@@ -16,6 +16,7 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.logging.LoggingContextAccessor;
 import com.continuuity.common.logging.common.LogWriter;
 import com.continuuity.common.logging.logback.CAppender;
+import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.data.DataFabric;
 import com.continuuity.data.DataFabricImpl;
 import com.continuuity.data.dataset.DataSetInstantiator;
@@ -47,6 +48,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.TaskCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +56,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Runs {@link com.continuuity.api.batch.MapReduce} programs
@@ -66,6 +69,7 @@ public class MapReduceProgramRunner implements ProgramRunner {
   private final CConfiguration cConf;
   private final Configuration hConf;
   private final LocationFactory locationFactory;
+  private final MetricsCollectionService metricsCollectionService;
 
   private Job jobConf;
   private MapReduceProgramController controller;
@@ -73,11 +77,13 @@ public class MapReduceProgramRunner implements ProgramRunner {
 
   @Inject
   public MapReduceProgramRunner(CConfiguration cConf, Configuration hConf,
-                                OperationExecutor opex, LocationFactory locationFactory) {
+                                OperationExecutor opex, LocationFactory locationFactory,
+                                MetricsCollectionService metricsCollectionService) {
     this.cConf = cConf;
     this.hConf = hConf;
     this.opex = opex;
     this.locationFactory = locationFactory;
+    this.metricsCollectionService = metricsCollectionService;
   }
 
   @Inject (optional = true)
@@ -125,7 +131,8 @@ public class MapReduceProgramRunner implements ProgramRunner {
       RunId runId = RunIds.generate();
       final BasicMapReduceContext context =
         new BasicMapReduceContext(program, runId, options.getUserArguments(), txAgent,
-                                  DataSets.createDataSets(dataSetContext, spec.getDataSets()), spec);
+                                  DataSets.createDataSets(dataSetContext, spec.getDataSets()), spec,
+                                  metricsCollectionService);
 
       try {
         MapReduce job = (MapReduce) program.getMainClass().newInstance();
@@ -220,7 +227,23 @@ public class MapReduceProgramRunner implements ProgramRunner {
           LoggingContextAccessor.setLoggingContext(context.getLoggingContext());
           try {
             LOG.info("Submitting mapreduce job {}", context.toString());
-            success = jobConf.waitForCompletion(true);
+
+            // submits job and returns immediately
+            jobConf.submit();
+
+            // until job is complete report stats
+            while (!jobConf.isComplete()) {
+              reportStats(context);
+
+              // we report to metrics backend every second, so 1 sec is enough here. That's mapreduce job anyways (not
+              // short) ;)
+              TimeUnit.MILLISECONDS.sleep(1000);
+            }
+
+            // NOTE: we want to report the final stats (they may change since last report and before job completed)
+            reportStats(context);
+
+            success = jobConf.isSuccessful();
           } catch (InterruptedException e) {
             // nothing we can do now: we simply stopped watching for job completion...
             throw Throwables.propagate(e);
@@ -250,6 +273,33 @@ public class MapReduceProgramRunner implements ProgramRunner {
         }
       }
     }.start();
+  }
+
+  private void reportStats(BasicMapReduceContext context) throws IOException, InterruptedException {
+    // map stats
+    float mapProgress = jobConf.getStatus().getMapProgress();
+    long mapInputRecords = getTaskCounter(jobConf, TaskCounter.MAP_INPUT_RECORDS);
+    long mapOutputRecords = getTaskCounter(jobConf, TaskCounter.MAP_OUTPUT_RECORDS);
+    long mapOutputBytes = getTaskCounter(jobConf, TaskCounter.MAP_OUTPUT_BYTES);
+
+    // current metrics API only supports int, cast it for now. Need another rev to support long.
+    context.getSystemMapperMetrics().gauge("process.completion", (int) (mapProgress * 100));
+    context.getSystemMapperMetrics().gauge("process.entries.ins", (int) mapInputRecords);
+    context.getSystemMapperMetrics().gauge("process.entries.outs", (int) mapOutputRecords);
+    context.getSystemMapperMetrics().gauge("process.bytes", (int) mapOutputBytes);
+
+    // reduce stats
+    float reduceProgress = jobConf.getStatus().getReduceProgress();
+    long reduceInputRecords = getTaskCounter(jobConf, TaskCounter.REDUCE_INPUT_RECORDS);
+    long reduceOutputRecords = getTaskCounter(jobConf, TaskCounter.REDUCE_OUTPUT_RECORDS);
+
+    context.getSystemReducerMetrics().gauge("process.completion", (int) (reduceProgress * 100));
+    context.getSystemReducerMetrics().gauge("process.entries.ins", (int) reduceInputRecords);
+    context.getSystemReducerMetrics().gauge("process.entries.outs", (int) reduceOutputRecords);
+  }
+
+  private long getTaskCounter(Job jobConf, TaskCounter taskCounter) throws IOException, InterruptedException {
+    return jobConf.getCounters().findCounter(TaskCounter.class.getName(), taskCounter.name()).getValue();
   }
 
   private Location createJobJarTempCopy(Location jobJarLocation) throws IOException {

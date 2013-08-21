@@ -1,4 +1,4 @@
-# checks if there exists a PID that is already running. If it is, then it fails with exit code of 1.
+# checks if there exists a PID that is already running. return 0 idempotently
 check_before_start()
 {
   if [ ! -d "$PID_DIR" ]; then
@@ -8,7 +8,7 @@ check_before_start()
     if kill -0 `cat $pid` > /dev/null 2>&1; then
       #echo "$APP $SERVICE running as process `cat $pid`. Stop it first."
       echo "$APP running as process `cat $pid`. Stop it first."
-      exit 1
+      exit 0
     fi
   fi
 }
@@ -43,16 +43,17 @@ set_java ()
         export JAVA="$JAVA_HOME/bin/java"
     fi
     if [ ! -x "$JAVA" ] ; then
-        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
+        echo "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
 
 Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
+location of your Java installation." >&2
+        exit 1
     fi
 else
     export JAVA="java"
-    which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+    which java >/dev/null 2>&1 || { echo "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
 Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
+location of your Java installation." >&2 ; exit 1; }
 fi
 }
 

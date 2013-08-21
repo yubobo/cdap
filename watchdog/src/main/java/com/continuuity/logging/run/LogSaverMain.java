@@ -6,34 +6,44 @@ package com.continuuity.logging.run;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
-import com.continuuity.common.logging.LoggingConfiguration;
-import com.continuuity.common.logging.logback.serialize.LogSchema;
 import com.continuuity.common.runtime.DaemonMain;
+import com.continuuity.logging.LoggingConfiguration;
+import com.continuuity.logging.serialize.LogSchema;
 import com.continuuity.weave.api.WeaveController;
 import com.continuuity.weave.api.WeavePreparer;
 import com.continuuity.weave.api.WeaveRunner;
 import com.continuuity.weave.api.WeaveRunnerService;
 import com.continuuity.weave.api.logging.PrinterLogHandler;
+import com.continuuity.weave.common.ServiceListenerAdapter;
 import com.continuuity.weave.yarn.YarnWeaveRunnerService;
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.io.Files;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Service;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.net.URISyntaxException;
+import java.util.Iterator;
 
 /**
  * Wrapper class to run LogSaver as a process.
  */
 public final class LogSaverMain extends DaemonMain {
+  private static final Logger LOG = LoggerFactory.getLogger(LogSaverMain.class);
+
   private WeaveRunnerService weaveRunnerService;
-  private WeavePreparer weavePreparer;
   private WeaveController weaveController;
+
+  private Configuration hConf;
+  private CConfiguration cConf;
 
   public static void main(String [] args) throws Exception {
     new LogSaverMain().doMain(args);
@@ -41,33 +51,71 @@ public final class LogSaverMain extends DaemonMain {
 
   @Override
   public void init(String[] args) {
-    Configuration hConf = new Configuration();
-    CConfiguration cConf = CConfiguration.create();
+    hConf = new Configuration();
+    cConf = CConfiguration.create();
     weaveRunnerService = new YarnWeaveRunnerService(new YarnConfiguration(),
                                                     cConf.get(Constants.CFG_ZOOKEEPER_ENSEMBLE));
-    weavePreparer = doInit(weaveRunnerService, hConf, cConf);
   }
 
   @Override
   public void start() {
-    weaveController = weavePreparer.start();
+    weaveRunnerService.startAndWait();
+
+    // If LogSaver is already running, return handle to that instance
+    Iterable<WeaveController> weaveControllers = weaveRunnerService.lookup(LogSaverWeaveApplication.getName());
+    Iterator<WeaveController> iterator = weaveControllers.iterator();
+
+    if (iterator.hasNext()) {
+      LOG.info("{} application is already running", LogSaverWeaveApplication.getName());
+      weaveController = iterator.next();
+
+      if (iterator.hasNext()) {
+        LOG.warn("Found more than one instance of {} running. Stopping the others...",
+                 LogSaverWeaveApplication.getName());
+        for (; iterator.hasNext(); ) {
+          WeaveController controller = iterator.next();
+          LOG.warn("Stopping one extra instance of {}", LogSaverWeaveApplication.getName());
+          controller.stopAndWait();
+        }
+        LOG.warn("Done stopping extra instances of {}", LogSaverWeaveApplication.getName());
+      }
+    } else {
+      LOG.info("Starting {} application", LogSaverWeaveApplication.getName());
+      WeavePreparer weavePreparer = doInit(weaveRunnerService, hConf, cConf);
+      weaveController = weavePreparer.start();
+
+      weaveController.addListener(new ServiceListenerAdapter() {
+        @Override
+        public void failed(Service.State from, Throwable failure) {
+          LOG.error("{} failed with exception... stopping LogSaverMain.", LogSaverWeaveApplication.getName(), failure);
+          System.exit(1);
+        }
+      }, MoreExecutors.sameThreadExecutor());
+    }
   }
 
   @Override
   public void stop() {
-    weaveController.stopAndWait();
+    LOG.info("Stopping {}", LogSaverWeaveApplication.getName());
+    if (weaveController != null && weaveController.isRunning()) {
+      weaveController.stopAndWait();
+    }
   }
 
   @Override
   public void destroy() {
-    weaveRunnerService.stopAndWait();
+    LOG.info("Destroying {}", LogSaverWeaveApplication.getName());
+    if (weaveRunnerService != null && weaveRunnerService.isRunning()) {
+      weaveRunnerService.stopAndWait();
+    }
   }
 
   static WeavePreparer doInit(WeaveRunner weaveRunner, Configuration hConf, CConfiguration cConf) {
     int partitions = cConf.getInt(LoggingConfiguration.NUM_PARTITIONS,  -1);
-    if (partitions < 1) {
-      throw new IllegalArgumentException("log.publish.partitions should be at least 1");
-    }
+    Preconditions.checkArgument(partitions > 0, "log.publish.partitions should be at least 1, got %s", partitions);
+
+    int memory = cConf.getInt(LoggingConfiguration.LOG_SAVER_RUN_MEMORY_MB, 1024);
+    Preconditions.checkArgument(memory > 0, "Got invalid memory value for log saver %s", memory);
 
     File hConfFile;
     File cConfFile;
@@ -76,16 +124,11 @@ public final class LogSaverMain extends DaemonMain {
       hConfFile.deleteOnExit();
       cConfFile = saveCConf(cConf, File.createTempFile("cConf", ".xml"));
       cConfFile.deleteOnExit();
-    } catch (IOException e) {
-      throw Throwables.propagate(e);
-    }
 
-    try {
-      return weaveRunner.prepare(new LogSaverWeaveApplication(partitions, hConfFile, cConfFile))
-        // TODO: write logs to file
+      return weaveRunner.prepare(new LogSaverWeaveApplication(partitions, memory, hConfFile, cConfFile))
         .addLogHandler(new PrinterLogHandler(new PrintWriter(System.out)))
         .withResources(LogSchema.getSchemaURL().toURI());
-    } catch (URISyntaxException e) {
+    } catch (Exception e) {
       throw Throwables.propagate(e);
     }
   }

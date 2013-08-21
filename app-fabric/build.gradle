@@ -32,10 +32,12 @@ dependencies {
 
   compile elastic([group: 'com.continuuity', name: 'data-fabric', classifier: 'api', version: "${version}", changing: true],"data-fabric")
   compile elastic([group: 'com.continuuity', name: 'overlord', classifier:'thrift', version: "${version}", changing: true], "overlord")
+  compile elastic([group: 'com.continuuity', name: 'watchdog', version: "${version}", changing: true], "watchdog")
 
   // Dependencies required by api.
 
   // Dependencies required by main.
+  compile libraries.asm
   compile libraries.slf4j_api
   compile libraries.apache_commons_cli
   compile libraries.google_gson
@@ -125,4 +127,12 @@ checkstyleThrift {
   source = sourceSets.main.allJava.matching {
     exclude '**'
   }
+}
+
+/**
+ * Use io.netty instead of org.jboss.netty
+ */
+configurations {
+    all*.exclude group: 'org.jboss.netty', module: 'netty'
+    all*.exclude group: 'asm', module: 'asm'
 }

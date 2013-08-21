@@ -38,11 +38,11 @@ public final class AvroFileWriter implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(AvroFileWriter.class);
 
   private final CheckpointManager checkpointManager;
-  private final FileManager fileManager;
+  private final FileMetaDataManager fileMetaDataManager;
   private final FileSystem fileSystem;
   private final Schema schema;
   private final int syncIntervalBytes;
-  private final String pathRoot;
+  private final Path pathRoot;
   private final Map<String, AvroFile> fileMap;
   private final long maxFileSize;
   private final long checkpointIntervalMs;
@@ -53,7 +53,7 @@ public final class AvroFileWriter implements Closeable {
   /**
    * Constructs an AvroFileWriter object.
    * @param checkpointManager used to store checkpoint meta data.
-   * @param fileManager used to store file meta data.
+   * @param fileMetaDataManager used to store file meta data.
    * @param fileSystem fileSystem where the Avro files are to be created.
    * @param pathRoot Root path for the files to be created.
    * @param schema schema of the Avro data to be written.
@@ -62,11 +62,11 @@ public final class AvroFileWriter implements Closeable {
    * @param checkpointIntervalMs interval to save checkpoint.
    * @param inactiveIntervalMs files that have no data written for more than inactiveIntervalMs will be closed.
    */
-  public AvroFileWriter(CheckpointManager checkpointManager, FileManager fileManager, FileSystem fileSystem,
-                        String pathRoot, Schema schema,
+  public AvroFileWriter(CheckpointManager checkpointManager, FileMetaDataManager fileMetaDataManager,
+                        FileSystem fileSystem, Path pathRoot, Schema schema,
                         long maxFileSize, int syncIntervalBytes, long checkpointIntervalMs, long inactiveIntervalMs) {
     this.checkpointManager = checkpointManager;
-    this.fileManager = fileManager;
+    this.fileMetaDataManager = fileMetaDataManager;
     this.fileSystem = fileSystem;
     this.schema = schema;
     this.syncIntervalBytes = syncIntervalBytes;
@@ -85,44 +85,56 @@ public final class AvroFileWriter implements Closeable {
    */
   public void append(List<KafkaLogEvent> events) throws IOException, OperationException {
     if (events.isEmpty()) {
+      LOG.debug("Empty append list.");
       return;
     }
 
     LoggingContext loggingContext = events.get(0).getLoggingContext();
-    AvroFile avroFile = getAvroFile(loggingContext);
+    LOG.debug("Appending {} messages for logging context {}", events.size(), loggingContext.getLogPathFragment());
+
+    long timestamp = events.get(0).getLogEvent().getTimeStamp();
+    AvroFile avroFile = getAvroFile(loggingContext, timestamp);
+    avroFile = rotateFile(avroFile, loggingContext, timestamp);
+
     for (KafkaLogEvent event : events) {
       avroFile.append(event);
     }
+    avroFile.flush();
 
     checkPoint(false);
-    rotateFile(avroFile, loggingContext);
   }
 
   @Override
   public void close() throws IOException {
-    // Close all files
-    LOG.info("Closing all files");
-    for (Map.Entry<String, AvroFile> entry : fileMap.entrySet()) {
-      entry.getValue().close();
-    }
-    fileMap.clear();
+    // First checkpoint state
     try {
       checkPoint(true);
     } catch (OperationException e) {
-      LOG.error("Caught exception while closing", e);
+      LOG.error("Caught exception while checkpointing", e);
     }
+
+    // Close all files
+    LOG.info("Closing all files");
+    for (Map.Entry<String, AvroFile> entry : fileMap.entrySet()) {
+      try {
+        entry.getValue().close();
+      } catch (Throwable e) {
+        LOG.error(String.format("Caught exception while closing file %s", entry.getValue().getPath()), e);
+      }
+    }
+    fileMap.clear();
   }
 
-  private AvroFile getAvroFile(LoggingContext loggingContext) throws IOException, OperationException {
+  private AvroFile getAvroFile(LoggingContext loggingContext, long timestamp) throws IOException, OperationException {
     AvroFile avroFile = fileMap.get(loggingContext.getLogPathFragment());
     if (avroFile == null) {
-      avroFile = createAvroFile(loggingContext);
-      fileMap.put(loggingContext.getLogPathFragment(), avroFile);
+      avroFile = createAvroFile(loggingContext, timestamp);
     }
     return avroFile;
   }
 
-  private AvroFile createAvroFile(LoggingContext loggingContext) throws IOException, OperationException {
+  private AvroFile createAvroFile(LoggingContext loggingContext, long timestamp) throws IOException,
+    OperationException {
     long currentTs = System.currentTimeMillis();
     Path path = createPath(loggingContext.getLogPathFragment(), currentTs);
     LOG.info(String.format("Creating Avro file %s", path.toUri()));
@@ -133,21 +145,25 @@ public final class AvroFileWriter implements Closeable {
       avroFile.close();
       throw e;
     }
-    fileManager.writeMetaData(loggingContext, currentTs, path.toUri().toString());
+    fileMap.put(loggingContext.getLogPathFragment(), avroFile);
+    fileMetaDataManager.writeMetaData(loggingContext, timestamp, path);
     return avroFile;
   }
 
-  private Path createPath(String pathFragment, long currentTs) {
+  private Path createPath(String pathFragment, long timestamp) {
     String date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-    return new Path(String.format("%s/%s/%s/%s.avro", pathRoot, pathFragment, date, currentTs));
+    return new Path(pathRoot, String.format("%s/%s/%s.avro", pathFragment, date, timestamp));
   }
 
-  private void rotateFile(AvroFile avroFile, LoggingContext loggingContext) throws IOException, OperationException {
+  private AvroFile rotateFile(AvroFile avroFile, LoggingContext loggingContext, long timestamp) throws IOException,
+    OperationException {
     if (avroFile.getPos() > maxFileSize) {
-      avroFile.close();
-      createAvroFile(loggingContext);
+      LOG.info(String.format("Rotating file %s", avroFile.getPath()));
       checkPoint(true);
+      avroFile.close();
+      return createAvroFile(loggingContext, timestamp);
     }
+    return avroFile;
   }
 
   private void checkPoint(boolean force) throws IOException, OperationException {
@@ -156,25 +172,27 @@ public final class AvroFileWriter implements Closeable {
       return;
     }
 
-    long checkpointOffset = Long.MAX_VALUE;
+    // Get the max checkpoint seen
+    long checkpointOffset = -1L;
     Set<String> files = Sets.newHashSetWithExpectedSize(fileMap.size());
     for (Iterator<Map.Entry<String, AvroFile>> it = fileMap.entrySet().iterator(); it.hasNext();) {
       AvroFile avroFile = it.next().getValue();
-      avroFile.flush();
+      avroFile.sync();
+
+      files.add(avroFile.getPath().toUri().toString());
+      if (avroFile.getMaxOffsetSeen() > checkpointOffset) {
+        checkpointOffset = avroFile.getMaxOffsetSeen();
+      }
 
       // Close inactive files
       if (currentTs - avroFile.getLastModifiedTs() > inactiveIntervalMs) {
         avroFile.close();
         it.remove();
       }
-
-      files.add(avroFile.getPath().toUri().toString());
-      if (checkpointOffset > avroFile.getMaxOffsetSeen()) {
-        checkpointOffset = avroFile.getMaxOffsetSeen();
-      }
     }
 
-    if (checkpointOffset != Long.MAX_VALUE) {
+    if (checkpointOffset != -1) {
+      LOG.debug(String.format("Saving checkpoint offset %d with files %d", checkpointOffset, files.size()));
       checkpointManager.saveCheckpoint(new CheckpointInfo(checkpointOffset, files));
     }
     lastCheckpointTime = currentTs;
@@ -189,6 +207,7 @@ public final class AvroFileWriter implements Closeable {
     private DataFileWriter<GenericRecord> dataFileWriter;
     private long maxOffsetSeen = -1;
     private long lastModifiedTs;
+    private boolean isOpen = false;
 
     public AvroFile(Path path) {
       this.path = path;
@@ -205,6 +224,7 @@ public final class AvroFileWriter implements Closeable {
       this.dataFileWriter.create(schema, this.outputStream);
       this.dataFileWriter.setSyncInterval(syncIntervalBytes);
       this.lastModifiedTs = System.currentTimeMillis();
+      this.isOpen = true;
     }
 
     public Path getPath() {
@@ -233,17 +253,31 @@ public final class AvroFileWriter implements Closeable {
 
     public void flush() throws IOException {
       dataFileWriter.flush();
-      outputStream.flush();
+      outputStream.hflush();
+    }
+
+    public void sync() throws IOException {
+      dataFileWriter.flush();
+      outputStream.hsync();
     }
 
     @Override
     public void close() throws IOException {
-      if (dataFileWriter != null) {
-        dataFileWriter.close();
+      if (!isOpen) {
+        return;
       }
-      if (outputStream != null) {
-        outputStream.close();
+
+      try {
+        if (dataFileWriter != null) {
+          dataFileWriter.close();
+        }
+      } finally {
+        if (outputStream != null) {
+          outputStream.close();
+        }
       }
+
+      isOpen = false;
     }
   }
 }
