@@ -1,13 +1,13 @@
 apply from: "$rootProject.projectDir/gradle/test-framework.gradle"
 
-defaultTasks 'deploy'
+defaultTasks 'deploySDK'
 
 task clean_sdk(type: Delete) {
     logger.println('[INFO]: Deleting previous Reactor...')
     delete "${buildDir}"
 }
 
-task deploy(type: Copy) {
+task deploySDK(type: Copy) {
 
     println "[INFO]: Deploying reactor local to ${buildDir}"
     def zipFile = file("${rootProject.projectDir}/distributions/build/distributions/continuuity-reactor-development-kit-${version}.zip")
