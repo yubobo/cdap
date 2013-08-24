@@ -20,5 +20,5 @@ task deploySDK(type: Copy) {
     }
 
 }
-deploy.dependsOn('clean_sdk')
-deploy.dependsOn(":distributions:reactor_sdk_dist")
+deploySDK.dependsOn('clean_sdk')
+deploySDK.dependsOn(":distributions:reactor_sdk_dist")
