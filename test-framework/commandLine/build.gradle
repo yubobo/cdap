@@ -10,15 +10,15 @@ task cleanDevSuite(type: Delete) {
 task deployDevSuite(type: Copy) {
 
     println "[INFO]: Deploying reactor local to ${buildDir}"
-    def zipFile = file("${rootProject.projectDir}/distributions/build/distributions/continuuity-developer-suite-${version}.zip")
+    def zipFile = file("${rootProject.projectDir}/distributions/build/distributions/continuuity-reactor-development-kit-${version}.zip")
     def outputDir = file("${buildDir}")
     from zipTree(zipFile)
     into outputDir
 
     doLast {
-        logger.println("[INFO]: reactor local deployed at ${buildDir}/continuuity-developer-suite-${version}")
+        logger.println("[INFO]: reactor local deployed at ${buildDir}/continuuity-reactor=development-kit-${version}")
     }
 
 }
 deployDevSuite.dependsOn('cleanDevSuite')
-deployDevSuite.dependsOn(":distributions:developer_suite_dist")
+deployDevSuite.dependsOn(":distributions:reactor_sdk_dist")
