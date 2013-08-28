@@ -7,6 +7,4 @@ include 'kafka'
 project(':singlenode').buildFileName = 'package.gradle'
 
 // Test framework
-include 'regression-framework'
-include 'regression-framework:reactor-sdk'
 include 'regression-framework:performance'
