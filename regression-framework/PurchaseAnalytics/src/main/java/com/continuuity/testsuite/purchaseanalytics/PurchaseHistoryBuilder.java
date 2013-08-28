@@ -15,12 +15,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.continuuity.testsuite.superpurchase;
+package com.continuuity.testsuite.purchaseanalytics;
 
 import com.continuuity.api.batch.AbstractMapReduce;
 import com.continuuity.api.batch.MapReduceContext;
 import com.continuuity.api.batch.MapReduceSpecification;
 import com.continuuity.api.common.Bytes;
+import com.continuuity.testsuite.purchaseanalytics.Purchase;
+import com.continuuity.testsuite.purchaseanalytics.PurchaseHistory;
 import com.google.gson.Gson;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;

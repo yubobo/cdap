@@ -1,4 +1,4 @@
-package com.continuuity.testsuite.superpurchase;
+package com.continuuity.testsuite.purchaseanalytics;
 
 /**
  *

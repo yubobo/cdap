@@ -15,7 +15,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.continuuity.testsuite.superpurchase;
+package com.continuuity.testsuite.purchaseanalytics;
 
 import java.util.ArrayList;
 import java.util.List;

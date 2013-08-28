@@ -15,13 +15,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.continuuity.testsuite.superpurchase;
+package com.continuuity.testsuite.purchaseanalytics;
 
 /**
  * This represents a purchase made by a customer. It is a very simple class and only contains
  * the name of the customer, the name of the product, the quantity and the price paid.
  */
-public class Purchase extends SerializedObject {
+public class Purchase extends com.continuuity.testsuite.purchaseanalytics.SerializedObject {
 
   private final String customer, product;
   private final int quantity, price;
