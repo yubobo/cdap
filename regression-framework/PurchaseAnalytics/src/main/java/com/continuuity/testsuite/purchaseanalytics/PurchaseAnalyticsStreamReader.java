@@ -48,10 +48,11 @@ public class PurchaseAnalyticsStreamReader extends AbstractFlowlet {
   @Output("outCustomer")
   private OutputEmitter<Customer> outCustomer;
 
-  //@ProcessInput
   public void process(StreamEvent event) {
 
     String body = new String(event.getBody().array());
+
+    System.out.print("Didn't break here? ");
 
     try {
       TransactionType transactionType = this.getTransactionType(body);

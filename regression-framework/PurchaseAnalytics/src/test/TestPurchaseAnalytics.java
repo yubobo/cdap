@@ -15,12 +15,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.continuuity.testsuite.purchaseanalytics;
 
 import com.continuuity.test.AppFabricTestBase;
 import com.continuuity.test.ApplicationManager;
 import com.continuuity.test.FlowManager;
 import com.continuuity.test.StreamWriter;
+import com.continuuity.testsuite.purchaseanalytics.PurchaseAnalyticsApp;
 import com.google.common.reflect.TypeToken;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -44,13 +44,10 @@ public class TestPurchaseAnalytics extends AppFabricTestBase {
   public void TestDataSetUsage() throws IOException, TimeoutException, InterruptedException {
     ApplicationManager appManager = deployApplication(PurchaseAnalyticsApp.class);
 
-    FlowManager batchFlow = appManager.startFlow("PurchaseAnalyticsFlow");
+    FlowManager purchaseAnalyticsFlow = appManager.startFlow("PurchaseAnalyticsFlow");
+
     StreamWriter s1 = appManager.getStreamWriter("transactionStream");
-    Thread.sleep(500);
-    s1.send("load");
+    s1.send("1|{\"customer\":\"alex\",\"product\":\"FisherPrice\",\"quantity\":10,\"price\":\"100\",\"purchaseTime\":\"129308132\"}");
 
-
-    //batchFlow.stop();
-    Thread.sleep(2000);
   }
 }

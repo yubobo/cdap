@@ -21,25 +21,22 @@ import com.continuuity.api.flow.Flow;
 import com.continuuity.api.flow.FlowSpecification;
 
 /**
- * This is a simple flow that consumes purchase events from a stream and stores Purchase objects in datastore.
- * It has only two flowlets: one consumes events from the stream and converts them into Purchase objects,
- * the other consumes these objects and stores them in a dataset.
+ * Reads transactions from stream, process purchase, customer, product, inventory.
  */
 public class PurchaseAnalyticsFlow implements Flow {
-
 
   @Override
   public FlowSpecification configure() {
     return FlowSpecification.Builder.with()
       .setName("PurchaseAnalyticsFlow")
-      .setDescription("Reads user and purchase information and stores in dataset")
+      .setDescription("Reads transactions from stream, process purchase, customer, product, inventory.")
       .withFlowlets()
       .add("reader", new PurchaseAnalyticsStreamReader())
       .add("purchase-collector", new PurchaseStoreFlowlet())
       .add("product-collector", new ProductStoreFlowlet())
       .add("customer-collector", new CustomerStoreFlowlet())
       .connect()
-      .fromStream("transactionStream").to("reader")
+      .fromStream("trx").to("reader")
       .from("reader").to("purchase-collector")
       .from("reader").to("product-collector")
       .from("reader").to("customer-collector")

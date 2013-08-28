@@ -1,5 +1,7 @@
 package com.continuuity.testsuite.purchaseanalytics;
 
+import com.continuuity.api.annotation.Output;
+import com.continuuity.api.annotation.ProcessInput;
 import com.continuuity.api.annotation.UseDataSet;
 import com.continuuity.api.common.Bytes;
 import com.continuuity.api.data.OperationException;
@@ -17,6 +19,7 @@ public class PurchaseStoreFlowlet extends AbstractFlowlet {
   @UseDataSet("purchases")
   private ObjectStore<Purchase> store;
 
+  @ProcessInput("outPurchase")
   public void process(Purchase purchase) throws OperationException {
     store.write(Bytes.toBytes(purchase.getPurchaseTime()), purchase);
   }
