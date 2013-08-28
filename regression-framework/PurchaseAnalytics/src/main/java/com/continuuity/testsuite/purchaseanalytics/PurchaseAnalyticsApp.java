@@ -38,7 +38,7 @@ public class PurchaseAnalyticsApp implements Application {
         .setName("PurchaseAnalytics")
         .setDescription("Purchase Analytics App")
         .withStreams()
-          .add(new Stream("purchaseStream"))
+          .add(new Stream("transactionStream"))
         .withDataSets()
           .add(new ObjectStore<PurchaseHistory>("history", PurchaseHistory.class))
           .add(new ObjectStore<Purchase>("purchases", Purchase.class))

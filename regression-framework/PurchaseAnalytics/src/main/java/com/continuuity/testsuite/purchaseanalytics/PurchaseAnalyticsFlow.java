@@ -39,7 +39,7 @@ public class PurchaseAnalyticsFlow implements Flow {
       .add("product-collector", new ProductStoreFlowlet())
       .add("customer-collector", new CustomerStoreFlowlet())
       .connect()
-      .fromStream("purchaseStream").to("reader")
+      .fromStream("transactionStream").to("reader")
       .from("reader").to("purchase-collector")
       .from("reader").to("product-collector")
       .from("reader").to("customer-collector")

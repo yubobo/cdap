@@ -17,6 +17,8 @@
 
 package com.continuuity.testsuite.purchaseanalytics;
 
+import com.continuuity.api.annotation.Output;
+import com.continuuity.api.annotation.ProcessInput;
 import com.continuuity.api.flow.flowlet.AbstractFlowlet;
 import com.continuuity.api.flow.flowlet.OutputEmitter;
 import com.continuuity.api.flow.flowlet.StreamEvent;
@@ -28,11 +30,25 @@ import com.google.gson.JsonParseException;
  */
 public class PurchaseAnalyticsStreamReader extends AbstractFlowlet {
 
-  private final Gson gson = new Gson();
-  OutputEmitter<Purchase> outPurchase;
-  OutputEmitter<Product> outProduct;
-  OutputEmitter<Customer> outCustomer;
+  public enum TransactionType {
+    Purchase,  /* 1 */
+    Product,   /* 2 */
+    Customer,   /* 3 */
+    Unknown
+  }
 
+  private final Gson gson = new Gson();
+
+  @Output("outPurchase")
+  private OutputEmitter<Purchase> outPurchase;
+
+  @Output("outProduct")
+  private OutputEmitter<Product> outProduct;
+
+  @Output("outCustomer")
+  private OutputEmitter<Customer> outCustomer;
+
+  //@ProcessInput
   public void process(StreamEvent event) {
 
     String body = new String(event.getBody().array());
@@ -91,12 +107,5 @@ public class PurchaseAnalyticsStreamReader extends AbstractFlowlet {
    */
   private String preProcessJSON(String event) {
     return event.substring(2);
-  }
-
-  public enum TransactionType {
-    Purchase,  /* 1 */
-    Product,   /* 2 */
-    Customer,   /* 3 */
-    Unknown
   }
 }

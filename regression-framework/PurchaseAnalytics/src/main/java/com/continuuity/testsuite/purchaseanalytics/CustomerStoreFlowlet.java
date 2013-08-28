@@ -14,6 +14,7 @@ public class CustomerStoreFlowlet extends AbstractFlowlet {
   @UseDataSet("customers")
   private ObjectStore<Customer> store;
 
+
   public void process(Customer customer) throws OperationException {
     //store.write(Bytes.toBytes(purchase.getPurchaseTime()), purchase);
   }

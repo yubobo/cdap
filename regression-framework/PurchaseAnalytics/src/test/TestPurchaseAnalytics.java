@@ -42,10 +42,10 @@ public class TestPurchaseAnalytics extends AppFabricTestBase {
 
   @Test
   public void TestDataSetUsage() throws IOException, TimeoutException, InterruptedException {
-    ApplicationManager appManager = deployApplication(TestBatchApp.class);
+    ApplicationManager appManager = deployApplication(PurchaseAnalyticsApp.class);
 
-    FlowManager batchFlow = appManager.startFlow("PurchaseFlow");
-    StreamWriter s1 = appManager.getStreamWriter("command");
+    FlowManager batchFlow = appManager.startFlow("PurchaseAnalyticsFlow");
+    StreamWriter s1 = appManager.getStreamWriter("transactionStream");
     Thread.sleep(500);
     s1.send("load");
 

@@ -13,7 +13,7 @@ public class ProductStoreFlowlet  extends AbstractFlowlet {
   @UseDataSet("products")
   private ObjectStore<Product> store;
 
-  public void process(Purchase purchase) throws OperationException {
+  public void process(Product product) throws OperationException {
     //store.write(Bytes.toBytes(purchase.getPurchaseTime()), purchase);
   }
 
