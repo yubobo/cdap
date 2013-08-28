@@ -15,7 +15,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.continuuity.testsuite.superpurchase;
+package com.continuuity.testsuite.purchaseanalytics;
 
 import com.continuuity.api.flow.flowlet.AbstractFlowlet;
 import com.continuuity.api.flow.flowlet.OutputEmitter;
@@ -26,11 +26,14 @@ import com.continuuity.api.flow.flowlet.StreamEvent;
  * <pre><name> bought <n> <items> for $<price></pre>. The event is then converted into
  * a Purchase object and emitted. If the event does not have this form, it is dropped.
  */
-public class PurchaseStreamReader extends AbstractFlowlet {
+public class PurchaseAnalyticsStreamReader extends AbstractFlowlet {
 
-  OutputEmitter<Purchase> out;
+  OutputEmitter<Purchase> outPurchase;
+  OutputEmitter<Product> outProduct;
+  OutputEmitter<Customer> outCustomer;
 
   public void process(StreamEvent event) {
+
     String body = new String(event.getBody().array());
     // <name> bought <n> <items> for $<price>
     String[] tokens =  body.split(" ");

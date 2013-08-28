@@ -15,7 +15,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.continuuity.testsuite.superpurchase;
+package com.continuuity.testsuite.purchaseanalytics;
 
 import com.continuuity.api.Application;
 import com.continuuity.api.ApplicationSpecification;
@@ -29,19 +29,22 @@ import java.util.List;
  *
  * This implements a simple purchase history application. See the package info for more details.
  */
-public class SuperPurchaseApp implements Application {
+public class PurchaseAnalyticsApp implements Application {
 
   @Override
   public ApplicationSpecification configure() {
     try {
       return ApplicationSpecification.Builder.with()
-        .setName("PurchaseHistory")
-        .setDescription("Purchase history application")
+        .setName("PurchaseAnalytics")
+        .setDescription("Purchase Analytics App")
         .withStreams()
           .add(new Stream("purchaseStream"))
         .withDataSets()
           .add(new ObjectStore<PurchaseHistory>("history", PurchaseHistory.class))
           .add(new ObjectStore<Purchase>("purchases", Purchase.class))
+          .add(new ObjectStore<Product>("product", Product.class))
+          .add(new ObjectStore<Inventory>("inventory", Inventory.class))
+          .add(new ObjectStore<Customer>("customer", Customer.class))
         .withFlows()
           .add(new PurchaseFlow())
         .withProcedures()

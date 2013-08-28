@@ -3,14 +3,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.continuuity.testsuite.superpurchase</groupId>
-    <artifactId>superpurchase</artifactId>
+    <groupId>com.continuuity.testsuite.purchaseanalytics</groupId>
+    <artifactId>purchaseanalytics</artifactId>
     <packaging>jar</packaging>
     <version>1.0</version>
     <name>SuperPurchase</name>
 
     <properties>
-        <main>com.continuuity.testsuite.superpurchase.SuperPurchaseApp</main>
+        <main>com.continuuity.testsuite.purchaseanalytics.PurchaseAnalyticsApp</main>
         <continuuityVersion>1.7.0-SNAPSHOT</continuuityVersion>
     </properties>
     <repositories>

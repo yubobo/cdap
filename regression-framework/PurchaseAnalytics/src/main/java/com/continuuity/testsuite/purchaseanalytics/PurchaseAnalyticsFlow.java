@@ -15,7 +15,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.continuuity.testsuite.superpurchase;
+package com.continuuity.testsuite.purchaseanalytics;
 
 import com.continuuity.api.flow.Flow;
 import com.continuuity.api.flow.FlowSpecification;
@@ -25,20 +25,24 @@ import com.continuuity.api.flow.FlowSpecification;
  * It has only two flowlets: one consumes events from the stream and converts them into Purchase objects,
  * the other consumes these objects and stores them in a dataset.
  */
-public class PurchaseFlow implements Flow {
+public class PurchaseAnalyticsFlow implements Flow {
 
 
   @Override
   public FlowSpecification configure() {
-    return FlowSpecification.Builder.with().
-      setName("PurchaseFlow").
-      setDescription("Reads user and purchase information and stores in dataset").
-      withFlowlets().
-      add("reader", new PurchaseStreamReader()).
-      add("collector", new PurchaseStore()).
-      connect().
-      fromStream("purchaseStream").to("reader").
-      from("reader").to("collector").
-      build();
+    return FlowSpecification.Builder.with()
+      .setName("PurchaseAnalyticsFlow")
+      .setDescription("Reads user and purchase information and stores in dataset")
+      .withFlowlets()
+      .add("reader", new PurchaseAnalyticsStreamReader())
+      .add("purchase-collector", new PurchaseStoreFlowlet())
+      .add("product-collector", new ProductStoreFlowlet())
+      .add("customer-collector", new CustomerStoreFlowlet())
+      .connect()
+      .fromStream("purchaseStream").to("reader")
+      .from("reader").to("purchase-collector")
+      .from("reader").to("product-collector")
+      .from("reader").to("customer-collector")
+      .build();
   }
 }

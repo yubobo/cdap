@@ -34,4 +34,4 @@
  *   </li>
  * </ul>
  */
-package com.continuuity.examples.purchase;
+package com.continuuity.testsuite.superpurchase;
