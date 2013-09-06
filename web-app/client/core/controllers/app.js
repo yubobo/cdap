@@ -62,7 +62,7 @@ define([], function () {
       /*
        * Load Mapreduces
        */
-      this.HTTP.get('rest', 'apps', model.id, 'mapreduce', function (objects) {
+      this.HTTP.get('rest', 'apps', model.id, 'mapreduces', function (objects) {
 
           var i = objects.length;
           while (i--) {

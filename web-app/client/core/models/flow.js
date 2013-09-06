@@ -22,7 +22,7 @@ define([], function () {
 			this.set('timeseries', Em.Object.create());
 			this.set('name', (this.get('flowId') || this.get('id') || this.get('meta').name));
 
-			this.set('app', this.get('applicationId') || this.get('application') || this.get('meta').app);
+			this.set('app', this.get('applicationId') || this.get('app') || this.get('meta').app);
 			this.set('id', this.get('app') + ':' +
 				(this.get('flowId') || this.get('id') || this.get('meta').name));
 
