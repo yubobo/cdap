@@ -278,7 +278,7 @@
             <div class="batch-item" {{bindAttr id="divId"}}>
               <div class="batch-icon batch-map">
                 <div class="info-window">
-                  <div class="label">{{name}}</div>
+                  <div class="batch-phase">{{name}}</div>
                   <div>{{state}}</div>
                   {{#if isRunning}}
                     <progress {{bindAttr value="totalCompletion" }} max="100"></progress>
@@ -338,7 +338,7 @@
             <div class="batch-item" {{bindAttr id="divId"}}>
               <div class="batch-icon batch-map">
                 <div class="info-window">
-                  <div class="label">{{name}}</div>
+                  <div class="batch-phase">{{name}}</div>
                   <div>{{state}}</div>
                   {{#if isRunning}}
                     <progress {{bindAttr value="completionPercentage" }} max="100"></progress>
