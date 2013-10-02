@@ -104,7 +104,11 @@ public final class Constants {
       /** for the address (hostname) of the tx server. */
       public static final String CFG_DATA_TX_BIND_ADDRESS
         = "data.tx.bind.address";
-  
+
+      /** for the address (hostname) of the tx server command port. */
+      public static final String CFG_DATA_TX_COMMAND_PORT
+        = "data.tx.command.port";
+
       /** the number of IO threads in the tx service. */
       public static final String CFG_DATA_TX_SERVER_IO_THREADS
         = "data.tx.server.io.threads";
