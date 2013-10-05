@@ -15,14 +15,14 @@ public class DataFormat {
   /**
    * The name of the configuration governing where data-fabric data is stored.
    */
-  private static final String dataDirPropName = "data.local.jdbc";
+  private static final String DATA_LOCAL_STORAGE = "data.local.storage";
 
   /**
    *  The name of the configuration governing the port which resourceMgr listens.
    *
    *  Used to confirm if the application is currently running
    */
-  private static final String resourceMgrPortPropName = "resource.manager.server.port";
+  private static final String APP_BIND_PORT = "app.bind.port";
 
   /**
    * Print the usage statement and return null.
@@ -113,7 +113,7 @@ public class DataFormat {
     }
 
     // first confirm user intends to delete all data
-    String userinput = promptUser("Warning: this will delete any existing Continuuity user data.  Proceed? (yes/no): ");
+    String userinput = promptUser("Warning: this will delete any existing Reactor user data.  Proceed? (yes/no): ");
     if (!("yes".equals(userinput) || "no".equals(userinput))) {
       // try once more
       userinput = promptUser("please type 'yes' or 'no': ");
@@ -130,19 +130,19 @@ public class DataFormat {
     CConfiguration myConfiguration = CConfiguration.create();
 
     // read the relevant property
-    String datadirjdbc = myConfiguration.get(dataDirPropName);
+    String datadirjdbc = myConfiguration.get(DATA_LOCAL_STORAGE);
 
     // extract the relative file path from the jdbc string
     String datadirpath = datadirjdbc.replaceAll(".*file:([^/]+)/.*", "$1");
 
-    //String datadirpath = myConfiguration.get(dataDirPropName);
+    //String datadirpath = myConfiguration.get(DATA_LOCAL_STORAGE);
     if (datadirpath == null) {
       System.out.println("Error: cannot read data-fabric configuration. Aborting...");
       System.exit(-1);
     }
 
     // read the resourceMgr port configuration
-    String port = myConfiguration.get(resourceMgrPortPropName);
+    String port = myConfiguration.get(APP_BIND_PORT);
     if (port == null) {
       System.out.println("Error: cannot read configuration. Aborting...");
       System.exit(-1);
@@ -150,7 +150,7 @@ public class DataFormat {
 
     // determine if singleNode is already running
     if (checkIfRunning(Integer.parseInt(port))) {
-      System.out.println("Error: continuuity-reactor must first be stopped.");
+      System.out.println("Error: Continuuity Reactor must first be stopped.");
       System.exit(-1);
     }
 
