@@ -81,6 +81,7 @@ dependencies {
         exclude group: 'commons-logging'
     }
     compile libraries.netty
+    compile libraries.http_client
 
     testCompile libraries.hadoop_minicluster
     testCompile libraries.jersey_server

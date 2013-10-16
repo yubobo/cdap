@@ -1,7 +1,7 @@
 /*
  * Copyright 2012-2013 Continuuity,Inc. All Rights Reserved.
  */
-package com.continuuity.gateway.v2.handlers.v2;
+package com.continuuity.common.http.forwarder;
 
 import com.ning.http.client.Request;
 import org.jboss.netty.buffer.ChannelBuffer;

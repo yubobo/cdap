@@ -4,27 +4,20 @@ import com.continuuity.common.discovery.RandomEndpointStrategy;
 import com.continuuity.common.discovery.TimeLimitEndpointStrategy;
 import com.continuuity.common.http.core.HandlerContext;
 import com.continuuity.common.http.core.HttpResponder;
+import com.continuuity.common.http.forwarder.RequestForwarder;
 import com.continuuity.gateway.auth.GatewayAuthenticator;
 import com.continuuity.weave.discovery.Discoverable;
 import com.continuuity.weave.discovery.DiscoveryServiceClient;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
-import com.ning.http.client.providers.netty.NettyResponse;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +40,6 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 
 /**
  * Handles procedure calls.
@@ -70,16 +62,14 @@ public class ProcedureHandler extends AuthenticatedHttpHandler {
     };
 
   private final DiscoveryServiceClient discoveryServiceClient;
-  private final AsyncHttpClient asyncHttpClient;
+  private final RequestForwarder requestForwarder;
 
   @Inject
   public ProcedureHandler(GatewayAuthenticator authenticator, DiscoveryServiceClient discoveryServiceClient) {
     super(authenticator);
     this.discoveryServiceClient = discoveryServiceClient;
 
-    AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
-    this.asyncHttpClient = new AsyncHttpClient(new NettyAsyncHttpProvider(configBuilder.build()),
-                                               configBuilder.build());
+    this.requestForwarder = new RequestForwarder();
   }
 
   @Override
@@ -90,7 +80,7 @@ public class ProcedureHandler extends AuthenticatedHttpHandler {
   @Override
   public void destroy(HandlerContext context) {
     LOG.info("Stopping ProcedureHandler.");
-    asyncHttpClient.close();
+    requestForwarder.close();
   }
 
   @POST
@@ -158,45 +148,12 @@ public class ProcedureHandler extends AuthenticatedHttpHandler {
 
       LOG.trace("Relaying request to " + relayUri);
 
-      // Construct request
-      RequestBuilder requestBuilder = new RequestBuilder("POST");
-      requestBuilder.setUrl(relayUri);
+      // Forward request
+      request.setMethod(HttpMethod.POST);
+      request.setUri(relayUri);
+      request.setContent(content);
+      requestForwarder.forward(request, responder);
 
-      if (content.readable()) {
-        requestBuilder.setBody(new ChannelBufferEntityWriter(content), content.readableBytes());
-      }
-
-      // Add headers
-      for (Map.Entry<String, String> entry : request.getHeaders()) {
-        requestBuilder.addHeader(entry.getKey(), entry.getValue());
-      }
-
-      asyncHttpClient.executeRequest(requestBuilder.build(), new AsyncCompletionHandler<Void>() {
-        @Override
-        public Void onCompleted(Response response) throws Exception {
-          if (response.getStatusCode() == OK.getCode()) {
-            String contentType = response.getContentType();
-            ChannelBuffer content = getResponseBody(response);
-
-            // Copy headers
-            ImmutableListMultimap.Builder<String, String> headerBuilder = ImmutableListMultimap.builder();
-            for (Map.Entry<String, List<String>> entry : response.getHeaders()) {
-              headerBuilder.putAll(entry.getKey(), entry.getValue());
-            }
-
-            responder.sendContent(OK, content, contentType, headerBuilder.build());
-          } else {
-            responder.sendStatus(HttpResponseStatus.valueOf(response.getStatusCode()));
-          }
-          return null;
-        }
-
-        @Override
-        public void onThrowable(Throwable t) {
-          LOG.trace("Got exception while posting {}", relayUri, t);
-          responder.sendStatus(INTERNAL_SERVER_ERROR);
-        }
-      });
     } catch (SecurityException e) {
       responder.sendStatus(FORBIDDEN);
     } catch (IllegalArgumentException e) {
@@ -205,16 +162,6 @@ public class ProcedureHandler extends AuthenticatedHttpHandler {
       LOG.error("Caught exception", e);
       responder.sendStatus(INTERNAL_SERVER_ERROR);
     }
-  }
-
-  private ChannelBuffer getResponseBody(Response response) throws IOException {
-    // Optimization for NettyAsyncHttpProvider
-    if (response instanceof NettyResponse) {
-      // This avoids copying
-      return ((NettyResponse) response).getResponseBodyAsChannelBuffer();
-    }
-    // This may copy, depending on the Response implementation.
-    return ChannelBuffers.wrappedBuffer(response.getResponseBodyAsByteBuffer());
   }
 
   private <T> ChannelBuffer jsonEncode(T obj, Type type, ChannelBuffer buffer) throws IOException {
