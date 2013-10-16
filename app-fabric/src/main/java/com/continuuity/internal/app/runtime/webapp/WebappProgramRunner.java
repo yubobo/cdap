@@ -11,6 +11,7 @@ import com.continuuity.common.http.core.NettyHttpService;
 import com.continuuity.common.utils.Networks;
 import com.continuuity.weave.api.RunId;
 import com.continuuity.weave.api.ServiceAnnouncer;
+import com.continuuity.weave.discovery.DiscoveryServiceClient;
 import com.continuuity.weave.internal.RunIds;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -35,14 +36,16 @@ public class WebappProgramRunner implements ProgramRunner {
   private final ServiceAnnouncer serviceAnnouncer;
   private final InetAddress hostname;
   private final WebappHttpHandlerFactory handlerFactory;
+  private final DiscoveryServiceClient discoveryServiceClient;
 
   @Inject
   public WebappProgramRunner(ServiceAnnouncer serviceAnnouncer,
                              @Named(Constants.AppFabric.SERVER_ADDRESS) InetAddress hostname,
-                             WebappHttpHandlerFactory handlerFactory) {
+                             WebappHttpHandlerFactory handlerFactory, DiscoveryServiceClient discoveryServiceClient) {
     this.serviceAnnouncer = serviceAnnouncer;
     this.hostname = hostname;
     this.handlerFactory = handlerFactory;
+    this.discoveryServiceClient = discoveryServiceClient;
   }
 
   @Override
@@ -65,7 +68,8 @@ public class WebappProgramRunner implements ProgramRunner {
       // Start netty server
       // TODO: add metrics reporting
       NettyHttpService.Builder builder = NettyHttpService.builder();
-      builder.addHttpHandlers(ImmutableList.of(handlerFactory.createHandler(program.getJarLocation())));
+      builder.addHttpHandlers(ImmutableList.of(handlerFactory.createHandler(program.getJarLocation()),
+                                               new GatewayForwardingHandler(discoveryServiceClient)));
       builder.setHost(hostname.getCanonicalHostName());
       NettyHttpService httpService = builder.build();
       httpService.startAndWait();

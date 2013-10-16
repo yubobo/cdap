@@ -42,6 +42,7 @@ public class IntactJarHttpHandler extends AbstractHttpHandler {
     super.init(context);
     try {
       jarResources = new JarResources(jarLocation);
+      LOG.info("Serving files from {}", jarLocation.toURI());
     } catch (IOException e) {
       LOG.error("Got exception: ", e);
       throw Throwables.propagate(e);

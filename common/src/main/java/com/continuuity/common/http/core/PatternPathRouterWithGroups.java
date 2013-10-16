@@ -88,15 +88,17 @@ public final class PatternPathRouterWithGroups<T> {
     // TODO: Clean up the return type.
     List<T> result = Lists.newArrayList();
     int maxMatch = 0;
+    int maxPatternLength = 0;
 
     for (ImmutablePair<Pattern, RouteDestinationWithGroups<T>> patternRoute : patternRouteList) {
       Matcher matcher =  patternRoute.getFirst().matcher(cleanPath);
 
       if (matcher.matches() && matcher.groupCount() >= maxMatch) {
-        if (matcher.groupCount() > maxMatch) {
+        if (matcher.groupCount() > maxMatch || matcher.pattern().pattern().length() > maxPatternLength) {
           result.clear();
           groupNameValues.clear();
           maxMatch = matcher.groupCount();
+          maxPatternLength = matcher.pattern().pattern().length();
         }
 
         int matchIndex = 1;

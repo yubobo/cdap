@@ -31,6 +31,7 @@ public class PathRouterTest {
 
     pathRouter.add("/multi/maxmatch/.*", "multi-max-match-*");
     pathRouter.add("/multi/maxmatch/{id}", "multi-max-match-id");
+    pathRouter.add("/multi/maxmatch/foo", "multi-max-match-foo");
 
     Map<String, String> emptyGroupValues = Maps.newHashMap();
     Map<String, String> groupValues = Maps.newHashMap();
@@ -70,10 +71,17 @@ public class PathRouterTest {
     assertEquals(0, routes.size());
 
     routes = pathRouter.getDestinations("/multi/match/def", emptyGroupValues);
-    assertEquals(ImmutableSet.of("multi-match-*", "multi-match-def"), ImmutableSet.copyOf(routes));
+    assertEquals(ImmutableSet.of("multi-match-def"), ImmutableSet.copyOf(routes));
+
+    routes = pathRouter.getDestinations("/multi/match/ghi", emptyGroupValues);
+    assertEquals(ImmutableSet.of("multi-match-*"), ImmutableSet.copyOf(routes));
 
     routes = pathRouter.getDestinations("/multi/maxmatch/id1", groupValues);
     assertEquals(ImmutableSet.of("multi-max-match-id"), ImmutableSet.copyOf(routes));
     assertEquals(ImmutableMap.of("id", "id1"), groupValues);
+
+    routes = pathRouter.getDestinations("/multi/maxmatch/foo", groupValues);
+    assertEquals(ImmutableSet.of("multi-max-match-id"), ImmutableSet.copyOf(routes));
+    assertEquals(ImmutableMap.of("id", "foo"), groupValues);
   }
 }
