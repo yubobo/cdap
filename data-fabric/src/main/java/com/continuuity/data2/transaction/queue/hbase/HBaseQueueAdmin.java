@@ -148,13 +148,16 @@ public class HBaseQueueAdmin implements QueueAdmin {
                          Constants.Transaction.DataJanitor.DEFAULT_TX_JANITOR_ENABLE)) {
       HBaseTableUtil.createQueueTableIfNotExists(admin, tableNameBytes, QueueConstants.COLUMN_FAMILY,
                                                  QueueConstants.MAX_CREATE_TABLE_WAIT, splits,
-                                                 HBaseTableUtil.createCoProcessorJar("queue", jarDir, HBaseQueueRegionObserver.class,
+                                                 HBaseTableUtil.createCoProcessorJar("queue", jarDir,
+                                                                                     HBaseQueueRegionObserver.class,
                                                                                      TransactionDataJanitor.class),
-                                                 HBaseQueueRegionObserver.class.getName(), TransactionDataJanitor.class.getName());
+                                                 HBaseQueueRegionObserver.class.getName(),
+                                                 TransactionDataJanitor.class.getName());
     } else {
       HBaseTableUtil.createQueueTableIfNotExists(admin, tableNameBytes, QueueConstants.COLUMN_FAMILY,
                                                  QueueConstants.MAX_CREATE_TABLE_WAIT, splits,
-                                                 HBaseTableUtil.createCoProcessorJar("queue", jarDir, HBaseQueueRegionObserver.class),
+                                                 HBaseTableUtil.createCoProcessorJar("queue", jarDir,
+                                                                                     HBaseQueueRegionObserver.class),
                                                  HBaseQueueRegionObserver.class.getName());
     }
   }

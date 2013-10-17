@@ -6,6 +6,7 @@ import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data.DistributedDataSetAccessor;
 import com.continuuity.data2.queue.QueueClientFactory;
 import com.continuuity.data2.transaction.DefaultTransactionExecutor;
+import com.continuuity.data2.transaction.TimingTxSystemClient;
 import com.continuuity.data2.transaction.TransactionExecutor;
 import com.continuuity.data2.transaction.TransactionExecutorFactory;
 import com.continuuity.data2.transaction.TransactionSystemClient;
@@ -88,7 +89,11 @@ public class DataFabricDistributedModule extends AbstractModule {
     }
     bind(DataSetAccessor.class).to(DistributedDataSetAccessor.class).in(Singleton.class);
     bind(InMemoryTransactionManager.class).in(Singleton.class);
-    bind(TransactionSystemClient.class).to(TransactionServiceClient.class).in(Singleton.class);
+//    bind(TransactionSystemClient.class).to(TransactionServiceClient.class).in(Singleton.class);
+    bind(TransactionSystemClient.class).annotatedWith(Names.named("txSystemClient"))
+      .to(TransactionServiceClient.class).in(Singleton.class);
+
+    bind(TransactionSystemClient.class).to(TimingTxSystemClient.class).in(Singleton.class);
     bind(QueueClientFactory.class).to(HBaseQueueClientFactory.class).in(Singleton.class);
     bind(QueueAdmin.class).to(HBaseQueueAdmin.class).in(Singleton.class);
 
