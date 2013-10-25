@@ -862,18 +862,28 @@
     <div id="info">
       <div class="info-box" style="float: right; border: 0;">
         <div id="action-buttons" class="btn-group pull-right">
+<<<<<<< Updated upstream
 
           <button class="btn" {{bindAttr disabled="model.startPauseDisabled"}} style="width:64px;" {{action "exec" on="click"}} {{bindAttr flow-app="model.applicationId"}} {{bindAttr flow-id="model.name"}} {{bindAttr flow-action="model.defaultAction"}}><span {{bindAttr class="model.actionIcon"}}></span><span>{{model.defaultAction}}</span></button>
 
           <button class="btn btn-icon" {{bindAttr disabled="model.startDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
 
+=======
+          <button class="btn start-stop" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span>{{model.defaultAction}}</span></button>
+          <button class="btn btn-icon" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
+>>>>>>> Stashed changes
         </div>
 
         <div class="flow-state"><strong>{{model.currentState}}</strong></div>
 
+<<<<<<< Updated upstream
       </div>
       <div class="info-box sparkline-box">{{view C.Embed.Chart title="Successful Requests" metrics="/reactor/apps/{parent}/procedures/{id}/query.requests"}}</div>
       <div class="info-box sparkline-box">{{view C.Embed.Chart title="Failed Requests" metrics="/reactor/apps/{parent}/procedures/{id}/query.failures"}}</div>
+=======
+      <div class="info-box sparkline-box requests">{{view C.Embed.Chart title="Successful Requests" metrics="/reactor/apps/{parent}/procedures/{id}/query.requests"}}</div>
+      <div class="info-box sparkline-box failures">{{view C.Embed.Chart title="Failed Requests" metrics="/reactor/apps/{parent}/procedures/{id}/query.failures"}}</div>
+>>>>>>> Stashed changes
     </div>
     <div id="panels">
 
@@ -898,9 +908,9 @@
             <td>
               {{view Ember.TextField valueBinding="requestParams" width="100%"}}
               {{#if model.isRunning}}
-              <button {{action "submit"}} class="btn" style="margin:0px 16px;">Execute</button>
+              <button {{action "submit"}} class="btn query-execute" style="margin:0px 16px;">Execute</button>
               {{else}}
-              <button disabled="disabled" class="btn" style="margin: 0px 16px;">Click "Start" Above</button>
+              <button disabled="disabled" class="btn  query-run" style="margin: 0px 16px;">Click "Start" Above</button>
               {{/if}}
             </td>
           </tr>
