@@ -452,14 +452,13 @@
 
       <div class="info-box" style="float: right; border: 0;">
         <div id="action-buttons" class="btn-group pull-right">
-          <button class="btn" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span>{{model.defaultAction}}</span></button>
+          <button class="btn start-stop" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span>{{model.defaultAction}}</span></button>
           <button class="btn btn-icon" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
         </div>
         <div class="flow-state"><strong>{{model.currentState}}</strong></div>
       </div>
-
-      <div class="info-box sparkline-box">{{view C.Embed.Chart metrics="/reactor/apps/{parent}/mapreduce/{id}/mappers/process.completion" title="Mapping" unit="percent"}}</div>
-      <div class="info-box sparkline-box">{{view C.Embed.Chart metrics="/reactor/apps/{parent}/mapreduce/{id}/reducers/process.completion" title="Reducing" unit="percent"}}</div>
+      <div class="info-box sparkline-box mapping">{{view C.Embed.Chart metrics="/reactor/apps/{parent}/mapreduce/{id}/mappers/process.completion" title="Mapping" unit="percent"}}</div>
+      <div class="info-box sparkline-box reducing">{{view C.Embed.Chart metrics="/reactor/apps/{parent}/mapreduce/{id}/reducers/process.completion" title="Reducing" unit="percent"}}</div>
 
     </div>
     <div id="panels">
@@ -868,17 +867,17 @@
 
   <script type="text/x-handlebars" data-template-name="ProcedureStatus">
 
-    <div id="info">
+	<div id="info">
       <div class="info-box" style="float: right; border: 0;">
         <div id="action-buttons" class="btn-group pull-right">
-          <button class="btn" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span>{{model.defaultAction}}</span></button>
+          <button class="btn start-stop" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span>{{model.defaultAction}}</span></button>
           <button class="btn btn-icon" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
         </div>
         <div class="flow-state"><strong>{{model.currentState}}</strong></div>
       </div>
 
-      <div class="info-box sparkline-box">{{view C.Embed.Chart title="Successful Requests" metrics="/reactor/apps/{parent}/procedures/{id}/query.requests"}}</div>
-      <div class="info-box sparkline-box">{{view C.Embed.Chart title="Failed Requests" metrics="/reactor/apps/{parent}/procedures/{id}/query.failures"}}</div>
+      <div class="info-box sparkline-box requests">{{view C.Embed.Chart title="Successful Requests" metrics="/reactor/apps/{parent}/procedures/{id}/query.requests"}}</div>
+      <div class="info-box sparkline-box failures">{{view C.Embed.Chart title="Failed Requests" metrics="/reactor/apps/{parent}/procedures/{id}/query.failures"}}</div>
     </div>
     <div id="panels">
 
@@ -921,9 +920,9 @@
               {{view C.Embed.Injector valueBinding="requestParams"}}
               <br />
               {{#if model.running}}
-              <button {{action "submit"}} class="btn">Execute</button>
+              <button {{action "submit"}} class="btn query-execute">Execute</button>
               {{else}}
-              <button disabled="disabled" class="btn">Click "Start" Above</button>
+              <button disabled="disabled" class="btn query-run">Click "Start" Above</button>
               {{/if}}
             </td>
 
