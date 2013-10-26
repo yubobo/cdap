@@ -75,18 +75,33 @@ function(Components, Embeddables, HTTP, Util) {
 			},
 
 			checkVersion: function(version) {
-
-				if (version && version.current !== 'UNKNOWN') {
+				if (version && !isNaN(version.current) && !isNaN(version.newest)) {
 
 					if (version.current !== version.newest &&
-						version.current.indexOf('SNAPSHOT') === -1 &&
-						C.get('isLocal')) {
+							version.current.indexOf('SNAPSHOT') === -1 &&
+							this.isNewVersionAvailable(version.newest, version.current) &&
+							C.get('isLocal')) {
 
 						$('#warning').html('<div>New version available: ' + version.current + ' » ' +
 							version.newest + '<br /><a target="_blank" href="https://accounts.continuuity.com/">' +
 							'Click here to download</a>.</div>').show();
 					}
 				}
+			},
+
+			isNewVersionAvailable: function (newest, current) {
+				if (newest.length !== 5 || current.length !== 5) {
+					return false;
+				}
+				var newestPatch = parseFloat(newest.substr(3,5));
+				var newestVersion = parseFloat(newest.substr(0,3));
+				var currentPatch = parseFloat(current.substr(3,5));
+				var currentVersion = parseFloat(current.substr(0,3));
+				if (newestPatch > currentPatch &&
+					newestVersion === currentVersion || newestVersion > currentVersion) {
+					return true;
+				}
+				return false;
 			}
 		}),
 
