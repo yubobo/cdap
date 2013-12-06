@@ -16,6 +16,7 @@ versions.zookeeperVersion = '3.4.5'
 versions.hbaseVersion = '0.94.6.1.continuuity'
 versions.quartzVersion = '2.2.0'
 versions.slf4jVersion = '1.7.5'
+versions.hiveVersion = '0.12.0'
 
 //--------------------------------------------------------------------------
 // Define all the global dependencies here. 
@@ -96,6 +97,11 @@ libraries.hadoop_yarn = "org.apache.hadoop:hadoop-yarn:$versions.hadoopVersion"
 // HBase
 libraries.hbase = "org.apache.hbase:hbase:$versions.hbaseVersion"
 libraries.hbase_test = "org.apache.hbase:hbase:$versions.hbaseVersion:tests"
+
+// Hive
+libraries.hive_contrib = "org.apache.hive:hive-contrib:$versions.hiveVersion"
+libraries.hive_exec = "org.apache.hive:hive-exec:$versions.hiveVersion"
+libraries.hive_serde = "org.apache.hive:hive-serde:$versions.hiveVersion"
 
 // Jetty
 libraries.jetty = "org.mortbay.jetty:jetty:6.1.22"
