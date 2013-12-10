@@ -15,7 +15,10 @@ var express = require('express'),
   utils = require('connect').utils,
   crypto = require('crypto'),
   path = require('path'),
-  request = require('request');
+  request = require('request'),
+  io = require('socket.io'),
+  formidable = require('formidable'),
+  Files = {};
 
 var Api = require('../common/api');
 var Env = require('./env');
@@ -147,6 +150,115 @@ WebAppServer.prototype.setCookieSession = function(cookieName, secret) {
  */
 WebAppServer.prototype.getServerInstance = function(app) {
   return this.lib.createServer(app);
+};
+
+/**
+ * Opens an io socket using the server.
+ * @param {Object} Http server used by application.
+ * @return {Object} instane of io socket listening to server.
+ */
+WebAppServer.prototype.getSocketIo = function(server) {
+  var io = require('socket.io').listen(server);
+  io.configure('development', function(){
+    io.set('transports', ['websocket', 'xhr-polling']);
+    io.set('log level', this.LOG_LEVEL);
+  });
+  return io;
+};
+
+/**
+ * Configures socket io handlers. Async binds socket io methods.
+ * @param {Object} instance of the socket io.
+ * @param {string} product of evn for socket to emit.
+ * @param {string} version.
+ */
+WebAppServer.prototype.configureIoHandlers = function(io, product, version, cookieName, secret) {
+  var self = this;
+
+  //Authorize and accept socket connection only if cookie exists.
+  io.set('authorization', function (data, accept) {
+    if (data.headers.cookie) {
+
+      var cookies = cookie.parse(data.headers.cookie);
+      var signedCookies = utils.parseSignedCookies(cookies, secret);
+      var obj = utils.parseJSONCookies(signedCookies);
+      data.session_id = obj[cookieName];
+      console.log('authorization complete')
+
+    } else {
+
+      return accept('No cookie transmitted', false);
+
+    }
+
+    accept(null, true);
+  });
+
+  var size;
+
+  io.sockets.on('connection', function (socket) {
+    socket.on('Start', function (data) { //data contains the variables that we passed through in the html file
+      var Name = data['Name'];
+      size = data['Size'];
+      Files[Name] = {  //Create a new Entry in The Files Variable
+        FileSize : data['Size'],
+        Data   : "",
+        Downloaded : 0
+      }
+      var Place = 0;
+      try{
+        var Stat = fs.statSync('Temp/' +  Name);
+        if(Stat.isFile())
+        {
+          Files[Name]['Downloaded'] = Stat.size;
+          Place = Stat.size / 524288;
+        }
+      }
+        catch(er){} //It's a New File
+      fs.open("Temp/" + Name, 'a', 0755, function(err, fd){
+        if(err)
+        {
+          console.log(err);
+        }
+        else
+        {
+          Files[Name]['Handler'] = fd; //We store the file handler so we can write to it later
+          socket.emit('MoreData', { 'Place' : Place, Percent : 0 });
+        }
+      });
+    });
+
+  
+    socket.on('Upload', function (data) {
+      var options = {
+        host: self.config['gateway.server.address'],
+        port: self.config['gateway.server.port'],
+        path: '/' + self.API_VERSION + '/apps',
+        method: 'POST',
+        headers: {
+          'Content-type': 'application/octet-stream',
+          'X-Archive-Name': data['Name']
+        }
+      };
+      var rq = http.request(options, function (response) {
+        response.setEncoding('utf-8');
+        response.on('data', function (chunk) {
+          console.log('chunk is', chunk)
+        });
+        if (response.statusCode !== 200) {
+          self.logger.error('Could not upload file ' + data['Name']);
+        } else {
+          
+        }
+      });
+
+      rq.on('error', function(e) {
+        self.logger.error('Could not upload file ' + data['Name']);
+      });
+      rq.write(data["Data"], 'binary');
+      rq.end();
+    });
+  });
 };
 
 /**
@@ -468,14 +580,58 @@ WebAppServer.prototype.bindRoutes = function() {
   /**
    * Upload an Application archive.
    */
-  this.app.post('/upload/:file', function (req, res) {
-    var url = 'http://' + self.config['gateway.server.address'] + ':' +
-      self.config['gateway.server.port'] + '/' + self.API_VERSION + '/apps';
+  // this.app.post('/upload/:file', function (req, res) {
+  //   var length = req.header('Content-length');
+  //   var location = '/tmp/' + req.params.file;
+  //   var data = new Buffer(parseInt(length, 10));
+  //   var idx = 0;
+  //   req.on('data', function(raw) {
+  //     raw.copy(data, idx);
+  //     idx += raw.length;
+  //   });
 
-    var x = request.post(url);
-    req.pipe(x);
-    x.pipe(res);
-  });
+  //   req.on('end', function() {
+  //     fs.writeFile(location, data, function(err) {
+  //       console.log('data is', data);
+  //       if(err) {
+  //         res.send(err);
+  //       } else {
+  //         var options = {
+  //           host: self.config['gateway.server.address'],
+  //           port: self.config['gateway.server.port'],
+  //           path: '/' + self.API_VERSION + '/apps',
+  //           method: 'POST',
+  //           headers: {
+  //             'Content-length': length,
+  //             'X-Archive-Name': req.params.file,
+  //             'Transfer-Encoding': 'chunked'
+  //           }
+  //         };
+  //         var rq = http.request(options, function (response) {
+  //           if (response.statusCode !== 200) {
+  //             res.send(400, 'Cold not upload file.');
+  //             self.logger.error('Could not upload file ' + req.params.file);
+  //           } else {
+  //             res.send('OK');
+  //           }
+  //         });
+
+  //         rq.on('error', function(e) {
+  //           console.log('here')
+  //         });
+  //         var stream = fs.createReadStream(location);
+  //         stream.on('data', function(chunk) {
+  //           console.log('chunks are', chunk);
+  //           rq.write(chunk);
+  //         });
+  //         stream.on('end', function() {
+  //           rq.end();
+  //         });
+
+  //       }
+  //     });
+  //   });
+  // });
 
   this.app.get('/upload/status', function (req, res) {
 

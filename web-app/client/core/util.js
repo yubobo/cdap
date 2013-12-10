@@ -125,22 +125,38 @@ define([], function () {
 					return;
 				}
 
-				var xhr = new XMLHttpRequest();
-				var uploadProg = xhr.upload || xhr;
+				// var xhr = new XMLHttpRequest();
+				// var uploadProg = xhr.upload || xhr;
 
-				uploadProg.addEventListener('progress', function (e) {
+				// uploadProg.addEventListener('progress', function (e) {
 
-					if (e.type === 'progress') {
-						var pct = Math.round((e.loaded / e.total) * 100);
-						$('#far-upload-status').html(pct + '% Uploaded...');
-					}
+				// 	if (e.type === 'progress') {
+				// 		var pct = Math.round((e.loaded / e.total) * 100);
+				// 		$('#far-upload-status').html(pct + '% Uploaded...');
+				// 	}
 
-				}, false);
+				// }, false);
 
-				xhr.open('POST', '/upload/' + file.name, true);
-				xhr.setRequestHeader("Content-type", "application/octet-stream");
-				xhr.setRequestHeader("X-Archive-Name", file.name);
-				xhr.send(file);
+				var socket = io.connect(document.location.hostname, {
+					secure: document.location.protocol === 'https:'
+				});
+				console.log(file);
+
+				var reader = new FileReader();
+				reader.readAsBinaryString(file.slice(0, file.size));
+
+				reader.onload = function (evt) {
+					C.aa = evt.target.result;
+					socket.emit('Upload', { 'Name' : file.name, Data : evt.target.result});
+				}
+				socket.emit('Start', { 'Name' : file.name, 'Size' : file.size });
+
+				// xhr.open('POST', '/upload/' + file.name, true);
+				// xhr.setRequestHeader("Content-type", "application/octet-stream");
+				// xhr.setRequestHeader("X-Archive-Name", file.name);
+				// xhr.send(file);
+				
+
 
 				function checkDeployStatus () {
 
@@ -166,24 +182,24 @@ define([], function () {
 
 				}
 
-				xhr.onreadystatechange = function () {
+				// xhr.onreadystatechange = function () {
 
-					if (xhr.readyState === 4) {
+				// 	if (xhr.readyState === 4) {
 
-						if (xhr.statusText === 'OK') {
-							checkDeployStatus();
+				// 		if (xhr.statusText === 'OK') {
+				// 			checkDeployStatus();
 
-						} else {
-							C.Modal.show("Deployment Error", xhr.responseText);
-							$('#drop-hover').fadeOut(function () {
-								$('#drop-label').show();
-								$('#drop-loading').hide();
-							});
+				// 		} else {
+				// 			C.Modal.show("Deployment Error", xhr.responseText);
+				// 			$('#drop-hover').fadeOut(function () {
+				// 				$('#drop-label').show();
+				// 				$('#drop-loading').hide();
+				// 			});
 
-						}
+				// 		}
 
-					}
-				};
+				// 	}
+				// };
 			},
 
 			sendFiles: function (files, type) {

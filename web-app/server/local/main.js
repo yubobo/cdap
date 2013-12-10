@@ -70,7 +70,8 @@ DevServer.prototype.start = function() {
   this.getConfig(function(version) {
 
     this.server = this.getServerInstance(this.app);
-
+    this.io = this.getSocketIo(this.server);
+    this.configureIoHandlers(this.io, 'Local', 'developer', this.cookieName, this.secret);
     this.setEnvironment('local', 'Development Kit', version, function () {
 
       this.bindRoutes();
