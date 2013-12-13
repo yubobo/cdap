@@ -1,6 +1,5 @@
 package com.continuuity.internal.app.runtime.webapp;
 
-import com.continuuity.archive.JarResources;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.http.core.AbstractHttpHandler;
 import com.continuuity.common.http.core.HandlerContext;
@@ -9,6 +8,7 @@ import com.continuuity.weave.filesystem.Location;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -17,20 +17,25 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.activation.MimetypesFileTypeMap;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.net.URLConnection;
+import java.io.InputStream;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Http service handler that serves files in deployed jar without exploding the jar.
  */
-public class IntactJarHttpHandler extends AbstractHttpHandler {
+public class IntactJarHttpHandler extends AbstractHttpHandler implements JarHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(IntactJarHttpHandler.class);
 
+  private static final MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+
   private final Location jarLocation;
-  private JarResources jarResources;
+  private JarFile jarFile;
   private ServePathGenerator servePathGenerator;
 
   @Inject
@@ -42,12 +47,12 @@ public class IntactJarHttpHandler extends AbstractHttpHandler {
   public void init(HandlerContext context) {
     super.init(context);
     try {
-      jarResources = new JarResources(jarLocation);
+      jarFile = new JarFile(new File(jarLocation.toURI()));
 
       Predicate<String> fileExists = new Predicate<String>() {
         @Override
         public boolean apply(String file) {
-          return file != null && jarResources.contains(file);
+          return file != null && jarFile.getJarEntry(file) != null;
         }
       };
 
@@ -58,42 +63,55 @@ public class IntactJarHttpHandler extends AbstractHttpHandler {
     }
   }
 
+  @Override
+  public void destroy(HandlerContext context) {
+    try {
+      jarFile.close();
+    } catch (IOException e) {
+      throw Throwables.propagate(e);
+    }
+  }
+
+  @Override
+  public String getServePath(String hostHeader, String uri) {
+    return servePathGenerator.getServePath(hostHeader, uri);
+  }
+
   @GET
-  @Path("/.*")
+  @Path("**")
   public void serve(HttpRequest request, HttpResponder responder) {
     try {
-
-      if (request.getUri().equals("/status")) {
-        responder.sendString(HttpResponseStatus.OK, "OK\n");
-        return;
-      }
-
-      String hostHeader = HttpHeaders.getHost(request);
-      if (hostHeader == null) {
-        responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
-      }
-
-      String path = servePathGenerator.getServePath(hostHeader, request.getUri());
+      String path = request.getUri();
       if (path == null) {
         responder.sendStatus(HttpResponseStatus.NOT_FOUND);
         return;
       }
 
-      byte [] bytes = jarResources.getResource(path);
+      if (path.startsWith("/") && path.length() > 1) {
+        path = path.substring(1);
+      }
 
-      if (bytes == null) {
+      JarEntry jarEntry = jarFile.getJarEntry(path);
+      if (jarEntry == null) {
         responder.sendStatus(HttpResponseStatus.NOT_FOUND);
         return;
       }
 
-      String contentType = URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(bytes));
-
-      ImmutableMultimap<String, String> headers = ImmutableMultimap.of();
-      if (contentType != null) {
-        headers = ImmutableMultimap.of(HttpHeaders.Names.CONTENT_TYPE, contentType);
+      InputStream in = jarFile.getInputStream(jarEntry);
+      if (in == null) {
+        // path is directory
+        responder.sendStatus(HttpResponseStatus.FORBIDDEN);
+        return;
       }
-      responder.sendByteArray(HttpResponseStatus.OK, bytes, headers);
 
+      try {
+        responder.sendByteArray(HttpResponseStatus.OK, ByteStreams.toByteArray(in),
+                                ImmutableMultimap.of(HttpHeaders.Names.CONTENT_TYPE,
+                                                     mimeTypesMap.getContentType(path)));
+
+      } finally {
+        in.close();
+      }
     } catch (Throwable t) {
       LOG.error("Got exception: ", t);
       responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);

@@ -42,7 +42,7 @@ public class TestHandler implements HttpHandler {
   @PUT
   public void testPutTweet(HttpRequest request, HttpResponder responder, @PathParam("id") String id){
     JsonObject object = new JsonObject();
-    object.addProperty("status", String.format("Handled get in tweets end-point, id: %s", id));
+    object.addProperty("status", String.format("Handled put in tweets end-point, id: %s", id));
     responder.sendJson(HttpResponseStatus.OK, object);
   }
 
@@ -130,6 +130,68 @@ public class TestHandler implements HttpHandler {
 
   private String getStringContent(HttpRequest request) throws IOException {
     return IOUtils.toString(new ChannelBufferInputStream(request.getContent()));
+  }
+
+  @Path("/multi-match/**")
+  @GET
+  public void multiMatchAll(HttpRequest request, HttpResponder responder) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-*");
+  }
+
+  @Path("/multi-match/{param}")
+  @GET
+  public void multiMatchParam(HttpRequest request, HttpResponder responder, @PathParam("param") String param) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-param-" + param);
+  }
+
+  @Path("/multi-match/foo")
+  @GET
+  public void multiMatchFoo(HttpRequest request, HttpResponder responder) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-get-actual-foo");
+  }
+
+  @Path("/multi-match/foo")
+  @PUT
+  public void multiMatchParamPut(HttpRequest request, HttpResponder responder) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-put-actual-foo");
+  }
+
+  @Path("/multi-match/{param}/bar")
+  @GET
+  public void multiMatchParamBar(HttpRequest request, HttpResponder responder, @PathParam("param") String param) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-param-bar-" + param);
+  }
+
+  @Path("/multi-match/foo/{param}")
+  @GET
+  public void multiMatchFooParam(HttpRequest request, HttpResponder responder, @PathParam("param") String param) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-get-foo-param-" + param);
+  }
+
+  @Path("/multi-match/foo/{param}/bar")
+  @GET
+  public void multiMatchFooParamBar(HttpRequest request, HttpResponder responder, @PathParam("param") String param) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-foo-param-bar-" + param);
+  }
+
+  @Path("/multi-match/foo/bar/{param}")
+  @GET
+  public void multiMatchFooBarParam(HttpRequest request, HttpResponder responder, @PathParam("param") String param) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-foo-bar-param-" + param);
+  }
+
+  @Path("/multi-match/foo/{param}/bar/baz")
+  @GET
+  public void multiMatchFooParamBarBaz(HttpRequest request, HttpResponder responder,
+                                       @PathParam("param") String param) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-foo-param-bar-baz-" + param);
+  }
+
+  @Path("/multi-match/foo/bar/{param}/{id}")
+  @GET
+  public void multiMatchFooBarParamId(HttpRequest request, HttpResponder responder,
+                                      @PathParam("param") String param, @PathParam("id") String id) {
+    responder.sendString(HttpResponseStatus.OK, "multi-match-foo-bar-param-" + param + "-id-" + id);
   }
 
   @Override
