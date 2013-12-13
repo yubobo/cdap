@@ -178,58 +178,37 @@ WebAppServer.prototype.configureIoHandlers = function(io, product, version, cook
   //Authorize and accept socket connection only if cookie exists.
   io.set('authorization', function (data, accept) {
     if (data.headers.cookie) {
-
       var cookies = cookie.parse(data.headers.cookie);
       var signedCookies = utils.parseSignedCookies(cookies, secret);
       var obj = utils.parseJSONCookies(signedCookies);
       data.session_id = obj[cookieName];
-      console.log('authorization complete')
-
     } else {
-
       return accept('No cookie transmitted', false);
-
     }
-
     accept(null, true);
   });
 
-  var size;
 
   io.sockets.on('connection', function (socket) {
-    socket.on('Start', function (data) { //data contains the variables that we passed through in the html file
-      var Name = data['Name'];
-      size = data['Size'];
-      Files[Name] = {  //Create a new Entry in The Files Variable
-        FileSize : data['Size'],
-        Data   : "",
-        Downloaded : 0
-      }
-      var Place = 0;
-      try{
-        var Stat = fs.statSync('Temp/' +  Name);
-        if(Stat.isFile())
-        {
-          Files[Name]['Downloaded'] = Stat.size;
-          Place = Stat.size / 524288;
-        }
-      }
-        catch(er){} //It's a New File
-      fs.open("Temp/" + Name, 'a', 0755, function(err, fd){
-        if(err)
-        {
-          console.log(err);
-        }
-        else
-        {
-          Files[Name]['Handler'] = fd; //We store the file handler so we can write to it later
-          socket.emit('MoreData', { 'Place' : Place, Percent : 0 });
-        }
-      });
-    });
 
+    var files = {};
+
+    socket.on('start', function (data) {
+      var name = data['name'];
+      files[name] = {
+        size: data['size'],
+        downloaded: 0
+      };
+      var place = 0;
+      socket.emit('moreData', {place: 0});
+    });
   
-    socket.on('Upload', function (data) {
+    socket.on('upload', function (data) {
+      console.log(data.data.length)
+      console.log('files is', files)
+      var name = data['name'];
+      files[name].downloaded += data.data.length;
+      console.log(self.config)
       var options = {
         host: self.config['gateway.server.address'],
         port: self.config['gateway.server.port'],
@@ -237,26 +216,28 @@ WebAppServer.prototype.configureIoHandlers = function(io, product, version, cook
         method: 'POST',
         headers: {
           'Content-type': 'application/octet-stream',
-          'X-Archive-Name': data['Name']
+          'X-Archive-Name': name
         }
       };
-      var rq = http.request(options, function (response) {
-        response.setEncoding('utf-8');
-        response.on('data', function (chunk) {
-          console.log('chunk is', chunk)
-        });
-        if (response.statusCode !== 200) {
-          self.logger.error('Could not upload file ' + data['Name']);
+      var req = http.request(options, function (response) {
+        if (files[name].downloaded === files[name].size) {
+          if (response.statusCode !== 200) {
+            var errorText = response.body || 'Could not upload file ' + data['name'];
+            socket.emit('uploadError', {error: errorText});
+            self.logger.error(errorText);
+          } else {
+            socket.emit('uploadComplete');
+          }
         } else {
-          
+          socket.emit('moreData', {place: files[name].downloaded});
         }
       });
 
-      rq.on('error', function(e) {
-        self.logger.error('Could not upload file ' + data['Name']);
+      req.on('error', function(e) {
+        self.logger.error(e);
       });
-      rq.write(data["Data"], 'binary');
-      rq.end();
+      req.write(data.data, 'Binary');
+      req.end();
     });
   });
 };

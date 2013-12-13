@@ -3,6 +3,10 @@
  */
 
 define([], function () {
+	var socket = io.connect(document.location.hostname, {
+		secure: document.location.protocol === 'https:'
+	});
+	var CHUNK_SIZE = 524288;
 
 	Em.debug('Loading Util');
 
@@ -115,6 +119,8 @@ define([], function () {
 
 			__sendFile: function () {
 
+				var self = this;
+
 				var file = this.fileQueue.shift();
 				if (file === undefined) {
 					C.Modal.show("Deployment Error", 'No file specified.');
@@ -137,19 +143,29 @@ define([], function () {
 
 				// }, false);
 
-				var socket = io.connect(document.location.hostname, {
-					secure: document.location.protocol === 'https:'
-				});
-				console.log(file);
-
 				var reader = new FileReader();
-				reader.readAsBinaryString(file.slice(0, file.size));
-
 				reader.onload = function (evt) {
-					C.aa = evt.target.result;
-					socket.emit('Upload', { 'Name' : file.name, Data : evt.target.result});
+					socket.emit('upload', {name: file.name, data: evt.target.result});
 				}
-				socket.emit('Start', { 'Name' : file.name, 'Size' : file.size });
+				
+				socket.emit('start', {name: file.name, size: file.size});
+
+				socket.on('moreData', function (data) {
+					console.log('here')
+					var place = data['place'];
+					var chunkedFile;
+
+					// Workaround for all browsers using HTML5 file reader api.
+					if (file.webkitSlice) {
+						chunkedFile = file.webkitSlice(place, place + CHUNK_SIZE);
+					} else if (file.mozSlice) {
+						chunkedFile = file.mozSlice(place, place + CHUNK_SIZE);
+					} else {
+						chunkedFile = file.slice(place, place + CHUNK_SIZE);
+					}
+					reader.readAsBinaryString(chunkedFile);
+					
+				});
 
 				// xhr.open('POST', '/upload/' + file.name, true);
 				// xhr.setRequestHeader("Content-type", "application/octet-stream");
@@ -157,30 +173,17 @@ define([], function () {
 				// xhr.send(file);
 				
 
+				socket.on('uploadComplete', function () {
+					self.checkDeployStatus();
+				});
 
-				function checkDeployStatus () {
-
-					$.getJSON('/upload/status', function (status) {
-
-						switch (status.code) {
-							case 4:
-								C.Modal.show("Deployment Error", status.message);
-								$('#drop-hover').fadeOut(function () {
-									$('#drop-label').show();
-									$('#drop-loading').hide();
-								});
-								break;
-							case 5:
-								$('#drop-hover').fadeOut();
-								window.location.reload();
-								break;
-							default:
-								checkDeployStatus();
-						}
-
-					});
-
-				}
+				socket.on('uploadError', function (data) {
+					C.Modal.show("Deployment Error", data.error);
+					$('#drop-hover').fadeOut(function () {
+						$('#drop-label').show();
+						$('#drop-loading').hide();
+					});					
+				});
 
 				// xhr.onreadystatechange = function () {
 
@@ -200,6 +203,30 @@ define([], function () {
 
 				// 	}
 				// };
+			},
+
+			checkDeployStatus: function () {
+
+				$.getJSON('/upload/status', function (status) {
+
+					switch (status.code) {
+						case 4:
+							C.Modal.show("Deployment Error", status.message);
+							$('#drop-hover').fadeOut(function () {
+								$('#drop-label').show();
+								$('#drop-loading').hide();
+							});
+							break;
+						case 5:
+							$('#drop-hover').fadeOut();
+							window.location.reload();
+							break;
+						default:
+							checkDeployStatus();
+					}
+
+				});
+
 			},
 
 			sendFiles: function (files, type) {
