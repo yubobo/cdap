@@ -8,12 +8,18 @@ import java.util.List;
  *
  */
 public interface DataSetTable {
+  /**
+   * Returns the local name for this table.  The full table name will be qualified by namespace in the
+   * global context. */
   public String getName();
 
+  /**
+   * Returns the user owning the table.
+   * TODO: should be provided by the framework instead.
+   */
   public String getOwner();
 
-  public List<Column> getPartitionKeys();
+  public List<Column> getPartitionColumns();
 
-  // FIXME: belongs in a service not in table itself
-  public List<DataPartition> listPartitions();
+  public List<Column> getDataColumns();
 }

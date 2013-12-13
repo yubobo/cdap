@@ -1,9 +1,11 @@
 package com.continuuity.api.data.schema;
 
+import com.continuuity.internal.io.Schema;
+
 /**
  *
  */
 public interface Column {
   public String getName();
-  public DataType getType();
+  public Schema getSchema();
 }
