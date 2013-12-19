@@ -10,7 +10,7 @@ import org.apache.hadoop.io.Writable;
 import java.util.Properties;
 
 /**
- *
+ * Hive SerDe implementation for reading and writing datasets.
  */
 public class DataSetSerDe extends AbstractSerDe {
   @Override

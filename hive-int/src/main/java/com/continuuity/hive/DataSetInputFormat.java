@@ -9,7 +9,9 @@ import org.apache.hadoop.mapred.Reporter;
 import java.io.IOException;
 
 /**
- *
+ * Map reduce InputFormat for reading from data sets.
+ * @param <K> Class type of record keys.
+ * @param <V> Class type of record values.
  */
 public class DataSetInputFormat<K, V> implements InputFormat<K, V> {
   @Override

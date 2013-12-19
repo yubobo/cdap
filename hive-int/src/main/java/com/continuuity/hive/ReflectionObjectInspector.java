@@ -7,7 +7,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import java.util.List;
 
 /**
- *
+ * ObjectInspector implementation for interacting with datasets.
  */
 public class ReflectionObjectInspector extends StructObjectInspector {
   @Override
