@@ -40,6 +40,7 @@ public class DataSetSerDe extends AbstractSerDe {
 
   @Override
   public ObjectInspector getObjectInspector() throws SerDeException {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    // returns the appropriate object inspector instance based on the defined schema
+    return null;
   }
 }
