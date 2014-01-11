@@ -4,6 +4,11 @@ import com.continuuity.api.data.DataSet;
 import com.continuuity.api.data.batch.BatchReadable;
 import com.continuuity.api.data.batch.Split;
 import com.continuuity.api.data.batch.SplitReader;
+import com.continuuity.api.data.dataset.table.Row;
+import com.google.common.base.Throwables;
+import com.google.gson.Gson;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -13,35 +18,46 @@ import org.apache.hadoop.mapred.Reporter;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Map reduce InputFormat for reading from data sets.
- * @param <K> Class type of record keys.
- * @param <V> Class type of record values.
  */
-public class DataSetInputFormat<K, V> implements InputFormat<K, V> {
+// TODO: eliminate use of ObjectWritable with something more efficient
+public class DataSetInputFormat implements InputFormat<ImmutableBytesWritable, KeyedObjectWritable> {
   @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-    // 1. retrieve dataset metadata
+    // num splits is currently ignored
 
-    // 2. get a dataset instance
+    // obtain dataset instance
+    DataSet dataset = getDataSet(job);
 
-    // 3. delegate to BatchReadable.getSplits()
-    return new InputSplit[0];  //To change body of implemented methods use File | Settings | File Templates.
+    // delegate to BatchReadable.getSplits()
+    if (!(dataset instanceof BatchReadable)) {
+      throw new IOException("DataSet " + dataset.getName() + " must implement HiveReadable interface");
+    }
+
+    BatchReadable readableDS = (BatchReadable) dataset;
+    List<Split> dsSplits = readableDS.getSplits();
+    InputSplit[] inputSplits = new InputSplit[dsSplits.size()];
+    for (int i = 0; i < dsSplits.size(); i++) {
+      inputSplits[i] = new DataSetInputSplit(dsSplits.get(i));
+    }
+    return inputSplits;
   }
 
   @Override
-  public RecordReader<K, V> getRecordReader(InputSplit split, JobConf job, Reporter reporter) throws IOException {
+  public RecordReader<ImmutableBytesWritable, KeyedObjectWritable> getRecordReader(
+      InputSplit split, JobConf job, Reporter reporter) throws IOException {
     // get the dataset instance
-    DataSet dataSet = null;
-    // TODO: how to instantiate???
+    DataSet dataSet = getDataSet(job);
 
     // instantiate a new record reader for the given split
     if (dataSet instanceof BatchReadable) {
       if (split instanceof DataSetInputSplit) {
         DataSetInputSplit dataSetSplit = (DataSetInputSplit) split;
         return new DataSetRecordReader(dataSetSplit,
-                                       ((BatchReadable)dataSet).createSplitReader(dataSetSplit.getDataSetSplit()));
+                                       ((BatchReadable) dataSet).createSplitReader(dataSetSplit.getDataSetSplit()));
       } else {
         throw new IOException("Invalid type for InputSplit: " + split.getClass().getName());
       }
@@ -50,11 +66,22 @@ public class DataSetInputFormat<K, V> implements InputFormat<K, V> {
     }
   }
 
+  private DataSet getDataSet(JobConf job) throws IOException {
+    // obtain dataset name and table name from properties
+    String accountName = job.get(DataSetSerDe.DATASET_ACCOUNT_KEY);
+    String datasetName = job.get(DataSetSerDe.DATASET_NAME_KEY);
+
+    // obtain dataset instance
+    return DataSetUtil.getDataSetInstance(job, accountName, datasetName);
+  }
+
   /**
-   * TODO: implement
+   * This class duplicates all the functionality of
+   * {@link com.continuuity.internal.app.runtime.batch.dataset.DataSetInputSplit}, but implements
+   * {@link org.apache.hadoop.mapred.InputSplit} instead of {@link org.apache.hadoop.mapreduce.InputSplit}.
    */
   public static class DataSetInputSplit implements InputSplit {
-    private final Split dataSetSplit;
+    private Split dataSetSplit;
 
     public DataSetInputSplit(Split dataSetSplit) {
       this.dataSetSplit = dataSetSplit;
@@ -77,25 +104,37 @@ public class DataSetInputFormat<K, V> implements InputFormat<K, V> {
 
     @Override
     public void write(DataOutput out) throws IOException {
-      // TODO: implement with extra support in Split (needs to be serializable)
+      Text.writeString(out, dataSetSplit.getClass().getName());
+      String ser = new Gson().toJson(dataSetSplit);
+      Text.writeString(out, ser);
     }
 
     @Override
     public void readFields(DataInput in) throws IOException {
-      // TODO: implement with extra support in Split (needs to be serializable)
+      try {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+          classLoader = getClass().getClassLoader();
+        }
+        Class<? extends Split> splitClass = (Class<Split>) classLoader.loadClass(Text.readString(in));
+        dataSetSplit = new Gson().fromJson(Text.readString(in), splitClass);
+      } catch (ClassNotFoundException e) {
+        throw Throwables.propagate(e);
+      }
     }
   }
 
   /**
-   * TODO: implement
+   *
    */
-  public static class DataSetRecordReader implements RecordReader {
+  public class DataSetRecordReader implements RecordReader<ImmutableBytesWritable, KeyedObjectWritable> {
     private final DataSetInputSplit split;
-    private final SplitReader splitReader;
+    private final SplitReader<byte[], Object> splitReader;
 
     private boolean initialized = false;
 
-    public DataSetRecordReader(DataSetInputSplit split, SplitReader splitReader) {
+    public DataSetRecordReader(DataSetInputSplit split,
+                               SplitReader<byte[], Object> splitReader) {
       this.split = split;
       this.splitReader = splitReader;
     }
@@ -112,29 +151,38 @@ public class DataSetInputFormat<K, V> implements InputFormat<K, V> {
     }
 
     @Override
-    public boolean next(Object key, Object value) throws IOException {
+    public boolean next(ImmutableBytesWritable key, KeyedObjectWritable value) throws IOException {
       if (!initialized) {
         initialize();
       }
 
+      boolean hasNext;
       try {
-        return splitReader.nextKeyValue();
+        hasNext = splitReader.nextKeyValue();
+        byte[] keyBytes = splitReader.getCurrentKey();
+        key.set(keyBytes);
+        value.setKey(keyBytes);
+        Object readerValue = splitReader.getCurrentValue();
+        if (readerValue instanceof Row) {
+          value.set(new RowWritable((Row) readerValue));
+        } else {
+          value.set(readerValue);
+        }
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();
         throw new IOException("Interrupted while retrieving the next key/value", ie);
       }
+      return hasNext;
     }
 
     @Override
-    public Object createKey() {
-      // not used?
-      return null;
+    public ImmutableBytesWritable createKey() {
+      return new ImmutableBytesWritable();
     }
 
     @Override
-    public Object createValue() {
-      // not used?
-      return null;
+    public KeyedObjectWritable createValue() {
+      return new KeyedObjectWritable();
     }
 
     @Override

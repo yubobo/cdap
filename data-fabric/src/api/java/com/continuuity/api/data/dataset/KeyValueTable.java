@@ -5,6 +5,7 @@ import com.continuuity.api.common.Bytes;
 import com.continuuity.api.data.DataSet;
 import com.continuuity.api.data.batch.BatchReadable;
 import com.continuuity.api.data.batch.BatchWritable;
+import com.continuuity.api.data.batch.HiveReadable;
 import com.continuuity.api.data.batch.Split;
 import com.continuuity.api.data.batch.SplitReader;
 import com.continuuity.api.data.dataset.table.Row;
@@ -17,7 +18,7 @@ import java.util.List;
  * This class implements a key/value map on top of Table. Supported
  * operations are read, write, delete, and swap.
  */
-public class KeyValueTable extends DataSet implements BatchReadable<byte[], byte[]>, BatchWritable<byte[], byte[]> {
+public class KeyValueTable extends DataSet implements HiveReadable<byte[]>, BatchWritable<byte[], byte[]> {
 
   // the fixed single column to use for the key
   static final byte[] KEY_COLUMN = { 'c' };
@@ -138,11 +139,14 @@ public class KeyValueTable extends DataSet implements BatchReadable<byte[], byte
     return new KeyValueScanner(split);
   }
 
+  @Override
+  public Class<byte[]> getValueType() {
+    return byte[].class;
+  }
   /**
    * The split reader for key/value is reading table split using the underlying Table's split reader.
    */
   public class KeyValueScanner extends SplitReader<byte[], byte[]> {
-
     // the underlying table's split reader
     private SplitReader<byte[], Row> reader;
 

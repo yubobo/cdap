@@ -107,6 +107,8 @@ libraries.hbase96_test = "org.apache.hbase:hbase-testing-util:$versions.hbase96V
 // Hive
 libraries.hive_contrib = "org.apache.hive:hive-contrib:$versions.hiveVersion"
 libraries.hive_exec = "org.apache.hive:hive-exec:$versions.hiveVersion"
+libraries.hive_hcatalog = "org.apache.hive.hcatalog:hcatalog:$versions.hiveVersion"
+libraries.hive_hcatalog_core = "org.apache.hive.hcatalog:hcatalog-core:$versions.hiveVersion"
 libraries.hive_serde = "org.apache.hive:hive-serde:$versions.hiveVersion"
 
 // Jetty

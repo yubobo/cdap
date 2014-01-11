@@ -20,13 +20,13 @@ allprojects{
 	}
 	
 	/// Define artifact repositories.
-	repositories {
+  repositories {
 	    maven {
 	        credentials {
 	            username nexusUsername
 	            password nexusPassword
 	        }
 	        url "https://repository.continuuity.com/content/groups/smartifacts"
-	    }
-    }
+      }
+  }
 }

@@ -19,7 +19,5 @@ public interface DataSetTable {
    */
   public String getOwner();
 
-  public List<Column> getPartitionColumns();
-
   public List<Column> getDataColumns();
 }
