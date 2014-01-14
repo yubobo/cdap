@@ -21,7 +21,7 @@ public class DataSetStorageHandler extends DefaultStorageHandler {
 
   @Override
   public Class<? extends OutputFormat> getOutputFormatClass() {
-    return null;  // not yet supported
+    return DataSetOutputFormat.class;  // not yet supported
   }
 
   @Override
