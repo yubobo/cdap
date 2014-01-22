@@ -14,6 +14,8 @@ import java.util.Properties;
  *
  */
 public class DataSetStorageHandler extends DefaultStorageHandler {
+  public static final String TABLE_NAME_CONF_KEY = "continuuity.table.name";
+
   @Override
   public Class<? extends InputFormat> getInputFormatClass() {
     return DataSetInputFormat.class;
@@ -44,10 +46,14 @@ public class DataSetStorageHandler extends DefaultStorageHandler {
     Properties tableProps = tableDesc.getProperties();
     jobProperties.put(DataSetSerDe.DATASET_ACCOUNT_KEY, tableProps.getProperty(DataSetSerDe.DATASET_ACCOUNT_KEY));
     jobProperties.put(DataSetSerDe.DATASET_NAME_KEY, tableProps.getProperty(DataSetSerDe.DATASET_NAME_KEY));
+    jobProperties.put(TABLE_NAME_CONF_KEY, tableDesc.getTableName());
   }
 
   @Override
   public void configureJobConf(TableDesc tableDesc, JobConf jobConf) {
     // TODO: add dependency jars
+    Properties tableProps = tableDesc.getProperties();
+    jobConf.set(DataSetSerDe.DATASET_ACCOUNT_KEY, tableProps.getProperty(DataSetSerDe.DATASET_ACCOUNT_KEY));
+    jobConf.set(DataSetSerDe.DATASET_NAME_KEY, tableProps.getProperty(DataSetSerDe.DATASET_NAME_KEY));
   }
 }

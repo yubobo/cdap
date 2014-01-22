@@ -1,14 +1,18 @@
 package com.continuuity.hive;
 
 import com.continuuity.api.data.DataSet;
+import com.continuuity.api.data.DataSetSpecification;
 import com.continuuity.api.data.batch.BatchReadable;
 import com.continuuity.api.data.batch.Split;
 import com.continuuity.api.data.batch.SplitReader;
 import com.continuuity.api.data.dataset.table.Row;
 import com.google.common.base.Throwables;
 import com.google.gson.Gson;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -41,7 +45,7 @@ public class DataSetInputFormat implements InputFormat<ImmutableBytesWritable, K
     List<Split> dsSplits = readableDS.getSplits();
     InputSplit[] inputSplits = new InputSplit[dsSplits.size()];
     for (int i = 0; i < dsSplits.size(); i++) {
-      inputSplits[i] = new DataSetInputSplit(dsSplits.get(i));
+      inputSplits[i] = new DataSetInputSplit(job, dsSplits.get(i));
     }
     return inputSplits;
   }
@@ -71,8 +75,14 @@ public class DataSetInputFormat implements InputFormat<ImmutableBytesWritable, K
     String accountName = job.get(DataSetSerDe.DATASET_ACCOUNT_KEY);
     String datasetName = job.get(DataSetSerDe.DATASET_NAME_KEY);
 
+    DataSetUtil dsUtil = new DataSetUtil(job);
+
     // obtain dataset instance
-    return DataSetUtil.getDataSetInstance(job, accountName, datasetName);
+    DataSetSpecification spec = dsUtil.getDataSetSpecification(job, accountName, datasetName);
+    if (spec == null) {
+      throw new IOException("No dataset found for account: " + accountName + ", dataset: " + datasetName);
+    }
+    return dsUtil.getDataSetInstance(job, spec);
   }
 
   /**
@@ -80,10 +90,17 @@ public class DataSetInputFormat implements InputFormat<ImmutableBytesWritable, K
    * {@link com.continuuity.internal.app.runtime.batch.dataset.DataSetInputSplit}, but implements
    * {@link org.apache.hadoop.mapred.InputSplit} instead of {@link org.apache.hadoop.mapreduce.InputSplit}.
    */
-  public static class DataSetInputSplit implements InputSplit {
+  public static class DataSetInputSplit extends FileSplit {
     private Split dataSetSplit;
+    private String dummyPath;
 
-    public DataSetInputSplit(Split dataSetSplit) {
+    // for Writable
+    public DataSetInputSplit() {
+    }
+
+    public DataSetInputSplit(Configuration conf, Split dataSetSplit) {
+      String tableName = conf.get(DataSetStorageHandler.TABLE_NAME_CONF_KEY);
+      this.dummyPath = DataSetUtil.getDummyPath(conf, tableName);
       this.dataSetSplit = dataSetSplit;
     }
 
@@ -92,7 +109,12 @@ public class DataSetInputFormat implements InputFormat<ImmutableBytesWritable, K
     }
 
     @Override
-    public long getLength() throws IOException {
+    public Path getPath() {
+      return new Path(dummyPath);
+    }
+
+    @Override
+    public long getLength() {
       return dataSetSplit.getLength();
     }
 
@@ -107,6 +129,7 @@ public class DataSetInputFormat implements InputFormat<ImmutableBytesWritable, K
       Text.writeString(out, dataSetSplit.getClass().getName());
       String ser = new Gson().toJson(dataSetSplit);
       Text.writeString(out, ser);
+      Text.writeString(out, dummyPath);
     }
 
     @Override
@@ -121,6 +144,7 @@ public class DataSetInputFormat implements InputFormat<ImmutableBytesWritable, K
       } catch (ClassNotFoundException e) {
         throw Throwables.propagate(e);
       }
+      this.dummyPath = Text.readString(in);
     }
   }
 
@@ -160,8 +184,12 @@ public class DataSetInputFormat implements InputFormat<ImmutableBytesWritable, K
       try {
         hasNext = splitReader.nextKeyValue();
         byte[] keyBytes = splitReader.getCurrentKey();
+        if (keyBytes == null) {
+          return false;
+        }
         key.set(keyBytes);
         value.setKey(keyBytes);
+
         Object readerValue = splitReader.getCurrentValue();
         if (readerValue instanceof Row) {
           value.set(new RowWritable((Row) readerValue));
