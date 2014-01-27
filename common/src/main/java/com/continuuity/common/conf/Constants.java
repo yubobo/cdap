@@ -356,6 +356,13 @@ public final class Constants {
   }
 
   /**
+   * Metrics constants.
+   */
+  public static final class Metrics {
+    public static final String DATASET_CONTEXT = "-.dataset";
+  }
+
+  /**
    * Common across components.
    */
   public static final String CFG_ZOOKEEPER_ENSEMBLE = "zookeeper.quorum";

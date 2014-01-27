@@ -28,6 +28,7 @@ import com.continuuity.data2.transaction.Transaction;
 import com.continuuity.data2.transaction.TransactionExecutor;
 import com.continuuity.data2.transaction.TransactionExecutorFactory;
 import com.continuuity.data2.transaction.TransactionFailureException;
+import com.continuuity.data2.transaction.TransactionNotInProgressException;
 import com.continuuity.data2.transaction.TransactionSystemClient;
 import com.continuuity.internal.app.runtime.AbstractListener;
 import com.continuuity.internal.app.runtime.DataSetFieldSetter;
@@ -63,6 +64,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -342,7 +344,7 @@ public class MapReduceProgramRunner implements ProgramRunner {
   }
 
   private Location createJobJarTempCopy(Location jobJarLocation) throws IOException {
-    Location programJarCopy = locationFactory.create(jobJarLocation.getTempFile("program.jar").toURI().getPath());
+    Location programJarCopy = locationFactory.create(jobJarLocation.getTempFile("program.jar").toURI());
     InputStream src = jobJarLocation.getInputStream();
     try {
       OutputStream dest = programJarCopy.getOutputStream();
@@ -399,8 +401,15 @@ public class MapReduceProgramRunner implements ProgramRunner {
             // committing long running tx: no need to commit datasets, as they were committed in external processes
             // also no need to rollback changes if commit fails, as these changes where performed by mapreduce tasks
             // NOTE: can't call afterCommit on datasets in this case: the changes were made by external processes.
-            if (!txSystemClient.commit(tx)) {
-              LOG.warn("Mapreduce job transaction failed to commit");
+            try {
+              if (!txSystemClient.commit(tx)) {
+                LOG.warn("Mapreduce job transaction {} failed to commit, context: {}", tx.getWritePointer(), context);
+                success = false;
+              }
+            } catch (TransactionNotInProgressException e) {
+              // will probably NEVER happen as it will never be timed out and there's nobody to invalidate it...
+              LOG.warn(String.format("Mapreduce job transaction %d UNEXPECTEDLY is NOT in progress, context: %s",
+                                     tx.getWritePointer(), context), e);
               success = false;
             }
           } else {
@@ -472,12 +481,13 @@ public class MapReduceProgramRunner implements ProgramRunner {
     ApplicationBundler appBundler = new ApplicationBundler(Lists.newArrayList("org.apache.hadoop"),
                                                            Lists.newArrayList("org.apache.hadoop.hbase"));
     Id.Program programId = context.getProgram().getId();
-    String programJarPath = context.getProgram().getJarLocation().toURI().getPath();
+    String programJarPath = context.getProgram().getJarLocation().toURI().toString();
     String programDir = programJarPath.substring(0, programJarPath.lastIndexOf('/'));
 
     Location appFabricDependenciesJarLocation =
-      locationFactory.create(String.format("%s/%s.%s.%s.%s.%s.jar",
-                                           programDir, Type.MAPREDUCE.name().toLowerCase(),
+      locationFactory.create(URI.create(programDir))
+                     .append(String.format("%s.%s.%s.%s.%s.jar",
+                                           Type.MAPREDUCE.name().toLowerCase(),
                                            programId.getAccountId(), programId.getApplicationId(),
                                            programId.getId(), context.getRunId().getId()));
 

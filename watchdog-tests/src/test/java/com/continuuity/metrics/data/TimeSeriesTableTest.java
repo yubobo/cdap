@@ -17,6 +17,7 @@ import com.continuuity.metrics.transport.TagMetric;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.junit.AfterClass;
@@ -24,7 +25,10 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -208,6 +212,91 @@ public class TimeSeriesTableTest {
   }
 
   @Test
+  public void testDeleteContextAndMetric() throws OperationException {
+
+    TimeSeriesTable timeSeriesTable = tableFactory.createTimeSeries("testContextAndMetricDelete", 1);
+
+    // 2012-10-01T12:00:00
+    final long time = 1317470400;
+    String runId = "runId";
+
+    // Insert dataset metrics for 5 apps with 2 flow per app
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 2; j++) {
+        String context = "app" + i + ".f.flow" + j;
+
+        // 2 tags representing 2 datasets
+        List<TagMetric> tagMetrics = Lists.newLinkedList();
+        tagMetrics.add(new TagMetric("ds1", 5));
+        tagMetrics.add(new TagMetric("ds2", 10));
+
+        // 10 timepoints for each metric
+        List<MetricsRecord> records = Lists.newArrayListWithCapacity(10);
+        for (int k = 0; k < 10; k++) {
+          records.add(new MetricsRecord(context, runId, "store.bytes", tagMetrics, time + k, 15));
+          records.add(new MetricsRecord(context, runId, "store.ops", tagMetrics, time + k, 15));
+          timeSeriesTable.save(records);
+        }
+      }
+    }
+
+    // Query aggregate
+    MetricsScanQuery query = new MetricsScanQueryBuilder()
+      .setContext("app1")
+      .setMetric("store.ops")
+      .setRunId(runId)
+      .build(time, time + 10);
+    // 10 datapoints from 2 rows, one for each flow
+    assertAggregate(query, timeSeriesTable.scan(query), 10, 2, new Function<Long, Integer>() {
+      @Override
+      public Integer apply(Long ts) {
+        return 30;
+      }
+    });
+
+    // delete all store.ops metrics from app1.f.flow.0
+    timeSeriesTable.delete("app1.f.flow0", "store.ops");
+    // check everything for context app1.f.flow.0 and metric "store.ops" is deleted, and nothing gets scanned.
+    query = new MetricsScanQueryBuilder()
+      .setContext("app1.f.flow0")
+      .setMetric("store.ops")
+      .setRunId(runId)
+      .build(time, time + 10);
+    Assert.assertFalse("scanned for rows not deleted as expected", timeSeriesTable.scan(query).hasNext());
+    // check tags got deleted too
+    query = new MetricsScanQueryBuilder()
+      .setContext("app1.f.flow0")
+      .setMetric("store.ops")
+      .setRunId(runId)
+      .setTag("ds1")
+      .build(time, time + 10);
+    Assert.assertFalse("scanned for rows not deleted as expected", timeSeriesTable.scan(query).hasNext());
+
+    // check other data was not mistakenly deleted
+    query = new MetricsScanQueryBuilder()
+      .setContext("app1.f")
+      .setMetric("store.ops")
+      .setRunId(runId)
+      .build(time, time + 10);
+    // 10 datapoints from 1 row, flow.0 should have been deleted flow
+    assertAggregate(query, timeSeriesTable.scan(query), 10, 1, new Function<Long, Integer>() {
+      @Override
+      public Integer apply(Long ts) {
+        return 15;
+      }
+    });
+
+    // should delete all store metrics
+    timeSeriesTable.delete(null, "store");
+    query = new MetricsScanQueryBuilder()
+      .setContext(null)
+      .setMetric("store")
+      .setRunId(runId)
+      .build(time, time + 10);
+    Assert.assertFalse("scanned for rows not deleted as expected", timeSeriesTable.scan(query).hasNext());
+  }
+
+  @Test
   public void testRangeDelete() throws OperationException {
 
     TimeSeriesTable timeSeriesTable = tableFactory.createTimeSeries("testRangeDelete", 1);
@@ -315,6 +404,44 @@ public class TimeSeriesTableTest {
         return 300;
       }
     });
+  }
+
+  @Test
+  public void testScanAllTags() throws OperationException {
+
+    TimeSeriesTable timeSeriesTable = tableFactory.createTimeSeries("testScanAllTags", 1);
+
+    try {
+      timeSeriesTable.save(ImmutableList.of(
+        new MetricsRecord("app.f.flow.flowlet", "0", "store.bytes", ImmutableList.of(
+          new TagMetric("tag1", 1), new TagMetric("tag2", 2), new TagMetric("tag3", 3)), 1234567890, 6)
+      ));
+
+      Map<String, Integer> tagValues = Maps.newHashMap();
+      MetricsScanQuery query = new MetricsScanQueryBuilder()
+        .setContext("app.f.flow.flowlet")
+        .setMetric("store.bytes")
+        .setRunId("0")
+        .build(1234567890, 1234567891);
+      MetricsScanner scanner = timeSeriesTable.scanAllTags(query);
+      while (scanner.hasNext()) {
+        MetricsScanResult result = scanner.next();
+        String tag = result.getTag();
+        if (tag == null) {
+          Assert.assertEquals(6, result.iterator().next().getValue());
+        } else {
+          Assert.assertFalse(tagValues.containsKey(result.getTag()));
+          tagValues.put(result.getTag(), result.iterator().next().getValue());
+        }
+      }
+
+      Assert.assertEquals(3, tagValues.size());
+      Assert.assertEquals(1, (int) tagValues.get("tag1"));
+      Assert.assertEquals(2, (int) tagValues.get("tag2"));
+      Assert.assertEquals(3, (int) tagValues.get("tag3"));
+    } finally {
+      timeSeriesTable.clear();
+    }
   }
 
   /**
