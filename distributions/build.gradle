@@ -5,6 +5,7 @@ evaluationDependsOn(':passport')
 apply plugin:'maven'
 apply from: "$rootProject.projectDir/gradle/packaging.gradle"
 apply from: "$rootProject.projectDir/gradle/run-maven.gradle"
+apply from: "$rootProject.projectDir/gradle/run-sphinx.gradle"
 
 task javadoc(type: Javadoc, overwrite: true) {
   source = project.parent.subprojects.collect { proj ->
@@ -81,6 +82,7 @@ configurations{
 
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.api.tasks.bundling.Compression
+
 
 task reactor_sdk_dist (type: Zip, dependsOn: [':web-app:build', ':examples:build']) {
   group = 'Continuuity'
@@ -383,7 +385,6 @@ task prepackager(overwrite: true) {
     }
   }
 }
-
 
 // Override some of our base packaging.gradle parameters for common package
 packaging {
