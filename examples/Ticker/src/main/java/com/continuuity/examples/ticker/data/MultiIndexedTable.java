@@ -22,6 +22,9 @@ import com.continuuity.api.common.Bytes;
 import com.continuuity.api.data.DataSet;
 import com.continuuity.api.data.DataSetContext;
 import com.continuuity.api.data.DataSetSpecification;
+import com.continuuity.api.data.batch.HiveReadable;
+import com.continuuity.api.data.batch.Split;
+import com.continuuity.api.data.batch.SplitReader;
 import com.continuuity.api.data.dataset.table.Delete;
 import com.continuuity.api.data.dataset.table.Put;
 import com.continuuity.api.data.dataset.table.Row;
@@ -42,7 +45,7 @@ import java.util.Set;
  * Note that <em>all key-values for a single row must be written with the same timestamp</em> in order for
  * reading by indexes to work correctly.
  */
-public class MultiIndexedTable extends DataSet {
+public class MultiIndexedTable extends DataSet implements HiveReadable<Row> {
   private static final Logger LOG = LoggerFactory.getLogger(MultiIndexedTable.class);
   // use a null value as separator for multiple field in the row key
   private static final byte NULL_BYTE = (byte) 0x0;
@@ -261,6 +264,21 @@ public class MultiIndexedTable extends DataSet {
     return null;
   }
 
+  @Override
+  public Class<Row> getValueType() {
+    return Row.class;
+  }
+
+  @Override
+  public List<Split> getSplits() {
+    return table.getSplits();
+  }
+
+  @Override
+  public SplitReader<byte[], Row> createSplitReader(Split split) {
+    return table.createSplitReader(split);
+  }
+
   private void logValues(Map<byte[], byte[]> values) {
     if (!LOG.isTraceEnabled()) {
       return;
@@ -270,6 +288,7 @@ public class MultiIndexedTable extends DataSet {
       LOG.trace(Bytes.toStringBinary(entry.getKey()) + "=" + Bytes.toStringBinary(entry.getValue()) + ", ");
     }
   }
+
   private static final class PeekableScanner implements Scanner {
     private final Scanner wrapped;
     private Row nextRow;
