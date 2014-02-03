@@ -296,6 +296,7 @@ public class MultiObjectStoreTest extends DataSetTestBase {
   @Test
   public void testSubclass() {
     IntegerStore ints = instantiator.getDataSet("ints");
+    Assert.assertEquals(Integer.class, ints.getValueType());
     ints.write(42, 101);
     Assert.assertEquals((Integer) 101, ints.read(42));
   }

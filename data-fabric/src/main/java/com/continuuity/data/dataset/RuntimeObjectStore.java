@@ -129,6 +129,11 @@ public final class RuntimeObjectStore<T> extends ObjectStore<T> {
     return new ObjectScanner(split);
   }
 
+  @Override
+  public Class<T> getValueType() {
+    return (Class<T>) getTypeToken().getRawType();
+  }
+
   /**
    * The split reader for objects is reading a table split using the underlying KeyValuyeTable's split reader.
    */

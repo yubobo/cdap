@@ -6,6 +6,7 @@ import com.continuuity.api.data.DataSetContext;
 import com.continuuity.api.data.DataSetSpecification;
 import com.continuuity.api.data.batch.BatchReadable;
 import com.continuuity.api.data.batch.BatchWritable;
+import com.continuuity.api.data.batch.HiveReadable;
 import com.continuuity.api.data.batch.Split;
 import com.continuuity.api.data.batch.SplitReader;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
@@ -31,7 +32,7 @@ import java.util.List;
  * @param <T> the type of objects in the store
  */
 @Beta
-public class ObjectStore<T> extends DataSet implements BatchReadable<byte[], T>, BatchWritable<byte[], T> {
+public class ObjectStore<T> extends DataSet implements HiveReadable<T>, BatchWritable<byte[], T> {
 
   private static final Gson GSON = new GsonBuilder()
   .registerTypeAdapter(Schema.class, new SchemaTypeAdapter())
@@ -122,6 +123,11 @@ public class ObjectStore<T> extends DataSet implements BatchReadable<byte[], T>,
   @Override
   public SplitReader<byte[], T> createSplitReader(Split split) {
     return delegate.get().createSplitReader(split);
+  }
+
+  @Override
+  public Class<T> getValueType() {
+    return delegate.get().getValueType();
   }
 
   /**

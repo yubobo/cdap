@@ -139,6 +139,9 @@ public class DataSetSerDe extends AbstractSerDe {
   public Object deserialize(Writable writable) throws SerDeException {
     KeyedObjectWritable keyedWritable = (KeyedObjectWritable) writable;
     Object value = keyedWritable.get();
+    if (value instanceof RowWritable) {
+      value = ((RowWritable) value).get();
+    }
     LOG.info("Deserialized value is " + (value == null ? "null" : value.getClass().getName()));
     if (value.getClass().isArray() || value.getClass().isPrimitive()) {
       LOG.info("Deserializing as KeyValue");

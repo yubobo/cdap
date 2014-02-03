@@ -5,6 +5,7 @@ import com.continuuity.api.annotation.Property;
 import com.continuuity.api.data.DataSet;
 import com.continuuity.api.data.batch.BatchReadable;
 import com.continuuity.api.data.batch.BatchWritable;
+import com.continuuity.api.data.batch.HiveReadable;
 import com.continuuity.api.data.batch.Split;
 import com.continuuity.api.data.batch.SplitReader;
 import com.google.common.base.Supplier;
@@ -16,8 +17,7 @@ import java.util.List;
  * This is the DataSet implementation of named tables -- other DataSets can be
  * defined by embedding instances of {@link Table} (and other DataSets).
  */
-public class Table extends DataSet implements
-  BatchReadable<byte[], Row>, BatchWritable<byte[], Put> {
+public class Table extends DataSet implements HiveReadable<Row>, BatchWritable<byte[], Put> {
 
   @Property
   private ConflictDetection conflictLevel;
@@ -274,6 +274,11 @@ public class Table extends DataSet implements
    */
   public Scanner scan(@Nullable byte[] startRow, @Nullable byte[] stopRow) {
     return delegate.get().scan(startRow, stopRow);
+  }
+
+  @Override
+  public Class<Row> getValueType() {
+    return Row.class;
   }
 
   @Override
