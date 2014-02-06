@@ -13,8 +13,10 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.weave.api.WeaveController;
 import com.continuuity.weave.api.WeaveRunner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.YarnClientProtocolProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,5 +53,10 @@ public final class DistributedMapReduceProgramRunner extends AbstractDistributed
                                                                                hConfFile, cConfFile, eventHandler));
 
     return new MapReduceWeaveProgramController(program.getName(), controller).startListen();
+  }
+
+  @Override
+  protected Iterable<Class<?>> getDependencies() {
+    return ImmutableList.<Class<?>>of(YarnClientProtocolProvider.class);
   }
 }

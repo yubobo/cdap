@@ -25,6 +25,7 @@ import com.continuuity.weave.filesystem.Location;
 import com.continuuity.weave.yarn.YarnSecureStore;
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 import com.google.common.io.InputSupplier;
 import com.google.common.util.concurrent.Service;
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -88,6 +90,10 @@ public abstract class AbstractDistributedProgramRunner implements ProgramRunner 
     }
 
     final String runtimeArgs = new Gson().toJson(options.getUserArguments());
+    final Iterable<Class<?>> dependencies = ImmutableList.<Class<?>>builder()
+      .add(new HBaseTableUtilFactory().get().getClass())
+      .addAll(getDependencies())
+      .build();
 
     // Obtains and add the HBase delegation token as well (if in non-secure mode, it's a no-op)
     // Weave would also ignore it if it is not running in secure mode.
@@ -97,7 +103,7 @@ public abstract class AbstractDistributedProgramRunner implements ProgramRunner 
       public WeaveController launch(WeaveApplication weaveApplication) {
         WeaveController weaveController = weaveRunner
           .prepare(weaveApplication)
-          .withDependencies(new HBaseTableUtilFactory().get().getClass())
+          .withDependencies(dependencies)
           .addLogHandler(new PrinterLogHandler(new PrintWriter(System.out)))
           .addSecureStore(YarnSecureStore.create(HBaseTokenUtils.obtainToken(hConf, new Credentials())))
           .withApplicationArguments(
@@ -115,6 +121,13 @@ public abstract class AbstractDistributedProgramRunner implements ProgramRunner 
   protected abstract ProgramController launch(Program program, ProgramOptions options,
                                               File hConfFile, File cConfFile, ApplicationLauncher launcher);
 
+  /**
+   * Sub-class overrides this method to announce extra dependencies for the program
+   * @return list of classes program depends on
+   */
+  protected Iterable<Class<?>> getDependencies() {
+    return Collections.emptyList();
+  }
 
   private File saveHConf(Configuration conf, File file) throws IOException {
     Writer writer = Files.newWriter(file, Charsets.UTF_8);
