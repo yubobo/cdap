@@ -2,16 +2,20 @@ package com.continuuity.hive;
 
 import com.continuuity.api.data.dataset.table.Row;
 import com.google.common.collect.Lists;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
  *
  */
 public class RowObjectInspector extends BaseStructObjectInspector {
+  private static final Log LOG = LogFactory.getLog(RowObjectInspector.class);
 
   public RowObjectInspector(List<String> columns, List<TypeInfo> columnTypes, String rowKeyField) {
     super(columns, columnTypes, rowKeyField);
@@ -22,6 +26,28 @@ public class RowObjectInspector extends BaseStructObjectInspector {
     if (data == null) {
       return null;
     }
+    LOG.info("Field is " + structField.getFieldName() + ", data type is " + data.getClass().getName());
+    if (data.getClass().isArray()) {
+      LOG.info("Array element type is " + data.getClass().getComponentType());
+    }
+    if (Collection.class.isAssignableFrom(data.getClass())) {
+      Collection dataCol = (Collection) data;
+      int idx = 0;
+      for (Object elt : dataCol) {
+        LOG.info("Elt #" + idx + " type is " + elt.getClass().getName());
+        idx++;
+      }
+    }
+    if (List.class.isAssignableFrom(data.getClass())) {
+      List dataList = (List) data;
+      for (int i = 0; i < fields.size(); i++) {
+        if (fields.get(i).getFieldName().equals(structField.getFieldName())) {
+          return dataList.get(i);
+        }
+      }
+      return null;
+    }
+
     Row row = (Row) data;
     String fieldName = structField.getFieldName();
     if (fieldName.equals(rowKeyField)) {
