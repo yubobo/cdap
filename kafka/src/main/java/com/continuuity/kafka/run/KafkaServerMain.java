@@ -11,6 +11,8 @@ import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.Service;
 import org.apache.twill.internal.kafka.EmbeddedKafkaServer;
 import org.apache.twill.zookeeper.ZKClientService;
+import org.apache.twill.zookeeper.ZKClientServices;
+import org.apache.twill.zookeeper.ZKClients;
 import org.apache.twill.zookeeper.ZKOperations;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -66,23 +68,24 @@ public class KafkaServerMain extends DaemonMain {
     LOG.info("Using replication factor {}", replicationFactor);
 
     if (zkNamespace != null) {
-      ZKClientService client = ZKClientService.Builder.of(zkConnectStr).build();
+      ZKClientService client = ZKClientServices.delegate(
+        ZKClients.namespace(ZKClientService.Builder.of(zkConnectStr).build(), "/" + zkNamespace));
       try {
         client.startAndWait();
 
-        String path = "/" + zkNamespace;
-        LOG.info(String.format("Creating zookeeper namespace %s", path));
+        try {
+          ZKOperations.ignoreError(
+            client.create("", null, CreateMode.PERSISTENT),
+            KeeperException.NodeExistsException.class, "/").get();
 
-        ZKOperations.ignoreError(
-          client.create(path, null, CreateMode.PERSISTENT),
-          KeeperException.NodeExistsException.class, path).get();
+          zkConnectStr = client.getConnectString();
 
-        client.stopAndWait();
-        zkConnectStr = String.format("%s/%s", zkConnectStr, zkNamespace);
+          LOG.info("Kafka zookeeper connect str: {}", zkConnectStr);
+        } finally {
+          client.stopAndWait();
+        }
       } catch (Exception e) {
         throw Throwables.propagate(e);
-      } finally {
-        client.stopAndWait();
       }
     }
 
@@ -95,7 +98,7 @@ public class KafkaServerMain extends DaemonMain {
 
   @Override
   public void start() {
-    LOG.info("Starting embedded kafka server...");
+    LOG.info("Starting embedded kafka server with following properties: \n{}", propertyToString(kafkaProperties));
 
     kafkaServer = new EmbeddedKafkaServer(kafkaProperties);
     Service.State state = kafkaServer.startAndWait();
@@ -144,6 +147,14 @@ public class KafkaServerMain extends DaemonMain {
     prop.setProperty("zookeeper.connection.timeout.ms", "1000000");
     prop.setProperty("default.replication.factor", Integer.toString(replicationFactor));
     return prop;
+  }
+
+  private static String propertyToString(Properties properties) {
+    StringBuilder builder = new StringBuilder();
+    for (String key : properties.stringPropertyNames()) {
+      builder.append(key).append("=").append(properties.getProperty(key)).append("\n");
+    }
+    return builder.toString();
   }
 
   private static int generateBrokerId(InetAddress address) {

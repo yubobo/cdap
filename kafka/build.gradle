@@ -13,4 +13,6 @@ dependencies {
     compile libraries.google_guava
     compile libraries.twill_core
     compile libraries.twill_zookeeper
+
+    testCompile libraries.junit
 }
