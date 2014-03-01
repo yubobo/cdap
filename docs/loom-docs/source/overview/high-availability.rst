@@ -52,7 +52,6 @@ Cons
 #. Write operations can be slower due to synchronous replication. 
 #. All transactions in progress in a data center when it goes down will be lost.
 #. On data center failure, the jobs in that data center will not make any progress.
-#. No control on what data gets replicated, can lead to massive change logs.
 
 
 Single Master
