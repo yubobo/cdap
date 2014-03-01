@@ -5,12 +5,30 @@
 High Availability
 ============
 
+We first describe how high availability is achieved within a single datacenter, then describe several 
+possible high availability setups across datacenters.
+
+Within a Datacenter
+===================
+
+.. _single-dc:
+.. figure:: /_images/ha_within_colo.png
+    :align: center
+    :alt: Within Datacenter Architecture Diagram
+
+Overview
+--------
+#. Multiple UIs with HAProxy in front of them
+#. ZooKeeper quorum of at least 3 nodes, with an odd number of total nodes.
+#. Multiple Loom Servers with HAProxy in front of them.  HA achieved through leader election.
+#. Multiple Provisioners to perform tasks.
+#. Database replication with automatic failover in case one of them goes down.
+
 Single Master
 =============
 
 .. _single-master:
-.. figure:: /_images/Single-Master-Architecture.png
-    :width: 700px
+.. figure:: /_images/ha_single_master.png
     :align: center
     :alt: Single Master Architecture Diagram
     :figclass: align-center
@@ -53,8 +71,7 @@ Multiple Masters
 =============
 
 .. _multiple-masters:
-.. figure:: /_images/Multiple-Masters-Architecture.png
-    :width: 700px
+.. figure:: /_images/ha_multi_master.png
     :align: center
     :alt: Multiple Masters Architecture Diagram
     :figclass: align-center
@@ -97,8 +114,7 @@ Custom Replication
 ==================
 
 .. _custom-replication:
-.. figure:: /_images/Custom-Replication-Architecture.png
-    :width: 700px
+.. figure:: /_images/ha_custom.png
     :align: center
     :alt: Custom Replication Architecture Diagram
     :figclass: align-center
