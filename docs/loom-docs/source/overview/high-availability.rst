@@ -123,8 +123,8 @@ Overview
 --------
 #. Architecturally very similar to Multiple Master approach, except for using custom replication.
 #. Data will be divided into shards, and divided amongst DBs across all data centers. Each shard will have one owner DB.
-#. Each shard is synchronously replicated locally, and one copy on a remote data center. 
-#. Not all data is replicated. Only completed operations, and any state information to restart in progress operations are replicated.
+#. Each shard is synchronously replicated locally, and at least one copy on a remote data center. 
+#. Replication occurs in chunks. Data replication upon completion of operations, and any state information to restart in progress operations are replicated.
 #. Data partitioning will prevent conflicts.
 #. Regular operations in a data center will happen on local shards (local DB).
 #. DB calls to other shards will be routed to the DB that is the owner of the shard.
