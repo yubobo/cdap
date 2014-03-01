@@ -24,6 +24,37 @@ Overview
 #. Multiple Provisioners to perform tasks.
 #. Database replication with automatic failover in case one of them goes down.
 
+Synchronous DB Cluster
+===================
+
+.. _synchronous-repl:
+.. figure:: /_images/ha_synchronous_repl.png
+    :align: center
+    :alt: Synchronous DB Architecture Diagram
+    :figclass: align-center
+
+Overview
+--------
+#. DB Cluster is synchronously replicated across all data centers.
+#. In-flight queues on Zoo Keeper will still remain local to a data center.
+
+Failover
+--------
+#. When a data center fails, since the DB is synchronously replicated, the other data centers will not be affected.
+#. Traffic from the failed data center will be re-routed to other data centers automatically.
+
+Pros
+----
+#. Consistent view of data at all times from all data centers.
+
+Cons
+----
+#. Write operations can be slower due to synchronous replication. 
+#. All transactions in progress in a data center when it goes down will be lost.
+#. On data center failure, the jobs in that data center will not make any progress.
+#. No control on what data gets replicated, can lead to massive change logs.
+
+
 Single Master
 =============
 
@@ -45,16 +76,8 @@ Failover
 #. When data center with master DB fails, the failover to promote a slave to be master can be automatic or manual. 
 #. When a slave becomes master, all requests from loom servers will need to be directed to it (can be automatic).
 
-Changes
--------
-#. Resource leak detection and fix job.
-#. Loom Server HA within a data center.
-#. ID generation will have to move to Master DB.
-#. Loom Servers will have to handle data inconsistency when Master DB goes down.
-
 Pros
 ----
-#. Minimal changes to existing design.
 #. Consistent view of data at all times from all data centers.
 
 Cons
@@ -89,13 +112,6 @@ Failover
 --------
 #. When a data center fails, the shards local to the data center will need a new owner DB.
 #. All calls to failed over shards will need to be routed to the new owner DB.
-
-Changes
--------
-#. Resource leak detection and fix job.
-#. Loom Server HA within a data center.
-#. Partition data into shards.
-#. Loom Server that becomes a new owner of a shard will have to handle in-progress tasks of failed shard.
 
 Pros
 ----
@@ -134,14 +150,6 @@ Failover
 --------
 #. When a data center fails, the remote data center having the shards of the failed data center will become the new owner of the shards.
 #. All calls to failed over shards will need to be routed to the new owner DB.
-
-Changes
--------
-#. Resource leak detection and fix job.
-#. Loom Server HA within a data center.
-#. Partition data into shards.
-#. Loom Server that becomes a new owner of a shard will have to handle in-progress tasks of failed shard.
-#. Custom replication.
 
 Pros
 ----
