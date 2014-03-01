@@ -12,3 +12,4 @@ Administration Guide
    macros
    plugins
    monitoring
+   ../bcp/index
