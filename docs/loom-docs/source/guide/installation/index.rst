@@ -323,7 +323,7 @@ Please ensure logrotate is enabled on your Loom hosts.
 Common Installation Issues
 ==========================
 
-* A common issue is installing Loom on machines that have Open JDK installed rather than Oracle JDK. Loom currently does not support Open JDK.
+* A common issue is installing Loom on machines that have Open JDK installed rather than Oracle JDK.
 
 * If you see JDBC exceptions in the Loom Server log like:
   ::
