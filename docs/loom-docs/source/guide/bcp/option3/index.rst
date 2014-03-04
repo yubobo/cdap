@@ -18,12 +18,14 @@ Overview
 #. Data partitioning will prevent conflicts.
 #. Regular operations in a data center will happen on local shards (local DB).
 #. DB calls to other shards will be routed to the DB that is the owner of the shard.
+#. User traffic to Loom UIs across data centers is routed through HAProxy.
 #. In-flight queues on Zoo Keeper will still remain local to a data center.
 
 Failover
 --------
 #. When a data center fails, the shards local to the data center will need a new owner DB.
 #. All calls to failed over shards will need to be routed to the new owner DB.
+#. User traffic from the failed data center will be re-routed to other data centers automatically by HAProxy.
 
 Pros
 ----

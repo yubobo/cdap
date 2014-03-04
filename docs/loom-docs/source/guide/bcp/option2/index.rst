@@ -16,12 +16,14 @@ Overview
 #. Single Master Loom DB at any point of time across all data centers. 
 #. Master DB will get replicated to DBs in other data centers using asynchronous Master-Slave replication. 
 #. All the reads and writes from Loom Servers in other data centers will go to the Master DB. 
+#. User traffic to Loom UIs across data centers is routed through HAProxy.
 #. In-flight queues on Zoo Keeper will still remain local to a data center.
 
 Failover
 --------
 #. When data center with master DB fails, the failover to promote a slave to be master can be automatic or manual. 
 #. When a slave becomes master, all requests from loom servers will need to be directed to it (can be automatic).
+#. User traffic from the failed data center will be re-routed to other data centers automatically by HAProxy.
 
 Pros
 ----

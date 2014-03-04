@@ -14,12 +14,14 @@ Hot-Hot : Synchronous DB Cluster
 
 Overview
 --------
-In this configuration a Database cluster with synchronous replication is shared across all data centers. User traffic to Loom UI is routed through HAProxy.
+#. In this configuration a Database cluster with synchronous replication is shared across all data centers. This means all data centers will have a consistent view of all data at all times. 
+#. User traffic to Loom UIs across data centers is routed through HAProxy.
+#. In-flight queues on Zoo Keeper will still remain local to a data center.
 
 Failover
 --------
-#. When a data center fails, since the DB is synchronously replicated the data of the failed data center will be available to other data centers.
-#. Traffic from the failed data center will be re-routed to other data centers automatically by HAProxy.
+#. When a data center fails, since the DB is synchronously replicated, the data of the failed data center will be available to other data centers.
+#. User traffic from the failed data center will be re-routed to other data centers automatically by HAProxy.
 
 Pros
 ----
