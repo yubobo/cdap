@@ -10,6 +10,4 @@ Loom can be setup for high availability across multiple data centers so that whe
    :maxdepth: 2
 
    option1/index
-   option2/index
-   option3/index
    option4/index
