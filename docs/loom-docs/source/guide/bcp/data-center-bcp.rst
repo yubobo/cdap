@@ -13,6 +13,8 @@ High availability of the service within a data center is achieved by running red
 #. Multiple Loom Servers with HAProxy in front of them. UI and provisioner connect to Loom Server using HAProxy interface.
 #. Database replication with automatic failover in case one of them goes down. DB is also fronted by a proxy, and Loom Server connects to DB using the proxy.
 
+.. note:: This configuration requires a minimum of 3 machines since the smallest redundant ZooKeeper quorum needs 3 nodes.
+
 .. _single-dc:
 .. figure:: /_images/ha_within_colo.png
     :align: center
