@@ -14,18 +14,20 @@ Hot-Hot : Synchronous DB Cluster
 
 Overview
 --------
-#. In this configuration a Database cluster with synchronous replication is shared across all data centers. This means all data centers will have a consistent view of all data at all times. 
-#. User traffic to Loom UIs across data centers is routed through HAProxy.
-#. In-flight queues on Zoo Keeper will still remain local to a data center.
+Among all Loom components, Database is the only component that stores persistent state information. Any HA configuration that runs redundant Loom services across data centers will have to make sure that the services in all data centers have consistent view of this data. One way of achieving this consistency is to share a single Database cluster across all data centers as discussed below.
+
+In this configuration a Database cluster with synchronous replication is shared across all data centers. Loom Servers in each data center will connect to the local instance of the Database cluster. All other components are configured as mentioned in :doc:`Datacenter High Availability  </guide/bcp/data-center-bcp>` section.
+
+Another advantage of this is that Loom Servers in all data centers have the same view of data at all times. Hence, users in all data centers will get to see the same state for all clusters at all times.
 
 Failover
 --------
-#. When a data center fails, since the DB is synchronously replicated, the data of the failed data center will be available to other data centers.
-#. User traffic from the failed data center will be re-routed to other data centers automatically by HAProxy.
+When a data center fails in this setup, the data of the failed data center is still available in other data centers due to synchronous replication. Hence Loom Servers in other data centers should be able to handle user traffic from the failed data center.
+User traffic from the failed data center will be re-routed to other data centers automatically by the load balancer.
 
 Pros
 ----
-#. Consistent view of data at all times from all data centers.
+#. Consistent view of data at all times from all data centers. 
 
 Cons
 ----
