@@ -12,32 +12,33 @@ Hot-Hot : With Custom Replication
 
 Overview
 ========
-#. Architecturally very similar to Multiple Master approach, except for using custom replication.
-#. Data will be divided into shards, and divided amongst DBs across all data centers. Each shard will have one owner DB.
-#. Each shard is synchronously replicated locally, and at least one copy on a remote data center. 
-#. Replication occurs in chunks. Data replication upon completion of operations, and any state information to restart in progress operations are replicated.
-#. Data partitioning will prevent conflicts.
-#. Regular operations in a data center will happen on local shards (local DB).
-#. DB calls to other shards will be routed to the DB that is the owner of the shard.
-#. User traffic to Loom UIs across data centers is routed through HAProxy.
-#. In-flight queues on Zoo Keeper will still remain local to a data center.
+If synchronous Database cluster turns out to be not optimal for a Loom installation, then we have to consider an alternative solution where we use local Databases in each data center with custom data replication service. This will allow for all data centers to share the data, while reducing the need to replicate all the data in the Database.
+
+Since we will not be sharing a Databasse across data centers now, we'll need to treat the data a little bit differently than before. 
+The data will be divided into shards based on the cluster ID partitioning. Each shard will be exclusively assigned to an owner Database in a data center. Only Loom Servers running locally will be able to write to such a shard. Any requests to update the clusters in non-local shard will be routed to the Loom Server runninig in the data center owning the shard. This update strategy prevents write conflicts since any updates to a cluster can be done only in a single Database.
+
+The custom replication replicates data only upon completion of operations, and any minimal state information to restart any operations in progress when a data center goes down is also replicated. Intermediate state change data will not be replicated, hence reducing the replication overhead.
+
+Also, each shard is synchronously replicated locally (to handle intra-datacenter failover), and also replicated to at least one remote data center.
+
+Since we now do not replicate each state change across data centers, users of a data center will have a delayed view of remote cluster state. The replication implementation should try to make this dealy as minimal as possible.
 
 Failover
 ========
-#. When a data center fails, the remote data center having the shards of the failed data center will become the new owner of the shards.
-#. All calls to failed over shards will need to be routed to the new owner DB.
-#. User traffic from the failed data center will be re-routed to other data centers automatically by HAProxy.
+When a data center fails, the remote data centers having the shards of the failed data center will become the new owners of the shards.
+All calls to these shards will need to be routed to the new owner data centers.
+User traffic from the failed data center will be re-routed to other data centers automatically by the load balancer.
 
 Pros
 ====
 #. Reads/writes to local shards (majority of operations) are optimal.
-#. Consistent view of data at all times from all data centers due to routing.
-#. Highly scalable.
+#. Data consistency is maintained on updates due to all updates for a cluster getting routed to a single Database.
+#. Improves scalability due to selective replication of data.
 #. Minimal data loss on data center failure.
 
 Cons
 ====
 #. Complex to implement.
-#. Reads/writes to non-local shards will be slow.
+#. Writes to non-local shards will be slow.
 #. All transactions in progress in a data center when it goes down will be lost.
 

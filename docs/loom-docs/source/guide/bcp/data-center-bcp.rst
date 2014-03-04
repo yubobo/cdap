@@ -45,5 +45,3 @@ Database
 --------
 Database needs to be replicated with automatic failover in case the master Database goes down. Database is also fronted by a load balancer, and Loom Server connects to Database using the load balancer.
 
-.. note:: This configuration requires a minimum of 3 machines since the smallest redundant ZooKeeper quorum needs 3 nodes.
-
