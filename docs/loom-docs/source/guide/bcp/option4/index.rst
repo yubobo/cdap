@@ -12,16 +12,16 @@ Hot-Hot : With Custom Replication
 
 Overview
 ========
-If synchronous Database cluster turns out to be not optimal for a Loom installation, then we have to consider an alternative solution where we use local Databases in each data center with custom data replication service. This will allow for all data centers to share the data, while reducing the need to replicate all the data in the Database.
+Synchronous Database cluster may turn out to be not optimal for large Loom installations due to the amount of data that needs to be replicated across datacenters. In such a case we have to consider an alternative solution where we use local Databases in each data center with a custom data replication service. This will allow for all data centers to share the data, while reducing the need to replicate all the data in the Database.
 
-Since we will not be sharing a Databasse across data centers now, we'll need to treat the data a little bit differently than before. 
-The data will be divided into shards based on the cluster ID partitioning. Each shard will be exclusively assigned to an owner Database in a data center. Only Loom Servers running locally will be able to write to such a shard. Any requests to update the clusters in non-local shard will be routed to the Loom Server runninig in the data center owning the shard. This update strategy prevents write conflicts since any updates to a cluster can be done only in a single Database.
+Since we will not be sharing a Database across data centers now, we'll need to treat the data a little bit differently than before. 
+The data will be divided into shards based on the cluster ID partitioning. Each shard will be exclusively assigned to an owner Database in a data center. Only Loom Servers running locally will be able to write to such a shard. Any requests to update the clusters in non-local shard will be routed to the Loom Server running in the data center owning the shard. This update strategy prevents write conflicts since any updates to a cluster can be done only in a single Database.
 
-The custom replication replicates data only upon completion of operations, and any minimal state information to restart any operations in progress when a data center goes down is also replicated. Intermediate state change data will not be replicated, hence reducing the replication overhead.
+The custom replication reduces replication overhead in two ways. First, it only replicates data upon completion of operations. Second, it replicates minimal state information needed to restart any operations in progress during data center failure. Intermediate state change data will not be replicated.
 
-Also, each shard is synchronously replicated locally (to handle intra-datacenter failover), and also replicated to at least one remote data center.
+Each shard is synchronously replicated locally to handle intra-datacenter failover, and also remotely to at least one other data center.
 
-Since we now do not replicate each state change across data centers, users of a data center will have a delayed view of remote cluster state. The replication implementation should try to make this dealy as minimal as possible.
+Since we currently do not replicate each state change across data centers, users of a data center will have a delayed view of remote cluster state. The replication implementation should try to make this delay as minimal as possible.
 
 Failover
 ========

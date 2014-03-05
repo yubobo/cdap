@@ -14,7 +14,7 @@ Hot-Hot : Synchronous DB Cluster
 
 Overview
 --------
-Among all Loom components, Database is the only component that stores persistent state information. Any HA configuration that runs redundant Loom services across data centers will have to make sure that the services in all data centers have consistent view of this data. One way of achieving this consistency is to share a single Database cluster across all data centers as discussed below.
+Among all Loom components, Database is the only component that stores persistent state information. Any HA configuration that runs redundant Loom services across data centers will have to make sure that the services in all data centers have a consistent view of this data. One way of achieving this consistency is to share a single Database cluster across all data centers as discussed below.
 
 In this configuration a Database cluster with synchronous replication is shared across all data centers. Loom Servers in each data center will connect to the local instance of the Database cluster. All other components are configured as mentioned in :doc:`Datacenter High Availability  </guide/bcp/data-center-bcp>` section.
 
