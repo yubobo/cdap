@@ -18,19 +18,14 @@ Among all Loom components, Database is the only component that stores persistent
 
 In this configuration a Database cluster with synchronous replication is shared across all data centers. Loom Servers in each data center will connect to the local instance of the Database cluster. All other components are configured as mentioned in :doc:`Datacenter High Availability  </guide/bcp/data-center-bcp>` section.
 
-Another advantage of this is that Loom Servers in all data centers have the same view of data at all times. Hence, users in all data centers will get to see the same state for all clusters at all times.
+An advantage of this approach is that Loom Servers in all data centers have the same view of data at all times. Hence, users in all data centers will get to see the same state for all clusters at all times.
 
 Failover
 --------
-When a data center fails in this setup, the data of the failed data center is still available in other data centers due to synchronous replication. Hence Loom Servers in other data centers should be able to handle user traffic from the failed data center.
+When a data center fails in this setup, the data of the failed data center is still available in other data centers due to synchronous replication. 
+Hence Loom Servers in other data centers should be able to handle user traffic from the failed data center. 
+
+However, any transaction that was in progress when the datacenter failed will be lost as it was not committed. 
+Also, any jobs that were in progress in the failed datacenter will not make any progress when the datacenter goes down.
+
 User traffic from the failed data center will be re-routed to other data centers automatically by the load balancer.
-
-Pros
-----
-#. Consistent view of data at all times from all data centers. 
-
-Cons
-----
-#. Write operations can be slower due to synchronous replication. 
-#. All transactions in progress in a data center when it goes down will be lost.
-#. On data center failure, the jobs in that data center will not make any progress.

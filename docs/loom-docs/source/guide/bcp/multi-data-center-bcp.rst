@@ -14,7 +14,8 @@ A couple of things need to be considered when configuring Loom to run across mul
 
 
 
-Recommended multi-datacener HA configurations for Loom-
+We discuss two possible multi-datacenter HA configurations for Loom in the next sections. 
+Note that the second option - HA with Custom Replication, is still work in progress. 
 
 .. toctree::
    :maxdepth: 2
