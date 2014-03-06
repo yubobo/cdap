@@ -179,7 +179,7 @@ If you are setting up a MySQL database from scratch you can run the following on
 .. parsed-literal::
   $ mysql -u root -p<root-password> -e 'create database loom;'
   $ mysql -u root -p<root-password> -e 'grant all privileges on loom.* to "loom"@"<loom-server>" identified by "<password>";'
-  $ mysql -u loom -p<password> loom < /opt/loom/server/docs/sql/loom-\ |version|\ -create-tables-mysql.sql
+  $ mysql -u loom -p<password> loom < /opt/loom/server/docs/sql/loom-create-tables-mysql.sql
   $ mysql -u loom -p<password> loom -e 'show tables;'
   +----------------+
   | Tables_in_loom |
