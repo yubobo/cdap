@@ -146,3 +146,9 @@ A full list of available configuration settings and their default values are giv
    * - scheduler.run.interval.seconds
      - 1
      - Interval, in seconds, various runs are scheduled on the server.
+   * - loom.ids.start.num
+     - 1
+     - Along with ``loom.ids.increment.by``, this setting is used to partition the ID space for :doc:`Multi-Datacenter High Availability </guide/bcp/multi-data-center-bcp>`. The ID generation in a datacenter will start from this number. Each datacenter will need to have a different start number so that the IDs do not overlap. All Loom Servers in a datacenter should share the same value of ``loom.ids.start.num``.
+   * - loom.ids.increment.by
+     - 1
+     - Along with ``loom.ids.start.num``, this setting is used to partition the ID space for :doc:`Multi-Datacenter High Availability </guide/bcp/multi-data-center-bcp>`. The IDs will increment by this number in a datacenter. All datacenters have to share the same value of ``loom.ids.increment.by`` to prevent overlapping of IDs. This number has to be large enough to enable future datacenter expansion.
