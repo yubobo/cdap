@@ -16,7 +16,6 @@ Login as an Administrator
 =========================
 
 The Loom Admin UI can be accessed at ``http://<loom-host>:<loom-ui-port>/``. Login using the admin credentials to access the administrator interface.
-The default administrator login credentials are username ``admin`` and password ``L0omProd!23``.
 
 .. figure:: /guide/quickstart/quickstart-screenshot-1.png
     :align: center
