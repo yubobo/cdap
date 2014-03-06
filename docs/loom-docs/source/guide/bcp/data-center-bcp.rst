@@ -1,24 +1,24 @@
 .. _overview_single_data_center:
 .. index::
-   single: Data Center High Availability
+   single: Datacenter High Availability
 =============================
 Datacenter High Availability
 =============================
 
 Loom can be configured to be resilient to machine or component failures. This document describes the recommended configuration 
-for setting up Loom for HA within a data center. Please refer to :doc:`multi-data center HA <multi-data-center-bcp>` documentation
-for configuring HA across multiple data centers.
+for setting up Loom for HA within a single datacenter. Please refer to :doc:`multi-datacenter HA <multi-data-center-bcp>` documentation
+for configuring HA across multiple datacenters.
 
-In order to support resiliency against machine or component failures within a data center, Loom components can be configured to 
+In order to support resiliency against machine or component failures within a datacenter, Loom components can be configured to 
 run with redundancies on multiple machines. Each machine running Loom can have a maximum of -
 
 * One loom-ui process
 * One loom-server process
 * Multiple loom-provisioner processes (See config LOOM_NUM_WORKERS in :doc:`installation guide </guide/installation/index>`)
 * One ZooKeeper process
-* One Database process
+* One database process
 
-The diagram below shows the logical deployment diagram of Loom for HA in a data center-
+The diagram below shows the logical deployment diagram of Loom for HA in a datacenter-
 
 .. _single-dc:
 .. figure:: /_images/ha_within_colo.png
@@ -27,7 +27,7 @@ The diagram below shows the logical deployment diagram of Loom for HA in a data 
 
 Loom UI
 ------
-Loom UI (loom-ui) is stateless, and communicates with Loom Server using REST endpoints. Hence Loom UI can be easily run on multiple machines. User traffic is routed to multiple instances of Loom UI using load balancers (like HAproxy or Varnish or VIP).
+Loom UI (loom-ui) is stateless, and communicates with Loom Server using REST endpoints. Hence Loom UI can be easily run on multiple machines. User traffic is routed to multiple instances of Loom UI using load balancers (such as HAproxy or Varnish or VIP).
 
 Loom Provisioner
 ----------------
@@ -43,5 +43,5 @@ A ZooKeeper quorum of at least 3 machines is required for redundancy. Note that 
 
 Database
 --------
-Database needs to be replicated with automatic failover in case the master Database goes down. Database is also fronted by a proxy that directs all operations to Master Database, and Loom Server connects to Database using the proxy.
+Database needs to be replicated with automatic failover in case the master database goes down. Database is also fronted by a proxy that directs all operations to master database, and Loom Server connects to database using the proxy.
 
