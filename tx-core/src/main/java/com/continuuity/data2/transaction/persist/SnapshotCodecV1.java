@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 
 /**
- * Handles serialization/deserialization of a {@link com.continuuity.data2.transaction.persist.TransactionSnapshot} and
+ * Handles serialization/deserialization of a {@link TransactionSnapshot} and
  * its elements to {@code byte[]}.
  */
 public class SnapshotCodecV1 extends AbstractSnapshotCodec {

@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Handles serialization/deserialization of a {@link com.continuuity.data2.transaction.persist.TransactionSnapshot} and
+ * Handles serialization/deserialization of a {@link TransactionSnapshot} and
  * its elements to {@code byte[]}.
  */
 public abstract class AbstractSnapshotCodec {
@@ -70,7 +70,7 @@ public abstract class AbstractSnapshotCodec {
 
   /**
    * Deserializes an encoded {@code TransactionSnapshot} back into its object representation.  Reverses serialization
-   * performed by {@link #encodeState(com.continuuity.data2.transaction.persist.TransactionSnapshot)}.
+   * performed by {@link #encodeState(TransactionSnapshot)}.
    * @param bytes the serialized {@code TransactionSnapshot} representation.
    * @return a {@code TransactionSnapshot} instance populated with the serialized values.
    */

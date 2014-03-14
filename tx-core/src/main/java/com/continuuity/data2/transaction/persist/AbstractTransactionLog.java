@@ -182,7 +182,7 @@ public abstract class AbstractTransactionLog implements TransactionLog {
 
   /**
    * Represents an entry in the transaction log.  Each entry consists of a key, generated from an incrementing sequence
-   * number, and a value, the {@link com.continuuity.data2.transaction.persist.TransactionEdit} being stored.
+   * number, and a value, the {@link TransactionEdit} being stored.
    */
   public static class Entry implements Writable {
     private LongWritable key;
