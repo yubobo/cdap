@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>seleniumTesting</groupId>
-  <artifactId>com.example</artifactId>
+  <artifactId>com.continuuity.testing</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
@@ -37,6 +37,17 @@
 		<groupId>org.hamcrest</groupId>
 		<artifactId>hamcrest-all</artifactId>
 	<version>1.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>1.3.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.2.1</version>
     </dependency>
 
   </dependencies>
