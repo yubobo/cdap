@@ -143,6 +143,7 @@ public class SingleNodeMain {
     transactionManager.stopAndWait();
     zookeeper.stopAndWait();
     logAppenderInitializer.close();
+    externalAuthenticationServer.stopAndWait();
   }
 
   /**
