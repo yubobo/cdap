@@ -15,6 +15,7 @@ import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.gateway.Gateway;
+import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.gateway.collector.NettyFlumeCollector;
 import com.continuuity.gateway.router.NettyRouter;
 import com.continuuity.gateway.router.RouterModules;
@@ -79,7 +80,6 @@ public class SingleNodeMain {
     externalAuthenticationServer = injector.getInstance(ExternalAuthenticationServer.class);
 
     metricsCollectionService = injector.getInstance(MetricsCollectionService.class);
-
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
@@ -106,6 +106,7 @@ public class SingleNodeMain {
     zkDir.mkdir();
     zookeeper = InMemoryZKServer.builder().setDataDir(zkDir).build();
     zookeeper.startAndWait();
+    externalAuthenticationServer.startAndWait();
 
     configuration.set(Constants.Zookeeper.QUORUM, zookeeper.getConnectionStr());
 
@@ -187,6 +188,11 @@ public class SingleNodeMain {
    * @param args Our cmdline arguments
    */
   public static void main(String[] args) {
+
+//    Injector injector = Guice.createInjector(new IOModule(), new SecurityModule(), new ConfigModule());
+//    ExternalAuthenticationServer server = injector.getInstance(ExternalAuthenticationServer.class);
+//    server.startAndWait();
+
     CConfiguration configuration = CConfiguration.create();
 
     // Single node use persistent data fabric by default
@@ -250,6 +256,7 @@ public class SingleNodeMain {
     return ImmutableList.of(
       new ConfigModule(configuration, hConf),
       new IOModule(),
+      new AuthModule(),
       new DiscoveryRuntimeModule().getInMemoryModules(),
       new LocationRuntimeModule().getInMemoryModules(),
       new AppFabricServiceRuntimeModule().getInMemoryModules(),
@@ -292,7 +299,7 @@ public class SingleNodeMain {
       },
       new ConfigModule(configuration, hConf),
       new IOModule(),
-      new SecurityModule(),
+      new AuthModule(),
       new DiscoveryRuntimeModule().getSingleNodeModules(),
       new LocationRuntimeModule().getSingleNodeModules(),
       new AppFabricServiceRuntimeModule().getSingleNodeModules(),
@@ -301,6 +308,7 @@ public class SingleNodeMain {
       new DataFabricModules().getSingleNodeModules(configuration),
       new MetricsClientRuntimeModule().getSingleNodeModules(),
       new LoggingModules().getSingleNodeModules(),
-      new RouterModules().getSingleNodeModules());
+      new RouterModules().getSingleNodeModules(),
+      new SecurityModule());
   }
 }

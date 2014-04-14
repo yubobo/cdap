@@ -2,6 +2,7 @@ package com.continuuity.gateway.router.handlers;
 
 import com.continuuity.gateway.router.HeaderDecoder;
 import com.continuuity.gateway.router.RouterServiceLookup;
+import com.continuuity.security.auth.Validator;
 import org.apache.twill.discovery.Discoverable;
 import com.google.common.base.Supplier;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -15,10 +16,17 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.net.InetSocketAddress;
+
+
 
 /**
  * Proxies incoming requests to a discoverable endpoint.
@@ -30,26 +38,64 @@ public class InboundHandler extends SimpleChannelUpstreamHandler {
   private final RouterServiceLookup serviceLookup;
 
   private volatile Channel outboundChannel;
+  private Validator tokenValidator;
+  private boolean securityEnabled;
 
-  public InboundHandler(ClientBootstrap clientBootstrap, final RouterServiceLookup serviceLookup) {
+  public InboundHandler(ClientBootstrap clientBootstrap, final RouterServiceLookup serviceLookup,
+                        Validator tokenValidator, boolean securityEnabled) {
     this.clientBootstrap = clientBootstrap;
     this.serviceLookup = serviceLookup;
+    this.tokenValidator = tokenValidator;
+    this.securityEnabled = securityEnabled;
   }
 
   private void openOutboundAndWrite(MessageEvent e) throws Exception {
     final ChannelBuffer msg = (ChannelBuffer) e.getMessage();
+
     msg.markReaderIndex();
 
     // Suspend incoming traffic until connected to the outbound service.
     final Channel inboundChannel = e.getChannel();
     inboundChannel.setReadable(false);
 
+    //Decoding the header
+    final HeaderDecoder.HeaderInfo headerInfo = HeaderDecoder.decodeHeader(msg);
+    String accessToken = headerInfo.getToken();
+
+    if (securityEnabled) {
+      Validator.State tokenState = tokenValidator.validate(accessToken);
+      boolean tokenValidFlag = true;
+      HttpResponse httpResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNAUTHORIZED);
+      switch (tokenState) {
+        case TOKEN_MISSING:
+          httpResponse.addHeader("WWW-Authenticate", "Bearer realm = example");
+          httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, 0);
+          tokenValidFlag = false;
+          break;
+
+        case TOKEN_INVALID:
+          httpResponse.addHeader("WWW-Authenticate", "Bearer realm=\"example\",\n" +
+            "                       error=\"invalid_token\",\n" +
+            "                       error_description=\"The access token expired\"");
+          httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, 0);
+          tokenValidFlag = false;
+          break;
+      }
+      if (!tokenValidFlag) {
+        inboundChannel.getPipeline().addLast("encoder", new HttpResponseEncoder());
+        e.getChannel().write(httpResponse).addListener(ChannelFutureListener.CLOSE);
+        return;
+      }
+  }
+
+
     // Discover endpoint.
     int inboundPort = ((InetSocketAddress) inboundChannel.getLocalAddress()).getPort();
     Discoverable discoverable = serviceLookup.getDiscoverable(inboundPort, new Supplier<HeaderDecoder.HeaderInfo>() {
       @Override
       public HeaderDecoder.HeaderInfo get() {
-        return HeaderDecoder.decodeHeader(msg);
+        return headerInfo;
+        //return HeaderDecoder.decodeHeader(msg);
       }
     });
 

@@ -2,8 +2,13 @@ package com.continuuity.security.server;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
+import com.continuuity.common.guice.ConfigModule;
+import com.continuuity.common.guice.IOModule;
+import com.continuuity.security.guice.SecurityModule;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
@@ -79,5 +84,9 @@ public class ExternalAuthenticationServer extends AbstractExecutionThreadService
     }
   }
 
-
+  public static void main(String[] args) {
+    Injector injector = Guice.createInjector(new ConfigModule(), new IOModule(), new SecurityModule());
+    ExternalAuthenticationServer server = injector.getInstance(ExternalAuthenticationServer.class);
+    server.startAndWait();
+  }
 }

@@ -9,6 +9,8 @@ import com.continuuity.security.auth.AccessTokenIdentifierCodec;
 import com.continuuity.security.auth.Codec;
 import com.continuuity.security.auth.KeyManager;
 import com.continuuity.security.auth.TokenManager;
+import com.continuuity.security.auth.TokenValidator;
+import com.continuuity.security.auth.Validator;
 import com.continuuity.security.server.BasicAuthenticationHandler;
 import com.continuuity.security.server.ExternalAuthenticationServer;
 import com.continuuity.security.server.GrantAccessTokenHandler;
@@ -23,7 +25,6 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.handler.HandlerList;
-
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 
@@ -55,6 +56,11 @@ public class SecurityModule extends PrivateModule {
                   .to(cConf.getLong(Constants.Security.TOKEN_EXPIRATION, Constants.Security.DEFAULT_TOKEN_EXPIRATION));
 
     expose(TokenManager.class);
+
+    //bind(TokenValidator.class).in(Scopes.SINGLETON);
+    bind(Validator.class).to(TokenValidator.class);
+    expose(Validator.class);
+
     expose(ExternalAuthenticationServer.class);
   }
 

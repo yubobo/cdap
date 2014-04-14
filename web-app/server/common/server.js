@@ -204,7 +204,7 @@ WebAppServer.prototype.bindRoutes = function() {
   /**
    * User Metrics Discovery
    */
-  this.app.get('/rest/metrics/user/*', function (req, res) {
+  this.app.get('/rest/metrics/user/*', this.checkAuth, function (req, res) {
 
     var path = req.url.slice(18);
 
@@ -215,7 +215,10 @@ WebAppServer.prototype.bindRoutes = function() {
       port: self.config['gateway.server.port'],
       method: 'GET',
       path: '/' + self.API_VERSION + '/metrics/available' + path,
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: { 
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token
+      }
     };
 
     var request = self.lib.request(options, function(response) {
@@ -259,10 +262,11 @@ WebAppServer.prototype.bindRoutes = function() {
     res.sendfile(path.resolve(__dirname + '../../../client/test/TestRunner.html'));
   });
 
+
   /*
    * REST DELETE handler.
    */
-  this.app.del('/rest/*', function (req, res) {
+  this.app.del('/rest/*', this.checkAuth, function (req, res) {
 
     var url = self.config['gateway.server.address'] + ':' + self.config['gateway.server.port'];
     var path = url + req.url.replace('/rest', '/' + self.API_VERSION);
@@ -270,7 +274,10 @@ WebAppServer.prototype.bindRoutes = function() {
     request({
       method: 'DELETE',
       url: 'http://' + path,
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: { 
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token 
+      }
     }, function (error, response, body) {
 
       if (!error && response.statusCode === 200) {
@@ -290,13 +297,16 @@ WebAppServer.prototype.bindRoutes = function() {
   /*
    * REST PUT handler.
    */
-  this.app.put('/rest/*', function (req, res) {
+  this.app.put('/rest/*', this.checkAuth, function (req, res) {
     var url = self.config['gateway.server.address'] + ':' + self.config['gateway.server.port'];
     var path = url + req.url.replace('/rest', '/' + self.API_VERSION);
     var opts = {
       method: 'PUT',
       url: 'http://' + path,
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: { 
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token 
+      }
     };
 
     if (req.body) {
@@ -325,13 +335,16 @@ WebAppServer.prototype.bindRoutes = function() {
   /**
    * Promote handler.
    */
-  this.app.post('/rest/apps/:appId/promote', function (req, res) {
+  this.app.post('/rest/apps/:appId/promote', this.checkAuth, function (req, res) {
     var url = self.config['gateway.server.address'] + ':' + self.config['gateway.server.port'];
     var path = url + req.url.replace('/rest', '/' + self.API_VERSION);
     var opts = {
       method: 'POST',
       url: 'http://' + path,
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: {
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token 
+      }
     };
 
     if (req.body) {
@@ -340,7 +353,8 @@ WebAppServer.prototype.bindRoutes = function() {
       };
       opts.body = JSON.stringify(opts.body) || '';
       opts.headers = {
-        'X-Continuuity-ApiKey': req.body.apiKey
+        'X-Continuuity-ApiKey': req.body.apiKey,
+        'Authorization': 'Bearer ' + req.session.token
       };
     }
 
@@ -362,13 +376,16 @@ WebAppServer.prototype.bindRoutes = function() {
   /*
    * REST POST handler.
    */
-  this.app.post('/rest/*', function (req, res) {
+  this.app.post('/rest/*', this.checkAuth, function (req, res) {
     var url = self.config['gateway.server.address'] + ':' + self.config['gateway.server.port'];
     var path = url + req.url.replace('/rest', '/' + self.API_VERSION);
     var opts = {
       method: 'POST',
       url: 'http://' + path,
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: { 
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token
+      }
     };
 
     if (req.body) {
@@ -397,7 +414,7 @@ WebAppServer.prototype.bindRoutes = function() {
   /*
    * REST GET handler.
    */
-  this.app.get('/rest/*', function (req, res) {
+  this.app.get('/rest/*', this.checkAuth, function (req, res) {
 
     var url = self.config['gateway.server.address'] + ':' + self.config['gateway.server.port'];
     var path = url + req.url.replace('/rest', '/' + self.API_VERSION);
@@ -405,7 +422,10 @@ WebAppServer.prototype.bindRoutes = function() {
     var opts = {
       method: 'GET',
       url: 'http://' + path,
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: { 
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token
+      }
     };
 
     request(opts, function (error, response, body) {
@@ -426,7 +446,7 @@ WebAppServer.prototype.bindRoutes = function() {
   /*
    * Metrics Handler
    */
-  this.app.post('/metrics', function (req, res) {
+  this.app.post('/metrics', this.checkAuth, function (req, res) {
 
     var pathList = req.body;
     var accountID = 'developer';
@@ -454,7 +474,8 @@ WebAppServer.prototype.bindRoutes = function() {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': content.length,
-        'X-Continuuity-ApiKey': req.session ? req.session.api_key : ''
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token
       }
     };
 
@@ -496,14 +517,17 @@ WebAppServer.prototype.bindRoutes = function() {
   /**
    * Upload an Application archive.
    */
-  this.app.post('/upload/:file', function (req, res) {
+  this.app.post('/upload/:file', this.checkAuth, function (req, res) {
     var url = 'http://' + self.config['gateway.server.address'] + ':' +
       self.config['gateway.server.port'] + '/' + self.API_VERSION + '/apps';
 
     var opts = {
       method: 'POST',
       url: url,
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: { 
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token
+      }
     };
 
     var x = request.post(opts);
@@ -518,7 +542,10 @@ WebAppServer.prototype.bindRoutes = function() {
       port: self.config['gateway.server.port'],
       path: '/' + self.API_VERSION + '/deploy/status',
       method: 'GET',
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: { 
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token
+      }
     };
 
     var request = self.lib.request(options, function (response) {
@@ -545,14 +572,17 @@ WebAppServer.prototype.bindRoutes = function() {
 
   });
 
-  this.app.post('/unrecoverable/reset', function (req, res) {
+  this.app.post('/unrecoverable/reset', this.checkAuth, function (req, res) {
 
     var host = self.config['gateway.server.address'] + ':' + self.config['gateway.server.port'];
 
     var opts = {
       method: 'POST',
       url: 'http://' + host + '/' + self.API_VERSION + '/unrecoverable/reset',
-      headers: { 'X-Continuuity-ApiKey': req.session ? req.session.api_key : '' }
+      headers: { 
+        'X-Continuuity-ApiKey': req.session ? req.session.api_key : '',
+        'Authorization': 'Bearer ' + req.session.token
+      }
     };
 
     request(opts, function (error, response, body) {

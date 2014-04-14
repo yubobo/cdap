@@ -134,6 +134,8 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 	 */
 	C.Router.map(function() {
 
+		this.resource('Login', { path: '/login' } );
+
 		this.resource('Overview', { path: '/overview' } );
 
 		this.resource('Resources', { path: '/resources' } );
@@ -264,6 +266,8 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
         this.transitionTo('Overview');
       }
     }),
+
+    LoginRoute: basicRouter.extend(),
 
 		OverviewRoute: basicRouter.extend(),
 
