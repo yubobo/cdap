@@ -141,6 +141,23 @@ function(Components, Embeddables, HTTP, Util) {
 				 self.setupEnvironment(response);
 			});
 
+
+		},
+
+		/**
+		 * Sets up authentication on the global Ember application.
+		 */
+		setupAuth: function () {
+			/**
+			 * Recieves response of type {token: <token>}
+			 */
+			HTTP.create().get('getsession', function (resp) {
+				if ('token' in resp) {
+					C.Env.set('auth', resp.token);
+				} else {
+					C.Env.set('auth', '');
+				}
+			});
 		},
 
 		setupEnvironment: function (env) {
@@ -343,7 +360,9 @@ function(Components, Embeddables, HTTP, Util) {
 			 * See "advanceReadiness" in the "setupEnvironment" call above.
 			 */
 			C.deferReadiness();
-			C.initialize(HTTP.create());
+			var http = HTTP.create();
+			C.initialize(http);
+			C.setupAuth(http);
 
 		}
 	});

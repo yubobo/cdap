@@ -611,8 +611,15 @@
     <property>
         <name>security.server.token.expiration.ms</name>
         <description>AccessToken expiration time in milliseconds</description>
-        <value>10000</value>
+        <value>1000000</value>
     </property>
-
+    <!--
+        Security Enabled setting
+    -->
+    <property>
+        <name>security.enabled</name>
+        <value>true</value>
+        <description> If false the router will not go validating the Access token</description>
+    </property>
 
 </configuration>

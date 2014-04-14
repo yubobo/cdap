@@ -3,6 +3,9 @@ package com.continuuity.gateway.router;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.gateway.router.handlers.InboundHandler;
+import com.continuuity.security.auth.*;
+import com.continuuity.security.auth.TokenValidator;
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -13,15 +16,9 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.DirectChannelBufferFactory;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelEvent;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelUpstreamHandler;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientBossPool;
@@ -60,12 +57,15 @@ public class NettyRouter extends AbstractIdleService {
   private final ChannelGroup channelGroup = new DefaultChannelGroup("server channels");
   private final RouterServiceLookup serviceLookup;
 
+  private boolean securityEnabled = false;
+
   private ServerBootstrap serverBootstrap;
   private ClientBootstrap clientBootstrap;
+  private Validator tokenValidator;
 
   @Inject
   public NettyRouter(CConfiguration cConf, @Named(Constants.Router.ADDRESS) InetAddress hostname,
-                     RouterServiceLookup serviceLookup) {
+                     RouterServiceLookup serviceLookup, Validator tokenValidator) {
 
     this.serverBossThreadPoolSize = cConf.getInt(Constants.Router.SERVER_BOSS_THREADS,
                                                  Constants.Router.DEFAULT_SERVER_BOSS_THREADS);
@@ -78,8 +78,10 @@ public class NettyRouter extends AbstractIdleService {
                                                  Constants.Router.DEFAULT_CLIENT_BOSS_THREADS);
     this.clientWorkerThreadPoolSize = cConf.getInt(Constants.Router.CLIENT_WORKER_THREADS,
                                                    Constants.Router.DEFAULT_CLIENT_WORKER_THREADS);
-
+    this.securityEnabled = cConf.getBoolean(Constants.Security.SECURITY_ENABLED,
+                                            Constants.Security.DEFAULT_SECURITY_ENABLED);
     this.hostname = hostname;
+    this.tokenValidator = tokenValidator;
     this.forwards = Sets.newHashSet(cConf.getStrings(Constants.Router.FORWARD, Constants.Router.DEFAULT_FORWARD));
     Preconditions.checkState(!this.forwards.isEmpty(), "Require at least one forward rule for router to start");
     LOG.info("Forwards - {}", this.forwards);
@@ -141,7 +143,7 @@ public class NettyRouter extends AbstractIdleService {
     serverBootstrap = new ServerBootstrap(
       new NioServerSocketChannelFactory(serverBossExecutor, serverWorkerExecutor));
     serverBootstrap.setOption("backlog", serverConnectionBacklog);
-    serverBootstrap.setOption("bufferFactory", new DirectChannelBufferFactory());
+    serverBootstrap.setOption("child.bufferFactory", new DirectChannelBufferFactory());
 
     // Setup the pipeline factory
     serverBootstrap.setPipelineFactory(
@@ -151,7 +153,7 @@ public class NettyRouter extends AbstractIdleService {
           ChannelPipeline pipeline = Channels.pipeline();
           pipeline.addLast("tracker", connectionTracker);
           pipeline.addLast("inbound-handler",
-                           new InboundHandler(clientBootstrap, serviceLookup));
+                           new InboundHandler(clientBootstrap, serviceLookup, tokenValidator, securityEnabled));
           return pipeline;
         }
       }
