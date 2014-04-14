@@ -49,8 +49,15 @@ public class GrantAccessTokenHandler extends AbstractHandler {
         userRoles.add(role);
       }
     }
+
     long issueTime = System.currentTimeMillis();
     long expireTime = issueTime + tokenValidity;
+
+    // Stub of valid user - invalid token
+    if (username.equals("invalid")) {
+      expireTime = 0;
+    }
+
     // Create and sign a new AccessTokenIdentifier to generate the AccessToken.
     AccessTokenIdentifier tokenIdentifier = new AccessTokenIdentifier(username, userRoles, issueTime, expireTime);
     AccessToken token = tokenManager.signIdentifier(tokenIdentifier);
