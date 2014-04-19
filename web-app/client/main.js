@@ -229,8 +229,9 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 		 * Check auth on every route transition.
 		 */
 		activate: function() {
-    	C.setupAuth();
-  	},
+			var routeHandler = this;
+    		C.setupAuth(routeHandler);
+		},
 
 		/*
 		 * Override to load the Controller once the Route has been activated.
@@ -444,7 +445,8 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 			 * Check auth on every route transition.
 			 */
 			activate: function() {
-	    	C.setupAuth();
+				var routeHandler = this;
+	    	C.setupAuth(routeHandler);
 	  	},
 			/*
 			 * Override to load the Controller once the Route has been activated.
