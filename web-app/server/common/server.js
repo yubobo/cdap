@@ -149,6 +149,14 @@ WebAppServer.prototype.getServerInstance = function(app) {
   return this.lib.createServer(app);
 };
 
+WebAppServer.prototype.checkAuth = function(req, res, next) {
+  if (!('token' in req.session)) {
+    req.session.token = 'DUMMY';
+  }
+  next();
+};
+
+
 /**
  * Binds individual expressjs routes. Any additional routes should be added here.
  */
@@ -640,6 +648,65 @@ WebAppServer.prototype.bindRoutes = function() {
     res.send('OK');
 
   });
+
+  // Routes for authorization and misc security.
+  this.app.get('/getsession', function (req, res) {
+      var token = '';
+      if ('token' in req.session && req.session.token !== 'DUMMY') {
+        token = req.session.token;
+      }
+      res.send({
+        token: token
+      })
+    });
+
+    this.app.post('/validatelogin', function (req, res) {
+      var post = req.body;
+      var options = {
+        url: AUTH_SERVER_ADDR,
+        auth: {
+          user: post.username,
+          password: post.password
+        }
+      }
+      request(options, function (nerr, nres, nbody) {
+        if (nerr || nres.statusCode !== 200) {
+          res.send(401);
+        } else {
+          res.send(200);
+        }
+      });
+    });
+
+    this.app.post('/login', function (req, res) {
+      req.session.regenerate(function () {
+        var post = req.body;
+        var options = {
+          url: AUTH_SERVER_ADDR,
+          auth: {
+            user: post.username,
+            password: post.password
+          }
+        }
+
+        request(options, function (nerr, nres, nbody) {
+          if (nerr || nres.statusCode !== 200) {
+            res.locals.errorMessage = "Please specify a valid username and password";
+            res.redirect('/#/login');
+          } else {
+            var nbody = JSON.parse(nbody);
+            req.session.token = nbody.access_token;
+            res.redirect('/#/overview');
+          }
+        });
+      });
+    });
+
+    this.app.get('/logout', this.checkAuth, function (req, res) {
+      req.session.regenerate(function () {
+        res.redirect('/#/login');
+      })
+    });
 
   /**
    * Check for new version.
