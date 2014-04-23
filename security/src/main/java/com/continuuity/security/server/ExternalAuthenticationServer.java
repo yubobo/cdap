@@ -2,13 +2,8 @@ package com.continuuity.security.server;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
-import com.continuuity.common.guice.ConfigModule;
-import com.continuuity.common.guice.IOModule;
-import com.continuuity.security.guice.SecurityModule;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
@@ -30,6 +25,16 @@ public class ExternalAuthenticationServer extends AbstractExecutionThreadService
   private final HandlerList handlers;
   private static final Logger LOG = LoggerFactory.getLogger(ExternalAuthenticationServer.class);
   private Server server;
+
+  /**
+   * Constants for a valid JSON response.
+   */
+  protected static final class ResponseFields {
+    protected static final String TOKEN_TYPE = "token_type";
+    protected static final String TOKEN_TYPE_BODY = "Bearer";
+    protected static final String ACCESS_TOKEN = "access_token";
+    protected static final String EXPIRES_IN = "expires_in";
+  }
 
   @Inject
   public ExternalAuthenticationServer(CConfiguration configuration, @Named("security.handlers") HandlerList handlers) {
@@ -82,11 +87,5 @@ public class ExternalAuthenticationServer extends AbstractExecutionThreadService
       LOG.error("Error stopping ExternalAuthenticationServer.");
       LOG.error(e.getMessage());
     }
-  }
-
-  public static void main(String[] args) {
-    Injector injector = Guice.createInjector(new ConfigModule(), new IOModule(), new SecurityModule());
-    ExternalAuthenticationServer server = injector.getInstance(ExternalAuthenticationServer.class);
-    server.startAndWait();
   }
 }

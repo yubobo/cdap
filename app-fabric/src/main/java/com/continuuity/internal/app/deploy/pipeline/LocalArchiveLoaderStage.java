@@ -4,7 +4,7 @@
 
 package com.continuuity.internal.app.deploy.pipeline;
 
-import com.continuuity.api.ApplicationSpecification;
+import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.Id;
 import com.continuuity.app.deploy.ConfigResponse;
 import com.continuuity.internal.app.ApplicationSpecificationAdapter;
@@ -12,12 +12,12 @@ import com.continuuity.internal.app.ForwardingApplicationSpecification;
 import com.continuuity.internal.app.deploy.InMemoryConfigurator;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
 import com.continuuity.pipeline.AbstractStage;
-import org.apache.twill.filesystem.Location;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.apache.twill.filesystem.Location;
 
-import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  * LocalArchiveLoaderStage gets a {@link Location} and emits a {@link ApplicationSpecification}.

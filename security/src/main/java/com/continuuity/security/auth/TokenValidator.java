@@ -1,40 +1,34 @@
 package com.continuuity.security.auth;
-import com.google.common.base.Charsets;
-import com.google.inject.Inject;
-import org.apache.commons.codec.binary.Base64;
-
 
 /**
- * This class validates the accessToken and returns the different states
- * of accessToken validation.
+ * Interface TokenValidator to validate the access token.
  */
-public class TokenValidator implements Validator{
-  private TokenManager tokenManager;
-  private Codec<AccessToken> accessTokenCodec;
+public interface TokenValidator {
+  /**
+   * Different states attained after validating the token
+   */
+  enum State {
+    TOKEN_MISSING("Token is missing."),
+    TOKEN_INVALID("Invalid token signature."),
+    TOKEN_EXPIRED("Expired token."),
+    TOKEN_INTERNAL("Invalid key for token."),
+    TOKEN_VALID("Token is valid."),
+    TOKEN_UNAUTHORIZED("Token is unauthorized.");
 
-  @Inject
-  public TokenValidator(TokenManager tokenManager, Codec<AccessToken> accessTokenCodec) {
-    this.tokenManager = tokenManager;
-    this.accessTokenCodec = accessTokenCodec;
+    private final String msg;
+
+    State(String msg) {
+      this.msg = msg;
+    }
+    public String getMsg() {
+      return msg;
+    }
   }
 
-  public State validate(String token) {
-    State state = State.TOKEN_VALID;
-    if (token == null) {
-      state = State.TOKEN_MISSING;
-      return state;
-    }
-    byte[] decodedToken = Base64.decodeBase64(token);
-    System.out.println(new String(decodedToken, Charsets.UTF_8));
-    try {
-      AccessToken accessToken = accessTokenCodec.decode(decodedToken);
-      tokenManager.validateSecret(accessToken);
-    } catch (Exception e) {
-        state = State.TOKEN_INVALID;
-    }
-    return state;
-  }
-
-
+  /**
+   *
+   * @param token The token to be validated.
+   * @return The state after validation.
+   */
+  State validate(String token);
 }
-

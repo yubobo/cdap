@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class WorkflowClient {
 
-  private static Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
+  private static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
   private final AsyncHttpClient httpClient;
   private final DiscoveryServiceClient discoveryServiceClient;
   @Inject
@@ -79,7 +79,7 @@ public class WorkflowClient {
     /**
      * Status code.
      */
-    public enum Code {NOT_FOUND, OK, ERROR}
+    public enum Code { NOT_FOUND, OK, ERROR }
 
     private final Code code;
 
