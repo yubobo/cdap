@@ -13,9 +13,6 @@ var WebAppServer = require('../common/server');
 // Default port for the Dashboard.
 var DEFAULT_BIND_PORT = 9999;
 
-// Authentication server address.
-var AUTH_SERVER_ADDR = "http://localhost:10009";
-
 /**
  * Set environment.
  */
@@ -69,74 +66,6 @@ DevServer.prototype.getConfig = function(opt_callback) {
   });
 };
 
-DevServer.prototype.checkAuth = function(req, res, next) {
-  if (!('token' in req.session)) {
-    req.session.token = 'DUMMY';
-  }
-  next();
-};
-
-DevServer.prototype.enableAuth = function() {
-
-  this.app.get('/getsession', function (req, res) {
-    var token = '';
-    if ('token' in req.session && req.session.token !== 'DUMMY') {
-      token = req.session.token;
-    }
-    res.send({
-      token: token
-    })
-  });
-
-  this.app.post('/validatelogin', function (req, res) {
-    var post = req.body;
-    var options = {
-      url: AUTH_SERVER_ADDR,
-      auth: {
-        user: post.username,
-        password: post.password
-      }
-    }
-    request(options, function (nerr, nres, nbody) {
-      if (nerr || nres.statusCode !== 200) {
-        res.send(401);
-      } else {
-        res.send(200);
-      }
-    });
-  });
-
-  this.app.post('/login', function (req, res) {
-    req.session.regenerate(function () {
-      var post = req.body;
-      var options = {
-        url: AUTH_SERVER_ADDR,
-        auth: {
-          user: post.username,
-          password: post.password
-        }
-      }
-
-      request(options, function (nerr, nres, nbody) {
-        if (nerr || nres.statusCode !== 200) {
-          res.locals.errorMessage = "Please specify a valid username and password";
-          res.redirect('/#/login');
-        } else {
-          var nbody = JSON.parse(nbody);
-          req.session.token = nbody.access_token;
-          res.redirect('/#/overview');
-        }
-      });
-    });
-  });
-
-  this.app.get('/logout', this.checkAuth, function (req, res) {
-    req.session.regenerate(function () {
-      res.redirect('/#/login');
-    })
-  });  
-};
-
 /**
  * Starts the server after getting config, sets up socket io, configures route handlers.
  */
@@ -149,7 +78,6 @@ DevServer.prototype.start = function() {
     this.setEnvironment('local', 'Development Kit', version, function () {
 
       this.bindRoutes();
-      this.enableAuth();
 
       if (!('dashboard.bind.port' in this.config)) {
         this.config['dashboard.bind.port'] = DEFAULT_BIND_PORT;
