@@ -1,5 +1,7 @@
 package com.continuuity.internal.data.dataset.schema;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,21 +30,39 @@ public class SchemaTest {
       .add("address", FieldType.map(FieldType.STRING, FieldType.STRING))
       .build();
 
-    // {name:STRING,age:INT,...,kids:[{name:STRING,age:INT}],address:(STRING->STRING)}
-    // {
-    //   name: STRING,
-    //   age: INT,...,
-    //   kids:[
-    //     {
-    //       name:STRING,
-    //       age:INT
-    //     }
-    //   ],
-    //   "net:worth ": LONG,
-    //   address: (STRING->STRING)}
-
     Assert.assertTrue(schema.hasField("weight"));
     Assert.assertTrue(schema.getType("kids").isList());
     Assert.assertTrue(schema.getType("kids").getElementType().isRecord());
+
+    Record record = DefaultRecord.of(schema)
+      .set("name", "Poorna")
+      .set("age", 34)
+      .set("net worth", 10000000000L)
+      .set("alive", true)
+      .set("weight", 123.4F)
+      .set("kloutscore", 123456.123456)
+      .set("secret", new byte[] {0, 1, 2})
+      .set("kids", ImmutableList.of(
+        DefaultRecord.of(schema.getType("kids").getElementType().getRecordSchema())
+        .set("name", "Anna")
+        .set("age", 12)
+        .build()
+      ))
+      .set("address", ImmutableMap.of("city", "sunnyvale"))
+      .build();
   }
 }
+
+// {name:STRING,age:INT,...,kids:[{name:STRING,age:INT}],address:(STRING->STRING)}
+// {
+//   name: STRING,
+//   age: INT,...,
+//   kids:[
+//     {
+//       name:STRING,
+//       age:INT
+//     }
+//   ],
+//   "net:worth ": LONG,
+//   address: (STRING->STRING)}
+

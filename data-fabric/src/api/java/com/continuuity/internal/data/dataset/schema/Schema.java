@@ -1,5 +1,6 @@
 package com.continuuity.internal.data.dataset.schema;
 
+import com.continuuity.common.utils.ImmutablePair;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -14,7 +15,7 @@ import java.util.Map;
 public final class Schema {
 
   private final List<String> names;
-  private final Map<String, FieldType> fields;
+  private final Map<String, ImmutablePair<Integer, FieldType>> fields;
 
   /**
    * @param fieldName name of the field
@@ -23,11 +24,39 @@ public final class Schema {
    * out whether a field exists.
    */
   public FieldType getType(String fieldName) {
-    FieldType fType = fields.get(fieldName);
-    if (fType == null) {
+    ImmutablePair<Integer, FieldType> entry = fields.get(fieldName);
+    if (entry == null) {
       throw new IllegalArgumentException("field '" + fieldName + "' does not exist in schema");
     }
-    return fType;
+    return entry.getSecond();
+  }
+
+  /**
+   * @param fieldName name of the field
+   * @return the psotion of that field.
+   * @throws java.lang.IllegalArgumentException if the field does not exist. Use {@link #hasField(String)} to find
+   * out whether a field exists.
+   */
+  public Integer getPosition(String fieldName) {
+    ImmutablePair<Integer, FieldType> entry = fields.get(fieldName);
+    if (entry == null) {
+      throw new IllegalArgumentException("field '" + fieldName + "' does not exist in schema");
+    }
+    return entry.getFirst();
+  }
+
+  /**
+   * @param fieldName name of the field
+   * @return a pair consisting oi the position and the type of that field.
+   * @throws java.lang.IllegalArgumentException if the field does not exist. Use {@link #hasField(String)} to find
+   * out whether a field exists.
+   */
+  public ImmutablePair<Integer, FieldType> getPositionAndType(String fieldName) {
+    ImmutablePair<Integer, FieldType> entry = fields.get(fieldName);
+    if (entry == null) {
+      throw new IllegalArgumentException("field '" + fieldName + "' does not exist in schema");
+    }
+    return entry;
   }
 
   /**
@@ -45,9 +74,19 @@ public final class Schema {
     return names;
   }
 
-  private Schema(Map<String, FieldType> fields, List<String> names) {
+  private Schema(Map<String, ImmutablePair<Integer, FieldType>> fields, List<String> names) {
     this.fields = ImmutableMap.copyOf(fields);
     this.names = ImmutableList.copyOf(names);
+  }
+
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
+    }
+    if (other == null || other.getClass() != this.getClass()) {
+      return false;
+    }
+    return fields.equals(((Schema) other).fields);
   }
 
   public static Builder builder() {
@@ -59,11 +98,11 @@ public final class Schema {
    */
   public static class Builder {
 
-    private Map<String, FieldType> fields = Maps.newHashMap();
+    private Map<String, ImmutablePair<Integer, FieldType>> fields = Maps.newHashMap();
     private List<String> fieldNames = Lists.newLinkedList();
 
     public Builder add(String name, FieldType type) {
-      fields.put(name, type);
+      fields.put(name, ImmutablePair.of(fieldNames.size(), type));
       fieldNames.add(name);
       return this;
     }
