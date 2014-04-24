@@ -68,6 +68,8 @@ WebAppServer.prototype.configSet = false;
  */
 var PRODUCT_VERSION, PRODUCT_ID, PRODUCT_NAME, IP_ADDRESS;
 
+var SECURITY_ENABLED;
+
 /**
  * Sets version if a version file exists.
  */
@@ -78,6 +80,8 @@ WebAppServer.prototype.setEnvironment = function(id, product, version, callback)
   PRODUCT_ID = id;
   PRODUCT_NAME = product;
   PRODUCT_VERSION = version;
+
+  SECURITY_ENABLED = true;
 
   this.logger.info('PRODUCT_ID', PRODUCT_ID);
   this.logger.info('PRODUCT_NAME', PRODUCT_NAME);
@@ -613,7 +617,8 @@ WebAppServer.prototype.bindRoutes = function() {
       'product_id': PRODUCT_ID,
       'product_name': PRODUCT_NAME,
       'product_version': PRODUCT_VERSION,
-      'ip': IP_ADDRESS
+      'ip': IP_ADDRESS,
+      'security_enabled': SECURITY_ENABLED
     };
 
     if (req.session.account_id) {

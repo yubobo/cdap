@@ -230,7 +230,9 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 		 */
 		activate: function() {
 			var routeHandler = this;
-    		C.setupAuth(routeHandler);
+			if (C.Env.security_enabled === true) {
+				C.setupAuth(routeHandler);
+			}
 		},
 
 		/*
@@ -446,7 +448,9 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 			 */
 			activate: function() {
 				var routeHandler = this;
-	    	C.setupAuth(routeHandler);
+				if (C.Env.security_enabled === true) {
+				  C.setupAuth(routeHandler);
+				}
 	  	},
 			/*
 			 * Override to load the Controller once the Route has been activated.

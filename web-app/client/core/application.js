@@ -170,6 +170,7 @@ function(Components, Embeddables, HTTP, Util) {
 			C.Env.set('productName', env.product_name);
 			C.Env.set('ip', env.ip);
 			C.Env.set('nux', !!env.nux);
+			C.Env.set('security_enabled', env.security_enabled)
 
 			$('title').text(env.product_name + ' » Continuuity');
 
@@ -365,7 +366,9 @@ function(Components, Embeddables, HTTP, Util) {
 			C.deferReadiness();
 			var http = HTTP.create();
 			C.initialize(http);
-			C.setupAuth(http);
+			if (C.Env.security_enabled === true) {
+			  C.setupAuth(http);
+			}
 
 		}
 	});

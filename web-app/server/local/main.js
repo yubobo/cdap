@@ -5,8 +5,7 @@
 var util = require("util"),
   fs = require('fs'),
   xml2js = require('xml2js'),
-  sys = require('sys'),
-  request = require('request');
+  sys = require('sys');
 
 var WebAppServer = require('../common/server');
 
