@@ -1,6 +1,7 @@
 package com.continuuity.internal.data.dataset.schema;
 
 import com.continuuity.common.utils.ImmutablePair;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -80,19 +81,31 @@ public final class Schema {
   }
 
   @Override
-  public boolean equals(Object other) {
-    if (this == other) {
+  public boolean equals(Object o) {
+    if (this == o) {
       return true;
     }
-    if (other == null || other.getClass() != this.getClass()) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    return fields.equals(((Schema) other).fields);
+
+    Schema that = (Schema) o;
+
+    return Objects.equal(this.names, that.names) &&
+      Objects.equal(this.fields, that.fields);
   }
 
   @Override
   public int hashCode() {
-    return fields.hashCode();
+    return Objects.hashCode(names, fields);
+  }
+
+  @Override
+  public String toString() {
+    return Objects.toStringHelper(this)
+      .add("names", names)
+      .add("fields", fields)
+      .toString();
   }
 
   public static Builder builder() {

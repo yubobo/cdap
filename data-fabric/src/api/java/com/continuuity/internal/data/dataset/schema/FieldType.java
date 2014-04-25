@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public final class FieldType {
 
-  private enum Type {
+  enum Type {
 
     INT(true, Integer.class),
     LONG(true, Long.class),
@@ -153,6 +153,16 @@ public final class FieldType {
     return Objects.hashCode(type, recordSchema, subType1, subType2);
   }
 
+  @Override
+  public String toString() {
+    return Objects.toStringHelper(this)
+      .add("type", type)
+      .add("subType1", subType1)
+      .add("subType2", subType2)
+      .add("recordSchema", recordSchema)
+      .toString();
+  }
+
   public void validateType(Object value, Validate validate) {
     if (value == null || validate == Validate.OFF) {
       return;
@@ -208,5 +218,9 @@ public final class FieldType {
         fieldType.validateType(fieldValue, validate);
       }
     }
+  }
+
+  Type getType() {
+    return type;
   }
 }
