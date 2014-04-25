@@ -101,6 +101,10 @@ public final class FieldType {
     return type == Type.LIST;
   }
 
+  public boolean isScalar() {
+    return type.isScalar();
+  }
+
   public FieldType getElementType() {
     if (!isList()) {
       throw new IllegalArgumentException("not a list");

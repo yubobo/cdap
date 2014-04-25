@@ -108,6 +108,9 @@ public final class Schema {
     private List<String> fieldNames = Lists.newLinkedList();
 
     public Builder add(String name, FieldType type) {
+      if (type.isMap() && !type.getKeyType().isScalar()) {
+        throw new IllegalArgumentException("key type of a map must be a scalar type.");
+      }
       fields.put(name, ImmutablePair.of(fieldNames.size(), type));
       fieldNames.add(name);
       return this;
