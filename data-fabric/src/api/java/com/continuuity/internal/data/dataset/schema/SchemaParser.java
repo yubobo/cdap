@@ -4,6 +4,16 @@ import com.continuuity.common.utils.ImmutablePair;
 
 /**
  * Parses a String schema representation into a Schema.
+ * <p>
+ *   schema = name ':' type
+ *   type = record | map | list | primitive
+ *   record = "{" record-schema "}"
+ *   record-schema = schema "," record-schema | schema
+ *   map = "(" "STRING" "->" type ")"
+ *   list = "[" type "]"
+ *   primitive = "INT" | "LONG" | "FLOAT" | "DOUBLE" | "BOOLEAN" | "STRING" | "BINARY"
+ *   name = char | digit | "_"
+ * </p>
  */
 public final class SchemaParser {
   private final String schemaString;

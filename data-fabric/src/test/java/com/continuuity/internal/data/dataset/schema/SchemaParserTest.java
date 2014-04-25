@@ -32,6 +32,12 @@ public class SchemaParserTest {
                         SchemaParser.parse("lengths:(STRING->DOUBLE)"));
     Assert.assertEquals(Schema.builder().add("names", FieldType.map(FieldType.STRING, FieldType.BINARY)).build(),
                         SchemaParser.parse("names :\f   (STRING-> BINARY ) "));
+    Assert.assertEquals(Schema.builder().add("lengths",
+                                             FieldType.map(FieldType.STRING,
+                                                           FieldType.record(Schema.builder().add("size", FieldType.INT)
+                                                                              .build())
+                                             )).build(),
+                        SchemaParser.parse("lengths:(STRING->{ size : INT })"));
   }
 
   @Test
