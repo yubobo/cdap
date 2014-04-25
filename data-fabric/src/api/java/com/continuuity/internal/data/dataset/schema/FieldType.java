@@ -129,6 +129,7 @@ public final class FieldType {
     return recordSchema;
   }
 
+  @Override
   public boolean equals(Object other) {
     if (this == other) {
       return true;
@@ -141,6 +142,11 @@ public final class FieldType {
       && Objects.equal(recordSchema, ft.recordSchema)
       && Objects.equal(subType1, ft.subType1)
       && Objects.equal(subType2, ft.subType2);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(type, recordSchema, subType1, subType2);
   }
 
   public void validateType(Object value, Validate validate) {

@@ -79,6 +79,7 @@ public final class Schema {
     this.names = ImmutableList.copyOf(names);
   }
 
+  @Override
   public boolean equals(Object other) {
     if (this == other) {
       return true;
@@ -87,6 +88,11 @@ public final class Schema {
       return false;
     }
     return fields.equals(((Schema) other).fields);
+  }
+
+  @Override
+  public int hashCode() {
+    return fields.hashCode();
   }
 
   public static Builder builder() {
