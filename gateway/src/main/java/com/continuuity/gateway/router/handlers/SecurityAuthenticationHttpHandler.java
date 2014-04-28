@@ -2,16 +2,12 @@ package com.continuuity.gateway.router.handlers;
 
 
 import com.continuuity.common.conf.Constants;
-import com.continuuity.common.guice.DiscoveryRuntimeModule;
-import com.continuuity.common.guice.IOModule;
 import com.continuuity.security.auth.AccessTokenTransformer;
 import com.continuuity.security.auth.TokenValidator;
 import com.google.common.base.Charsets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -96,7 +92,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
       JsonArray externalAuthenticationURIs = new JsonArray();
       while (discoverableIterator.hasNext()) {
         Discoverable d = discoverableIterator.next();
-        externalAuthenticationURIs.add(new JsonPrimitive(d.getSocketAddress().getHostName()));
+        externalAuthenticationURIs.add(new JsonPrimitive(d.getSocketAddress().getAddress().getHostAddress()));
       }
       jsonObject.add("auth_uri", externalAuthenticationURIs);
 
