@@ -141,6 +141,26 @@ function(Components, Embeddables, HTTP, Util) {
 				 self.setupEnvironment(response);
 			});
 
+
+		},
+
+		/**
+		 * Sets up authentication on the global Ember application.
+		 */
+		setupAuth: function (routeHandler) {
+			/**
+			 * Recieves response of type {token: <token>}
+			 */
+			HTTP.create().get('getsession', function (resp) {
+				if ('token' in resp) {
+					C.Env.set('auth', resp.token);
+				} else {
+					C.Env.set('auth', '');
+				}
+				if (!C.Env.get('auth') && 'routeName' in routeHandler) {
+					routeHandler.transitionTo('Login');
+				}
+			});
 		},
 
 		setupEnvironment: function (env) {
@@ -150,6 +170,7 @@ function(Components, Embeddables, HTTP, Util) {
 			C.Env.set('productName', env.product_name);
 			C.Env.set('ip', env.ip);
 			C.Env.set('nux', !!env.nux);
+			C.Env.set('security_enabled', env.security_enabled)
 
 			$('title').text(env.product_name + ' » Continuuity');
 
@@ -343,7 +364,11 @@ function(Components, Embeddables, HTTP, Util) {
 			 * See "advanceReadiness" in the "setupEnvironment" call above.
 			 */
 			C.deferReadiness();
-			C.initialize(HTTP.create());
+			var http = HTTP.create();
+			C.initialize(http);
+			if (C.Env.security_enabled === true) {
+			  C.setupAuth(http);
+			}
 
 		}
 	});

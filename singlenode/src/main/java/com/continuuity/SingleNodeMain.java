@@ -28,6 +28,7 @@ import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.continuuity.metrics.guice.MetricsHandlerModule;
 import com.continuuity.passport.http.client.PassportClient;
 import com.continuuity.security.guice.SecurityModules;
+import com.continuuity.security.server.ExternalAuthenticationServer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
@@ -59,6 +60,7 @@ public class SingleNodeMain {
   private final MetricsQueryService metricsQueryService;
   private final NettyFlumeCollector flumeCollector;
   private final AppFabricServer appFabricServer;
+  private final ExternalAuthenticationServer externalAuthenticationServer;
 
   private final MetricsCollectionService metricsCollectionService;
 
@@ -80,6 +82,7 @@ public class SingleNodeMain {
     appFabricServer = injector.getInstance(AppFabricServer.class);
     logAppenderInitializer = injector.getInstance(LogAppenderInitializer.class);
 
+    externalAuthenticationServer = injector.getInstance(ExternalAuthenticationServer.class);
     metricsCollectionService = injector.getInstance(MetricsCollectionService.class);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -114,6 +117,7 @@ public class SingleNodeMain {
     // Start all the services.
     transactionManager.startAndWait();
     metricsCollectionService.startAndWait();
+    externalAuthenticationServer.startAndWait();
 
     Service.State state = appFabricServer.startAndWait();
     if (state != Service.State.RUNNING) {
@@ -146,6 +150,7 @@ public class SingleNodeMain {
     transactionManager.stopAndWait();
     zookeeper.stopAndWait();
     logAppenderInitializer.close();
+    externalAuthenticationServer.stopAndWait();
   }
 
   /**
