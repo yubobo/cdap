@@ -44,13 +44,13 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
   private String realm;
 
   public SecurityAuthenticationHttpHandler(String realm, TokenValidator tokenValidator,
-                                           AccessTokenTransformer accessTokenTransformer, boolean securityEnabled) {
+                                           AccessTokenTransformer accessTokenTransformer, boolean securityEnabled,
+                                           DiscoveryServiceClient discoveryServiceClient) {
     this.realm = realm;
     this.tokenValidator = tokenValidator;
     this.accessTokenTransformer = accessTokenTransformer;
     this.securityEnabled = securityEnabled;
-    Injector injector = Guice.createInjector(new IOModule(), new DiscoveryRuntimeModule().getInMemoryModules());
-    this.discoveryServiceClient = injector.getInstance(DiscoveryServiceClient.class);
+    this.discoveryServiceClient = discoveryServiceClient;
   }
 
   private void securedInterception(ChannelHandlerContext ctx, MessageEvent event) throws Exception {

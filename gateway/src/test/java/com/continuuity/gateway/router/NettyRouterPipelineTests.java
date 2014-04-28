@@ -2,6 +2,7 @@ package com.continuuity.gateway.router;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
+import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.IOModule;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
@@ -209,7 +210,8 @@ public class NettyRouterPipelineTests {
     @Override
     protected void before() throws Throwable {
       CConfiguration cConf = CConfiguration.create();
-      Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule());
+      Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule(), new DiscoveryRuntimeModule().getInMemoryModules());
+      DiscoveryServiceClient discoveryServiceClient = injector.getInstance(DiscoveryServiceClient.class);
       AccessTokenTransformer accessTokenTransformer = injector.getInstance(AccessTokenTransformer.class);
       cConf.set(Constants.Router.ADDRESS, hostname);
       cConf.setStrings(Constants.Router.FORWARD, forwards.toArray(new String[forwards.size()]));
@@ -220,7 +222,7 @@ public class NettyRouterPipelineTests {
           public State validate(String token) {
             return State.TOKEN_VALID;
           }
-        }, accessTokenTransformer);
+        }, accessTokenTransformer, discoveryServiceClient);
       router.startAndWait();
 
       for (Map.Entry<Integer, String> entry : router.getServiceLookup().getServiceMap().entrySet()) {

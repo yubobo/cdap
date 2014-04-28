@@ -14,6 +14,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.DirectChannelBufferFactory;
@@ -73,9 +74,12 @@ public class NettyRouter extends AbstractIdleService {
   private ServerBootstrap serverBootstrap;
   private ClientBootstrap clientBootstrap;
 
+  private DiscoveryServiceClient discoveryServiceClient;
+
   @Inject
   public NettyRouter(CConfiguration cConf, @Named(Constants.Router.ADDRESS) InetAddress hostname,
-                     RouterServiceLookup serviceLookup, TokenValidator tokenValidator, AccessTokenTransformer accessTokenTransformer) {
+                     RouterServiceLookup serviceLookup, TokenValidator tokenValidator, AccessTokenTransformer accessTokenTransformer,
+                     DiscoveryServiceClient discoveryServiceClient) {
 
     this.serverBossThreadPoolSize = cConf.getInt(Constants.Router.SERVER_BOSS_THREADS,
                                                  Constants.Router.DEFAULT_SERVER_BOSS_THREADS);
@@ -102,6 +106,7 @@ public class NettyRouter extends AbstractIdleService {
     LOG.info("Forwards - {}", this.forwards);
 
     this.serviceLookup = serviceLookup;
+    this.discoveryServiceClient = discoveryServiceClient;
   }
 
   @Override
@@ -170,7 +175,8 @@ public class NettyRouter extends AbstractIdleService {
           pipeline.addLast("http-decoder", new HttpRequestDecoder());
           pipeline.addLast("http-encoder", new HttpResponseEncoder());
           pipeline.addLast("SecurityHandler", new SecurityAuthenticationHttpHandler(realm, tokenValidator,
-                                                                                    accessTokenTransformer, securityEnabled));
+                                                                                    accessTokenTransformer, securityEnabled,
+                                                                                    discoveryServiceClient));
           pipeline.addLast("http-request-handler",
                            new HttpRequestHandler(clientBootstrap, serviceLookup));
 
