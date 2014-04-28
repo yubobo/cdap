@@ -85,7 +85,7 @@ public class DistributedKeyManager extends AbstractKeyManager implements Resourc
   }
 
   @Override
-  public synchronized void onUpdate() {
+  public void onUpdate() {
     LOG.info("SharedResourceCache triggered update on key: leader={}", leader);
     for (Map.Entry<String, KeyIdentifier> keyEntry : allKeys.entrySet()) {
       if (currentKey == null || keyEntry.getValue().getExpiration() > currentKey.getExpiration()) {
@@ -96,7 +96,7 @@ public class DistributedKeyManager extends AbstractKeyManager implements Resourc
   }
 
   @Override
-  public synchronized void onResourceUpdate(KeyIdentifier instance) {
+  public void onResourceUpdate(KeyIdentifier instance) {
     LOG.info("SharedResourceCache triggered update: leader={}, resource key={}", leader, instance);
     if (currentKey == null || instance.getExpiration() > currentKey.getExpiration()) {
       currentKey = instance;

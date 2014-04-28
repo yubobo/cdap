@@ -161,14 +161,14 @@ public class SharedResourceCache<T> extends AbstractIdleService implements Map<S
     try {
       byte[] encoded = codec.encode(instance);
       try {
-        lock.lock();
+        //lock.lock();
         LOG.info("Setting value for node " + znode);
         OperationFuture<String> future = zookeeper.create(znode, encoded, CreateMode.PERSISTENT);
         Futures.getUnchecked(future);
         LOG.info("Set value for node " + znode);
         return resources.put(name, instance);
       } finally {
-        lock.unlock();
+        //lock.unlock();
       }
     } catch (IOException ioe) {
       throw Throwables.propagate(ioe);
@@ -184,14 +184,14 @@ public class SharedResourceCache<T> extends AbstractIdleService implements Map<S
     String znode = joinZNode(parentZnode, name);
     T removedInstance = null;
     try {
-      lock.lock();
+      //lock.lock();
       OperationFuture<String> future = zookeeper.delete(znode);
       Futures.getUnchecked(future);
       LOG.info("Removed value for node " + znode);
       removedInstance = resources.remove(name);
       return removedInstance;
     } finally {
-      lock.unlock();
+      //lock.unlock();
     }
   }
 
@@ -257,11 +257,11 @@ public class SharedResourceCache<T> extends AbstractIdleService implements Map<S
     LOG.info("Got created event on " + path);
     String name = getZNode(path);
     try {
-      lock.lock();
+      //lock.lock();
       T resource = getResource(path);
       resources.put(name, resource);
     } finally {
-      lock.unlock();
+      //lock.unlock();
     }
   }
 
@@ -269,10 +269,10 @@ public class SharedResourceCache<T> extends AbstractIdleService implements Map<S
     LOG.info("Got deleted event on " + path);
     String name = getZNode(path);
     try {
-      lock.lock();
+      //lock.lock();
       resources.remove(name);
     } finally {
-      lock.unlock();
+      //lock.unlock();
     }
   }
 
@@ -283,10 +283,10 @@ public class SharedResourceCache<T> extends AbstractIdleService implements Map<S
       return;
     }
     try {
-      lock.lock();
+      //lock.lock();
       resources = reloadAll();
     } finally {
-      lock.unlock();
+      //lock.unlock();
     }
     notifyListeners();
   }
@@ -295,11 +295,11 @@ public class SharedResourceCache<T> extends AbstractIdleService implements Map<S
     LOG.info("Got dataChanged event on " + path);
     String name = getZNode(path);
     try {
-      lock.lock();
+      //lock.lock();
       T instance = getResource(path);
       resources.put(name, instance);
     } finally {
-      lock.unlock();
+      //lock.unlock();
     }
   }
 
