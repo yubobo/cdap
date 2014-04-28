@@ -68,7 +68,38 @@ WebAppServer.prototype.configSet = false;
  */
 var PRODUCT_VERSION, PRODUCT_ID, PRODUCT_NAME, IP_ADDRESS;
 
-var SECURITY_ENABLED;
+/**
+ * Security Globals
+ */
+var SECURITY_ENABLED, AUTH_SERVER_ADDR;
+
+WebAppServer.prototype.setSecurityStatus = function(callback) {
+  // Hit any endpoint to check if authentication is enabled.
+  var options = {
+    host: this.config['gateway.server.address'],
+    port: this.config['gateway.server.port'],
+    path: '/' + this.API_VERSION + '/deploy/status',
+    method: 'GET',
+    headers: {
+      'X-Continuuity-ApiKey': '',
+      'Authorization': 'Bearer '
+    }
+  };
+
+  var req = this.lib.request(options, function (response) {
+      if (response.statusCode === 401) {
+        SECURITY_ENABLED = true;
+        // TODO: Read ExtAuth URL from response
+        AUTH_SERVER_ADDR = "http://localhost:10009";
+      } else {
+        SECURITY_ENABLED = false;
+      }
+      if (typeof callback === 'function') {
+        callback();
+      }
+  });
+  req.end();
+};
 
 /**
  * Sets version if a version file exists.
@@ -81,21 +112,18 @@ WebAppServer.prototype.setEnvironment = function(id, product, version, callback)
   PRODUCT_NAME = product;
   PRODUCT_VERSION = version;
 
-  SECURITY_ENABLED = true;
-
   this.logger.info('PRODUCT_ID', PRODUCT_ID);
   this.logger.info('PRODUCT_NAME', PRODUCT_NAME);
   this.logger.info('PRODUCT_VERSION', PRODUCT_VERSION);
 
-  Env.getAddress(function (address) {
-
-    IP_ADDRESS = address;
-    if (typeof callback === 'function') {
-      callback(PRODUCT_VERSION, address);
-    }
-
+  this.setSecurityStatus(function() {
+    Env.getAddress(function (address) {
+      IP_ADDRESS = address;
+      if (typeof callback === 'function') {
+        callback(PRODUCT_VERSION, address);
+      }
+    }.bind(this));
   }.bind(this));
-
 };
 
 /**
@@ -171,9 +199,6 @@ WebAppServer.prototype.bindRoutes = function() {
     this.logger.info('Configuration file not set ', this.config);
     return false;
   }
-
-  // Authentication server address.
-  var AUTH_SERVER_ADDR = "http://" + self.getLocalHost() + ":10009";
 
   var availableMetrics = {
     'App': [
