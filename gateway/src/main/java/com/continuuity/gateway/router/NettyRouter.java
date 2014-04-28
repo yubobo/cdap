@@ -78,7 +78,8 @@ public class NettyRouter extends AbstractIdleService {
 
   @Inject
   public NettyRouter(CConfiguration cConf, @Named(Constants.Router.ADDRESS) InetAddress hostname,
-                     RouterServiceLookup serviceLookup, TokenValidator tokenValidator, AccessTokenTransformer accessTokenTransformer,
+                     RouterServiceLookup serviceLookup, TokenValidator tokenValidator,
+                     AccessTokenTransformer accessTokenTransformer,
                      DiscoveryServiceClient discoveryServiceClient) {
 
     this.serverBossThreadPoolSize = cConf.getInt(Constants.Router.SERVER_BOSS_THREADS,
@@ -175,7 +176,8 @@ public class NettyRouter extends AbstractIdleService {
           pipeline.addLast("http-decoder", new HttpRequestDecoder());
           pipeline.addLast("http-encoder", new HttpResponseEncoder());
           pipeline.addLast("SecurityHandler", new SecurityAuthenticationHttpHandler(realm, tokenValidator,
-                                                                                    accessTokenTransformer, securityEnabled,
+                                                                                    accessTokenTransformer,
+                                                                                    securityEnabled,
                                                                                     discoveryServiceClient));
           pipeline.addLast("http-request-handler",
                            new HttpRequestHandler(clientBootstrap, serviceLookup));

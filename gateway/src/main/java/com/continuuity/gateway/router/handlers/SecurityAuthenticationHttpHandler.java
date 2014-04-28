@@ -34,7 +34,8 @@ import org.jboss.netty.handler.codec.http.HttpVersion;
 import java.util.Iterator;
 
 /**
- *
+ * Security handler that intercept HTTP message and validates the access token in
+ * header Authorization field
  */
 public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHandler {
   private TokenValidator tokenValidator;
@@ -53,6 +54,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
     this.discoveryServiceClient = discoveryServiceClient;
   }
 
+
   private void securedInterception(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
     final HttpRequest msg = (HttpRequest) event.getMessage();
     JsonObject jsonObject = new JsonObject();
@@ -61,11 +63,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
     inboundChannel.setReadable(false);
 
     String auth = msg.getHeader(HttpHeaders.Names.AUTHORIZATION);
-    String path = msg.getUri();
-    String host = msg.getHeader(HttpHeaders.Names.HOST);
-    String httpMethod = msg.getMethod().getName();
     String accessToken = null;
-
 
     if (auth != null) {
       int spIndex = auth.trim().indexOf(' ') + 1;
@@ -80,8 +78,6 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
         httpResponse.addHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Bearer realm=\"" + realm + "\"");
         jsonObject.addProperty("error", "Token Missing");
         jsonObject.addProperty("error_description", tokenState.getMsg());
-
-        //httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, 0);
         break;
 
       case TOKEN_INVALID:
@@ -90,7 +86,6 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
         httpResponse.addHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Bearer realm=\"" + realm + "\"" +
           "  error=\"invalid_token\"" +
           "  error_description=\"" + tokenState.getMsg() + "\"");
-        //httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, 0);
         jsonObject.addProperty("error", "invalid_token");
         jsonObject.addProperty("error_description", tokenState.getMsg());
         break;
@@ -107,7 +102,6 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
 
       ChannelBuffer content = ChannelBuffers.wrappedBuffer(jsonObject.toString().getBytes(Charsets.UTF_8));
       httpResponse.setContent(content);
-      //bufferContent.resetReaderIndex();
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content.readableBytes());
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/json;charset=UTF-8");
 
@@ -116,6 +110,8 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
       writeFuture.addListener(ChannelFutureListener.CLOSE);
       return;
     } else {
+      //TODO: transform the access token and send the access token identifier
+      // in request with modified Authorization header
 //      String serealizedAccessTokenIdentifier = accessTokenTransformer.transform(accessToken);
 //      msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " + serealizedAccessTokenIdentifier);
       Channels.fireMessageReceived(ctx, msg, event.getRemoteAddress());
@@ -133,6 +129,5 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
     } else {
       Channels.fireMessageReceived(ctx, event.getMessage(), event.getRemoteAddress());
     }
-   // Channels.fireMessageReceived(ctx, msg, e.getRemoteAddress());
   }
 }

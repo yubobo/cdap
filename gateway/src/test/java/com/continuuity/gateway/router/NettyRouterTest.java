@@ -407,7 +407,8 @@ public class NettyRouterTest {
     @Override
     protected void before() throws Throwable {
       CConfiguration cConf = CConfiguration.create();
-      Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule(), new DiscoveryRuntimeModule().getInMemoryModules());
+      Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule(),
+                                               new DiscoveryRuntimeModule().getInMemoryModules());
       DiscoveryServiceClient discoveryServiceClient = injector.getInstance(DiscoveryServiceClient.class);
       AccessTokenTransformer accessTokenTransformer = injector.getInstance(AccessTokenTransformer.class);
       cConf.set(Constants.Router.ADDRESS, hostname);

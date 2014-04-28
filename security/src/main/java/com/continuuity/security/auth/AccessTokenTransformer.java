@@ -22,7 +22,7 @@ public class AccessTokenTransformer {
     this.accessTokenIdentifierCodec = accessTokenIdentifierCodec;
   }
 
-  public String transform(String accessToken) throws IOException{
+  public String transform(String accessToken) throws IOException {
     String accessTokenIdentifier = null;
     byte[] decodedAccessToken = Base64.decodeBase64(accessToken);
     AccessToken accessTokenObj = accessTokenCodec.decode(decodedAccessToken);

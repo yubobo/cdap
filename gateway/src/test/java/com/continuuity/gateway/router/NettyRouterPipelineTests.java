@@ -156,7 +156,7 @@ public class NettyRouterPipelineTests {
                                  router.getServiceMap().get(gatewayService));
       socket.setSoTimeout(5000);
 
-      PrintWriter request = new PrintWriter( socket.getOutputStream() );
+      PrintWriter request = new PrintWriter(socket.getOutputStream());
 
       request.write("GET /v1/ping/3 HTTP/1.1\r\n" +
                       " Host: localhost\r\n\r\n"
@@ -181,7 +181,7 @@ public class NettyRouterPipelineTests {
       Assert.assertEquals(2, gatewayServer.getNumRequests());
       request.close();
       socket.close();
-    } catch (Throwable th){
+    } catch (Throwable th) {
       //Socket timeout exception. Do no-op.
     }
 
@@ -210,14 +210,16 @@ public class NettyRouterPipelineTests {
     @Override
     protected void before() throws Throwable {
       CConfiguration cConf = CConfiguration.create();
-      Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule(), new DiscoveryRuntimeModule().getInMemoryModules());
+      Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule(),
+                                               new DiscoveryRuntimeModule().getInMemoryModules());
       DiscoveryServiceClient discoveryServiceClient = injector.getInstance(DiscoveryServiceClient.class);
       AccessTokenTransformer accessTokenTransformer = injector.getInstance(AccessTokenTransformer.class);
       cConf.set(Constants.Router.ADDRESS, hostname);
       cConf.setStrings(Constants.Router.FORWARD, forwards.toArray(new String[forwards.size()]));
       router =
         new NettyRouter(cConf, InetAddresses.forString(hostname),
-                        new RouterServiceLookup((DiscoveryServiceClient) discoveryService),new TokenValidator() {
+                        new RouterServiceLookup((DiscoveryServiceClient) discoveryService),
+                        new TokenValidator() {
           @Override
           public State validate(String token) {
             return State.TOKEN_VALID;
