@@ -111,16 +111,14 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content.readableBytes());
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/json;charset=UTF-8");
 
-
-      System.out.println(content.toString(Charsets.UTF_8));
       ChannelFuture writeFuture = Channels.future(event.getChannel());
       Channels.write(ctx, writeFuture, httpResponse);
       writeFuture.addListener(ChannelFutureListener.CLOSE);
       System.out.println(" After writing");
       return;
     } else {
-      String serealizedAccessTokenIdentifier = accessTokenTransformer.transform(accessToken);
-      msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " + serealizedAccessTokenIdentifier);
+//      String serealizedAccessTokenIdentifier = accessTokenTransformer.transform(accessToken);
+//      msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " + serealizedAccessTokenIdentifier);
       Channels.fireMessageReceived(ctx, msg, event.getRemoteAddress());
     }
 
