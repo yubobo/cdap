@@ -87,20 +87,23 @@ WebAppServer.prototype.setSecurityStatus = function(setAddress) {
   };
 
   var req = this.lib.request(options, function (response) {
-      if (response.statusCode === 401) {
-        SECURITY_ENABLED = true;
-//        TODO: Read ExtAuth URL from response
-//        data = JSON.parse(response.body.data);
-//        AUTH_SERVER_ADDR = data['auth_uri'][0];
-        AUTH_SERVER_ADDR = "http://localhost:10009";
-      } else {
-        SECURITY_ENABLED = false;
-      }
-      // TODO: Remove
-//      SECURITY_ENABLED = true;
-      if (typeof setAddress === 'function') {
-        setAddress();
-      }
+      var data = '';
+      response.on("data", function(chunk) {
+          data += chunk;
+      });
+
+      response.on('end', function () {
+        if (response.statusCode === 401) {
+          SECURITY_ENABLED = true;
+          json = JSON.parse(data);
+          AUTH_SERVER_ADDR = "http://" + json.auth_uri[0] + ":10009";
+        } else {
+          SECURITY_ENABLED = false;
+        }
+        if (typeof setAddress === 'function') {
+          setAddress();
+        }
+      });
   });
   req.end();
 };
