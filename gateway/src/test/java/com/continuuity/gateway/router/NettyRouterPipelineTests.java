@@ -2,9 +2,13 @@ package com.continuuity.gateway.router;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
+import com.continuuity.common.guice.IOModule;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.http.NettyHttpService;
+import com.continuuity.security.auth.AccessTokenTransformer;
+import com.continuuity.security.auth.TokenValidator;
+import com.continuuity.security.guice.InMemorySecurityModule;
 import com.google.common.base.Charsets;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMultimap;
@@ -13,6 +17,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.net.InetAddresses;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -203,11 +209,18 @@ public class NettyRouterPipelineTests {
     @Override
     protected void before() throws Throwable {
       CConfiguration cConf = CConfiguration.create();
+      Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule());
+      AccessTokenTransformer accessTokenTransformer = injector.getInstance(AccessTokenTransformer.class);
       cConf.set(Constants.Router.ADDRESS, hostname);
       cConf.setStrings(Constants.Router.FORWARD, forwards.toArray(new String[forwards.size()]));
       router =
         new NettyRouter(cConf, InetAddresses.forString(hostname),
-                        new RouterServiceLookup((DiscoveryServiceClient) discoveryService));
+                        new RouterServiceLookup((DiscoveryServiceClient) discoveryService),new TokenValidator() {
+          @Override
+          public State validate(String token) {
+            return State.TOKEN_VALID;
+          }
+        }, accessTokenTransformer);
       router.startAndWait();
 
       for (Map.Entry<Integer, String> entry : router.getServiceLookup().getServiceMap().entrySet()) {
