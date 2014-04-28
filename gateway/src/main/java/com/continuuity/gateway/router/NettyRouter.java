@@ -3,6 +3,9 @@ package com.continuuity.gateway.router;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.gateway.router.handlers.HttpRequestHandler;
+import com.continuuity.gateway.router.handlers.SecurityAuthenticationHttpHandler;
+import com.continuuity.security.auth.AccessTokenTransformer;
+import com.continuuity.security.auth.TokenValidator;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -62,12 +65,17 @@ public class NettyRouter extends AbstractIdleService {
   private final ChannelGroup channelGroup = new DefaultChannelGroup("server channels");
   private final RouterServiceLookup serviceLookup;
 
+  private final boolean securityEnabled;
+  private final TokenValidator tokenValidator;
+  private final AccessTokenTransformer accessTokenTransformer;
+  private final String realm;
+
   private ServerBootstrap serverBootstrap;
   private ClientBootstrap clientBootstrap;
 
   @Inject
   public NettyRouter(CConfiguration cConf, @Named(Constants.Router.ADDRESS) InetAddress hostname,
-                     RouterServiceLookup serviceLookup) {
+                     RouterServiceLookup serviceLookup, TokenValidator tokenValidator, AccessTokenTransformer accessTokenTransformer) {
 
     this.serverBossThreadPoolSize = cConf.getInt(Constants.Router.SERVER_BOSS_THREADS,
                                                  Constants.Router.DEFAULT_SERVER_BOSS_THREADS);
@@ -80,6 +88,13 @@ public class NettyRouter extends AbstractIdleService {
                                                  Constants.Router.DEFAULT_CLIENT_BOSS_THREADS);
     this.clientWorkerThreadPoolSize = cConf.getInt(Constants.Router.CLIENT_WORKER_THREADS,
                                                    Constants.Router.DEFAULT_CLIENT_WORKER_THREADS);
+
+    this.securityEnabled = cConf.getBoolean(Constants.Security.CFG_SECURITY_ENABLED, false);
+
+
+    this.realm = cConf.get(Constants.Security.CFG_REALM);
+    this.tokenValidator = tokenValidator;
+    this.accessTokenTransformer = accessTokenTransformer;
 
     this.hostname = hostname;
     this.forwards = Sets.newHashSet(cConf.getStrings(Constants.Router.FORWARD, Constants.Router.DEFAULT_FORWARD));
@@ -153,9 +168,12 @@ public class NettyRouter extends AbstractIdleService {
           ChannelPipeline pipeline = Channels.pipeline();
           pipeline.addLast("tracker", connectionTracker);
           pipeline.addLast("http-decoder", new HttpRequestDecoder());
+          pipeline.addLast("http-encoder", new HttpResponseEncoder());
+          pipeline.addLast("SecurityHandler", new SecurityAuthenticationHttpHandler(realm, tokenValidator,
+                                                                                    accessTokenTransformer, securityEnabled));
           pipeline.addLast("http-request-handler",
                            new HttpRequestHandler(clientBootstrap, serviceLookup));
-          pipeline.addLast("http-response-encoder", new HttpResponseEncoder());
+
           return pipeline;
         }
       }

@@ -16,6 +16,7 @@ public final class Constants {
     public static final String GATEWAY = "gateway";
     public static final String DATASET_MANAGER = "dataset.manager";
     public static final String APP_FABRIC_LEADER_ELECTION_PREFIX = "election/appfabric";
+    public static final String EXTERNAL_AUTHENTICATION = "external.authentication";
   }
 
   /**
@@ -452,6 +453,12 @@ public final class Constants {
     public static final String[] BASIC_USER_ROLES = new String[] {"user", "admin", "moderator"};
 
     public static final String CFG_FILE_BASED_KEYFILE_PATH = "security.data.keyfile.path";
+
+    /** Configuration for enabling the security */
+    public static final String CFG_SECURITY_ENABLED = "security.enabled";
+
+    /**Configuration for security realm */
+    public static final String CFG_REALM = "security.realm";
   }
 
   public static final String CFG_LOCAL_DATA_DIR = "local.data.dir";

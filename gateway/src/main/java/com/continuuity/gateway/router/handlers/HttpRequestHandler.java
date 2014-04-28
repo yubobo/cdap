@@ -161,7 +161,7 @@ public class HttpRequestHandler extends SimpleChannelUpstreamHandler {
   @Override
   public void channelClosed(ChannelHandlerContext ctx,
                             ChannelStateEvent e) throws Exception {
-    for (ChannelFuture cf : discoveryTable.values()){
+    for (ChannelFuture cf : discoveryTable.values()) {
       cf.getChannel().write(ChannelBuffers.EMPTY_BUFFER)
                      .addListener(ChannelFutureListener.CLOSE);
     }

@@ -4,10 +4,13 @@ import com.continuuity.security.auth.AccessToken;
 import com.continuuity.security.auth.AccessTokenCodec;
 import com.continuuity.security.auth.AccessTokenIdentifier;
 import com.continuuity.security.auth.AccessTokenIdentifierCodec;
+import com.continuuity.security.auth.AccessTokenTransformer;
 import com.continuuity.security.auth.Codec;
 import com.continuuity.security.auth.KeyIdentifier;
 import com.continuuity.security.auth.KeyIdentifierCodec;
 import com.continuuity.security.auth.TokenManager;
+import com.continuuity.security.auth.AccessTokenValidator;
+import com.continuuity.security.auth.TokenValidator;
 import com.continuuity.security.server.BasicAuthenticationHandler;
 import com.continuuity.security.server.ExternalAuthenticationServer;
 import com.continuuity.security.server.GrantAccessTokenHandler;
@@ -51,6 +54,10 @@ public abstract class SecurityModule extends PrivateModule {
                            .in(Scopes.SINGLETON);
 
     expose(TokenManager.class);
+    bind(TokenValidator.class).to(AccessTokenValidator.class);
+    bind(AccessTokenTransformer.class).in(Scopes.SINGLETON);
+    expose(AccessTokenTransformer.class);
+    expose(TokenValidator.class);
     expose(ExternalAuthenticationServer.class);
   }
 
