@@ -712,7 +712,7 @@
     -->
     <property>
         <name>security.enabled</name>
-        <value>false</value>
+        <value>true</value>
         <description> If false the router will not go validating the Accesstoken</description>
     </property>
 
