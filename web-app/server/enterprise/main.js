@@ -96,6 +96,8 @@ EntServer.prototype.start = function() {
       self.logger.info('I am the master.', cluster.isMaster);
 
       if (cluster.isMaster) {
+        ClusterStore.setup();
+
         for (var i = 0; i < clusters; i++) {
           cluster.fork();
         }

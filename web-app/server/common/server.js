@@ -15,7 +15,8 @@ var express = require('express'),
   utils = require('connect').utils,
   crypto = require('crypto'),
   path = require('path'),
-  request = require('request');
+  request = require('request'),
+  ClusterStore = require('strong-cluster-connect-store')(express);
 
 var Api = require('../common/api');
 var Env = require('./env');
@@ -175,7 +176,7 @@ WebAppServer.prototype.configureExpress = function() {
  */
 WebAppServer.prototype.setCookieSession = function(cookieName, secret) {
   this.app.use(express.cookieParser());
-  this.app.use(express.session({secret: secret, key: cookieName}));
+  this.app.use(express.session({store: new ClusterStore(), secret: secret, key: cookieName}));
 };
 
 /**
