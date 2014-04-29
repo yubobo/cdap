@@ -12,6 +12,8 @@ import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.handler.AbstractHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
  * Generate and grant access token to authorized users.
  */
 public class GrantAccessTokenHandler extends AbstractHandler {
+  private static final Logger LOG = LoggerFactory.getLogger(GrantAccessTokenHandler.class);
   private final TokenManager tokenManager;
   private final Codec<AccessToken> tokenCodec;
   private final CConfiguration cConf;
@@ -57,6 +60,7 @@ public class GrantAccessTokenHandler extends AbstractHandler {
     // Create and sign a new AccessTokenIdentifier to generate the AccessToken.
     AccessTokenIdentifier tokenIdentifier = new AccessTokenIdentifier(username, userRoles, issueTime, expireTime);
     AccessToken token = tokenManager.signIdentifier(tokenIdentifier);
+    LOG.info("Issued token for user {}: {}", username, token);
 
     // Set response headers
     response.setContentType("application/json;charset=UTF-8");

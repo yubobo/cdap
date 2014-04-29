@@ -26,6 +26,8 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 
@@ -34,6 +36,8 @@ import java.util.Iterator;
  * header Authorization field
  */
 public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHandler {
+  private static final Logger LOG = LoggerFactory.getLogger(SecurityAuthenticationHttpHandler.class);
+
   private TokenValidator tokenValidator;
   private AccessTokenTransformer accessTokenTransformer;
   DiscoveryServiceClient discoveryServiceClient;
@@ -74,6 +78,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
         httpResponse.addHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Bearer realm=\"" + realm + "\"");
         jsonObject.addProperty("error", "Token Missing");
         jsonObject.addProperty("error_description", tokenState.getMsg());
+        LOG.info("Failed authentication due to missing token");
         break;
 
       case TOKEN_INVALID:
@@ -84,6 +89,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
           "  error_description=\"" + tokenState.getMsg() + "\"");
         jsonObject.addProperty("error", "invalid_token");
         jsonObject.addProperty("error_description", tokenState.getMsg());
+        LOG.info("Failed authentication due to invalid token, reason={}; token={}", tokenState.getMsg(), accessToken);
         break;
     }
     if (tokenState != TokenValidator.State.TOKEN_VALID) {
@@ -106,6 +112,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
       writeFuture.addListener(ChannelFutureListener.CLOSE);
       return;
     } else {
+      LOG.info("Authentication succeeded for token: {}", accessToken);
       //TODO: transform the access token and send the access token identifier
       // in request with modified Authorization header
 //      String serealizedAccessTokenIdentifier = accessTokenTransformer.transform(accessToken);
