@@ -8,7 +8,9 @@ var util = require('util'),
   xml2js = require('xml2js'),
   sys = require('sys'),
   cluster = require('cluster'),
-  os = require('os');
+  os = require('os'),
+  express = require('express'),
+  ClusterStore = require('strong-cluster-connect-store')(express);
 
 var WebAppServer = require('../common/server');
 
