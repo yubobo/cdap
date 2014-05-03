@@ -98,4 +98,13 @@ public class
   public int hashCode() {
     return Objects.hashCode(getIdentifier(), getKeyId(), Bytes.hashCode(getDigestBytes()));
   }
+
+  @Override
+  public String toString() {
+    return Objects.toStringHelper(this)
+      .add("identifier", identifier)
+      .add("keyId", keyId)
+      .add("digest", Bytes.toStringBinary(digest))
+      .toString();
+  }
 }
