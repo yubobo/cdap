@@ -89,7 +89,6 @@ public class SingleNodeMain {
     streamHttpService = injector.getInstance(StreamHttpService.class);
     externalAuthenticationServer = injector.getInstance(ExternalAuthenticationServer.class);
 
-
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
@@ -157,7 +156,7 @@ public class SingleNodeMain {
     transactionManager.stopAndWait();
     zookeeper.stopAndWait();
     logAppenderInitializer.close();
-    externalAuthenticationServer.stopAndWait();
+    externalAuthenticationServer.startAndWait();
   }
 
   /**
