@@ -113,8 +113,8 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
       return false;
     }
 
-    String serealizedAccessTokenIdentifier = accessTokenTransformer.transform(accessToken.trim());
-    msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " + serealizedAccessTokenIdentifier);
+    //String serealizedAccessTokenIdentifier = accessTokenTransformer.transform(accessToken.trim());
+    //msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " + serealizedAccessTokenIdentifier);
     return true;
   }
 
