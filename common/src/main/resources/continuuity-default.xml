@@ -795,6 +795,7 @@
         <name>security.realm</name>
         <value>continuuity</value>
         <description>Security realm used for authentication</description>
+    </property>
 
     <property>
         <name>security.token.digest.key.expiration.ms</name>
