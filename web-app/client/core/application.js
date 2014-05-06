@@ -143,10 +143,12 @@ function(Components, Embeddables, HTTP, Util) {
 
 		},
 
-		/**
-		 * Sets up authentication on the global Ember application.
-		 */
-		setupAuth: function (routeHandler) {
+    /**
+     * Sets up authentication on the global Ember application.
+     * @param routeHandler Ember route handler object for current route.
+     * @param callback function to execute if authentication is successful.
+     */
+		setupAuth: function (routeHandler, callback) {
 			/**
 			 * Recieves response of type {token: <token>}
 			 */
@@ -157,8 +159,10 @@ function(Components, Embeddables, HTTP, Util) {
 					C.Env.set('auth', '');
 				}
 				if (!C.Env.get('auth') && 'routeName' in routeHandler) {
-					routeHandler.transitionTo('Login');
-				}
+          routeHandler.transitionTo('Login');
+				} else {
+          callback();
+        }
 			});
 		},
 

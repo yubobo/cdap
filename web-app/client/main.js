@@ -228,28 +228,28 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 		/**
 		 * Check auth on every route transition.
 		 */
-		activate: function() {
-			var routeHandler = this;
-			if (C.Env.security_enabled === true) {
-				C.setupAuth(routeHandler);
-			}
-		},
+		activate: function() {},
 
 		/*
 		 * Override to load the Controller once the Route has been activated.
 		 */
 		setupController: function(controller, model) {
-			controller.set('model', model);
-			controller.load();
+      var routeHandler = this;
+      if (C.Env.security_enabled === true) {
+        C.setupAuth(routeHandler, function () {
+          controller.set('model', model);
+          controller.load();
 
-			var handlers = C.get('routeHandlers');
-			for (var handler in handlers) {
-				if (typeof handlers[handler] === 'function') {
-					handlers[handler](controller, model);
-				}
-			}
+          var handlers = C.get('routeHandlers');
+          for (var handler in handlers) {
+            if (typeof handlers[handler] === 'function') {
+              handlers[handler](controller, model);
+            }
+          }
 
-			window.scrollTo(0, 0);
+          window.scrollTo(0, 0);
+        });
+      }
 		},
 		/*
 		 * Override to unload the Controller once the Route has been deactivated.
@@ -263,6 +263,58 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 		model: modelFinder
 
 	});
+
+  /*
+   * Pages for lists of Elements use the List controller.
+   * @param {string} type ['App', 'Stream', 'Flow', ...]
+   */
+  function getListHandler(types) {
+    return {
+      /**
+       * Check auth on every route transition.
+       */
+      activate: function() {},
+      /*
+       * Override to load the Controller once the Route has been activated.
+       */
+      setupController: function  () {
+        var routeHandler = this;
+        if (C.Env.security_enabled === true) {
+          C.setupAuth(routeHandler, function () {
+            for (var i=0, len=types.length; i<len; i++) {
+              this.controllerFor('List').load(types[i]);
+            }
+          });
+        }
+      },
+      /*
+       * Override the templates to be rendered and where.
+       */
+      renderTemplate: function () {
+        /*
+         * Render the List Page template (i.e. the header / time selector)
+         */
+        this.render('list-page', {
+          controller: 'List'
+        });
+        /*
+         * Render a list type partial into the List Page template
+         */
+        for (var i=0, len=types.length; i<len; i++) {
+          this.render('_' + types[i].toLowerCase() + 's-list', {
+            controller: 'List',
+            into: 'list-page'
+          });
+        }
+      },
+      /*
+       * Override to unload the Controller once the Route has been deactivated.
+       */
+      deactivate: function () {
+        this.controllerFor('List').unload();
+      }
+    };
+  }
 
 	/*
 	 * The following define the actual route handlers.
@@ -436,58 +488,6 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 		PageNotFoundRoute: Ember.Route.extend()
 
 	});
-
-	/*
-	 * Pages for lists of Elements use the List controller.
-	 * @param {string} type ['App', 'Stream', 'Flow', ...]
-	 */
-	function getListHandler(types) {
-		return {
-			/**
-			 * Check auth on every route transition.
-			 */
-			activate: function() {
-				var routeHandler = this;
-				if (C.Env.security_enabled === true) {
-				  C.setupAuth(routeHandler);
-				}
-	  	},
-			/*
-			 * Override to load the Controller once the Route has been activated.
-			 */
-			setupController: function  () {
-				for (var i=0, len=types.length; i<len; i++) {
-					this.controllerFor('List').load(types[i]);
-				}
-			},
-			/*
-			 * Override the templates to be rendered and where.
-			 */
-			renderTemplate: function () {
-				/*
-				 * Render the List Page template (i.e. the header / time selector)
-				 */
-				this.render('list-page', {
-					controller: 'List'
-				});
-				/*
-				 * Render a list type partial into the List Page template
-				 */
-				for (var i=0, len=types.length; i<len; i++) {
-					this.render('_' + types[i].toLowerCase() + 's-list', {
-						controller: 'List',
-						into: 'list-page'
-					});
-				}
-			},
-			/*
-			 * Override to unload the Controller once the Route has been deactivated.
-			 */
-			deactivate: function () {
-				this.controllerFor('List').unload();
-			}
-		};
-	}
 
 	$.extend(C, {
 
