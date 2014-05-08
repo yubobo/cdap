@@ -47,6 +47,14 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
   private DiscoveryServiceClient discoveryServiceClient;
   private Iterable<Discoverable> discoverables;
   private final String realm;
+
+  private String clientIP;
+  private String userName;
+  private Date date;
+  private String requestLine;
+  private String responseCode;
+  private String responseContentLength;
+
   private String auditLogLine;
 
   public SecurityAuthenticationHttpHandler(String realm, TokenValidator tokenValidator,
@@ -57,6 +65,13 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     this.accessTokenTransformer = accessTokenTransformer;
     this.discoveryServiceClient = discoveryServiceClient;
     discoverables = discoveryServiceClient.discover(Constants.Service.EXTERNAL_AUTHENTICATION);
+
+    // default value of '-' in access log means the absence of that field
+    this.clientIP = "-";
+    this.userName = "-";
+    this.requestLine = "-";
+    this.responseCode = "-";
+    this.responseContentLength = "-";
   }
 
   /**
@@ -81,6 +96,11 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
         accessToken = auth.substring(spIndex + 1).trim();
       }
     }
+
+    date = new Date();
+    clientIP = ((InetSocketAddress) ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
+    requestLine = msg.getMethod() + " " + msg.getUri() + " " + msg.getProtocolVersion();
+
     TokenState tokenState = tokenValidator.validate(accessToken);
     if (!tokenState.isValid()) {
       HttpResponse httpResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNAUTHORIZED);
@@ -97,7 +117,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
         jsonObject.addProperty("error_description", tokenState.getMsg());
         LOG.debug("Failed authentication due to invalid token, reason={};", tokenState);
       }
-
+      responseCode = "401";
       JsonArray externalAuthenticationURIs = new JsonArray();
 
       //Waiting for service to get discovered
@@ -109,7 +129,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
       httpResponse.setContent(content);
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content.readableBytes());
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/json;charset=UTF-8");
-
+      responseContentLength = "" + content.readableBytes();
       ChannelFuture writeFuture = Channels.future(inboundChannel);
       Channels.write(ctx, writeFuture, httpResponse);
       writeFuture.addListener(ChannelFutureListener.CLOSE);
@@ -117,14 +137,9 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     } else {
         AccessTokenTransformer.AccessTokenIdentifierPair accessTokenIdentifierPair =
         accessTokenTransformer.transform(accessToken);
-        String clientIP = ((InetSocketAddress) ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
-        String user = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
+        userName = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
         msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " +
                                                           accessTokenIdentifierPair.getAccessTokenIdentifierStr());
-        String requestLine = msg.getMethod() + " " + msg.getUri() + " " + msg.getProtocolVersion();
-        Date date = new Date();
-        auditLogLine = clientIP + " - " + user + " [" + date + "] " + requestLine;
-        //System.out.println(clientIP + " - " + user + " [" + date + "] " + requestLine);
         return true;
     }
   }
@@ -157,26 +172,30 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     if (!(msg instanceof HttpRequest)) {
       super.messageReceived(ctx, event);
     } else if (validateSecuredInterception(ctx, (HttpRequest) msg, event.getChannel())) {
-        Channels.fireMessageReceived(ctx, msg, event.getRemoteAddress());
+      System.out.println(getAuditLogLine());
+      Channels.fireMessageReceived(ctx, msg, event.getRemoteAddress());
     } else {
+      System.out.println(getAuditLogLine());
       return;
     }
   }
 
   @Override
   public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-    //System.out.println(e.getMessage());
     ChannelBuffer channelBuffer = (ChannelBuffer) e.getMessage();
     ChannelBuffer sliced = channelBuffer.slice(channelBuffer.readerIndex(), channelBuffer.readableBytes());
     byte b = ' ';
     int indx = sliced.indexOf(sliced.readerIndex(), sliced.readableBytes(), b);
-    //int indx2 = sliced.indexOf(indx+1, sliced.readableBytes(),b);
-    String responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
+    responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
     System.out.println(channelBuffer.toString(Charsets.UTF_8));
-    //System.out.println("response code is " + responseCode);
-    auditLogLine += " " + responseCode;
-    System.out.println(auditLogLine);
+
+    System.out.println(getAuditLogLine());
     super.writeRequested(ctx, e);
+  }
+
+  private String getAuditLogLine() {
+    return String.format("%s %s [%s] %s %s %s", clientIP, userName, date,
+                         requestLine, responseCode, responseContentLength);
   }
 
 }
