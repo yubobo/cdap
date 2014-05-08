@@ -118,7 +118,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
         String clientIP = ((InetSocketAddress) ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
         String user = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
         msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " +
-        accessTokenIdentifierPair.getAccessTokenIdentifierStr());
+                                                          accessTokenIdentifierPair.getAccessTokenIdentifierStr());
         String requestLine = msg.getMethod() + " " + msg.getUri() + " " + msg.getProtocolVersion();
         Date date = new Date();
         System.out.println(clientIP + " - " + user + " [" + date + "] " + requestLine);
