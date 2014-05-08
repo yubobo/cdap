@@ -19,6 +19,7 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * Security handler that intercept HTTP message and validates the access token in
  * header Authorization field.
  */
-public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHandler {
+public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
   private static final Logger LOG = LoggerFactory.getLogger(SecurityAuthenticationHttpHandler.class);
 
   private final TokenValidator tokenValidator;
@@ -46,6 +47,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
   private DiscoveryServiceClient discoveryServiceClient;
   private Iterable<Discoverable> discoverables;
   private final String realm;
+  private String auditLogLine;
 
   public SecurityAuthenticationHttpHandler(String realm, TokenValidator tokenValidator,
                                            AccessTokenTransformer accessTokenTransformer,
@@ -121,7 +123,8 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
                                                           accessTokenIdentifierPair.getAccessTokenIdentifierStr());
         String requestLine = msg.getMethod() + " " + msg.getUri() + " " + msg.getProtocolVersion();
         Date date = new Date();
-        System.out.println(clientIP + " - " + user + " [" + date + "] " + requestLine);
+        auditLogLine = clientIP + " - " + user + " [" + date + "] " + requestLine;
+        //System.out.println(clientIP + " - " + user + " [" + date + "] " + requestLine);
         return true;
     }
   }
@@ -158,6 +161,22 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
     } else {
       return;
     }
+  }
+
+  @Override
+  public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    //System.out.println(e.getMessage());
+    ChannelBuffer channelBuffer = (ChannelBuffer) e.getMessage();
+    ChannelBuffer sliced = channelBuffer.slice(channelBuffer.readerIndex(), channelBuffer.readableBytes());
+    byte b = ' ';
+    int indx = sliced.indexOf(sliced.readerIndex(), sliced.readableBytes(), b);
+    //int indx2 = sliced.indexOf(indx+1, sliced.readableBytes(),b);
+    String responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
+    System.out.println(channelBuffer.toString(Charsets.UTF_8));
+    //System.out.println("response code is " + responseCode);
+    auditLogLine += " " + responseCode;
+    System.out.println(auditLogLine);
+    super.writeRequested(ctx, e);
   }
 
 }

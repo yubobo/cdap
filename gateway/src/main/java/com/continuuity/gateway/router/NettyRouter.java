@@ -26,6 +26,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelDownstreamHandler;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
@@ -178,9 +179,22 @@ public class NettyRouter extends AbstractIdleService {
           pipeline.addLast("http-response-encoder", new HttpResponseEncoder());
           pipeline.addLast("http-decoder", new HttpRequestDecoder());
           if (securityEnabled) {
+//            pipeline.addLast("logger", new SimpleChannelHandler(){
+//              @Override
+//              public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+//                super.messageReceived(ctx, e);
+//              }
+//              @Override
+//              public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+//                System.out.println(e.getMessage());
+//                super.writeRequested(ctx, e);
+//              }
+//            });
+//            pipeline.addLast("http-response-decoder", new HttpResponseDecoder());
             pipeline.addLast("access-token-authenticator", new SecurityAuthenticationHttpHandler(realm, tokenValidator,
                                                                                     accessTokenTransformer,
                                                                                     discoveryServiceClient));
+            pipeline.addLast("http-response-decoder", new HttpResponseDecoder());
           }
           pipeline.addLast("http-request-handler",
                            new HttpRequestHandler(clientBootstrap, serviceLookup));
