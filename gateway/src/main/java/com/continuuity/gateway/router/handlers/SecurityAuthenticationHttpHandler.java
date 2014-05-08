@@ -113,9 +113,16 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
       writeFuture.addListener(ChannelFutureListener.CLOSE);
       return false;
     } else {
-      msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " +
-                                                        accessTokenTransformer.transform(accessToken));
-      return true;
+        AccessTokenTransformer.AccessTokenIdentifierPair accessTokenIdentifierPair =
+        accessTokenTransformer.transform(accessToken);
+        String clientIP = ((InetSocketAddress) ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
+        String user = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
+        msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " +
+        accessTokenIdentifierPair.getAccessTokenIdentifierStr());
+        String requestLine = msg.getMethod() + " " + msg.getUri() + " " + msg.getProtocolVersion();
+        Date date = new Date();
+        System.out.println(clientIP + " - " + user + " [" + date + "] " + requestLine);
+        return true;
     }
   }
 

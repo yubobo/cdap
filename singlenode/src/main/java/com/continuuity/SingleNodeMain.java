@@ -30,6 +30,7 @@ import com.continuuity.metrics.guice.MetricsHandlerModule;
 import com.continuuity.metrics.query.MetricsQueryService;
 import com.continuuity.passport.http.client.PassportClient;
 import com.continuuity.security.guice.SecurityModules;
+import com.continuuity.security.server.ExternalAuthenticationServer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
@@ -67,6 +68,7 @@ public class SingleNodeMain {
 
   private final LogAppenderInitializer logAppenderInitializer;
   private final InMemoryTransactionManager transactionManager;
+  private final ExternalAuthenticationServer externalAuthenticationServer;
 
   private InMemoryZKServer zookeeper;
 
@@ -85,6 +87,7 @@ public class SingleNodeMain {
 
     metricsCollectionService = injector.getInstance(MetricsCollectionService.class);
     streamHttpService = injector.getInstance(StreamHttpService.class);
+    externalAuthenticationServer = injector.getInstance(ExternalAuthenticationServer.class);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
@@ -106,7 +109,7 @@ public class SingleNodeMain {
    */
   protected void startUp(String[] args) throws Exception {
     logAppenderInitializer.initialize();
-
+    externalAuthenticationServer.startAndWait();
     File zkDir = new File(configuration.get(Constants.CFG_LOCAL_DATA_DIR) + "/zookeeper");
     //noinspection ResultOfMethodCallIgnored
     zkDir.mkdir();
