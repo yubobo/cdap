@@ -11,6 +11,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -124,6 +125,9 @@ public class NettyRouter extends AbstractIdleService {
       }
     };
 
+    if (tokenValidator instanceof Service) {
+      ((Service) tokenValidator).startAndWait();
+    }
     bootstrapClient(connectionTracker);
 
     bootstrapServer(connectionTracker);
@@ -142,6 +146,9 @@ public class NettyRouter extends AbstractIdleService {
       clientBootstrap.shutdown();
       clientBootstrap.releaseExternalResources();
       serverBootstrap.releaseExternalResources();
+    }
+    if (tokenValidator instanceof Service) {
+      ((Service) tokenValidator).stopAndWait();
     }
 
     LOG.info("Stopped Netty Router.");

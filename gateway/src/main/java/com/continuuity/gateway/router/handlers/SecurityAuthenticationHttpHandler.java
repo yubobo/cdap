@@ -20,7 +20,6 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -34,7 +33,6 @@ import java.net.InetSocketAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -104,7 +102,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
       } else {
         httpResponse.addHeader(HttpHeaders.Names.WWW_AUTHENTICATE,
                                  String.format("Bearer realm=\"%s\" error=\"invalid_token\"" +
-                                                 "error_description=\"%s\"", realm, tokenState.getMsg()));
+                                                 " error_description=\"%s\"", realm, tokenState.getMsg()));
         jsonObject.addProperty("error", "invalid_token");
         jsonObject.addProperty("error_description", tokenState.getMsg());
         LOG.debug("Failed authentication due to invalid token, reason={};", tokenState);
@@ -182,13 +180,13 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     if (entryObject instanceof AuditLogEntry) {
       logEntry = (AuditLogEntry) entryObject;
     }
-    ChannelBuffer channelBuffer = (ChannelBuffer) e.getMessage();
-    ChannelBuffer sliced = channelBuffer.slice(channelBuffer.readerIndex(), channelBuffer.readableBytes());
-    byte b = ' ';
-    int indx = sliced.indexOf(sliced.readerIndex(), sliced.readableBytes(), b);
-    if (logEntry != null) {
-      logEntry.responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
-      AUDIT_LOG.trace(logEntry.toString());
+    Object message = e.getMessage();
+    if (message instanceof HttpResponse) {
+      HttpResponse response = (HttpResponse) message;
+      if (logEntry != null) {
+        logEntry.responseCode = Integer.toString(response.getStatus().getCode());
+        AUDIT_LOG.trace(logEntry.toString());
+      }
     }
     super.writeRequested(ctx, e);
   }
