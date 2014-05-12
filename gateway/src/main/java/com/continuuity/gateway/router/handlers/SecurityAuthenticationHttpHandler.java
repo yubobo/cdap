@@ -175,20 +175,34 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
 
   @Override
   public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-    Object entryObject = ctx.getAttachment();
-    AuditLogEntry logEntry = null;
-    if (entryObject instanceof AuditLogEntry) {
-      logEntry = (AuditLogEntry) entryObject;
-    }
+    AuditLogEntry logEntry = getLogEntry(ctx);
     Object message = e.getMessage();
     if (message instanceof HttpResponse) {
       HttpResponse response = (HttpResponse) message;
-      if (logEntry != null) {
-        logEntry.responseCode = Integer.toString(response.getStatus().getCode());
-        AUDIT_LOG.trace(logEntry.toString());
-      }
+      logEntry.responseCode = Integer.toString(response.getStatus().getCode());
+    } else if (message instanceof ChannelBuffer) {
+      ChannelBuffer channelBuffer = (ChannelBuffer) message;
+      ChannelBuffer sliced = channelBuffer.slice(channelBuffer.readerIndex(), channelBuffer.readableBytes());
+      byte b = ' ';
+      int indx = sliced.indexOf(sliced.readerIndex(), sliced.readableBytes(), b);
+      logEntry.responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
+    } else {
+      LOG.info("Response message is of type " + message.getClass());
     }
+    AUDIT_LOG.trace(logEntry.toString());
     super.writeRequested(ctx, e);
+  }
+
+  private AuditLogEntry getLogEntry(ChannelHandlerContext ctx) {
+    Object entryObject = ctx.getAttachment();
+    AuditLogEntry logEntry;
+    if (entryObject != null && entryObject instanceof AuditLogEntry) {
+      logEntry = (AuditLogEntry) entryObject;
+    } else {
+      logEntry = new AuditLogEntry();
+      ctx.setAttachment(logEntry);
+    }
+    return logEntry;
   }
 
   private final class AuditLogEntry {
