@@ -1,6 +1,7 @@
 package com.continuuity.security.auth;
 
 import com.continuuity.security.io.Codec;
+import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
@@ -12,7 +13,7 @@ import java.io.IOException;
  * This class validates the accessToken and returns the different states
  * of accessToken validation.
  */
-public class AccessTokenValidator implements TokenValidator {
+public class AccessTokenValidator extends AbstractIdleService implements TokenValidator {
   private static final Logger LOG = LoggerFactory.getLogger(AccessTokenValidator.class);
   private final TokenManager tokenManager;
   private final Codec<AccessToken> accessTokenCodec;
@@ -44,5 +45,15 @@ public class AccessTokenValidator implements TokenValidator {
       LOG.debug("{} {}", state, ite);
     }
     return state;
+  }
+
+  @Override
+  protected void startUp() throws Exception {
+    this.tokenManager.startAndWait();
+  }
+
+  @Override
+  protected void shutDown() throws Exception {
+    this.tokenManager.stopAndWait();
   }
 }

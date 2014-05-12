@@ -23,5 +23,19 @@
       <appender-ref ref="Console"/>
     </root>
 
+    <!--
+      Uncomment the following seciont to enable access logging by the router process
+    -->
+    <appender name="AUDIT" class="ch.qos.logback.core.FileAppender">
+      <file>access.log</file>
+      <append>true</append>
+      <encoder>
+        <pattern>%msg%n</pattern>
+      </encoder>
+    </appender>
+    <logger name="http-access" level="TRACE">
+      <appender-ref ref="AUDIT" />
+    </logger>
+
 </configuration>
 

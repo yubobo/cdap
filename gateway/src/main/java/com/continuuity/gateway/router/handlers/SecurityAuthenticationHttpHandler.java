@@ -19,7 +19,7 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -30,22 +30,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Security handler that intercept HTTP message and validates the access token in
  * header Authorization field.
  */
-public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHandler {
+public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
   private static final Logger LOG = LoggerFactory.getLogger(SecurityAuthenticationHttpHandler.class);
+  private static final Logger AUDIT_LOG = LoggerFactory.getLogger("http-access");
 
   private final TokenValidator tokenValidator;
   private final AccessTokenTransformer accessTokenTransformer;
   private DiscoveryServiceClient discoveryServiceClient;
   private Iterable<Discoverable> discoverables;
   private final String realm;
+  private DateFormat dateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z");
+
 
   public SecurityAuthenticationHttpHandler(String realm, TokenValidator tokenValidator,
                                            AccessTokenTransformer accessTokenTransformer,
@@ -66,19 +70,27 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
    * @throws Exception
    */
   private boolean validateSecuredInterception(ChannelHandlerContext ctx, HttpRequest msg,
-                                      Channel inboundChannel) throws Exception {
+                                      Channel inboundChannel, AuditLogEntry logEntry) throws Exception {
     JsonObject jsonObject = new JsonObject();
     String auth = msg.getHeader(HttpHeaders.Names.AUTHORIZATION);
     String accessToken = null;
 
-    //Parsing the access token from authorization header.The request authorization comes as
-    //Authorization: Bearer accesstoken
+    /*
+     * Parse the access token from authorization header.  The header will be in the form:
+     *     Authorization: Bearer ACCESSTOKEN
+     *
+     * where ACCESSTOKEN is the base64 encoded serialized AccessToken instance.
+     */
     if (auth != null) {
       int spIndex = auth.trim().indexOf(' ');
       if (spIndex != -1) {
         accessToken = auth.substring(spIndex + 1).trim();
       }
     }
+
+    logEntry.clientIP = ((InetSocketAddress) ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
+    logEntry.requestLine = msg.getMethod() + " " + msg.getUri() + " " + msg.getProtocolVersion();
+
     TokenState tokenState = tokenValidator.validate(accessToken);
     if (!tokenState.isValid()) {
       HttpResponse httpResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNAUTHORIZED);
@@ -95,7 +107,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
         jsonObject.addProperty("error_description", tokenState.getMsg());
         LOG.debug("Failed authentication due to invalid token, reason={};", tokenState);
       }
-
+      logEntry.responseCode = "401";
       JsonArray externalAuthenticationURIs = new JsonArray();
 
       //Waiting for service to get discovered
@@ -107,15 +119,18 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
       httpResponse.setContent(content);
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content.readableBytes());
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/json;charset=UTF-8");
-
+      logEntry.responseContentLength = "" + content.readableBytes();
       ChannelFuture writeFuture = Channels.future(inboundChannel);
       Channels.write(ctx, writeFuture, httpResponse);
       writeFuture.addListener(ChannelFutureListener.CLOSE);
       return false;
     } else {
-      msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " +
-                                                        accessTokenTransformer.transform(accessToken));
-      return true;
+        AccessTokenTransformer.AccessTokenIdentifierPair accessTokenIdentifierPair =
+        accessTokenTransformer.transform(accessToken);
+        logEntry.userName = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
+        msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " +
+                                                          accessTokenIdentifierPair.getAccessTokenIdentifierStr());
+        return true;
     }
   }
 
@@ -146,11 +161,54 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
     Object msg = event.getMessage();
     if (!(msg instanceof HttpRequest)) {
       super.messageReceived(ctx, event);
-    } else if (validateSecuredInterception(ctx, (HttpRequest) msg, event.getChannel())) {
-      Channels.fireMessageReceived(ctx, msg, event.getRemoteAddress());
     } else {
-      return;
+      AuditLogEntry logEntry = new AuditLogEntry();
+      ctx.setAttachment(logEntry);
+      if (validateSecuredInterception(ctx, (HttpRequest) msg, event.getChannel(), logEntry)) {
+        Channels.fireMessageReceived(ctx, msg, event.getRemoteAddress());
+      } else {
+        AUDIT_LOG.trace(logEntry.toString());
+        return;
+      }
     }
   }
 
+  @Override
+  public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    Object entryObject = ctx.getAttachment();
+    AuditLogEntry logEntry = null;
+    if (entryObject instanceof AuditLogEntry) {
+      logEntry = (AuditLogEntry) entryObject;
+    }
+    Object message = e.getMessage();
+    if (message instanceof HttpResponse) {
+      HttpResponse response = (HttpResponse) message;
+      if (logEntry != null) {
+        logEntry.responseCode = Integer.toString(response.getStatus().getCode());
+        AUDIT_LOG.trace(logEntry.toString());
+      }
+    }
+    super.writeRequested(ctx, e);
+  }
+
+  private final class AuditLogEntry {
+    /** Each audit log field will default to "-" if the field is missing or not supported. */
+    private static final String DEFAULT_VALUE = "-";
+
+    private String clientIP = DEFAULT_VALUE;
+    private String userName = DEFAULT_VALUE;
+    private Date date;
+    private String requestLine = DEFAULT_VALUE;
+    private String responseCode = DEFAULT_VALUE;
+    private String responseContentLength = DEFAULT_VALUE;
+
+    public AuditLogEntry() {
+      this.date = new Date();
+    }
+
+    public String toString() {
+      return String.format("%s %s [%s] \"%s\" %s %s", clientIP, userName, dateFormat.format(date),
+                           requestLine, responseCode, responseContentLength);
+    }
+  }
 }

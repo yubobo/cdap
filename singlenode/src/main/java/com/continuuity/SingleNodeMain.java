@@ -109,7 +109,7 @@ public class SingleNodeMain {
    */
   protected void startUp(String[] args) throws Exception {
     logAppenderInitializer.initialize();
-
+    externalAuthenticationServer.startAndWait();
     File zkDir = new File(configuration.get(Constants.CFG_LOCAL_DATA_DIR) + "/zookeeper");
     //noinspection ResultOfMethodCallIgnored
     zkDir.mkdir();

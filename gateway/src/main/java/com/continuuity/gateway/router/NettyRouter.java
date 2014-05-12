@@ -11,6 +11,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -26,6 +27,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelDownstreamHandler;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
@@ -39,6 +41,7 @@ import org.jboss.netty.channel.socket.nio.ShareableWorkerPool;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,6 +125,9 @@ public class NettyRouter extends AbstractIdleService {
       }
     };
 
+    if (tokenValidator instanceof Service) {
+      ((Service) tokenValidator).startAndWait();
+    }
     bootstrapClient(connectionTracker);
 
     bootstrapServer(connectionTracker);
@@ -140,6 +146,9 @@ public class NettyRouter extends AbstractIdleService {
       clientBootstrap.shutdown();
       clientBootstrap.releaseExternalResources();
       serverBootstrap.releaseExternalResources();
+    }
+    if (tokenValidator instanceof Service) {
+      ((Service) tokenValidator).stopAndWait();
     }
 
     LOG.info("Stopped Netty Router.");
