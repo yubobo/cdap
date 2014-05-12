@@ -19,26 +19,26 @@ import java.io.IOException;
 /**
  * Handles dataset administrative calls.
  */
-@Path("/" + Constants.Dataset.Manager.VERSION)
+@Path("/" + Constants.Dataset.UserService.VERSION)
 public class DatasetAdminHandler extends AbstractHttpHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(DatasetAdminHandler.class);
 
-  private final DatasetManager mdsDatasetManager;
+  private final DatasetManager datasetManager;
   private final ClassLoader classLoader;
   /**
    * User to execute administrative commands as.
    */
   private final String user;
 
-  public DatasetAdminHandler(String user, DatasetManager mdsDatasetManager, ClassLoader classLoader) {
+  public DatasetAdminHandler(String user, DatasetManager datasetManager, ClassLoader classLoader) {
     this.user = user;
-    this.mdsDatasetManager = mdsDatasetManager;
+    this.datasetManager = datasetManager;
     this.classLoader = classLoader;
   }
 
   @GET
-  @Path("/datasets/admin/exists/{name}")
+  @Path("/datasets/admin/{name}")
   public void exists(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<Boolean>() {
       @Override
@@ -58,11 +58,11 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   @GET
   @Path("/datasets/admin/drop/{name}")
   public void drop(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<Void>() {
+    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
       @Override
-      public Void apply(DatasetAdmin datasetAdmin) throws IOException {
+      public String apply(DatasetAdmin datasetAdmin) throws IOException {
         datasetAdmin.drop();
-        return null;
+        return "";
       }
     });
   }
@@ -70,11 +70,11 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   @GET
   @Path("/datasets/admin/truncate/{name}")
   public void truncate(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<Void>() {
+    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
       @Override
-      public Void apply(DatasetAdmin datasetAdmin) throws IOException {
+      public String apply(DatasetAdmin datasetAdmin) throws IOException {
         datasetAdmin.truncate();
-        return null;
+        return "";
       }
     });
   }
@@ -82,11 +82,11 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   @GET
   @Path("/datasets/admin/upgrade/{name}")
   public void upgrade(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<Void>() {
+    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
       @Override
-      public Void apply(DatasetAdmin datasetAdmin) throws IOException {
+      public String apply(DatasetAdmin datasetAdmin) throws IOException {
         datasetAdmin.upgrade();
-        return null;
+        return "";
       }
     });
   }
@@ -94,7 +94,7 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   private void applyDatasetAdminOperation(final HttpResponder responder, String name,
                                           DatasetAdminOperation<?> datasetAdminOperation) {
     try {
-      DatasetAdmin datasetAdmin = mdsDatasetManager.getAdmin(name, classLoader);
+      DatasetAdmin datasetAdmin = datasetManager.getAdmin(name, classLoader);
       if (datasetAdmin != null) {
         Object result = datasetAdminOperation.apply(datasetAdmin);
         if (result != null && !(result instanceof Void)) {

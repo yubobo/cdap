@@ -4,8 +4,11 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data2.datafabric.ReactorDatasetNamespace;
+import com.continuuity.data2.datafabric.dataset.DataFabricDatasetManager;
+import com.continuuity.data2.datafabric.dataset.client.DatasetManagerServiceClient;
 import com.continuuity.data2.datafabric.dataset.type.DatasetModuleConflictException;
 import com.continuuity.data2.dataset2.manager.NamespacedDatasetManager;
+import com.continuuity.data2.dataset2.manager.inmemory.InMemoryDatasetDefinitionRegistry;
 import com.continuuity.http.NettyHttpService;
 import com.continuuity.data2.datafabric.dataset.instance.DatasetInstanceManager;
 import com.continuuity.data2.datafabric.dataset.type.DatasetTypeManager;
@@ -16,6 +19,8 @@ import com.google.common.base.Throwables;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
+import org.apache.twill.discovery.DiscoveryServiceClient;
+import org.apache.twill.filesystem.LocalLocationFactory;
 import org.apache.twill.filesystem.LocationFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
@@ -51,6 +56,7 @@ public class DatasetManagerService extends AbstractIdleService {
                                LocationFactory locationFactory,
                                @Named(Constants.Dataset.Manager.ADDRESS) InetAddress hostname,
                                DiscoveryService discoveryService,
+                               DiscoveryServiceClient discoveryServiceClient,
                                @Named("datasetMDS") DatasetManager mdsDatasetManager,
                                @Named("defaultDatasetModules")
                                NavigableMap<String, Class<? extends DatasetModule>> defaultModules,
@@ -68,10 +74,16 @@ public class DatasetManagerService extends AbstractIdleService {
     this.typeManager = new DatasetTypeManager(mdsDatasetManager, txSystemClient, locationFactory);
     this.instanceManager = new DatasetInstanceManager(mdsDatasetManager, txSystemClient);
 
+    DatasetManagerServiceClient dsManagerClient = new DatasetManagerServiceClient(discoveryServiceClient);
+    DatasetManager dsManager = new DataFabricDatasetManager(dsManagerClient, cConf,
+                                           new LocalLocationFactory(),
+                                           new InMemoryDatasetDefinitionRegistry());
+
+
     builder.addHttpHandlers(ImmutableList.of(new DatasetTypeHandler(typeManager, locationFactory, cConf),
                                              new DatasetInstanceHandler(typeManager, instanceManager),
                                              // TODO: pass proper classloader, pass proper user
-                                             new DatasetAdminHandler("bob", this.mdsDatasetManager, null)));
+                                             new DatasetAdminHandler("bob", dsManager, null)));
 
     builder.setHost(hostname.getCanonicalHostName());
     builder.setPort(cConf.getInt(Constants.Dataset.Manager.PORT, Constants.Dataset.Manager.DEFAULT_PORT));

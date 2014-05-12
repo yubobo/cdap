@@ -44,9 +44,9 @@ public class DatasetUserAdminHandler extends AbstractHttpHandler {
   }
 
   @GET
-  @Path("/datasets/admin/exists/{name}")
+  @Path("/datasets/admin/{name}")
   public void exists(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    String url = String.format("http://%s/datasets/admin/exists/%s", adminHandlerHostAndPort.toString(), name);
+    String url = String.format("http://%s/datasets/admin/%s", adminHandlerHostAndPort.toString(), name);
     applyDatasetAdminOperation(responder, url);
   }
 

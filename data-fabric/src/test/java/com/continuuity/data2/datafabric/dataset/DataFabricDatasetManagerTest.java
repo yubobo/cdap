@@ -52,6 +52,7 @@ public class DataFabricDatasetManagerTest extends AbstractDatasetManagerTest {
                                                new LocalLocationFactory(),
                                                InetAddress.getByName("localhost"),
                                                discoveryService,
+                                               discoveryService,
                                                new InMemoryDatasetManager(),
                                                ImmutableSortedMap.<String, Class<? extends DatasetModule>>of(
                                                  "memoryTable", InMemoryTableModule.class),

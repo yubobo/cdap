@@ -59,6 +59,7 @@ public abstract class DatasetManagerServiceTestBase {
                                         new LocalLocationFactory(),
                                         InetAddress.getByName("localhost"),
                                         discoveryService,
+                                        discoveryService,
                                         new InMemoryDatasetManager(),
                                         ImmutableSortedMap.<String, Class<? extends DatasetModule>>of(
                                           "memoryTable", InMemoryTableModule.class),
@@ -86,12 +87,12 @@ public abstract class DatasetManagerServiceTestBase {
     return new Response<T>(response.getStatusLine().getStatusCode(), (T) GSON.fromJson(reader, typeOfT));
   }
 
-  static final class Response<T> {
+  protected static final class Response<T> {
     final int status;
     @Nullable
     final T value;
 
-    private Response(int status, @Nullable T value) {
+    protected Response(int status, @Nullable T value) {
       this.status = status;
       this.value = value;
     }
