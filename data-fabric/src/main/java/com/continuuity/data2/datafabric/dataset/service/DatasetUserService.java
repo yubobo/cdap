@@ -1,0 +1,109 @@
+package com.continuuity.data2.datafabric.dataset.service;
+
+import com.continuuity.common.conf.CConfiguration;
+import com.continuuity.common.conf.Constants;
+import com.continuuity.http.NettyHttpService;
+import com.continuuity.internal.data.dataset.module.DatasetModule;
+import com.google.common.collect.ImmutableList;
+import com.google.common.net.HostAndPort;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import org.apache.twill.common.Cancellable;
+import org.apache.twill.discovery.Discoverable;
+import org.apache.twill.discovery.DiscoveryService;
+import org.apache.twill.filesystem.LocationFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.NavigableMap;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Handles various dataset operations running as a particular user.
+ */
+public class DatasetUserService extends AbstractIdleService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(DatasetUserService.class);
+
+  private final NettyHttpService httpService;
+  private final DiscoveryService discoveryService;
+  private final NavigableMap<String, Class<? extends DatasetModule>> defaultModules;
+  private final String user;
+  private Cancellable cancelDiscovery;
+
+  @Inject
+  public DatasetUserService(CConfiguration cConf,
+                               LocationFactory locationFactory,
+                               @Named(Constants.Dataset.Manager.ADDRESS) InetAddress hostname,
+                               DiscoveryService discoveryService,
+                               @Named("defaultDatasetModules") NavigableMap<String, Class<? extends DatasetModule>> defaultModules
+  ) throws Exception {
+
+    NettyHttpService.Builder builder = NettyHttpService.builder();
+    this.defaultModules = defaultModules;
+    // TODO: pass proper user
+    this.user = "bob";
+
+    // TODO: use random port, since we want to run one DatasetUserService per reactor user.
+    builder.addHttpHandlers(ImmutableList.of(
+      new DatasetUserAdminHandler(
+        user, HostAndPort.fromParts("localhost", Constants.Dataset.Manager.DEFAULT_PORT))));
+
+    builder.setHost(hostname.getCanonicalHostName());
+
+    builder.setPort(cConf.getInt(Constants.Dataset.UserService.PORT, Constants.Dataset.UserService.DEFAULT_PORT));
+
+    builder.setConnectionBacklog(cConf.getInt(Constants.Dataset.UserService.BACKLOG_CONNECTIONS,
+                                              Constants.Dataset.UserService.DEFAULT_BACKLOG));
+    builder.setExecThreadPoolSize(cConf.getInt(Constants.Dataset.UserService.EXEC_THREADS,
+                                               Constants.Dataset.UserService.DEFAULT_EXEC_THREADS));
+    builder.setBossThreadPoolSize(cConf.getInt(Constants.Dataset.UserService.BOSS_THREADS,
+                                               Constants.Dataset.UserService.DEFAULT_BOSS_THREADS));
+    builder.setWorkerThreadPoolSize(cConf.getInt(Constants.Dataset.UserService.WORKER_THREADS,
+                                                 Constants.Dataset.UserService.DEFAULT_WORKER_THREADS));
+
+    this.httpService = builder.build();
+    this.discoveryService = discoveryService;
+  }
+
+  @Override
+  protected void startUp() throws Exception {
+    LOG.info("Starting DatasetUserService for user {}...", user);
+
+    httpService.startAndWait();
+
+    // Register the service
+    cancelDiscovery = discoveryService.register(new Discoverable() {
+      @Override
+      public String getName() {
+        return Constants.Service.DATASET_MANAGER + "." + user;
+      }
+
+      @Override
+      public InetSocketAddress getSocketAddress() {
+        return httpService.getBindAddress();
+      }
+    });
+
+    LOG.info("DatasetManagerService started successfully on {}", httpService.getBindAddress());
+  }
+
+  @Override
+  protected void shutDown() throws Exception {
+    LOG.info("Stopping DatasetUserService...");
+
+    // Unregister the service
+    cancelDiscovery.cancel();
+    // Wait for a few seconds for requests to stop
+    try {
+      TimeUnit.SECONDS.sleep(3);
+    } catch (InterruptedException e) {
+      LOG.error("Interrupted while waiting...", e);
+    }
+
+    httpService.stopAndWait();
+  }
+}

@@ -69,7 +69,9 @@ public class DatasetManagerService extends AbstractIdleService {
     this.instanceManager = new DatasetInstanceManager(mdsDatasetManager, txSystemClient);
 
     builder.addHttpHandlers(ImmutableList.of(new DatasetTypeHandler(typeManager, locationFactory, cConf),
-                                             new DatasetInstanceHandler(typeManager, instanceManager)));
+                                             new DatasetInstanceHandler(typeManager, instanceManager),
+                                             // TODO: pass proper classloader, pass proper user
+                                             new DatasetAdminHandler("bob", this.mdsDatasetManager, null)));
 
     builder.setHost(hostname.getCanonicalHostName());
     builder.setPort(cConf.getInt(Constants.Dataset.Manager.PORT, Constants.Dataset.Manager.DEFAULT_PORT));

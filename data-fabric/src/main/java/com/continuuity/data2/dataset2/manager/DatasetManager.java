@@ -86,7 +86,8 @@ public interface DatasetManager {
    * @throws IOException when there's trouble to instantiate {@link DatasetAdmin}
    */
   @Nullable
-  <T extends DatasetAdmin> T getAdmin(String datasetInstanceName, @Nullable ClassLoader classLoader)
+  <T extends DatasetAdmin> T
+  getAdmin(String datasetInstanceName, @Nullable ClassLoader classLoader)
     throws DatasetManagementException, IOException;
 
   /**

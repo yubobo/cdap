@@ -90,7 +90,7 @@ public class DatasetInstanceHandlerTest extends DatasetManagerServiceTestBase {
     Assert.assertEquals(HttpStatus.SC_OK, DatasetTypeHandlerTest.deleteModule("module1"));
   }
 
-  private int createInstance(String instanceName, String typeName, DatasetInstanceProperties props) throws IOException {
+  protected int createInstance(String instanceName, String typeName, DatasetInstanceProperties props) throws IOException {
     HttpPost post = new HttpPost(getUrl("/datasets/instances/" + instanceName));
     post.addHeader("type-name", typeName);
     post.setEntity(new StringEntity(new Gson().toJson(props)));
@@ -101,19 +101,19 @@ public class DatasetInstanceHandlerTest extends DatasetManagerServiceTestBase {
     return response.getStatusLine().getStatusCode();
   }
 
-  private Response<List<DatasetInstanceSpec>> getInstances() throws IOException {
+  protected Response<List<DatasetInstanceSpec>> getInstances() throws IOException {
     HttpGet get = new HttpGet(getUrl("/datasets/instances"));
     DefaultHttpClient client = new DefaultHttpClient();
     return parseResponse(client.execute(get), new TypeToken<List<DatasetInstanceSpec>>() { }.getType());
   }
 
-  private Response<DatasetInstanceMeta> getInstance(String instanceName) throws IOException {
+  protected Response<DatasetInstanceMeta> getInstance(String instanceName) throws IOException {
     HttpGet get = new HttpGet(getUrl("/datasets/instances/" + instanceName));
     DefaultHttpClient client = new DefaultHttpClient();
     return parseResponse(client.execute(get), DatasetInstanceMeta.class);
   }
 
-  private int deleteInstance(String instanceName) throws IOException {
+  protected int deleteInstance(String instanceName) throws IOException {
     HttpDelete delete = new HttpDelete(getUrl("/datasets/instances/" + instanceName));
     HttpResponse response = new DefaultHttpClient().execute(delete);
     return response.getStatusLine().getStatusCode();
@@ -160,7 +160,7 @@ public class DatasetInstanceHandlerTest extends DatasetManagerServiceTestBase {
     };
   }
 
-  private static DatasetInstanceSpec createSpec(String instanceName, String typeName,
+  protected static DatasetInstanceSpec createSpec(String instanceName, String typeName,
                                                 DatasetInstanceProperties properties) {
     return new DatasetInstanceSpec.Builder(instanceName, typeName).properties(properties.getProperties()).build();
   }
