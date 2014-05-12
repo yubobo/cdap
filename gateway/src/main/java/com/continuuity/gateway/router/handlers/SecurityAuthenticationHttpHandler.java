@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -41,21 +43,15 @@ import java.util.concurrent.TimeUnit;
  */
 public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
   private static final Logger LOG = LoggerFactory.getLogger(SecurityAuthenticationHttpHandler.class);
+  private static final Logger AUDIT_LOG = LoggerFactory.getLogger("http-access");
 
   private final TokenValidator tokenValidator;
   private final AccessTokenTransformer accessTokenTransformer;
   private DiscoveryServiceClient discoveryServiceClient;
   private Iterable<Discoverable> discoverables;
   private final String realm;
+  private DateFormat dateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z");
 
-  private String clientIP;
-  private String userName;
-  private Date date;
-  private String requestLine;
-  private String responseCode;
-  private String responseContentLength;
-
-  private String auditLogLine;
 
   public SecurityAuthenticationHttpHandler(String realm, TokenValidator tokenValidator,
                                            AccessTokenTransformer accessTokenTransformer,
@@ -65,13 +61,6 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     this.accessTokenTransformer = accessTokenTransformer;
     this.discoveryServiceClient = discoveryServiceClient;
     discoverables = discoveryServiceClient.discover(Constants.Service.EXTERNAL_AUTHENTICATION);
-
-    // default value of '-' in access log means the absence of that field
-    this.clientIP = "-";
-    this.userName = "-";
-    this.requestLine = "-";
-    this.responseCode = "-";
-    this.responseContentLength = "-";
   }
 
   /**
@@ -83,13 +72,17 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
    * @throws Exception
    */
   private boolean validateSecuredInterception(ChannelHandlerContext ctx, HttpRequest msg,
-                                      Channel inboundChannel) throws Exception {
+                                      Channel inboundChannel, AuditLogEntry logEntry) throws Exception {
     JsonObject jsonObject = new JsonObject();
     String auth = msg.getHeader(HttpHeaders.Names.AUTHORIZATION);
     String accessToken = null;
 
-    //Parsing the access token from authorization header.The request authorization comes as
-    //Authorization: Bearer accesstoken
+    /*
+     * Parse the access token from authorization header.  The header will be in the form:
+     *     Authorization: Bearer ACCESSTOKEN
+     *
+     * where ACCESSTOKEN is the base64 encoded serialized AccessToken instance.
+     */
     if (auth != null) {
       int spIndex = auth.trim().indexOf(' ');
       if (spIndex != -1) {
@@ -97,9 +90,8 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
       }
     }
 
-    date = new Date();
-    clientIP = ((InetSocketAddress) ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
-    requestLine = msg.getMethod() + " " + msg.getUri() + " " + msg.getProtocolVersion();
+    logEntry.clientIP = ((InetSocketAddress) ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
+    logEntry.requestLine = msg.getMethod() + " " + msg.getUri() + " " + msg.getProtocolVersion();
 
     TokenState tokenState = tokenValidator.validate(accessToken);
     if (!tokenState.isValid()) {
@@ -117,7 +109,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
         jsonObject.addProperty("error_description", tokenState.getMsg());
         LOG.debug("Failed authentication due to invalid token, reason={};", tokenState);
       }
-      responseCode = "401";
+      logEntry.responseCode = "401";
       JsonArray externalAuthenticationURIs = new JsonArray();
 
       //Waiting for service to get discovered
@@ -129,7 +121,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
       httpResponse.setContent(content);
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content.readableBytes());
       httpResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/json;charset=UTF-8");
-      responseContentLength = "" + content.readableBytes();
+      logEntry.responseContentLength = "" + content.readableBytes();
       ChannelFuture writeFuture = Channels.future(inboundChannel);
       Channels.write(ctx, writeFuture, httpResponse);
       writeFuture.addListener(ChannelFutureListener.CLOSE);
@@ -137,7 +129,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     } else {
         AccessTokenTransformer.AccessTokenIdentifierPair accessTokenIdentifierPair =
         accessTokenTransformer.transform(accessToken);
-        userName = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
+        logEntry.userName = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
         msg.setHeader(HttpHeaders.Names.WWW_AUTHENTICATE, "Reactor-verified " +
                                                           accessTokenIdentifierPair.getAccessTokenIdentifierStr());
         return true;
@@ -171,31 +163,54 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     Object msg = event.getMessage();
     if (!(msg instanceof HttpRequest)) {
       super.messageReceived(ctx, event);
-    } else if (validateSecuredInterception(ctx, (HttpRequest) msg, event.getChannel())) {
-      System.out.println(getAuditLogLine());
-      Channels.fireMessageReceived(ctx, msg, event.getRemoteAddress());
     } else {
-      System.out.println(getAuditLogLine());
-      return;
+      AuditLogEntry logEntry = new AuditLogEntry();
+      ctx.setAttachment(logEntry);
+      if (validateSecuredInterception(ctx, (HttpRequest) msg, event.getChannel(), logEntry)) {
+        Channels.fireMessageReceived(ctx, msg, event.getRemoteAddress());
+      } else {
+        AUDIT_LOG.trace(logEntry.toString());
+        return;
+      }
     }
   }
 
   @Override
   public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    Object entryObject = ctx.getAttachment();
+    AuditLogEntry logEntry = null;
+    if (entryObject instanceof AuditLogEntry) {
+      logEntry = (AuditLogEntry) entryObject;
+    }
     ChannelBuffer channelBuffer = (ChannelBuffer) e.getMessage();
     ChannelBuffer sliced = channelBuffer.slice(channelBuffer.readerIndex(), channelBuffer.readableBytes());
     byte b = ' ';
     int indx = sliced.indexOf(sliced.readerIndex(), sliced.readableBytes(), b);
-    responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
-    System.out.println(channelBuffer.toString(Charsets.UTF_8));
-
-    System.out.println(getAuditLogLine());
+    if (logEntry != null) {
+      logEntry.responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
+      AUDIT_LOG.trace(logEntry.toString());
+    }
     super.writeRequested(ctx, e);
   }
 
-  private String getAuditLogLine() {
-    return String.format("%s %s [%s] %s %s %s", clientIP, userName, date,
-                         requestLine, responseCode, responseContentLength);
-  }
+  private final class AuditLogEntry {
+    /** Each audit log field will default to "-" if the field is missing or not supported. */
+    private static final String DEFAULT_VALUE = "-";
 
+    private String clientIP = DEFAULT_VALUE;
+    private String userName = DEFAULT_VALUE;
+    private Date date;
+    private String requestLine = DEFAULT_VALUE;
+    private String responseCode = DEFAULT_VALUE;
+    private String responseContentLength = DEFAULT_VALUE;
+
+    public AuditLogEntry() {
+      this.date = new Date();
+    }
+
+    public String toString() {
+      return String.format("%s %s [%s] \"%s\" %s %s", clientIP, userName, dateFormat.format(date),
+                           requestLine, responseCode, responseContentLength);
+    }
+  }
 }
