@@ -38,14 +38,21 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   }
 
   @GET
-  @Path("/datasets/admin/{name}")
+  @Path("/datasets/admin/{name}/exists")
   public void exists(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<Boolean>() {
-      @Override
-      public Boolean apply(DatasetAdmin datasetAdmin) throws IOException {
-        return datasetAdmin.exists();
+    try {
+      DatasetAdmin datasetAdmin = datasetManager.getAdmin(name, classLoader);
+      if (datasetAdmin != null) {
+        boolean exists = datasetAdmin.exists();
+        responder.sendJson(HttpResponseStatus.OK, exists);
       }
-    });
+    } catch (DatasetManagementException e) {
+      LOG.info("Error", e);
+      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    } catch (IOException e) {
+      LOG.info("Error", e);
+      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @GET
@@ -56,7 +63,7 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   }
 
   @GET
-  @Path("/datasets/admin/drop/{name}")
+  @Path("/datasets/admin/{name}/drop")
   public void drop(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
       @Override
@@ -68,7 +75,7 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   }
 
   @GET
-  @Path("/datasets/admin/truncate/{name}")
+  @Path("/datasets/admin/{name}/truncate")
   public void truncate(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
       @Override
@@ -80,7 +87,7 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   }
 
   @GET
-  @Path("/datasets/admin/upgrade/{name}")
+  @Path("/datasets/admin/{name}/upgrade")
   public void upgrade(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
       @Override

@@ -44,7 +44,7 @@ public class DatasetUserAdminHandler extends AbstractHttpHandler {
   }
 
   @GET
-  @Path("/datasets/admin/{name}")
+  @Path("/datasets/admin/{name}/exists")
   public void exists(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     String url = String.format("http://%s/datasets/admin/%s", adminHandlerHostAndPort.toString(), name);
     applyDatasetAdminOperation(responder, url);
@@ -58,21 +58,21 @@ public class DatasetUserAdminHandler extends AbstractHttpHandler {
   }
 
   @GET
-  @Path("/datasets/admin/drop/{name}")
+  @Path("/datasets/admin/{name}/drop")
   public void drop(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     String url = String.format("http://%s/datasets/admin/drop/%s", adminHandlerHostAndPort.toString(), name);
     applyDatasetAdminOperation(responder, url);
   }
 
   @GET
-  @Path("/datasets/admin/truncate/{name}")
+  @Path("/datasets/admin/{name}/drop")
   public void truncate(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     String url = String.format("http://%s/datasets/admin/truncate/%s", adminHandlerHostAndPort.toString(), name);
     applyDatasetAdminOperation(responder, url);
   }
 
   @GET
-  @Path("/datasets/admin/upgrade/{name}")
+  @Path("/datasets/admin/{name}/upgrade")
   public void upgrade(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     String url = String.format("http://%s/datasets/admin/upgrade/%s", adminHandlerHostAndPort.toString(), name);
     applyDatasetAdminOperation(responder, url);

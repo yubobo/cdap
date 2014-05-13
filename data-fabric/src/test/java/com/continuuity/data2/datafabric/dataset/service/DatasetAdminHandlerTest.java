@@ -32,7 +32,7 @@ public class DatasetAdminHandlerTest extends DatasetInstanceHandlerTest {
 
     // verify instance does not exist
     Response<Boolean> existsResponse = getExists(datasetName);
-    Assert.assertEquals(HttpStatus.SC_NOT_FOUND, existsResponse.status);
+    Assert.assertEquals(HttpStatus.SC_OK, existsResponse.status);
     Assert.assertEquals(false, existsResponse.value);
 
     // create dataset instance
