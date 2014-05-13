@@ -23,6 +23,7 @@ import org.apache.twill.filesystem.Location;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 import javax.annotation.Nullable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -202,7 +203,13 @@ public class DatasetManagerServiceClient {
         }
         byte[] responseBody = null;
         if (conn.getDoInput()) {
-          InputStream is = conn.getInputStream();
+          InputStream is = null;
+          try {
+             is = conn.getInputStream();
+          } catch (FileNotFoundException e) {
+            // got 404
+            return new HttpResponse(conn.getResponseCode(), conn.getResponseMessage(), responseBody);
+          }
           try {
             responseBody = ByteStreams.toByteArray(is);
           } finally {
