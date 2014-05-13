@@ -5,12 +5,13 @@ package com.continuuity.metrics.query;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
-import com.continuuity.common.http.core.HandlerContext;
-import com.continuuity.common.http.core.HttpResponder;
 import com.continuuity.common.metrics.MetricsScope;
 import com.continuuity.common.service.ServerException;
 import com.continuuity.data2.OperationException;
-import com.continuuity.gateway.auth.GatewayAuthenticator;
+import com.continuuity.gateway.auth.Authenticator;
+import com.continuuity.http.HandlerContext;
+import com.continuuity.http.HttpResponder;
+import com.continuuity.metadata.MetaDataTable;
 import com.continuuity.metrics.MetricsConstants;
 import com.continuuity.metrics.data.AggregatesTable;
 import com.continuuity.metrics.data.MetricsScanQuery;
@@ -28,15 +29,15 @@ import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 
 /**
  * Handlers for clearing metrics.
@@ -51,9 +52,10 @@ public class DeleteMetricsHandler extends BaseMetricsHandler {
   private final int tsRetentionSeconds;
 
   @Inject
-  public DeleteMetricsHandler(GatewayAuthenticator authenticator,
-                              final MetricsTableFactory metricsTableFactory, CConfiguration cConf) {
-    super(authenticator);
+  public DeleteMetricsHandler(Authenticator authenticator,
+                              final MetricsTableFactory metricsTableFactory, CConfiguration cConf,
+                              MetaDataTable metaDataTable) {
+    super(authenticator, metaDataTable);
     this.metricsTableCaches = Maps.newHashMap();
     this.aggregatesTables = Maps.newHashMap();
     for (final MetricsScope scope : MetricsScope.values()) {

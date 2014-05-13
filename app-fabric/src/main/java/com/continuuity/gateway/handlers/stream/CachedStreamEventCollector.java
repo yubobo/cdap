@@ -8,7 +8,7 @@ import com.continuuity.common.queue.QueueName;
 import com.continuuity.data2.queue.QueueClientFactory;
 import com.continuuity.data2.queue.QueueEntry;
 import com.continuuity.data2.transaction.TransactionSystemClient;
-import com.continuuity.streamevent.StreamEventCodec;
+import com.continuuity.common.stream.StreamEventCodec;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
@@ -17,11 +17,11 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.annotation.Nullable;
 
 /**
  * This class caches stream events and enqueues them in batch.

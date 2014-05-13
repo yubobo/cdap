@@ -7,9 +7,9 @@ import com.continuuity.app.program.Program;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.common.metrics.MetricsCollector;
 import com.continuuity.common.metrics.MetricsScope;
-import org.apache.twill.api.RunId;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import org.apache.twill.api.RunId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +41,7 @@ public abstract class AbstractContext implements DataSetContext {
                          getAccountId(), getApplicationId(), getProgramName(), runId);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T extends DataSet> T getDataSet(String name) {
     T dataSet = (T) datasets.get(name);

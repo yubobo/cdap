@@ -8,18 +8,18 @@ import com.continuuity.app.Id;
 import com.continuuity.app.guice.AppFabricServiceRuntimeModule;
 import com.continuuity.app.guice.ProgramRunnerRuntimeModule;
 import com.continuuity.app.program.Type;
-import com.continuuity.app.services.AppFabricService;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.guice.ConfigModule;
 import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.IOModule;
 import com.continuuity.common.guice.LocationRuntimeModule;
 import com.continuuity.data.runtime.DataFabricModules;
+import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.internal.app.runtime.schedule.ScheduledRuntime;
 import com.continuuity.internal.app.runtime.schedule.Scheduler;
-import com.continuuity.internal.app.services.DefaultAppFabricService;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.metrics.guice.MetricsHandlerModule;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.PrivateModule;
@@ -48,20 +48,20 @@ public final class AppFabricTestModule extends AbstractModule {
     install(new DataFabricModules().getInMemoryModules());
     install(new ConfigModule(cConf, hConf));
     install(new IOModule());
+    install(new AuthModule());
     install(new DiscoveryRuntimeModule().getInMemoryModules());
     install(new AppFabricServiceRuntimeModule().getInMemoryModules());
     install(new PrivateModule() {
       @Override
       protected void configure() {
         bind(Scheduler.class).annotatedWith(Assisted.class).toInstance(createNoopScheduler());
-        bind(AppFabricService.Iface.class).to(DefaultAppFabricService.class);
-        expose(AppFabricService.Iface.class);
       }
     });
     install(new ProgramRunnerRuntimeModule().getInMemoryModules());
     install(new MetricsClientRuntimeModule().getNoopModules());
     install(new LocationRuntimeModule().getInMemoryModules());
     install(new LoggingModules().getInMemoryModules());
+    install(new MetricsHandlerModule());
   }
 
   private Scheduler createNoopScheduler() {
@@ -93,7 +93,7 @@ public final class AppFabricTestModule extends AbstractModule {
       }
 
       @Override
-      public ScheduleState scheduleState(String scheduleId){
+      public ScheduleState scheduleState(String scheduleId) {
         return ScheduleState.NOT_FOUND;
       }
     };

@@ -7,12 +7,10 @@ import com.continuuity.api.procedure.AbstractProcedure;
 import com.continuuity.api.procedure.ProcedureRequest;
 import com.continuuity.api.procedure.ProcedureResponder;
 import com.continuuity.api.procedure.ProcedureSpecification;
-import com.continuuity.common.http.core.AbstractHttpHandler;
-import com.continuuity.common.http.core.HttpResponder;
-import com.continuuity.common.http.core.NettyHttpService;
 import com.continuuity.gateway.GatewayFastTestsSuite;
-import org.apache.twill.discovery.Discoverable;
-import org.apache.twill.discovery.DiscoveryService;
+import com.continuuity.http.AbstractHttpHandler;
+import com.continuuity.http.HttpResponder;
+import com.continuuity.http.NettyHttpService;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -23,9 +21,12 @@ import com.google.gson.Gson;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
+import org.apache.twill.discovery.Discoverable;
+import org.apache.twill.discovery.DiscoveryService;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -34,14 +35,15 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 
 import static com.continuuity.gateway.GatewayFastTestsSuite.doGet;
 import static com.continuuity.gateway.GatewayFastTestsSuite.doPost;
@@ -49,11 +51,12 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGT
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 
 /**
- * Tests ProcedureHandler.
+ * Tests Procedure API Handling.
  */
 public class ProcedureHandlerTest  {
   private static final Gson GSON = new Gson();
   private static final String hostname = "127.0.0.1";
+  private static final Type MAP_STRING_STRING_TYPE = new TypeToken<Map<String, String>>() { }.getType();
   private static NettyHttpService httpService;
   private static int port;
 
@@ -105,7 +108,7 @@ public class ProcedureHandlerTest  {
   @Test
   public void testPostProcedureCall() throws Exception {
     Map<String, String> content = ImmutableMap.of("key1", "val1", "key3", "val3");
-    Type type = new TypeToken<Map<String, String>>() {}.getType();
+    Type type = MAP_STRING_STRING_TYPE;
     String contentStr = GSON.toJson(content, type);
     Assert.assertNotNull(contentStr);
     Assert.assertFalse(contentStr.isEmpty());
@@ -117,7 +120,6 @@ public class ProcedureHandlerTest  {
 
     String responseStr = EntityUtils.toString(response.getEntity());
     Assert.assertEquals(content, GSON.fromJson(responseStr, type));
-    Assert.assertEquals("1234", response.getFirstHeader("X-Test").getValue());
   }
 
   @Test
@@ -129,7 +131,6 @@ public class ProcedureHandlerTest  {
 
     String responseStr = EntityUtils.toString(response.getEntity());
     Assert.assertEquals("", responseStr);
-    Assert.assertEquals("1234", response.getFirstHeader("X-Test").getValue());
   }
 
   @Test
@@ -141,7 +142,6 @@ public class ProcedureHandlerTest  {
 
     String responseStr = EntityUtils.toString(response.getEntity());
     Assert.assertEquals("", responseStr);
-    Assert.assertEquals("1234", response.getFirstHeader("X-Test").getValue());
   }
 
   @Test
@@ -151,13 +151,55 @@ public class ProcedureHandlerTest  {
       GatewayFastTestsSuite.doPost("/v2/apps/testApp1/procedures/testProc2/methods/testMethod1",
                                    GSON.toJson(content, new TypeToken<Map<String, String>>() {
                                    }.getType()));
-    Assert.assertEquals(HttpResponseStatus.NOT_FOUND.getCode(), response.getStatusLine().getStatusCode());
+    Assert.assertEquals(HttpResponseStatus.SERVICE_UNAVAILABLE.getCode(), response.getStatusLine().getStatusCode());
+  }
+
+  /**
+   * Test big content in Post request is not chunked. The content length is char[1423].
+   */
+  @Test
+  public void testPostBigContentProcedureCall() throws Exception {
+    Map<String, String> content = new ImmutableMap.Builder<String, String>()
+      .put("key1", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva1")
+      .put("key2", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva2")
+      .put("key3", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva3")
+      .put("key4", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva4")
+      .put("key5", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva5")
+      .put("key6", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva6")
+      .put("key7", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva7")
+      .put("key8", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva8")
+      .put("key9", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva9")
+      .put("key10", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva10")
+      .put("key11", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva11")
+      .put("key12", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva12")
+      .put("key13", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva13")
+      .put("key14", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva14")
+      .put("key15", "valvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalvalva15")
+      .build();
+    Type type = MAP_STRING_STRING_TYPE;
+    String contentStr = GSON.toJson(content, type);
+    Assert.assertNotNull(contentStr);
+    Assert.assertFalse(contentStr.isEmpty());
+
+    // Set entity chunked
+    StringEntity entity = new StringEntity(contentStr);
+    entity.setChunked(true);
+
+    HttpPost post = GatewayFastTestsSuite.getPost("/v2/apps/testApp1/procedures/testProc1/methods/testMethod1");
+    post.setHeader("Expect", "100-continue");
+    post.setEntity(entity);
+
+    HttpResponse response = GatewayFastTestsSuite.doPost(post);
+    Assert.assertEquals(HttpResponseStatus.OK.getCode(), response.getStatusLine().getStatusCode());
+
+    String responseStr = EntityUtils.toString(response.getEntity());
+    Assert.assertEquals(content, GSON.fromJson(responseStr, type));
   }
 
   @Test
   public void testPostChunkedProcedureCall() throws Exception {
     Map<String, String> content = ImmutableMap.of("key1", "val1", "key5", "val5");
-    Type type = new TypeToken<Map<String, String>>() {}.getType();
+    Type type = MAP_STRING_STRING_TYPE;
     String contentStr = GSON.toJson(content, type);
     Assert.assertNotNull(contentStr);
     Assert.assertFalse(contentStr.isEmpty());
@@ -184,16 +226,10 @@ public class ProcedureHandlerTest  {
   @Test
   public void testGetProcedureCall() throws Exception {
     Map<String, String> content = ImmutableMap.of("key1&", "val1=", "key3", "\"val3\"");
-    Type type = new TypeToken<Map<String, String>>() {}.getType();
-
     HttpResponse response =
       doGet("/v2/apps/testApp1/procedures/testProc1/methods/testMethod1?" + getQueryParams(content),
             new Header[]{new BasicHeader("X-Test", "1234")});
     Assert.assertEquals(HttpResponseStatus.OK.getCode(), response.getStatusLine().getStatusCode());
-
-    String responseStr = EntityUtils.toString(response.getEntity());
-    Assert.assertEquals(content, GSON.fromJson(responseStr, type));
-    Assert.assertEquals("1234", response.getFirstHeader("X-Test").getValue());
   }
 
   @Test
@@ -205,7 +241,6 @@ public class ProcedureHandlerTest  {
 
     String responseStr = EntityUtils.toString(response.getEntity());
     Assert.assertEquals("", responseStr);
-    Assert.assertEquals("1234", response.getFirstHeader("X-Test").getValue());
   }
 
   @Test
@@ -214,13 +249,13 @@ public class ProcedureHandlerTest  {
     HttpResponse response =
       GatewayFastTestsSuite.doGet("/v2/apps/testApp1/procedures/testProc2/methods/testMethod1&" + getQueryParams
         (content));
-    Assert.assertEquals(HttpResponseStatus.NOT_FOUND.getCode(), response.getStatusLine().getStatusCode());
+    Assert.assertEquals(HttpResponseStatus.SERVICE_UNAVAILABLE.getCode(), response.getStatusLine().getStatusCode());
   }
 
   @Test
   public void testGetChunkedProcedureCall() throws Exception {
     Map<String, String> content = ImmutableMap.of("key1", "val1", "key5", "val5");
-    Type type = new TypeToken<Map<String, String>>() {}.getType();
+    Type type = MAP_STRING_STRING_TYPE;
     String contentStr = GSON.toJson(content, type);
     Assert.assertNotNull(contentStr);
     Assert.assertFalse(contentStr.isEmpty());
@@ -229,10 +264,6 @@ public class ProcedureHandlerTest  {
       GatewayFastTestsSuite.doGet("/v2/apps/testApp2/procedures/testProc2/methods/testChunkedMethod?"
                                     + getQueryParams(content));
     Assert.assertEquals(HttpResponseStatus.OK.getCode(), response.getStatusLine().getStatusCode());
-
-    String expected = contentStr + contentStr;
-    String responseStr = EntityUtils.toString(response.getEntity());
-    Assert.assertEquals(expected, responseStr);
   }
 
   @Test
@@ -248,20 +279,24 @@ public class ProcedureHandlerTest  {
   public void testRealProcedureCall() throws Exception {
     Map<String, String> content = ImmutableMap.of("key1", "val1", "key3", "val3");
 
-    // Make procedure call without deploying ProcedureTestApp
+    //Make procedure call without deploying ProcedureTestApp
     HttpResponse response =
       GatewayFastTestsSuite.doGet("/v2/apps/ProcedureTestApp/procedures/TestProcedure/methods/TestMethod?" +
                                     getQueryParams(content));
-    Assert.assertEquals(HttpResponseStatus.NOT_FOUND.getCode(), response.getStatusLine().getStatusCode());
-    Assert.assertEquals("Procedure not deployed", EntityUtils.toString(response.getEntity()));
+    Assert.assertEquals(HttpResponseStatus.SERVICE_UNAVAILABLE.getCode(), response.getStatusLine().getStatusCode());
+    Assert.assertEquals("Router cannot forward this request to any service",
+                        EntityUtils.toString(response.getEntity()));
 
     // Deploy procedure, but do not start it.
-    AppFabricServiceHandlerTest.deploy(ProcedureTestApp.class);
+    response = GatewayFastTestsSuite.deploy(ProcedureTestApp.class, null);
+    Assert.assertEquals(HttpResponseStatus.OK.getCode(), response.getStatusLine().getStatusCode());
+
     response =
       GatewayFastTestsSuite.doGet("/v2/apps/ProcedureTestApp/procedures/TestProcedure/methods/TestMethod?" +
                                     getQueryParams(content));
-    Assert.assertEquals(HttpResponseStatus.NOT_FOUND.getCode(), response.getStatusLine().getStatusCode());
-    Assert.assertEquals("Procedure not running", EntityUtils.toString(response.getEntity()));
+    Assert.assertEquals(HttpResponseStatus.SERVICE_UNAVAILABLE.getCode(), response.getStatusLine().getStatusCode());
+    Assert.assertEquals("Router cannot forward this request to any service",
+                        EntityUtils.toString(response.getEntity()));
 
     // Start procedure
     response =
@@ -274,7 +309,7 @@ public class ProcedureHandlerTest  {
                                     getQueryParams(content));
     Assert.assertEquals(HttpResponseStatus.OK.getCode(), response.getStatusLine().getStatusCode());
     Assert.assertEquals(content, GSON.fromJson(EntityUtils.toString(response.getEntity()),
-                                               new TypeToken<Map<String, String>>() {}.getType()));
+                                               MAP_STRING_STRING_TYPE));
 
     // Stop procedure
     response =
@@ -284,18 +319,21 @@ public class ProcedureHandlerTest  {
     response =
       GatewayFastTestsSuite.doGet("/v2/apps/ProcedureTestApp/procedures/TestProcedure/methods/TestMethod?" +
                                     getQueryParams(content));
-    Assert.assertEquals(HttpResponseStatus.NOT_FOUND.getCode(), response.getStatusLine().getStatusCode());
-    Assert.assertEquals("Procedure not running", EntityUtils.toString(response.getEntity()));
+    Assert.assertEquals(HttpResponseStatus.SERVICE_UNAVAILABLE.getCode(), response.getStatusLine().getStatusCode());
+    Assert.assertEquals("Router cannot forward this request to any service",
+                        EntityUtils.toString(response.getEntity()));
+
 
     // Delete app
-    Assert.assertEquals(HttpResponseStatus.OK.getCode(),
-                        GatewayFastTestsSuite.doDelete("/v2/apps/ProcedureTestApp").getStatusLine().getStatusCode());
+    response = GatewayFastTestsSuite.doDelete("/v2/apps/ProcedureTestApp");
+    Assert.assertEquals(HttpResponseStatus.OK.getCode(), response.getStatusLine().getStatusCode());
 
     response =
       GatewayFastTestsSuite.doGet("/v2/apps/ProcedureTestApp/procedures/TestProcedure/methods/TestMethod?" +
                                     getQueryParams(content));
-    Assert.assertEquals(HttpResponseStatus.NOT_FOUND.getCode(), response.getStatusLine().getStatusCode());
-    Assert.assertEquals("Procedure not deployed", EntityUtils.toString(response.getEntity()));
+    Assert.assertEquals(HttpResponseStatus.SERVICE_UNAVAILABLE.getCode(), response.getStatusLine().getStatusCode());
+    Assert.assertEquals("Router cannot forward this request to any service",
+                        EntityUtils.toString(response.getEntity()));
   }
 
   /**
@@ -303,7 +341,8 @@ public class ProcedureHandlerTest  {
    */
   public static class TestHandler extends AbstractHttpHandler {
     @POST
-    @Path("/apps/{appId}/procedures/{procedureName}/{methodName}")
+    @GET
+    @Path("/v2/apps/{appId}/procedures/{procedureName}/methods/{methodName}")
     public void handle(HttpRequest request, final HttpResponder responder,
                        @PathParam("appId") String appId, @PathParam("procedureName") String procedureName,
                        @PathParam("methodName") String methodName) {
@@ -346,8 +385,8 @@ public class ProcedureHandlerTest  {
 
   private static void testTestServer() throws Exception {
     DefaultHttpClient httpclient = new DefaultHttpClient();
-    HttpPost request = new HttpPost(String.format("http://%s:%d/apps/testApp1/procedures/testProc1/testMethod1",
-                                                hostname, port));
+    HttpPost request = new HttpPost(String.format(
+      "http://%s:%d/v2/apps/testApp1/procedures/testProc1/methods/testMethod1", hostname, port));
     HttpResponse response = httpclient.execute(request);
     Assert.assertEquals(HttpResponseStatus.OK.getCode(), response.getStatusLine().getStatusCode());
   }
@@ -362,14 +401,14 @@ public class ProcedureHandlerTest  {
   }
 
   /**
-   * App to test ProcedureHandler.
+   * App to test Procedure API Handling.
    */
   public static class ProcedureTestApp implements Application {
     @Override
     public ApplicationSpecification configure() {
       return ApplicationSpecification.Builder.with()
         .setName("ProcedureTestApp")
-        .setDescription("App to test ProcedureHandler")
+        .setDescription("App to test Procedure API Handling")
         .noStream()
         .noDataSet()
         .noFlow()

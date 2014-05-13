@@ -9,11 +9,10 @@ import com.continuuity.common.conf.Constants;
 import com.continuuity.common.discovery.EndpointStrategy;
 import com.continuuity.common.discovery.RandomEndpointStrategy;
 import com.continuuity.common.discovery.TimeLimitEndpointStrategy;
-import com.continuuity.gateway.auth.GatewayAuthenticator;
+import com.continuuity.common.stream.DefaultStreamEvent;
+import com.continuuity.gateway.auth.Authenticator;
 import com.continuuity.gateway.handlers.stream.CachedStreamEventCollector;
 import com.continuuity.gateway.handlers.stream.StreamCache;
-import com.continuuity.streamevent.DefaultStreamEvent;
-import org.apache.twill.discovery.DiscoveryServiceClient;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.inject.Inject;
@@ -22,6 +21,7 @@ import org.apache.avro.ipc.CallFuture;
 import org.apache.flume.source.avro.AvroFlumeEvent;
 import org.apache.flume.source.avro.AvroSourceProtocol;
 import org.apache.flume.source.avro.Status;
+import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,12 +52,12 @@ class FlumeAdapter extends AbstractIdleService implements AvroSourceProtocol.Cal
 
   private final StreamCache streamCache;
   private final CachedStreamEventCollector streamEventCollector;
-  private final GatewayAuthenticator authenticator;
+  private final Authenticator authenticator;
   private final DiscoveryServiceClient discoveryClient;
 
   @Inject
   FlumeAdapter(StreamCache streamCache, CachedStreamEventCollector streamEventCollector,
-               GatewayAuthenticator authenticator, DiscoveryServiceClient discoveryClient) {
+               Authenticator authenticator, DiscoveryServiceClient discoveryClient) {
     this.streamCache = streamCache;
     this.streamEventCollector = streamEventCollector;
     this.authenticator = authenticator;

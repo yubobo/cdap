@@ -1,5 +1,7 @@
 package com.continuuity.common.conf;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Constants used by different systems are all defined here.
  */
@@ -9,11 +11,16 @@ public final class Constants {
    */
   public static final class Service {
     public static final String APP_FABRIC = "app.fabric";
+    public static final String APP_FABRIC_HTTP = "app.fabric.http";
     public static final String METADATA = "metadata";
     public static final String TRANSACTION = "transaction";
     public static final String METRICS = "metrics";
+    public static final String PROCEDURES = "procedures";
     public static final String GATEWAY = "gateway";
+    public static final String STREAM_HANDLER = "stream.handler";
+    public static final String DATASET_MANAGER = "dataset.manager";
     public static final String APP_FABRIC_LEADER_ELECTION_PREFIX = "election/appfabric";
+    public static final String EXTERNAL_AUTHENTICATION = "external.authentication";
   }
 
   /**
@@ -56,9 +63,11 @@ public final class Constants {
     /**
      * Default constants for common.
      */
-    public static final int DEFAULT_SERVER_PORT = 45000;
-    public static final String DEFAULT_SERVER_ADDRESS = "localhost";
 
+    public static final int DEFAULT_SERVER_PORT = 45005;
+
+    //TODO: THis temp
+    public static final String DEFAULT_SERVER_ADDRESS = "localhost";
 
     /**
      * App Fabric Server.
@@ -70,6 +79,26 @@ public final class Constants {
     public static final String TEMP_DIR = "app.temp.dir";
     public static final String REST_PORT = "app.rest.port";
     public static final String PROGRAM_JVM_OPTS = "app.program.jvm.opts";
+
+    /**
+     * query parameter to indicate start time
+     */
+    public static final String QUERY_PARAM_START_TIME = "before";
+
+    /**
+     * query parameter to indicate end time
+     */
+    public static final String QUERY_PARAM_END_TIME = "after";
+
+    /**
+     * Query parameter to indicate limits on results.
+     */
+    public static final String QUERY_PARAM_LIMIT = "limit";
+
+    /**
+     * Default history results limit.
+     */
+    public static final int DEFAULT_HISTORY_RESULTS_LIMIT = 100;
   }
 
   /**
@@ -113,6 +142,16 @@ public final class Constants {
       public static final String CFG_TX_SNAPSHOT_RETAIN = "data.tx.snapshot.retain";
       /** Default value for number of most recent snapshots to retain. */
       public static final int DEFAULT_TX_SNAPSHOT_RETAIN = 10;
+    }
+
+    /**
+     * Twill Runnable configuration.
+     */
+    public static final class Container {
+      public static final String ADDRESS = "data.tx.bind.address";
+      public static final String NUM_INSTANCES = "data.tx.num.instances";
+      public static final String NUM_CORES = "data.tx.num.cores";
+      public static final String MEMORY_MB = "data.tx.memory.mb";
     }
 
     /**
@@ -244,6 +283,75 @@ public final class Constants {
     }
   }
 
+  /**
+   * Datasets
+   */
+  public static final class Dataset {
+    /**
+     * DatasetManager service configuration.
+     */
+    public static final class Manager {
+      public static final String VERSION = "v1";
+      public static final String ADDRESS = "dataset.manager.bind.address";
+      public static final String PORT = "dataset.manager.bind.port";
+      public static final String BACKLOG_CONNECTIONS = "dataset.manager.connection.backlog";
+      public static final String EXEC_THREADS = "dataset.manager.exec.threads";
+      public static final String BOSS_THREADS = "dataset.manager.boss.threads";
+      public static final String WORKER_THREADS = "dataset.manager.worker.threads";
+      public static final String OUTPUT_DIR = "dataset.manager.output.dir";
+
+      // Defaults
+      public static final int DEFAULT_PORT = 10009;
+      public static final int DEFAULT_BACKLOG = 20000;
+      public static final int DEFAULT_EXEC_THREADS = 10;
+      public static final int DEFAULT_BOSS_THREADS = 1;
+      public static final int DEFAULT_WORKER_THREADS = 4;
+    }
+  }
+
+  /**
+   * Stream configurations.
+   */
+  public static final class Stream {
+    /* Begin CConfiguration keys */
+    public static final String BASE_DIR = "stream.base.dir";
+    public static final String PARTITION_DURATION = "stream.partition.duration";
+    public static final String INDEX_INTERVAL = "stream.index.interval";
+    public static final String FILE_PREFIX = "stream.file.prefix";
+    public static final String CONSUMER_TABLE_PRESPLITS = "stream.consumer.table.presplits";
+
+    // Stream http service configurations.
+    public static final String ADDRESS = "stream.bind.address";
+    public static final String WORKER_THREADS = "stream.worker.threads";
+
+    // YARN container configurations.
+    public static final String CONTAINER_VIRTUAL_CORES = "stream.container.num.cores";
+    public static final String CONTAINER_MEMORY_MB = "stream.container.memory.mb";
+    public static final String CONTAINER_INSTANCES = "stream.container.instances";
+    /* End CConfiguration keys */
+
+    /* Begin constants used by stream */
+
+    /** How often to check for new file when reading from stream in milliseconds. **/
+    public static final long NEW_FILE_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(10);
+    public static final int HBASE_WRITE_BUFFER_SIZE = 4 * 1024 * 1024;
+
+
+    /**
+     * Contains HTTP headers used by Stream handler.
+     */
+    public static final class Headers {
+      public static final String CONSUMER_ID = "X-Continuuity-ConsumerId";
+    }
+
+    // Time for a stream consumer to timeout in StreamHandler for REST API dequeue.
+    public static final long CONSUMER_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(60);
+
+    // The consumer state table namespace for consumers created from stream handler for REST API dequeue.
+    public static final String HANDLER_CONSUMER_NS = "stream.handler";
+
+    /* End constants used by stream */
+  }
 
   /**
    * Gateway Configurations.
@@ -297,7 +405,6 @@ public final class Constants {
     public static final String STREAM_HANDLER_NAME = "stream.rest";
     public static final String METRICS_CONTEXT = "gateway." + Gateway.STREAM_HANDLER_NAME;
     public static final String FLUME_HANDLER_NAME = "stream.flume";
-    public static final String HEADER_STREAM_CONSUMER = "X-Continuuity-ConsumerId";
     public static final String HEADER_DESTINATION_STREAM = "X-Continuuity-Destination";
     public static final String HEADER_FROM_COLLECTOR = "X-Continuuity-FromCollector";
     public static final String CONTINUUITY_API_KEY = "X-Continuuity-ApiKey";
@@ -360,12 +467,63 @@ public final class Constants {
    */
   public static final class Metrics {
     public static final String DATASET_CONTEXT = "-.dataset";
+    public static final String ADDRESS = "metrics.bind.address";
+    public static final String CLUSTER_NAME = "metrics.cluster.name";
+    public static final String CONFIG_AUTHENTICATION_REQUIRED = "metrics.authenticate";
+    public static final String BACKLOG_CONNECTIONS = "metrics.connection.backlog";
+    public static final String EXEC_THREADS = "metrics.exec.threads";
+    public static final String BOSS_THREADS = "metrics.boss.threads";
+    public static final String WORKER_THREADS = "metrics.worker.threads";
+    public static final String NUM_INSTANCES = "metrics.num.instances";
+    public static final String NUM_CORES = "metrics.num.cores";
+    public static final String MEMORY_MB = "metrics.memory.mb";
   }
 
   /**
-   * Common across components.
+   * Configurations for metrics processor.
    */
-  public static final String CFG_ZOOKEEPER_ENSEMBLE = "zookeeper.quorum";
+  public static final class MetricsProcessor {
+    public static final String NUM_INSTANCES = "metrics.processor.num.instances";
+    public static final String NUM_CORES = "metrics.processor.num.cores";
+    public static final String MEMORY_MB = "metrics.processor.memory.mb";
+  }
+
+  /**
+   * Configurations for log saver.
+   */
+  public static final class LogSaver {
+    public static final String NUM_INSTANCES = "log.saver.num.instances";
+    public static final String MEMORY_MB = "log.saver.run.memory.megs";
+  }
+
+  /**
+   * Security configuration.
+   */
+  public static final class Security {
+    /** Algorithm used to generate the digest for access tokens. */
+    public static final String TOKEN_DIGEST_ALGO = "security.token.digest.algorithm";
+    /** Key length for secret key used by token digest algorithm. */
+    public static final String TOKEN_DIGEST_KEY_LENGTH = "security.token.digest.keylength";
+    /** Time duration in milliseconds after which an active secret key should be retired. */
+    public static final String TOKEN_DIGEST_KEY_EXPIRATION = "security.token.digest.key.expiration.ms";
+    /** Parent znode used for secret key distribution in ZooKeeper. */
+    public static final String DIST_KEY_PARENT_ZNODE = "security.token.distributed.parent.znode";
+
+    /** Configuration for External Authentication Server. */
+    public static final String AUTH_SERVER_PORT = "security.server.port";
+    /** Maximum number of handler threads for the Authentication Server embedded Jetty instance. */
+    public static final String MAX_THREADS = "security.server.maxthreads";
+    /** Access token expiration time in milliseconds. */
+    public static final String TOKEN_EXPIRATION = "security.server.token.expiration.ms";
+    public static final String[] BASIC_USER_ROLES = new String[] {"user", "admin", "moderator"};
+
+    public static final String CFG_FILE_BASED_KEYFILE_PATH = "security.data.keyfile.path";
+    /** Configuration for enabling the security */
+    public static final String CFG_SECURITY_ENABLED = "security.enabled";
+    /**Configuration for security realm */
+    public static final String CFG_REALM = "security.realm";
+  }
+
   public static final String CFG_LOCAL_DATA_DIR = "local.data.dir";
   public static final String CFG_YARN_USER = "yarn.user";
   public static final String CFG_HDFS_USER = "hdfs.user";
@@ -387,7 +545,6 @@ public final class Constants {
   }
   /** defines which persistence engine to use when running all in one JVM. **/
   public static final String CFG_DATA_INMEMORY_PERSISTENCE = "data.local.inmemory.persistence.type";
-  public static final String CFG_DATA_LEVELDB_ENABLED = "data.local.storage.enabled";
   public static final String CFG_DATA_LEVELDB_DIR = "data.local.storage";
   public static final String CFG_DATA_LEVELDB_BLOCKSIZE = "data.local.storage.blocksize";
   public static final String CFG_DATA_LEVELDB_CACHESIZE = "data.local.storage.cachesize";

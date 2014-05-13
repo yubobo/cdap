@@ -3,13 +3,10 @@ apply plugin: 'java'
 apply plugin: 'application'
 apply from: "$rootProject.projectDir/gradle/packaging.gradle"
 
-tasks.withType(Compile) { 
-    options.compilerArgs << "-Xlint:unchecked"
-}
-
 dependencies {
   compile elastic([group: 'com.continuuity', name: 'data-fabric', version: "${version}", changing: true], "data-fabric")
   compile elastic([group: 'com.continuuity', name: 'data-fabric', classifier: 'api', version: "${version}", changing: true], "data-fabric")
+  compile elastic([group: 'com.continuuity', name: 'security', version: "${version}", changing: true], "security")
   testCompile elastic([group: 'com.continuuity', name: 'data-fabric', classifier: 'test', version: "${version}", changing: true], "data-fabric")
 
   compile elastic([group: 'com.continuuity', name: 'app-fabric', classifier: 'api', version: "${version}", changing: true], "app-fabric")
@@ -33,6 +30,7 @@ dependencies {
   compile libraries.flume_ng_sdk
 
   compile libraries.twill_discovery_api
+  compile libraries.continuuity_netty_http
 }
 
 test {

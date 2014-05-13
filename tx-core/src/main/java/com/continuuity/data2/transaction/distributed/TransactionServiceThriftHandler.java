@@ -4,12 +4,16 @@ import com.continuuity.common.rpc.RPCServiceHandler;
 import com.continuuity.data2.transaction.TransactionNotInProgressException;
 import com.continuuity.data2.transaction.distributed.thrift.TBoolean;
 import com.continuuity.data2.transaction.distributed.thrift.TTransaction;
+import com.continuuity.data2.transaction.distributed.thrift.TTransactionCouldNotTakeSnapshotException;
 import com.continuuity.data2.transaction.distributed.thrift.TTransactionNotInProgressException;
 import com.continuuity.data2.transaction.distributed.thrift.TTransactionServer;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
+import com.continuuity.data2.transaction.persist.SnapshotCodecV2;
+import com.continuuity.data2.transaction.persist.TransactionSnapshot;
 import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 
@@ -31,6 +35,7 @@ import java.util.Set;
  */
 public class TransactionServiceThriftHandler implements TTransactionServer.Iface, RPCServiceHandler {
   private InMemoryTransactionManager txManager;
+  private static final String STATUS_OK = "OK";
 
   public TransactionServiceThriftHandler(InMemoryTransactionManager txManager) {
     this.txManager = txManager;
@@ -84,8 +89,8 @@ public class TransactionServiceThriftHandler implements TTransactionServer.Iface
   }
 
   @Override
-  public void invalidateTx(TTransaction tx) throws TException {
-    txManager.invalidate(ConverterUtils.unwrap(tx));
+  public boolean invalidateTx(long tx) throws TException {
+    return txManager.invalidate(tx);
   }
 
   @Override
@@ -96,5 +101,31 @@ public class TransactionServiceThriftHandler implements TTransactionServer.Iface
   @Override
   public void destroy() throws Exception {
     txManager.stopAndWait();
+  }
+
+  @Override
+  public ByteBuffer getSnapshot() throws TTransactionCouldNotTakeSnapshotException, TException {
+    try {
+      TransactionSnapshot snapshot = txManager.getSnapshot();
+      if (snapshot == null) {
+        throw new TTransactionCouldNotTakeSnapshotException("Transaction manager could not get a snapshot.");
+      }
+      SnapshotCodecV2 codec = new SnapshotCodecV2();
+      // todo find a way to encode directly to the stream, without having the snapshot in memory twice
+      byte[] encoded = codec.encodeState(snapshot);
+      return ByteBuffer.wrap(encoded);
+    } catch (IOException e) {
+      throw new TTransactionCouldNotTakeSnapshotException(e.getMessage());
+    }
+  }
+
+  @Override
+  public void resetState() throws TException {
+    txManager.resetState();
+  }
+
+  @Override
+  public String status() throws TException {
+    return STATUS_OK;
   }
 }

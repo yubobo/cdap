@@ -1,5 +1,6 @@
 package com.continuuity.internal.data.dataset.lib.table;
 
+import com.continuuity.api.data.batch.Split;
 import com.continuuity.internal.data.dataset.Dataset;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.Map;
 /**
  * Provides generic table dataset interface.
  */
+// todo: we may want to remove Exception from method signatures to make it nicer for devs as soon as we expose this API
 public interface OrderedTable extends Dataset {
   /**
    * Reads the values of the specified columns in the specified row.
@@ -145,5 +147,5 @@ public interface OrderedTable extends Dataset {
    * @param stopRow stop row of the range, exclusive
    * @return list of {@link com.continuuity.api.data.batch.Split}s
    */
-  List<TableSplit> getSplits(int numSplits, byte[] startRow, byte[] stopRow) throws Exception;
+  List<Split> getSplits(int numSplits, byte[] startRow, byte[] stopRow) throws Exception;
 }

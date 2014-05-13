@@ -3,10 +3,10 @@ package com.continuuity.internal.app.runtime.distributed;
 import com.continuuity.app.program.Program;
 import com.continuuity.common.queue.QueueName;
 import com.continuuity.data2.transaction.queue.QueueAdmin;
-import com.continuuity.data2.transaction.queue.StreamAdmin;
+import com.continuuity.data2.transaction.stream.StreamAdmin;
 import com.continuuity.internal.app.runtime.flow.FlowUtils;
-import org.apache.twill.api.TwillController;
 import com.google.common.collect.Multimap;
+import org.apache.twill.api.TwillController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,15 +40,9 @@ final class DistributedFlowletInstanceUpdater {
     waitForInstances(flowletId, oldInstanceCount);
     twillController.sendCommand(flowletId, ProgramCommands.SUSPEND).get();
 
-    for (QueueName queueName : consumerQueues.get(flowletId)) {
-      if (queueName.isStream()) {
-        streamAdmin.configureInstances(queueName, FlowUtils.generateConsumerGroupId(program, flowletId),
-                                       newInstanceCount);
-      } else {
-        queueAdmin.configureInstances(queueName, FlowUtils.generateConsumerGroupId(program, flowletId),
-                                      newInstanceCount);
-      }
-    }
+    FlowUtils.reconfigure(consumerQueues.get(flowletId),
+                          FlowUtils.generateConsumerGroupId(program, flowletId), newInstanceCount,
+                          streamAdmin, queueAdmin);
 
     twillController.changeInstances(flowletId, newInstanceCount).get();
     twillController.sendCommand(flowletId, ProgramCommands.RESUME).get();

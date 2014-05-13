@@ -5,12 +5,10 @@
 package com.continuuity.performance.runner;
 
 import com.continuuity.api.Application;
-import com.continuuity.api.ApplicationSpecification;
-import com.continuuity.app.Id;
+import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.authorization.AuthorizationFactory;
 import com.continuuity.app.deploy.ManagerFactory;
-import com.continuuity.app.services.AppFabricService;
-import com.continuuity.app.services.AuthToken;
+import com.continuuity.app.guice.AppFabricServiceRuntimeModule;
 import com.continuuity.app.store.StoreFactory;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
@@ -18,8 +16,11 @@ import com.continuuity.common.guice.ConfigModule;
 import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.IOModule;
 import com.continuuity.common.guice.LocationRuntimeModule;
+import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.common.utils.Networks;
 import com.continuuity.data.runtime.DataFabricModules;
+import com.continuuity.gateway.handlers.AppFabricHttpHandler;
+import com.continuuity.internal.app.Specifications;
 import com.continuuity.internal.app.authorization.PassportAuthorizationFactory;
 import com.continuuity.internal.app.deploy.SyncManagerFactory;
 import com.continuuity.internal.app.store.MDTBasedStoreFactory;
@@ -34,12 +35,13 @@ import com.continuuity.pipeline.PipelineFactory;
 import com.continuuity.test.ApplicationManager;
 import com.continuuity.test.ProcedureClient;
 import com.continuuity.test.StreamWriter;
+import com.continuuity.test.internal.AppFabricTestHelper;
 import com.continuuity.test.internal.DefaultProcedureClient;
 import com.continuuity.test.internal.ProcedureClientFactory;
-import com.continuuity.test.internal.TestHelper;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
@@ -51,12 +53,6 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Named;
 import org.apache.commons.lang.StringUtils;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TFramedTransport;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
@@ -65,10 +61,7 @@ import org.apache.twill.discovery.InMemoryDiscoveryService;
 import org.apache.twill.discovery.ServiceDiscovered;
 import org.apache.twill.filesystem.Location;
 import org.apache.twill.filesystem.LocationFactory;
-import org.apache.twill.zookeeper.RetryStrategies;
 import org.apache.twill.zookeeper.ZKClientService;
-import org.apache.twill.zookeeper.ZKClientServices;
-import org.apache.twill.zookeeper.ZKClients;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -91,7 +84,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Runner for performance tests. This class is using lots of classes and code from JUnit framework.
@@ -99,12 +91,12 @@ import java.util.concurrent.TimeUnit;
 public final class PerformanceTestRunner {
 
   private static final Logger LOG = LoggerFactory.getLogger(PerformanceTestRunner.class);
-  private static AppFabricService.Iface appFabricServer;
   private static LocationFactory locationFactory;
   private static Injector injector;
   private static String accountId = "developer";
   private static DiscoveryServiceClient discoveryServiceClient;
   private static ZKClientService zkClientService;
+  private static AppFabricHttpHandler httpHandler;
 
   private TestClass testClass;
   private final CConfiguration config;
@@ -271,14 +263,14 @@ public final class PerformanceTestRunner {
 
     try {
 
-      ApplicationSpecification appSpec = applicationClz.newInstance().configure();
+      ApplicationSpecification appSpec =
+        Specifications.from(applicationClz.newInstance().configure());
 
-      Location deployedJar = TestHelper.deployApplication(appFabricServer, locationFactory, new Id.Account(accountId),
-                                                          TestHelper.DUMMY_AUTH_TOKEN, "", appSpec.getName(),
-                                                          applicationClz);
+      Location deployedJar = AppFabricTestHelper.deployApplication(httpHandler, locationFactory,
+                                                                   appSpec.getName(), applicationClz);
 
       BenchmarkManagerFactory bmf = injector.getInstance(BenchmarkManagerFactory.class);
-      ApplicationManager am = bmf.create(TestHelper.DUMMY_AUTH_TOKEN, accountId, appSpec.getName(), appFabricServer,
+      ApplicationManager am = bmf.create(accountId, appSpec.getName(), httpHandler,
                                          deployedJar, appSpec);
       return am;
 
@@ -290,7 +282,7 @@ public final class PerformanceTestRunner {
   // Wipes out all applications and data for a given account in the Reactor.
   protected void clearAppFabric() {
     try {
-      appFabricServer.reset(TestHelper.DUMMY_AUTH_TOKEN, accountId);
+      AppFabricTestHelper.reset(httpHandler);
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
@@ -310,38 +302,19 @@ public final class PerformanceTestRunner {
     config.set("app.output.dir", outputDir.getAbsolutePath());
     config.set("app.tmp.dir", tmpDir.getAbsolutePath());
 
-    try {
-      appFabricServer = getAppFabricClient(config);
-    } catch (TTransportException e) {
-      LOG.error("Error when trying to open connection with remote AppFabric.");
-      Throwables.propagate(e);
-    }
-
-    Module dataFabricModule;
-    Module discoveryServiceModule;
-    Module locationModule;
+    List<Module> modules = Lists.newArrayList();
 
     try {
       if (config.get("perf.reactor.mode") != null
         && config.get("perf.reactor.mode").equals("distributed")) {
-        dataFabricModule = new DataFabricModules().getDistributedModules();
-        locationModule = new LocationRuntimeModule().getDistributedModules();
-        zkClientService =
-          ZKClientServices.delegate(
-            ZKClients.reWatchOnExpire(
-              ZKClients.retryOnFailure(
-                ZKClientService.Builder.of(
-                  config.get(Constants.Zookeeper.QUORUM))
-                  .setSessionTimeout(config.getInt(
-                    Constants.Zookeeper.CFG_SESSION_TIMEOUT_MILLIS,
-                    Constants.Zookeeper.DEFAULT_SESSION_TIMEOUT_MILLIS))
-                  .build(),
-                RetryStrategies.fixDelay(2, TimeUnit.SECONDS))));
-        discoveryServiceModule = new DiscoveryRuntimeModule(zkClientService).getDistributedModules();
+        modules.add(new DataFabricModules().getDistributedModules());
+        modules.add(new LocationRuntimeModule().getDistributedModules());
+        modules.add(new ZKClientModule());
+        modules.add(new DiscoveryRuntimeModule().getDistributedModules());
       } else {
-        dataFabricModule = new DataFabricModules().getSingleNodeModules();
-        locationModule = new LocationRuntimeModule().getInMemoryModules();
-        discoveryServiceModule = new AbstractModule() {
+        modules.add(new DataFabricModules().getSingleNodeModules());
+        modules.add(new LocationRuntimeModule().getInMemoryModules());
+        modules.add(new AbstractModule() {
           @Override
           protected void configure() {
             final String host = config.get(MetricsConstants.ConfigKeys.SERVER_ADDRESS, "localhost");
@@ -398,79 +371,59 @@ public final class PerformanceTestRunner {
             });
             bind(DiscoveryService.class).toInstance(new InMemoryDiscoveryService());
           }
-        };
+        });
       }
 
-      injector = Guice
-        .createInjector(dataFabricModule,
-                        discoveryServiceModule,
-                        new ConfigModule(config),
-                        new IOModule(),
-                        locationModule,
-                        new AbstractModule() {
-                          @Override
-                          protected void configure() {
-                            install(new FactoryModuleBuilder().implement(ApplicationManager.class,
-                                                                         DefaultBenchmarkManager.class).build
-                              (BenchmarkManagerFactory.class));
-                            install(new FactoryModuleBuilder().implement(StreamWriter.class,
-                                                                         MultiThreadedStreamWriter.class).build
-                              (BenchmarkStreamWriterFactory.class));
-                            install(new FactoryModuleBuilder().implement(ProcedureClient.class,
-                                                                         DefaultProcedureClient.class).build
-                              (ProcedureClientFactory.class));
-                          }
-                        }, new Module() {
-            @Override
-            public void configure(Binder binder) {
-              binder.bind(new TypeLiteral<PipelineFactory<?>>() {
-              }).to(new TypeLiteral<SynchronousPipelineFactory<?>>() {
-              });
-              binder.bind(ManagerFactory.class).to(SyncManagerFactory.class);
+      modules.add(new ConfigModule(config));
+      modules.add(new IOModule());
+      modules.add(new AppFabricServiceRuntimeModule().getInMemoryModules());
+      modules.add(new AbstractModule() {
+        @Override
+        protected void configure() {
+          install(new FactoryModuleBuilder()
+                    .implement(ApplicationManager.class, DefaultBenchmarkManager.class)
+                    .build(BenchmarkManagerFactory.class));
+          install(new FactoryModuleBuilder()
+                    .implement(StreamWriter.class, MultiThreadedStreamWriter.class)
+                    .build(BenchmarkStreamWriterFactory.class));
+          install(new FactoryModuleBuilder()
+                    .implement(ProcedureClient.class, DefaultProcedureClient.class)
+                    .build(ProcedureClientFactory.class));
+        }
+      });
+      modules.add(new Module() {
+        @Override
+        public void configure(Binder binder) {
+          binder.bind(new TypeLiteral<PipelineFactory>() { })
+            .to(new TypeLiteral<SynchronousPipelineFactory>() {
+            });
+          binder.bind(ManagerFactory.class).to(SyncManagerFactory.class);
 
-              binder.bind(AuthorizationFactory.class).to(PassportAuthorizationFactory.class);
-              binder.bind(AppFabricService.Iface.class).toInstance(appFabricServer);
-              binder.bind(StoreFactory.class).to(MDTBasedStoreFactory.class);
-              binder.bind(AuthToken.class).toInstance(TestHelper.DUMMY_AUTH_TOKEN);
-            }
-            @Provides
-            @Named(Constants.AppFabric.SERVER_ADDRESS)
-            @SuppressWarnings(value = "unused")
-            public InetAddress providesHostname(CConfiguration cConf) {
-              return Networks.resolve(cConf.get(Constants.AppFabric.SERVER_ADDRESS),
-                                      new InetSocketAddress("localhost", 0).getAddress());
-            }
-          }
-        );
+          binder.bind(AuthorizationFactory.class).to(PassportAuthorizationFactory.class);
+          binder.bind(StoreFactory.class).to(MDTBasedStoreFactory.class);
+        }
+        @Provides
+        @Named(Constants.AppFabric.SERVER_ADDRESS)
+        @SuppressWarnings(value = "unused")
+        public InetAddress providesHostname(CConfiguration cConf) {
+          return Networks.resolve(cConf.get(Constants.AppFabric.SERVER_ADDRESS),
+                                  new InetSocketAddress("localhost", 0).getAddress());
+        }
+      });
+
+      injector = Guice.createInjector(modules);
     } catch (Exception e) {
       LOG.error("Failure during initial bind and injection : " + e.getMessage(), e);
       Throwables.propagate(e);
     }
     locationFactory = injector.getInstance(LocationFactory.class);
     discoveryServiceClient = injector.getInstance(DiscoveryServiceClient.class);
-  }
-
-  // Get an AppFabricClient for communication with the AppFabric of a local or remote Reactor.
-  private static AppFabricService.Client getAppFabricClient(CConfiguration config) throws TTransportException  {
-    String  appFabricServerHost = config.get(Constants.AppFabric.SERVER_ADDRESS,
-                                             Constants.AppFabric.DEFAULT_SERVER_ADDRESS);
-    int  appFabricServerPort = config.getInt(Constants.AppFabric.SERVER_PORT,
-                                             Constants.AppFabric.DEFAULT_SERVER_PORT);
-    LOG.debug("Connecting with AppFabric Server at {}:{}", appFabricServerHost, appFabricServerPort);
-    return new AppFabricService.Client(getThriftProtocol(appFabricServerHost, appFabricServerPort));
-  }
-
-  private static TProtocol getThriftProtocol(String serviceHost, int servicePort) throws TTransportException {
-    TTransport transport = new TFramedTransport(new TSocket(serviceHost, servicePort));
+    httpHandler = injector.getInstance(AppFabricHttpHandler.class);
     try {
-      transport.open();
-    } catch (TTransportException e) {
-      String message = String.format("Unable to connect to thrift service at %s:%d. Reason: %s", serviceHost,
-                                     servicePort, e.getMessage());
-      LOG.error(message);
-      throw e;
+      zkClientService = injector.getInstance(ZKClientService.class);
+    } catch (Exception e) {
+      zkClientService = null;
     }
-    return new TBinaryProtocol(transport);
   }
 
   // Gets executed once before running all the test methods of the current performance test class.

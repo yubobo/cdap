@@ -8,11 +8,11 @@ import com.continuuity.WordCountApp;
 import com.continuuity.api.flow.flowlet.StreamEvent;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.program.Type;
-import com.continuuity.app.runtime.Arguments;
 import com.continuuity.app.runtime.ProgramController;
-import com.continuuity.app.runtime.ProgramOptions;
 import com.continuuity.app.runtime.ProgramRunner;
 import com.continuuity.common.queue.QueueName;
+import com.continuuity.common.stream.DefaultStreamEvent;
+import com.continuuity.common.stream.StreamEventCodec;
 import com.continuuity.data2.queue.Queue2Producer;
 import com.continuuity.data2.queue.QueueClientFactory;
 import com.continuuity.data2.queue.QueueEntry;
@@ -25,32 +25,33 @@ import com.continuuity.internal.app.ApplicationSpecificationAdapter;
 import com.continuuity.internal.app.deploy.pipeline.ApplicationWithPrograms;
 import com.continuuity.internal.app.runtime.BasicArguments;
 import com.continuuity.internal.app.runtime.ProgramRunnerFactory;
+import com.continuuity.internal.app.runtime.SimpleProgramOptions;
 import com.continuuity.internal.app.runtime.flow.FlowProgramRunner;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
-import com.continuuity.streamevent.DefaultStreamEvent;
-import com.continuuity.streamevent.StreamEventCodec;
 import com.continuuity.test.internal.DefaultId;
-import com.continuuity.test.internal.TestHelper;
-import org.apache.twill.discovery.Discoverable;
-import org.apache.twill.discovery.DiscoveryServiceClient;
+import com.continuuity.test.internal.AppFabricTestHelper;
 import com.google.common.base.Charsets;
+import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.twill.discovery.Discoverable;
+import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
@@ -61,54 +62,57 @@ import java.util.concurrent.TimeUnit;
  */
 public class FlowTest {
 
+  @ClassRule
+  public static TemporaryFolder tmpFolder = new TemporaryFolder();
+
+  private static final Supplier<File> TEMP_FOLDER_SUPPLIER = new Supplier<File>() {
+
+    @Override
+    public File get() {
+      try {
+        return tmpFolder.newFolder();
+      } catch (IOException e) {
+        throw Throwables.propagate(e);
+      }
+    }
+  };
+
   private static final Logger LOG = LoggerFactory.getLogger(FlowTest.class);
 
   @Test
   public void testAppWithArgs() throws Exception {
-   final ApplicationWithPrograms app = TestHelper.deployApplicationWithManager(ArgumentCheckApp.class);
-   ProgramRunnerFactory runnerFactory = TestHelper.getInjector().getInstance(ProgramRunnerFactory.class);
+   final ApplicationWithPrograms app = AppFabricTestHelper.deployApplicationWithManager(ArgumentCheckApp.class,
+                                                                                        TEMP_FOLDER_SUPPLIER);
+   ProgramRunnerFactory runnerFactory = AppFabricTestHelper.getInjector().getInstance(ProgramRunnerFactory.class);
 
     // Only running flow is good. But, in case procedure, we need to send something to procedure as it's lazy
     // load on procedure.
     List<ProgramController> controllers = Lists.newArrayList();
     for (final Program program : app.getPrograms()) {
       ProgramRunner runner = runnerFactory.create(ProgramRunnerFactory.Type.valueOf(program.getType().name()));
-      controllers.add(runner.run(program, new ProgramOptions() {
-        @Override
-        public String getName() {
-          return program.getName();
-        }
-
-        @Override
-        public Arguments getArguments() {
-          return new BasicArguments();
-        }
-
-        @Override
-        public Arguments getUserArguments() {
-          return new BasicArguments(ImmutableMap.<String, String>of("arg", "test"));
-        }
-      }));
+      controllers.add(runner.run(program, new SimpleProgramOptions(
+        program.getName(), new BasicArguments(), new BasicArguments(ImmutableMap.of("arg", "test")))));
     }
 
     TimeUnit.SECONDS.sleep(1);
 
     Gson gson = new Gson();
-    DiscoveryServiceClient discoveryServiceClient = TestHelper.getInjector().getInstance(DiscoveryServiceClient.class);
+    DiscoveryServiceClient discoveryServiceClient = AppFabricTestHelper.getInjector().
+                                                    getInstance(DiscoveryServiceClient.class);
     Discoverable discoverable = discoveryServiceClient.discover(
       String.format("procedure.%s.%s.%s",
                     DefaultId.ACCOUNT.getId(), "ArgumentCheckApp", "SimpleProcedure")).iterator().next();
 
-    HttpClient client = new DefaultHttpClient();
-    HttpPost post = new HttpPost(String.format("http://%s:%d/apps/%s/procedures/%s/%s",
-                                               discoverable.getSocketAddress().getHostName(),
-                                               discoverable.getSocketAddress().getPort(),
-                                               "ArgumentCheckApp",
-                                               "SimpleProcedure",
-                                               "argtest"));
-    post.setEntity(new StringEntity(gson.toJson(ImmutableMap.of("word", "text:Testing"))));
-    HttpResponse response = client.execute(post);
-    Assert.assertTrue(response.getStatusLine().getStatusCode() == 200);
+    URL url = new URL(String.format("http://%s:%d/apps/%s/procedures/%s/methods/%s",
+                                    discoverable.getSocketAddress().getHostName(),
+                                    discoverable.getSocketAddress().getPort(),
+                                    "ArgumentCheckApp",
+                                    "SimpleProcedure",
+                                    "argtest"));
+    HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
+    urlConn.setDoOutput(true);
+    urlConn.getOutputStream().write(gson.toJson(ImmutableMap.of("word", "text:Testing")).getBytes(Charsets.UTF_8));
+    Assert.assertTrue(urlConn.getResponseCode() == 200);
 
     for (ProgramController controller : controllers) {
       controller.stop().get();
@@ -117,8 +121,9 @@ public class FlowTest {
 
   @Test
   public void testFlow() throws Exception {
-    final ApplicationWithPrograms app = TestHelper.deployApplicationWithManager(WordCountApp.class);
-    ProgramRunnerFactory runnerFactory = TestHelper.getInjector().getInstance(ProgramRunnerFactory.class);
+    final ApplicationWithPrograms app = AppFabricTestHelper.deployApplicationWithManager(WordCountApp.class,
+                                                                                         TEMP_FOLDER_SUPPLIER);
+    ProgramRunnerFactory runnerFactory = AppFabricTestHelper.getInjector().getInstance(ProgramRunnerFactory.class);
 
     List<ProgramController> controllers = Lists.newArrayList();
 
@@ -128,30 +133,16 @@ public class FlowTest {
         continue;
       }
       ProgramRunner runner = runnerFactory.create(ProgramRunnerFactory.Type.valueOf(program.getType().name()));
-      controllers.add(runner.run(program, new ProgramOptions() {
-        @Override
-        public String getName() {
-          return program.getName();
-        }
-
-        @Override
-        public Arguments getArguments() {
-          return new BasicArguments();
-        }
-
-        @Override
-        public Arguments getUserArguments() {
-          return new BasicArguments();
-        }
-      }));
+      controllers.add(runner.run(program, new SimpleProgramOptions(program)));
     }
 
     TimeUnit.SECONDS.sleep(1);
 
-    TransactionSystemClient txSystemClient = TestHelper.getInjector().getInstance(TransactionSystemClient.class);
+    TransactionSystemClient txSystemClient = AppFabricTestHelper.getInjector().
+                                             getInstance(TransactionSystemClient.class);
 
     QueueName queueName = QueueName.fromStream("text");
-    QueueClientFactory queueClientFactory = TestHelper.getInjector().getInstance(QueueClientFactory.class);
+    QueueClientFactory queueClientFactory = AppFabricTestHelper.getInjector().getInstance(QueueClientFactory.class);
     Queue2Producer producer = queueClientFactory.createProducer(queueName);
 
     // start tx to write in queue in tx
@@ -174,28 +165,26 @@ public class FlowTest {
 
     // Procedure
     Gson gson = new Gson();
-    DiscoveryServiceClient discoveryServiceClient = TestHelper.getInjector().getInstance(DiscoveryServiceClient.class);
+    DiscoveryServiceClient discoveryServiceClient = AppFabricTestHelper.getInjector().
+      getInstance(DiscoveryServiceClient.class);
     Discoverable discoverable = discoveryServiceClient.discover(
       String.format("procedure.%s.%s.%s",
                     DefaultId.ACCOUNT.getId(), "WordCountApp", "WordFrequency")).iterator().next();
 
-    HttpClient client = new DefaultHttpClient();
-    HttpPost post = new HttpPost(String.format("http://%s:%d/apps/%s/procedures/%s/%s",
-                                               discoverable.getSocketAddress().getHostName(),
-                                               discoverable.getSocketAddress().getPort(),
-                                               "WordCountApp",
-                                               "WordFrequency",
-                                               "wordfreq"));
-    post.setEntity(new StringEntity(gson.toJson(ImmutableMap.of("word", "text:Testing"))));
-    HttpResponse response = client.execute(post);
-    Map<String, Long> responseContent = gson.fromJson(
-      new InputStreamReader(response.getEntity().getContent(), Charsets.UTF_8),
-      new TypeToken<Map<String, Long>>(){}.getType());
+    URL url = new URL(String.format("http://%s:%d/apps/%s/procedures/%s/methods/%s",
+                                    discoverable.getSocketAddress().getHostName(),
+                                    discoverable.getSocketAddress().getPort(),
+                                    "WordCountApp",
+                                    "WordFrequency",
+                                    "wordfreq"));
+    HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
+    urlConn.setDoOutput(true);
+    urlConn.getOutputStream().write(gson.toJson(ImmutableMap.of("word", "text:Testing")).getBytes(Charsets.UTF_8));
+    Map<String, Long> responseContent = gson.fromJson(new InputStreamReader(urlConn.getInputStream(), Charsets.UTF_8),
+                                                      new TypeToken<Map<String, Long>>() { }.getType());
 
     LOG.info("Procedure response: " + responseContent);
     Assert.assertEquals(ImmutableMap.of("text:Testing", 10L), responseContent);
-
-    client.getConnectionManager().shutdown();
 
     for (ProgramController controller : controllers) {
       controller.stop().get();
@@ -204,31 +193,16 @@ public class FlowTest {
 
   @Test
   public void testCountRandomApp() throws Exception {
-    final ApplicationWithPrograms app = TestHelper.deployApplicationWithManager(TestCountRandomApp.class);
-
+    final ApplicationWithPrograms app = AppFabricTestHelper.deployApplicationWithManager(TestCountRandomApp.class,
+                                                                                         TEMP_FOLDER_SUPPLIER);
     System.out.println(ApplicationSpecificationAdapter.create(new ReflectionSchemaGenerator())
                                                       .toJson(app.getAppSpecLoc().getSpecification()));
 
     ProgramController controller = null;
     for (final Program program : app.getPrograms()) {
       if (program.getType() == Type.FLOW) {
-        ProgramRunner runner = TestHelper.getInjector().getInstance(FlowProgramRunner.class);
-        controller = runner.run(program, new ProgramOptions() {
-          @Override
-          public String getName() {
-            return program.getName();
-          }
-
-          @Override
-          public Arguments getArguments() {
-            return new BasicArguments();
-          }
-
-          @Override
-          public Arguments getUserArguments() {
-            return new BasicArguments();
-          }
-        });
+        ProgramRunner runner = AppFabricTestHelper.getInjector().getInstance(FlowProgramRunner.class);
+        controller = runner.run(program, new SimpleProgramOptions(program));
       }
     }
 
@@ -238,39 +212,24 @@ public class FlowTest {
 
   @Test
   public void testCountAndFilterWord() throws Exception {
-    final ApplicationWithPrograms app = TestHelper.deployApplicationWithManager(CountAndFilterWord.class);
-
+    final ApplicationWithPrograms app = AppFabricTestHelper.deployApplicationWithManager(CountAndFilterWord.class,
+                                                                                         TEMP_FOLDER_SUPPLIER);
     ProgramController controller = null;
     for (final Program program : app.getPrograms()) {
       if (program.getType() == Type.FLOW) {
-        ProgramRunner runner = TestHelper.getInjector().getInstance(FlowProgramRunner.class);
-        controller = runner.run(program, new ProgramOptions() {
-          @Override
-          public String getName() {
-            return program.getName();
-          }
-
-          @Override
-          public Arguments getArguments() {
-            return new BasicArguments();
-          }
-
-          @Override
-          public Arguments getUserArguments() {
-            return new BasicArguments();
-          }
-        });
+        ProgramRunner runner = AppFabricTestHelper.getInjector().getInstance(FlowProgramRunner.class);
+        controller = runner.run(program, new SimpleProgramOptions(program));
       }
     }
 
     TimeUnit.SECONDS.sleep(1);
 
     QueueName queueName = QueueName.fromStream("text");
-    QueueClientFactory queueClientFactory = TestHelper.getInjector().getInstance(QueueClientFactory.class);
+    QueueClientFactory queueClientFactory = AppFabricTestHelper.getInjector().getInstance(QueueClientFactory.class);
     final Queue2Producer producer = queueClientFactory.createProducer(queueName);
 
     TransactionExecutorFactory txExecutorFactory =
-      TestHelper.getInjector().getInstance(TransactionExecutorFactory.class);
+      AppFabricTestHelper.getInjector().getInstance(TransactionExecutorFactory.class);
     TransactionExecutor txExecutor =
       txExecutorFactory.createExecutor(ImmutableList.of((TransactionAware) producer));
 
@@ -297,7 +256,7 @@ public class FlowTest {
   @Test (expected = IllegalArgumentException.class)
   public void testInvalidOutputEmitter() throws Throwable {
     try {
-      TestHelper.deployApplicationWithManager(InvalidFlowOutputApp.class);
+      AppFabricTestHelper.deployApplicationWithManager(InvalidFlowOutputApp.class, TEMP_FOLDER_SUPPLIER);
     } catch (Exception e) {
       throw Throwables.getRootCause(e);
     }

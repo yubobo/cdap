@@ -1,8 +1,6 @@
 package com.continuuity.test.internal;
 
 import com.continuuity.test.ProcedureClient;
-import org.apache.twill.discovery.Discoverable;
-import org.apache.twill.discovery.DiscoveryServiceClient;
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 import com.google.common.reflect.TypeToken;
@@ -10,6 +8,8 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonWriter;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import org.apache.twill.discovery.Discoverable;
+import org.apache.twill.discovery.DiscoveryServiceClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,7 +45,7 @@ public final class DefaultProcedureClient implements ProcedureClient {
       String.format("procedure.%s.%s.%s",
                     accountId, applicationId, procedureName)).iterator().next();
 
-    URL url = new URL(String.format("http://%s:%d/apps/%s/procedures/%s/%s",
+    URL url = new URL(String.format("http://%s:%d/apps/%s/procedures/%s/methods/%s",
                       discoverable.getSocketAddress().getHostName(),
                       discoverable.getSocketAddress().getPort(),
                       applicationId,
@@ -55,7 +55,7 @@ public final class DefaultProcedureClient implements ProcedureClient {
     urlConn.setDoOutput(true);
     JsonWriter writer = new JsonWriter(new OutputStreamWriter(urlConn.getOutputStream(), Charsets.UTF_8));
     try {
-      new Gson().toJson(arguments, new TypeToken<Map<String, String>>(){}.getType(), writer);
+      new Gson().toJson(arguments, new TypeToken<Map<String, String>>() { }.getType(), writer);
     } finally {
       writer.close();
     }

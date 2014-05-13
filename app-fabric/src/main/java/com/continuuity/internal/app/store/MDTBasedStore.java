@@ -4,13 +4,14 @@
 
 package com.continuuity.internal.app.store;
 
-import com.continuuity.api.ApplicationSpecification;
 import com.continuuity.api.ProgramSpecification;
 import com.continuuity.api.data.DataSetSpecification;
 import com.continuuity.api.data.stream.StreamSpecification;
 import com.continuuity.api.flow.FlowSpecification;
+import com.continuuity.api.flow.FlowletConnection;
 import com.continuuity.api.flow.FlowletDefinition;
 import com.continuuity.api.procedure.ProcedureSpecification;
+import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.Id;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.program.Programs;
@@ -30,8 +31,6 @@ import com.continuuity.internal.io.ReflectionSchemaGenerator;
 import com.continuuity.internal.procedure.DefaultProcedureSpecification;
 import com.continuuity.metadata.MetaDataEntry;
 import com.continuuity.metadata.MetaDataTable;
-import org.apache.twill.filesystem.Location;
-import org.apache.twill.filesystem.LocationFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -40,9 +39,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
+import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
+import org.apache.twill.filesystem.Location;
+import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,8 +108,8 @@ public class MDTBasedStore implements Store {
                                   "Newer program update time than the specification update time. " +
                                   "Application must be redeployed");
 
-      return Programs.create(programLocation);
-    } catch (OperationException e){
+      return Programs.create(programLocation, Files.createTempDir());
+    } catch (OperationException e) {
       throw new IOException(e);
     }
   }
@@ -291,7 +293,7 @@ public class MDTBasedStore implements Store {
     MetaDataEntry existing = metaDataTable.get(context, id.getAccountId(), null,
                                                FieldTypes.Application.ENTRY_TYPE, id.getId());
 
-    if (existing != null){
+    if (existing != null) {
       String json = existing.getTextField(FieldTypes.Application.SPEC_JSON);
       Preconditions.checkNotNull(json);
 
@@ -585,7 +587,7 @@ public class MDTBasedStore implements Store {
     return flowletDef;
   }
 
-  private FlowSpecification getFlowSpecSafely(Id.Program id, ApplicationSpecification appSpec) {
+  private static FlowSpecification getFlowSpecSafely(Id.Program id, ApplicationSpecification appSpec) {
     FlowSpecification flowSpec = appSpec.getFlows().get(id.getId());
     if (flowSpec == null) {
       throw new IllegalArgumentException("no such flow @ account id: " + id.getAccountId() +
@@ -675,7 +677,7 @@ public class MDTBasedStore implements Store {
                                                FieldTypes.ProgramRun.ARGS, id.getId());
     Map<String, String> args = Maps.newHashMap();
     if (existing != null) {
-      java.lang.reflect.Type type = new TypeToken<Map<String, String>>(){}.getType();
+      java.lang.reflect.Type type = new TypeToken<Map<String, String>>() { }.getType();
       args = gson.fromJson(existing.getTextField(FieldTypes.ProgramRun.ENTRY_TYPE), type);
     }
     return args;
@@ -710,6 +712,27 @@ public class MDTBasedStore implements Store {
                                            ", app id: " + id.getApplication().getId());
     }
     return appSpec;
+  }
+
+  private ApplicationSpecification replaceInAppSpec(final ApplicationSpecification appSpec,
+                                                    final Id.Program id,
+                                                    final FlowSpecification flowSpec,
+                                                    final FlowletDefinition adjustedFlowletDef,
+                                                    final List<FlowletConnection> connections) {
+    // as app spec is immutable we have to do this trick
+    return replaceFlowInAppSpec(appSpec, id, new ForwardingFlowSpecification(flowSpec) {
+      @Override
+      public List<FlowletConnection> getConnections() {
+        return connections;
+      }
+
+      @Override
+      public Map<String, FlowletDefinition> getFlowlets() {
+        Map<String, FlowletDefinition> flowlets = Maps.newHashMap(super.getFlowlets());
+        flowlets.put(adjustedFlowletDef.getFlowletSpec().getName(), adjustedFlowletDef);
+        return flowlets;
+      }
+    });
   }
 
   private ApplicationSpecification replaceFlowletInAppSpec(final ApplicationSpecification appSpec,
@@ -824,5 +847,59 @@ public class MDTBasedStore implements Store {
     if (entries.size() > 0) {
       metaDataTable.delete(id.getAccountId(), entries);
     }
+  }
+
+  @Override
+  public void changeFlowletSteamConnection(Id.Program flow, String flowletId, String oldValue, String newValue)
+    throws OperationException {
+
+    Preconditions.checkArgument(flow != null, "flow cannot be null");
+    Preconditions.checkArgument(flowletId != null, "flowletId cannot be null");
+    Preconditions.checkArgument(oldValue != null, "oldValue cannot be null");
+    Preconditions.checkArgument(newValue != null, "newValue cannot be null");
+
+    LOG.trace("Changing flowlet stream connection: account: {}, application: {}, flow: {}, flowlet: {}," +
+                " old coonnected stream: {}, new connected stream: {}",
+               flow.getAccountId(), flow.getApplicationId(), flow.getId(), flowletId, oldValue, newValue);
+
+    ApplicationSpecification appSpec = getAppSpecSafely(flow);
+
+    FlowSpecification flowSpec = getFlowSpecSafely(flow, appSpec);
+
+    boolean adjusted = false;
+    List<FlowletConnection> conns = Lists.newArrayList();
+    for (FlowletConnection con : flowSpec.getConnections()) {
+      if (FlowletConnection.Type.STREAM == con.getSourceType() &&
+          flowletId.equals(con.getTargetName()) &&
+          oldValue.equals(con.getSourceName())) {
+
+        conns.add(new FlowletConnection(con.getSourceType(), newValue, con.getTargetName()));
+        adjusted = true;
+      } else {
+        conns.add(con);
+      }
+    }
+
+    if (!adjusted) {
+      throw new IllegalArgumentException(
+        String.format("Cannot change stream connection to %s, the connection to be changed is not found," +
+          " account: %s, application: %s, flow: %s, flowlet: %s, source stream: %s",
+                      newValue, flow.getAccountId(), flow.getApplicationId(), flow.getId(), flowletId, oldValue));
+    }
+
+    FlowletDefinition flowletDef = getFlowletDefinitionSafely(flowSpec, flowletId, flow);
+    FlowletDefinition newFlowletDef = new FlowletDefinition(flowletDef, oldValue, newValue);
+    ApplicationSpecification newAppSpec = replaceInAppSpec(appSpec, flow, flowSpec, newFlowletDef, conns);
+
+    replaceAppSpecInProgramJar(flow, newAppSpec, Type.FLOW);
+
+    long timestamp = System.currentTimeMillis();
+    storeAppSpec(flow.getApplication(), newAppSpec, timestamp);
+
+    LOG.trace("Changed flowlet stream connection: account: {}, application: {}, flow: {}, flowlet: {}," +
+                " old coonnected stream: {}, new connected stream: {}",
+              flow.getAccountId(), flow.getApplicationId(), flow.getId(), flowletId, oldValue, newValue);
+
+    // todo: change stream "used by" flow mapping in metadata?
   }
 }

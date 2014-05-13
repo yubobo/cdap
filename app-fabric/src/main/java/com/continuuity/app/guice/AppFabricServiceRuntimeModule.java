@@ -5,12 +5,15 @@ package com.continuuity.app.guice;
 
 import com.continuuity.app.authorization.AuthorizationFactory;
 import com.continuuity.app.deploy.ManagerFactory;
-import com.continuuity.app.services.AppFabricService;
 import com.continuuity.app.store.StoreFactory;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.runtime.RuntimeModule;
 import com.continuuity.common.utils.Networks;
+import com.continuuity.gateway.handlers.AppFabricHttpHandler;
+import com.continuuity.gateway.handlers.MonitorHandler;
+import com.continuuity.gateway.handlers.PingHandler;
+import com.continuuity.http.HttpHandler;
 import com.continuuity.internal.app.authorization.PassportAuthorizationFactory;
 import com.continuuity.internal.app.deploy.SyncManagerFactory;
 import com.continuuity.internal.app.runtime.schedule.DataSetBasedScheduleStore;
@@ -18,8 +21,6 @@ import com.continuuity.internal.app.runtime.schedule.DefaultSchedulerService;
 import com.continuuity.internal.app.runtime.schedule.ExecutorThreadPool;
 import com.continuuity.internal.app.runtime.schedule.Scheduler;
 import com.continuuity.internal.app.runtime.schedule.SchedulerService;
-import com.continuuity.internal.app.services.AppFabricServiceFactory;
-import com.continuuity.internal.app.services.DefaultAppFabricService;
 import com.continuuity.internal.app.store.MDTBasedStoreFactory;
 import com.continuuity.internal.pipeline.SynchronousPipelineFactory;
 import com.continuuity.pipeline.PipelineFactory;
@@ -28,16 +29,16 @@ import com.google.common.base.Throwables;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Provides;
-import com.google.inject.TypeLiteral;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
+import com.google.inject.Scopes;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import org.quartz.SchedulerException;
 import org.quartz.core.JobRunShellFactory;
 import org.quartz.core.QuartzScheduler;
 import org.quartz.core.QuartzSchedulerResources;
 import org.quartz.impl.DefaultThreadExecutor;
 import org.quartz.impl.DirectSchedulerFactory;
-import org.quartz.impl.SchedulerRepository;
 import org.quartz.impl.StdJobRunShellFactory;
 import org.quartz.impl.StdScheduler;
 import org.quartz.simpl.CascadingClassLoadHelper;
@@ -70,30 +71,30 @@ public final class AppFabricServiceRuntimeModule extends RuntimeModule {
   /**
    * Guice module for AppFabricServer. Requires data-fabric related bindings being available.
    */
-  // Note: Ideally this should be private module, but gateway and test cases uses some of the internal bindings.
   private static final class AppFabricServiceModule extends AbstractModule {
 
     @Override
     protected void configure() {
-      bind(new TypeLiteral<PipelineFactory<?>>(){}).to(new TypeLiteral<SynchronousPipelineFactory<?>>(){});
+      bind(PipelineFactory.class).to(SynchronousPipelineFactory.class);
       bind(ManagerFactory.class).to(SyncManagerFactory.class);
 
       bind(AuthorizationFactory.class).to(PassportAuthorizationFactory.class);
 
-      install(
-        new FactoryModuleBuilder()
-          .implement(AppFabricService.Iface.class, DefaultAppFabricService.class)
-          .build(AppFabricServiceFactory.class)
-      );
-
       bind(StoreFactory.class).to(MDTBasedStoreFactory.class);
-      bind(SchedulerService.class).to(DefaultSchedulerService.class);
+
+      bind(SchedulerService.class).to(DefaultSchedulerService.class).in(Scopes.SINGLETON);
       bind(Scheduler.class).to(SchedulerService.class);
+
+      Multibinder<HttpHandler> handlerBinder = Multibinder.newSetBinder(binder(), HttpHandler.class,
+                                                                        Names.named("appfabric.http.handler"));
+      handlerBinder.addBinding().to(AppFabricHttpHandler.class);
+      handlerBinder.addBinding().to(PingHandler.class);
+      handlerBinder.addBinding().to(MonitorHandler.class);
     }
 
     @Provides
     @Named(Constants.AppFabric.SERVER_ADDRESS)
-    public InetAddress providesHostname(CConfiguration cConf) {
+    public final InetAddress providesHostname(CConfiguration cConf) {
       return Networks.resolve(cConf.get(Constants.AppFabric.SERVER_ADDRESS),
                               new InetSocketAddress("localhost", 0).getAddress());
     }
@@ -160,10 +161,6 @@ public final class AppFabricServiceRuntimeModule extends RuntimeModule {
 
       jrsf.initialize(scheduler);
       qs.initialize();
-
-      SchedulerRepository schedRep = SchedulerRepository.getInstance();
-      qs.addNoGCObject(schedRep); // prevents the repository from being garbage collected
-      schedRep.bind(scheduler);
 
       return scheduler;
     }

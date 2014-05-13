@@ -10,23 +10,23 @@ import com.continuuity.app.store.StoreFactory;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.data2.transaction.queue.QueueAdmin;
 import com.continuuity.pipeline.PipelineFactory;
+import com.google.inject.Inject;
 import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.apache.twill.filesystem.LocationFactory;
-import com.google.inject.Inject;
 
 /**
  *
  */
 public final class SyncManagerFactory implements ManagerFactory {
   private final CConfiguration configuration;
-  private final PipelineFactory<?> pFactory;
+  private final PipelineFactory pFactory;
   private final LocationFactory lFactory;
   private final StoreFactory sFactory;
   private final QueueAdmin queueAdmin;
   private final DiscoveryServiceClient discoveryServiceClient;
 
   @Inject
-  public SyncManagerFactory(CConfiguration configuration, PipelineFactory<?> pFactory,
+  public SyncManagerFactory(CConfiguration configuration, PipelineFactory pFactory,
                             LocationFactory lFactory, StoreFactory sFactory, QueueAdmin queueAdmin,
                             DiscoveryServiceClient discoveryServiceClient) {
     this.configuration = configuration;
@@ -38,8 +38,8 @@ public final class SyncManagerFactory implements ManagerFactory {
   }
 
   @Override
-  public Manager<?, ?> create(ProgramTerminator programTerminator) {
-    return new LocalManager(configuration, pFactory, lFactory, sFactory, programTerminator, queueAdmin,
+  public <I, O> Manager<I, O> create(ProgramTerminator programTerminator) {
+    return new LocalManager<I, O>(configuration, pFactory, lFactory, sFactory, programTerminator, queueAdmin,
                             discoveryServiceClient);
   }
 }

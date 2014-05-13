@@ -5,9 +5,9 @@
 package com.continuuity.passport.http.handlers;
 
 
-import com.continuuity.common.http.core.HandlerContext;
-import com.continuuity.common.http.core.HttpHandler;
-import com.continuuity.common.http.core.HttpResponder;
+import com.continuuity.http.HandlerContext;
+import com.continuuity.http.HttpHandler;
+import com.continuuity.http.HttpResponder;
 import com.continuuity.passport.core.exceptions.StaleNonceException;
 import com.continuuity.passport.core.service.DataManagementService;
 import com.continuuity.passport.core.service.SecurityService;
@@ -50,7 +50,7 @@ public class ActivationNonceHandler extends PassportHandler implements HttpHandl
 
   @GET
   @Produces("text/plain")
-  public void status(HttpRequest request, HttpResponder responder){
+  public void status(HttpRequest request, HttpResponder responder) {
     responder.sendString(HttpResponseStatus.OK, "OK");
   }
 

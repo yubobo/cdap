@@ -1,12 +1,13 @@
 package com.continuuity.internal.app.runtime.batch;
 
-import com.continuuity.api.ApplicationSpecification;
 import com.continuuity.api.data.DataSet;
 import com.continuuity.api.data.DataSetSpecification;
 import com.continuuity.api.data.batch.BatchReadable;
 import com.continuuity.api.data.batch.BatchWritable;
+import com.continuuity.api.data.stream.StreamBatchReadable;
 import com.continuuity.api.mapreduce.MapReduce;
 import com.continuuity.api.mapreduce.MapReduceSpecification;
+import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.Id;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.program.Type;
@@ -24,12 +25,14 @@ import com.continuuity.data.DataFabric;
 import com.continuuity.data.DataFabric2Impl;
 import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data.dataset.DataSetInstantiator;
+import com.continuuity.data.stream.TextStreamInputFormat;
 import com.continuuity.data2.transaction.Transaction;
 import com.continuuity.data2.transaction.TransactionExecutor;
 import com.continuuity.data2.transaction.TransactionExecutorFactory;
 import com.continuuity.data2.transaction.TransactionFailureException;
 import com.continuuity.data2.transaction.TransactionNotInProgressException;
 import com.continuuity.data2.transaction.TransactionSystemClient;
+import com.continuuity.data2.transaction.stream.StreamAdmin;
 import com.continuuity.data2.util.hbase.HBaseTableUtilFactory;
 import com.continuuity.internal.app.runtime.AbstractListener;
 import com.continuuity.internal.app.runtime.DataSetFieldSetter;
@@ -38,14 +41,10 @@ import com.continuuity.internal.app.runtime.ProgramOptionConstants;
 import com.continuuity.internal.app.runtime.batch.dataset.DataSetInputFormat;
 import com.continuuity.internal.app.runtime.batch.dataset.DataSetOutputFormat;
 import com.continuuity.internal.lang.Reflections;
-import org.apache.twill.api.RunId;
-import org.apache.twill.filesystem.Location;
-import org.apache.twill.filesystem.LocationFactory;
-import org.apache.twill.internal.ApplicationBundler;
-import org.apache.twill.internal.RunIds;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -53,22 +52,29 @@ import com.google.inject.Inject;
 import com.google.inject.ProvisionException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.twill.api.RunId;
+import org.apache.twill.filesystem.Location;
+import org.apache.twill.filesystem.LocationFactory;
+import org.apache.twill.internal.ApplicationBundler;
+import org.apache.twill.internal.RunIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  * Runs {@link MapReduce} programs.
@@ -76,6 +82,7 @@ import java.util.concurrent.TimeUnit;
 public class MapReduceProgramRunner implements ProgramRunner {
   private static final Logger LOG = LoggerFactory.getLogger(MapReduceProgramRunner.class);
 
+  private final StreamAdmin streamAdmin;
   private final CConfiguration cConf;
   private final Configuration hConf;
   private final LocationFactory locationFactory;
@@ -90,12 +97,14 @@ public class MapReduceProgramRunner implements ProgramRunner {
   @Inject
   public MapReduceProgramRunner(CConfiguration cConf, Configuration hConf,
                                 LocationFactory locationFactory,
+                                StreamAdmin streamAdmin,
                                 DataSetAccessor dataSetAccessor, TransactionSystemClient txSystemClient,
                                 MetricsCollectionService metricsCollectionService,
                                 TransactionExecutorFactory txExecutorFactory) {
     this.cConf = cConf;
     this.hConf = hConf;
     this.locationFactory = locationFactory;
+    this.streamAdmin = streamAdmin;
     this.metricsCollectionService = metricsCollectionService;
     this.dataSetAccessor = dataSetAccessor;
     this.txSystemClient = txSystemClient;
@@ -217,6 +226,7 @@ public class MapReduceProgramRunner implements ProgramRunner {
       jobConf.getCredentials().addAll(credentials);
     }
 
+    jobConf.getConfiguration().setClassLoader(context.getProgram().getClassLoader());
     context.setJob(jobConf);
 
     // additional mapreduce job initialization at run-time
@@ -245,8 +255,6 @@ public class MapReduceProgramRunner implements ProgramRunner {
     jobConf.setJar(jobJar.toURI().toString());
     jobConf.addFileToClassPath(new Path(programJarCopy.toURI()));
 
-    jobConf.getConfiguration().setClassLoader(context.getProgram().getClassLoader());
-
     MapReduceContextConfig contextConfig = new MapReduceContextConfig(jobConf);
     // We start long-running tx to be used by mapreduce job tasks.
     final Transaction tx = txSystemClient.startLong();
@@ -263,8 +271,14 @@ public class MapReduceProgramRunner implements ProgramRunner {
           try {
             LOG.info("Submitting mapreduce job {}", context.toString());
 
-            // submits job and returns immediately
-            jobConf.submit();
+            ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+            Thread.currentThread().setContextClassLoader(job.getClass().getClassLoader());
+            try {
+              // submits job and returns immediately
+              jobConf.submit();
+            } finally {
+              Thread.currentThread().setContextClassLoader(oldClassLoader);
+            }
 
             MapReduceMetricsWriter metricsWriter = new MapReduceMetricsWriter(jobConf, context);
 
@@ -325,7 +339,13 @@ public class MapReduceProgramRunner implements ProgramRunner {
     txExecutor.execute(new TransactionExecutor.Subroutine() {
       @Override
       public void apply() throws Exception {
-        job.beforeSubmit(context);
+        ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(job.getClass().getClassLoader());
+        try {
+          job.beforeSubmit(context);
+        } finally {
+          Thread.currentThread().setContextClassLoader(oldClassLoader);
+        }
       }
     });
   }
@@ -460,18 +480,26 @@ public class MapReduceProgramRunner implements ProgramRunner {
     return outputDataset;
   }
 
-  private DataSet setInputDataSetIfNeeded(Job jobConf, BasicMapReduceContext mapReduceContext) {
+  @SuppressWarnings("unchecked")
+  private DataSet setInputDataSetIfNeeded(Job jobConf, BasicMapReduceContext mapReduceContext) throws Exception {
     DataSet inputDataset = null;
     // whatever was set into mapReduceJob e.g. during beforeSubmit(..) takes precedence
-    if (mapReduceContext.getInputDataset() != null) {
-      inputDataset = (DataSet) mapReduceContext.getInputDataset();
+    BatchReadable batchReadable = mapReduceContext.getInputDataset();
+
+    if (batchReadable != null && batchReadable instanceof DataSet) {
+      inputDataset = (DataSet) batchReadable;
     } else  {
       // trying to init input dataset from spec
       String inputDataSetName = mapReduceContext.getSpecification().getInputDataSet();
       if (inputDataSetName != null) {
-        inputDataset = mapReduceContext.getDataSet(inputDataSetName);
-        // We checked on validation phase that it implements BatchReadable
-        mapReduceContext.setInput((BatchReadable) inputDataset, ((BatchReadable) inputDataset).getSplits());
+        // TODO: It's a hack for stream
+        if (inputDataSetName.startsWith("stream://")) {
+          batchReadable = new StreamBatchReadable(inputDataSetName.substring("stream://".length()));
+        } else {
+          inputDataset = mapReduceContext.getDataSet(inputDataSetName);
+          // We checked on validation phase that it implements BatchReadable
+          mapReduceContext.setInput((BatchReadable) inputDataset, ((BatchReadable) inputDataset).getSplits());
+        }
       }
     }
 
@@ -480,13 +508,24 @@ public class MapReduceProgramRunner implements ProgramRunner {
       DataSetSpecification spec = mapReduceContext.getProgram().getSpecification()
                                                   .getDataSets().get(inputDataset.getName());
       DataSetInputFormat.setInput(jobConf, spec);
+    } else if (batchReadable instanceof StreamBatchReadable) {
+      // TODO: It's a hack for stream
+      StreamBatchReadable stream = (StreamBatchReadable) batchReadable;
+      Location streamPath = streamAdmin.getConfig(stream.getStreamName()).getLocation();
+      LOG.info("Using stream as input from {}", streamPath.toURI());
+
+      TextStreamInputFormat.setStreamPath(jobConf, streamPath.toURI());
+      TextStreamInputFormat.setTimeRange(jobConf, stream.getStartTime(), stream.getEndTime());
+      jobConf.setInputFormatClass(TextStreamInputFormat.class);
     }
+
     return inputDataset;
   }
 
   private Location buildJobJar(BasicMapReduceContext context) throws IOException {
     ApplicationBundler appBundler = new ApplicationBundler(Lists.newArrayList("org.apache.hadoop"),
-                                                           Lists.newArrayList("org.apache.hadoop.hbase"));
+                                                           Lists.newArrayList("org.apache.hadoop.hbase",
+                                                                              "org.apache.hadoop.hive"));
     Id.Program programId = context.getProgram().getId();
 
     Location appFabricDependenciesJarLocation =
@@ -497,9 +536,31 @@ public class MapReduceProgramRunner implements ProgramRunner {
 
     LOG.debug("Creating job jar: {}", appFabricDependenciesJarLocation.toURI());
 
-    List<Class<?>> classes = Lists.newArrayList(MapReduce.class,
-                                                          DataSetOutputFormat.class, DataSetInputFormat.class,
-                                                          MapperWrapper.class, ReducerWrapper.class);
+    Set<Class<?>> classes = Sets.newHashSet();
+    classes.add(MapReduce.class);
+    classes.add(DataSetOutputFormat.class);
+    classes.add(DataSetInputFormat.class);
+    classes.add(TextStreamInputFormat.class);
+    classes.add(MapperWrapper.class);
+    classes.add(ReducerWrapper.class);
+
+    Job jobConf = context.getHadoopJob();
+    try {
+      Class<? extends InputFormat<?, ?>> inputFormatClass = jobConf.getInputFormatClass();
+      LOG.info("InputFormat class: {} {}", inputFormatClass, inputFormatClass.getClassLoader());
+      classes.add(inputFormatClass);
+    } catch (Throwable t) {
+      LOG.info("InputFormat class not found: {}", t.getMessage(), t);
+      // Ignore
+    }
+    try {
+      Class<? extends OutputFormat<?, ?>> outputFormatClass = jobConf.getOutputFormatClass();
+      LOG.info("OutputFormat class: {} {}", outputFormatClass, outputFormatClass.getClassLoader());
+      classes.add(outputFormatClass);
+    } catch (Throwable t) {
+      LOG.info("OutputFormat class not found: {}", t.getMessage(), t);
+      // Ignore
+    }
 
     try {
       Class<?> hbaseTableUtilClass = new HBaseTableUtilFactory().get().getClass();
@@ -508,7 +569,10 @@ public class MapReduceProgramRunner implements ProgramRunner {
       LOG.warn("Not including HBaseTableUtil classes in submitted job jar since they are not available.");
     }
 
+    ClassLoader oldCLassLoader = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(jobConf.getConfiguration().getClassLoader());
     appBundler.createBundle(appFabricDependenciesJarLocation, classes);
+    Thread.currentThread().setContextClassLoader(oldCLassLoader);
 
     return appFabricDependenciesJarLocation;
   }

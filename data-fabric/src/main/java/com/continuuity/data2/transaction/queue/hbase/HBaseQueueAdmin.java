@@ -11,8 +11,6 @@ import com.continuuity.data2.transaction.queue.QueueEntryRow;
 import com.continuuity.data2.util.hbase.HBaseTableUtil;
 import com.continuuity.hbase.wd.AbstractRowKeyDistributor;
 import com.continuuity.hbase.wd.RowKeyDistributorByHashPrefix;
-import org.apache.twill.filesystem.Location;
-import org.apache.twill.filesystem.LocationFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
@@ -39,6 +37,8 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.ColumnPrefixFilter;
 import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
+import org.apache.twill.filesystem.Location;
+import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +90,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
                             DataSetAccessor dataSetAccessor,
                             LocationFactory locationFactory,
                             HBaseTableUtil tableUtil) throws IOException {
-    super(new HBaseAdmin(hConf), tableUtil);
+    super(hConf, tableUtil);
     this.cConf = cConf;
     // todo: we have to do that because queues do not follow dataset semantic fully (yet)
     String unqualifiedTableNamePrefix =
@@ -179,6 +179,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
   }
 
   boolean exists(QueueName queueName) throws IOException {
+    HBaseAdmin admin = getHBaseAdmin();
     return admin.tableExists(getActualTableName(queueName)) && admin.tableExists(configTableName);
   }
 
@@ -207,6 +208,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
   }
 
   private void truncate(byte[] tableNameBytes) throws IOException {
+    HBaseAdmin admin = getHBaseAdmin();
     if (admin.tableExists(tableNameBytes)) {
       HTableDescriptor tableDescriptor = admin.getTableDescriptor(tableNameBytes);
       admin.disableTable(tableNameBytes);
@@ -248,6 +250,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
   }
 
   private void drop(byte[] tableName) throws IOException {
+    HBaseAdmin admin = getHBaseAdmin();
     if (admin.tableExists(tableName)) {
       admin.disableTable(tableName);
       admin.deleteTable(tableName);
@@ -256,7 +259,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
 
   private void deleteConsumerConfigurations(QueueName queueName) throws IOException {
     // we need to delete the row for this queue name from the config table
-    HTable hTable = new HTable(admin.getConfiguration(), configTableName);
+    HTable hTable = new HTable(getHBaseAdmin().getConfiguration(), configTableName);
     try {
       byte[] rowKey = queueName.toBytes();
       hTable.delete(new Delete(rowKey));
@@ -266,35 +269,39 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
   }
 
   private void deleteConsumerConfigurations(String app, String flow) throws IOException {
-    // we need to delete the row for this queue name from the config table
-    HTable hTable = new HTable(admin.getConfiguration(), configTableName);
-    try {
-      byte[] prefix = Bytes.toBytes(QueueName.prefixForFlow(app, flow));
-      byte[] stop = Arrays.copyOf(prefix, prefix.length);
-      stop[prefix.length - 1]++; // this is safe because the last byte is always '/'
-
-      Scan scan = new Scan();
-      scan.setStartRow(prefix);
-      scan.setStopRow(stop);
-      scan.setFilter(new FirstKeyOnlyFilter());
-      scan.setMaxVersions(1);
-      ResultScanner resultScanner = hTable.getScanner(scan);
-
-      List<Delete> deletes = Lists.newArrayList();
-      Result result;
+    // table is created lazily, possible it may not exist yet.
+    HBaseAdmin admin = getHBaseAdmin();
+    if (admin.tableExists(configTableName)) {
+      // we need to delete the row for this queue name from the config table
+      HTable hTable = new HTable(admin.getConfiguration(), configTableName);
       try {
-        while ((result = resultScanner.next()) != null) {
-          byte[] row = result.getRow();
-          deletes.add(new Delete(row));
+        byte[] prefix = Bytes.toBytes(QueueName.prefixForFlow(app, flow));
+        byte[] stop = Arrays.copyOf(prefix, prefix.length);
+        stop[prefix.length - 1]++; // this is safe because the last byte is always '/'
+
+        Scan scan = new Scan();
+        scan.setStartRow(prefix);
+        scan.setStopRow(stop);
+        scan.setFilter(new FirstKeyOnlyFilter());
+        scan.setMaxVersions(1);
+        ResultScanner resultScanner = hTable.getScanner(scan);
+
+        List<Delete> deletes = Lists.newArrayList();
+        Result result;
+        try {
+          while ((result = resultScanner.next()) != null) {
+            byte[] row = result.getRow();
+            deletes.add(new Delete(row));
+          }
+        } finally {
+          resultScanner.close();
         }
+
+        hTable.delete(deletes);
+
       } finally {
-        resultScanner.close();
+        hTable.close();
       }
-
-      hTable.delete(deletes);
-
-    } finally {
-      hTable.close();
     }
   }
 
@@ -353,7 +360,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
                               QueueConstants.DEFAULT_QUEUE_TABLE_PRESPLITS);
     byte[][] splitKeys = HBaseTableUtil.getSplitKeys(splits);
 
-    tableUtil.createTableIfNotExists(admin, tableName, htd, splitKeys);
+    tableUtil.createTableIfNotExists(getHBaseAdmin(), tableName, htd, splitKeys);
   }
 
   private void createConfigTable() throws IOException {
@@ -364,7 +371,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
     htd.addFamily(hcd);
     hcd.setMaxVersions(1);
 
-    tableUtil.createTableIfNotExists(admin, tableName, htd, null,
+    tableUtil.createTableIfNotExists(getHBaseAdmin(), tableName, htd, null,
                                      QueueConstants.MAX_CREATE_TABLE_WAIT, TimeUnit.MILLISECONDS);
   }
 
@@ -378,7 +385,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
 
   @Override
   public void dropAll() throws Exception {
-    for (HTableDescriptor desc : admin.listTables()) {
+    for (HTableDescriptor desc : getHBaseAdmin().listTables()) {
       String tableName = Bytes.toString(desc.getName());
       // It's important to keep config table enabled while disabling queue tables.
       if (tableName.startsWith(tableNamePrefix) && !tableName.equals(configTableName)) {
@@ -397,7 +404,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
       create(queueName);
     }
 
-    HTable hTable = new HTable(admin.getConfiguration(), configTableName);
+    HTable hTable = new HTable(getHBaseAdmin().getConfiguration(), configTableName);
 
     try {
       byte[] rowKey = queueName.toBytes();
@@ -431,7 +438,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
       create(queueName);
     }
 
-    HTable hTable = new HTable(admin.getConfiguration(), configTableName);
+    HTable hTable = new HTable(getHBaseAdmin().getConfiguration(), configTableName);
 
     try {
       byte[] rowKey = queueName.toBytes();
@@ -499,7 +506,7 @@ public class HBaseQueueAdmin extends AbstractHBaseDataSetManager implements Queu
   public void upgrade() throws Exception {
     // For each table managed by this admin, performs an upgrade
     Properties properties = new Properties();
-    for (HTableDescriptor desc : admin.listTables()) {
+    for (HTableDescriptor desc : getHBaseAdmin().listTables()) {
       String tableName = Bytes.toString(desc.getName());
       // It's important to skip config table enabled.
       if (tableName.startsWith(tableNamePrefix) && !tableName.equals(configTableName)) {

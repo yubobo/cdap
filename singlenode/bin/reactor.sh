@@ -3,6 +3,7 @@
 ##############################################################################
 ##
 ##  Continuuity Reactor start up script for UNIX
+##  Copyright 2012-2014 Continuuity,Inc. All Rights Reserved.
 ##
 ##############################################################################
 
@@ -59,6 +60,7 @@ done
 SAVED="`pwd`"
 cd "`dirname \"$PRG\"`/.." >&-
 APP_HOME="`pwd -P`"
+NUX_FILE="$APP_HOME/.nux_dashboard"
 
 CLASSPATH=$APP_HOME/lib/*:$APP_HOME/conf/
 
@@ -217,10 +219,13 @@ rotate_log () {
     fi
 }
 
+#Delete the nux file to reenable nux flow
+reenable_nux () {
+ rm -f $NUX_FILE
+}
 # Checks if this is first time user is using the reactor
 nux_enabled() {
- nux_file="$APP_HOME/.nux_dashboard"
- if [ -f $nux_file ];
+ if [ -f $NUX_FILE ];
  then
   return 1;
  else
@@ -258,7 +263,7 @@ start() {
     while kill -0 $background_process >/dev/null 2>/dev/null ; do
       if grep 'Reactor started successfully' $APP_HOME/logs/reactor.log > /dev/null 2>&1; then
         if $debug ; then
-          echo; echo "Remote debugger agent started on port $port"
+          echo; echo "Remote debugger agent started on port $port."
         else
           echo
         fi
@@ -308,7 +313,7 @@ stop() {
 
 restart() {
     stop
-    start
+    start $1 $2
 }
 
 status() {
@@ -329,28 +334,36 @@ status() {
 }
 
 case "$1" in
-  start)
-    shift
+  start|restart)
+    command=$1; shift
     debug=false
-    port=5005
+    nux=false
     while [ $# -gt 0 ]
     do
       case "$1" in
         --enable-debug) shift; debug=true; port=$1; shift;;
+        --enable-nux) shift; nux=true;;
         *) shift; break;;
       esac
     done
+    if $nux; then
+      reenable_nux
+    fi
     if $debug ; then
+      shopt -s extglob
+      if [ -z "$port" ]; then
+        port=5005
+      elif [ -n "${port##+([0-9])}" ]; then
+        die "port number must be an integer.";
+      elif [ $port -lt 1024 ] || [ $port -gt 65535 ]; then
+        die "port number must be between 1024 and 65535.";
+      fi
       CONTINUUITY_REACTOR_OPTS="${CONTINUUITY_REACTOR_OPTS} -agentlib:jdwp=transport=dt_socket,address=localhost:$port,server=y,suspend=n"
     fi
-    start $debug $port
+    $command $debug $port
   ;;
 
   stop)
-    $1
-  ;;
-
-  restart)
     $1
   ;;
 
@@ -360,6 +373,9 @@ case "$1" in
 
   *)
     echo "Usage: $0 {start|stop|restart|status}"
+    echo "Additional options with start, restart:"
+    echo "--enable-nux  to reenable new user experience flow"
+    echo "--enable-debug [ <port> ] to connect to a debug port for local reactor (default port is 5005)"
     exit 1
   ;;
 

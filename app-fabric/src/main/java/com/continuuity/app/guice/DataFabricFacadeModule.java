@@ -12,10 +12,10 @@ import com.continuuity.data2.transaction.TransactionExecutor;
 import com.continuuity.data2.transaction.TransactionExecutorFactory;
 import com.continuuity.data2.transaction.TransactionSystemClient;
 import com.continuuity.data2.transaction.inmemory.DetachedTxSystemClient;
+import com.continuuity.data2.transaction.stream.StreamConsumerFactory;
 import com.continuuity.internal.app.runtime.AbstractDataFabricFacade;
 import com.continuuity.internal.app.runtime.DataFabricFacade;
 import com.continuuity.internal.app.runtime.DataFabricFacadeFactory;
-import org.apache.twill.filesystem.LocationFactory;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.PrivateModule;
@@ -24,6 +24,7 @@ import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import org.apache.twill.filesystem.LocationFactory;
 
 /**
  * A private module for creating bindings for DataFabricFacadeFactory
@@ -75,9 +76,11 @@ public final class DataFabricFacadeModule extends PrivateModule {
                                        TransactionExecutorFactory txExecutorFactory,
                                        DataSetAccessor dataSetAccessor,
                                        QueueClientFactory queueClientFactory,
+                                       StreamConsumerFactory streamConsumerFactory,
                                        LocationFactory locationFactory,
                                        @Assisted Program program) {
-      super(txSystemClient, txExecutorFactory, dataSetAccessor, queueClientFactory, locationFactory, program);
+      super(txSystemClient, txExecutorFactory, dataSetAccessor,
+            queueClientFactory, streamConsumerFactory, locationFactory, program);
     }
   }
 
@@ -91,9 +94,11 @@ public final class DataFabricFacadeModule extends PrivateModule {
                                     @Named("transaction.off") TransactionExecutorFactory txExecutorFactory,
                                     DataSetAccessor dataSetAccessor,
                                     QueueClientFactory queueClientFactory,
+                                    StreamConsumerFactory streamConsumerFactory,
                                     LocationFactory locationFactory,
                                     @Assisted Program program) {
-      super(txSystemClient, txExecutorFactory, dataSetAccessor, queueClientFactory, locationFactory, program);
+      super(txSystemClient, txExecutorFactory, dataSetAccessor,
+            queueClientFactory, streamConsumerFactory, locationFactory, program);
     }
   }
 }

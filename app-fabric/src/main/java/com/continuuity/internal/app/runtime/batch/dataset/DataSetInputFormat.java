@@ -48,6 +48,7 @@ public final class DataSetInputFormat<KEY, VALUE> extends InputFormat<KEY, VALUE
     return list;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public RecordReader<KEY, VALUE> createRecordReader(final InputSplit split,
                                                      final TaskAttemptContext context)
@@ -61,9 +62,8 @@ public final class DataSetInputFormat<KEY, VALUE> extends InputFormat<KEY, VALUE
     MapReduceContextProvider contextProvider = new MapReduceContextProvider(context, MapReduceMetrics.TaskType.Mapper);
     BasicMapReduceContext mrContext = contextProvider.get();
     mrContext.getMetricsCollectionService().startAndWait();
-    @SuppressWarnings("unchecked")
     String dataSetName = getInputDataSetSpec(conf).getName();
-    BatchReadable<KEY, VALUE> dataset = (BatchReadable) mrContext.getDataSet(dataSetName);
+    BatchReadable<KEY, VALUE> dataset = (BatchReadable<KEY, VALUE>) mrContext.getDataSet(dataSetName);
     SplitReader<KEY, VALUE> splitReader = dataset.createSplitReader(inputSplit.getSplit());
 
     // the record reader now owns the context and will close it

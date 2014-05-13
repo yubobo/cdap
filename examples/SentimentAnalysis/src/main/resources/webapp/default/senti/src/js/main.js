@@ -22,7 +22,7 @@ Homepage.prototype.init  = function () {
 Homepage.prototype.injectIntoStream = function() {
   var injectText = $("#stream-inject-textarea").val();
   $.ajax({
-    url: 'v2/streams/sentence',
+    url: '/v2/streams/sentence',
     type: 'POST',
     dataType: 'json',
     contentType: 'application/json',
@@ -35,12 +35,21 @@ Homepage.prototype.enableIntervals = function () {
   var self = this;
   this.interval = setInterval(function() {
     $.ajax({
-      url: 'v2/apps/sentiment/procedures/sentiment-query/methods/aggregates',
+      url: '/v2/apps/sentiment/procedures/sentiment-query/methods/aggregates',
       type: 'GET',
       contentType: "application/json",
       cache: false,
       dataType: 'json',
       success: function(data) {
+        if (!data.positive) {
+            data.positive = 0;
+        }
+        if (!data.negative) {
+            data.negative= 0;
+        }
+        if (!data.neutral) {
+            data.neutral= 0;
+        }
         $("#positive-sentences-processed").text(data.positive);
         $("#neutral-sentences-processed").text(data.neutral);
         $("#negative-sentences-processed").text(data.negative);
@@ -49,7 +58,7 @@ Homepage.prototype.enableIntervals = function () {
     });
 
     $.ajax({
-      url: 'v2/apps/sentiment/procedures/sentiment-query/methods/sentiments?sentiment=positive',
+      url: '/v2/apps/sentiment/procedures/sentiment-query/methods/sentiments?sentiment=positive',
       type: 'GET',
       contentType: "application/json",
       dataType: 'json',
@@ -66,7 +75,7 @@ Homepage.prototype.enableIntervals = function () {
     });
 
     $.ajax({
-      url: 'v2/apps/sentiment/procedures/sentiment-query/methods/sentiments?sentiment=neutral',
+      url: '/v2/apps/sentiment/procedures/sentiment-query/methods/sentiments?sentiment=neutral',
       type: 'GET',
       contentType: "application/json",
       dataType: 'json',
@@ -83,7 +92,7 @@ Homepage.prototype.enableIntervals = function () {
     });
 
     $.ajax({
-      url: 'v2/apps/sentiment/procedures/sentiment-query/methods/sentiments?sentiment=negative',
+      url: '/v2/apps/sentiment/procedures/sentiment-query/methods/sentiments?sentiment=negative',
       type: 'GET',
       contentType: "application/json",
       dataType: 'json',
