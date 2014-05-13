@@ -79,15 +79,7 @@ public class DatasetUserAdminHandler extends AbstractHttpHandler {
   }
 
   private void applyDatasetAdminOperation(final HttpResponder responder, String url) {
-    HttpClient httpClient = new DefaultHttpClient();
-    HttpGet httpGet = new HttpGet(url);
-    try {
-      HttpResponse response = httpClient.execute(httpGet);
-      responder.sendJson(HttpResponseStatus.OK, response.getEntity().getContent());
-    } catch (IOException e) {
-      LOG.error("Error", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-    }
+    LOG.info("Applying dataset admin op {}", url);
   }
 
 }

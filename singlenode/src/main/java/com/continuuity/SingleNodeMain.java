@@ -15,6 +15,7 @@ import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data.stream.service.StreamHttpModule;
 import com.continuuity.data.stream.service.StreamHttpService;
+import com.continuuity.data2.datafabric.dataset.service.DatasetUserHttpModule;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.gateway.Gateway;
 import com.continuuity.gateway.auth.AuthModule;
@@ -311,6 +312,7 @@ public class SingleNodeMain {
       new LoggingModules().getSingleNodeModules(),
       new RouterModules().getSingleNodeModules(),
       new SecurityModules().getSingleNodeModules(),
-      new StreamHttpModule());
+      new StreamHttpModule(),
+      new DatasetUserHttpModule());
   }
 }
