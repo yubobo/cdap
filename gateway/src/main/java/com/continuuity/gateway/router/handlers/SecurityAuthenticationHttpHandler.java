@@ -186,6 +186,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
       byte b = ' ';
       int indx = sliced.indexOf(sliced.readerIndex(), sliced.readableBytes(), b);
       logEntry.responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
+      logEntry.responseContentLength = "" + channelBuffer.readableBytes();
     } else {
       LOG.info("Response message is of type " + message.getClass());
     }
