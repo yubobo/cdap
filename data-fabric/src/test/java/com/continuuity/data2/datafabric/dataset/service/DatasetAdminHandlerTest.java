@@ -51,7 +51,7 @@ public class DatasetAdminHandlerTest extends DatasetInstanceHandlerTest {
   }
 
   protected Response<Boolean> getExists(String instanceName) throws IOException {
-    HttpGet post = new HttpGet(getUrl("/datasets/admin/" + instanceName));
+    HttpGet post = new HttpGet(getUrl("/datasets/admin/" + instanceName + "/exists"));
 
     DefaultHttpClient client = new DefaultHttpClient();
     HttpResponse response = client.execute(post);

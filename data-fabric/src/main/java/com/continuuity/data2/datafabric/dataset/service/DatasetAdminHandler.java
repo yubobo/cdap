@@ -42,10 +42,8 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   public void exists(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
     try {
       DatasetAdmin datasetAdmin = datasetManager.getAdmin(name, classLoader);
-      if (datasetAdmin != null) {
-        boolean exists = datasetAdmin.exists();
-        responder.sendJson(HttpResponseStatus.OK, exists);
-      }
+      boolean exists = datasetAdmin != null && datasetAdmin.exists();
+      responder.sendJson(HttpResponseStatus.OK, exists);
     } catch (DatasetManagementException e) {
       LOG.info("Error", e);
       responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
