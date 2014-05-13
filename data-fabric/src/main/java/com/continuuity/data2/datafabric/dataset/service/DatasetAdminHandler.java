@@ -26,15 +26,11 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
 
   private final DatasetManager datasetManager;
   private final ClassLoader classLoader;
-  /**
-   * User to execute administrative commands as.
-   */
-  private final String user;
 
-  public DatasetAdminHandler(String user, DatasetManager datasetManager, ClassLoader classLoader) {
-    this.user = user;
+  public DatasetAdminHandler(DatasetManager datasetManager) {
     this.datasetManager = datasetManager;
-    this.classLoader = classLoader;
+    // TODO(alvin): use proper classloader
+    this.classLoader = null;
   }
 
   @GET
@@ -117,6 +113,11 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
       LOG.info("Error", e);
       responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  // TODO(alvin): implement
+  private String getUser() {
+    return "bob";
   }
 
   public interface DatasetAdminOperation<T> {
