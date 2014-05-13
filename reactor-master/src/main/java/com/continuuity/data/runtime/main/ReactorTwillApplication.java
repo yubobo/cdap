@@ -3,6 +3,7 @@ package com.continuuity.data.runtime.main;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.twill.AbortOnTimeoutEventHandler;
+import com.continuuity.data2.datafabric.dataset.runtime.DatasetUserRunnable;
 import com.continuuity.logging.run.LogSaverTwillRunnable;
 import com.continuuity.metrics.runtime.MetricsProcessorTwillRunnable;
 import com.continuuity.metrics.runtime.MetricsTwillRunnable;
@@ -36,15 +37,36 @@ public class ReactorTwillApplication implements TwillApplication {
     final long noContainerTimeout = cConf.getLong(Constants.CFG_TWILL_NO_CONTAINER_TIMEOUT, Long.MAX_VALUE);
 
     return
+      // TODO(alvin): remove
+      addDatasetUserService(
       addLogSaverService(
        addStreamService(
          addTransactionService(
            addMetricsProcessor (
              addMetricsService(
-              TwillSpecification.Builder.with().setName(NAME).withRunnable())))))
+              TwillSpecification.Builder.with().setName(NAME).withRunnable()))))))
         .anyOrder()
         .withEventHandler(new AbortOnTimeoutEventHandler(noContainerTimeout))
         .build();
+  }
+
+  // TODO(alvin): move this to have DatasetAdminHandler spin up DatasetUserRunnable/DatasetUserService
+  // on demand for each user
+  private TwillSpecification.Builder.RunnableSetter addDatasetUserService(TwillSpecification.Builder.MoreRunnable
+                                                                         builder) {
+
+    ResourceSpecification spec = ResourceSpecification.Builder
+      .with()
+      .setVirtualCores(1)
+      .setMemory(512, ResourceSpecification.SizeUnit.MEGA)
+      .setInstances(1)
+      .build();
+
+    return builder.add(new DatasetUserRunnable("dataset.user", "hConf.xml", "cConf.xml"), spec)
+      .withLocalFiles()
+      .add("hConf.xml", hConfFile.toURI())
+      .add("cConf.xml", cConfFile.toURI())
+      .apply();
   }
 
   private TwillSpecification.Builder.RunnableSetter addLogSaverService(TwillSpecification.Builder.MoreRunnable
