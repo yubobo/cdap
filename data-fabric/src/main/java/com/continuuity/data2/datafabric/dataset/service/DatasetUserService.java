@@ -79,7 +79,8 @@ public class DatasetUserService extends AbstractIdleService {
     cancelDiscovery = discoveryService.register(new Discoverable() {
       @Override
       public String getName() {
-        return Constants.Service.DATASET_MANAGER + "." + user;
+        // TODO(alvin): some function to get the service name of a user service by user name
+        return Constants.Service.DATASET_USER + "." + user;
       }
 
       @Override

@@ -15,6 +15,7 @@ import com.continuuity.internal.data.dataset.module.DatasetModule;
 import com.google.common.collect.ImmutableSortedMap;
 import org.apache.twill.discovery.InMemoryDiscoveryService;
 import org.apache.twill.filesystem.LocalLocationFactory;
+import org.apache.twill.yarn.YarnTwillRunnerService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -52,6 +53,7 @@ public class DataFabricDatasetManagerTest extends AbstractDatasetManagerTest {
                                                new LocalLocationFactory(),
                                                InetAddress.getByName("localhost"),
                                                discoveryService,
+                                               new FakeTwillRunnerService(),
                                                discoveryService,
                                                new InMemoryDatasetManager(),
                                                ImmutableSortedMap.<String, Class<? extends DatasetModule>>of(

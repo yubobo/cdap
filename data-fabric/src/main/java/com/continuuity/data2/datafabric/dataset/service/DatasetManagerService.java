@@ -16,6 +16,8 @@ import com.continuuity.data2.dataset2.manager.DatasetManager;
 import com.continuuity.data2.transaction.TransactionSystemClient;
 import com.continuuity.internal.data.dataset.module.DatasetModule;
 import com.google.common.base.Throwables;
+import org.apache.twill.api.TwillRunner;
+import org.apache.twill.api.TwillRunnerService;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
@@ -56,6 +58,7 @@ public class DatasetManagerService extends AbstractIdleService {
                                LocationFactory locationFactory,
                                @Named(Constants.Dataset.Manager.ADDRESS) InetAddress hostname,
                                DiscoveryService discoveryService,
+                               TwillRunnerService twillRunner,
                                DiscoveryServiceClient discoveryServiceClient,
                                @Named("datasetMDS") DatasetManager mdsDatasetManager,
                                @Named("defaultDatasetModules")
@@ -82,7 +85,7 @@ public class DatasetManagerService extends AbstractIdleService {
 
     builder.addHttpHandlers(ImmutableList.of(new DatasetTypeHandler(typeManager, locationFactory, cConf),
                                              new DatasetInstanceHandler(typeManager, instanceManager),
-                                             new DatasetAdminHandler(dsManager)));
+                                             new DatasetAdminHandler(dsManager, twillRunner, discoveryServiceClient)));
 
     builder.setHost(hostname.getCanonicalHostName());
     builder.setPort(cConf.getInt(Constants.Dataset.Manager.PORT, Constants.Dataset.Manager.DEFAULT_PORT));
