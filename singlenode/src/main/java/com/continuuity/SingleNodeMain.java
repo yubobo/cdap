@@ -137,6 +137,7 @@ public class SingleNodeMain {
     flumeCollector.startAndWait();
     webCloudAppService.startAndWait();
     streamHttpService.startAndWait();
+//    datasetManagerService.startAndWait();
     datasetUserService.startAndWait();
 
     String hostname = InetAddress.getLocalHost().getHostName();
@@ -151,6 +152,7 @@ public class SingleNodeMain {
     LOG.info("Shutting down reactor...");
 
     datasetUserService.stopAndWait();
+//    datasetManagerService.stopAndWait();
     streamHttpService.stopAndWait();
     webCloudAppService.stopAndWait();
     flumeCollector.stopAndWait();
