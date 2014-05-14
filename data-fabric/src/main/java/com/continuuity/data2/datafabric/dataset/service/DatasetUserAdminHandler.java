@@ -6,6 +6,7 @@ import com.continuuity.data2.dataset2.manager.DatasetManagementException;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.data.dataset.DatasetAdmin;
+import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ public class DatasetUserAdminHandler extends AbstractHttpHandler {
   private final String user;
   private final DataFabricDatasetManager dsService;
 
+  @Inject
   public DatasetUserAdminHandler(String user, DataFabricDatasetManager dsService) {
     this.user = user;
     this.dsService = dsService;

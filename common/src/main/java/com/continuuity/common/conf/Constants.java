@@ -320,7 +320,7 @@ public final class Constants {
       public static final String OUTPUT_DIR = "dataset.user.output.dir";
 
       // Defaults
-      public static final int DEFAULT_PORT = 10009;
+      public static final int DEFAULT_PORT = 10010;
       public static final int DEFAULT_BACKLOG = 20000;
       public static final int DEFAULT_EXEC_THREADS = 10;
       public static final int DEFAULT_BOSS_THREADS = 1;

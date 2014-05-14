@@ -36,13 +36,17 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   private final Map<String, DatasetUserServiceClient> userServices;
   private final TwillRunnerService runnerService;
   private final DiscoveryServiceClient discoveryServiceClient;
+  private String cConfName;
+  private String hConfName;
 
   @Inject
   public DatasetAdminHandler(DatasetManager datasetManager, TwillRunnerService runnerService,
-                             DiscoveryServiceClient discoveryServiceClient) {
+                             DiscoveryServiceClient discoveryServiceClient, String cConfName, String hConfName) {
     this.datasetManager = datasetManager;
     this.runnerService = runnerService;
     this.discoveryServiceClient = discoveryServiceClient;
+    this.cConfName = cConfName;
+    this.hConfName = hConfName;
     this.userServices = new HashMap<String, DatasetUserServiceClient>();
   }
 
@@ -93,7 +97,7 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
 
     String runnableName = "dataset.user." + user;
     LOG.info("Starting dataset user service {}", runnableName);
-    DatasetUserRunnable datasetUserRunnable = new DatasetUserRunnable(runnableName, null, null);
+    DatasetUserRunnable datasetUserRunnable = new DatasetUserRunnable(runnableName, cConfName, hConfName);
     TwillController twillController = runnerService.prepare(datasetUserRunnable).start();
     DatasetUserServiceClient newUserServiceClient = new DatasetUserServiceClient(user, discoveryServiceClient);
     return newUserServiceClient;

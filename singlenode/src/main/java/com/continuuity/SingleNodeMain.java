@@ -15,6 +15,7 @@ import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data.stream.service.StreamHttpModule;
 import com.continuuity.data.stream.service.StreamHttpService;
+import com.continuuity.data2.datafabric.dataset.service.DatasetManagerService;
 import com.continuuity.data2.datafabric.dataset.service.DatasetUserHttpModule;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.gateway.Gateway;
@@ -63,6 +64,7 @@ public class SingleNodeMain {
   private final NettyFlumeCollector flumeCollector;
   private final AppFabricServer appFabricServer;
   private final StreamHttpService streamHttpService;
+  private final DatasetManagerService datasetManagerService;
 
   private final MetricsCollectionService metricsCollectionService;
 
@@ -86,6 +88,7 @@ public class SingleNodeMain {
 
     metricsCollectionService = injector.getInstance(MetricsCollectionService.class);
     streamHttpService = injector.getInstance(StreamHttpService.class);
+    datasetManagerService = injector.getInstance(DatasetManagerService.class);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
