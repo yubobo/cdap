@@ -15,7 +15,7 @@ import java.io.IOException;
 /**
  *
  */
-public class DatasetUserAdminHandlerTest extends DatasetInstanceHandlerTest {
+public class DatasetAdminHandlerTest extends DatasetInstanceHandlerTest {
 
   private static final Gson GSON = new Gson();
 
