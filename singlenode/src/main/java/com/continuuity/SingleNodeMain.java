@@ -17,6 +17,7 @@ import com.continuuity.data.stream.service.StreamHttpModule;
 import com.continuuity.data.stream.service.StreamHttpService;
 import com.continuuity.data2.datafabric.dataset.service.DatasetManagerService;
 import com.continuuity.data2.datafabric.dataset.service.DatasetUserHttpModule;
+import com.continuuity.data2.datafabric.dataset.service.DatasetUserService;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.gateway.Gateway;
 import com.continuuity.gateway.auth.AuthModule;
@@ -64,7 +65,8 @@ public class SingleNodeMain {
   private final NettyFlumeCollector flumeCollector;
   private final AppFabricServer appFabricServer;
   private final StreamHttpService streamHttpService;
-  private final DatasetManagerService datasetManagerService;
+//  private final DatasetManagerService datasetManagerService;
+  private final DatasetUserService datasetUserService;
 
   private final MetricsCollectionService metricsCollectionService;
 
@@ -88,7 +90,8 @@ public class SingleNodeMain {
 
     metricsCollectionService = injector.getInstance(MetricsCollectionService.class);
     streamHttpService = injector.getInstance(StreamHttpService.class);
-    datasetManagerService = injector.getInstance(DatasetManagerService.class);
+    datasetUserService = injector.getInstance(DatasetUserService.class);
+//    datasetManagerService = injector.getInstance(DatasetManagerService.class);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
@@ -134,6 +137,7 @@ public class SingleNodeMain {
     flumeCollector.startAndWait();
     webCloudAppService.startAndWait();
     streamHttpService.startAndWait();
+    datasetUserService.startAndWait();
 
     String hostname = InetAddress.getLocalHost().getHostName();
     System.out.println("Continuuity Reactor started successfully");
@@ -146,6 +150,7 @@ public class SingleNodeMain {
   public void shutDown() {
     LOG.info("Shutting down reactor...");
 
+    datasetUserService.stopAndWait();
     streamHttpService.stopAndWait();
     webCloudAppService.stopAndWait();
     flumeCollector.stopAndWait();

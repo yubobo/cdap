@@ -20,7 +20,7 @@ import java.io.IOException;
 /**
  * Handles dataset administration calls for a particular user.
  */
-@Path("/" + Constants.Dataset.Manager.VERSION)
+@Path("/" + Constants.Dataset.UserService.VERSION)
 public class DatasetUserAdminHandler extends AbstractHttpHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(DatasetUserAdminHandler.class);
