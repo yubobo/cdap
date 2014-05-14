@@ -49,9 +49,6 @@ public class DataFabricInMemoryModule extends AbstractModule {
 
     // Bind TxDs2 stuff
     bind(DataSetAccessor.class).to(InMemoryDataSetAccessor.class).in(Singleton.class);
-    bind(TransactionStateStorage.class).to(NoOpTransactionStateStorage.class).in(Singleton.class);
-    bind(InMemoryTransactionManager.class).in(Singleton.class);
-    bind(TransactionSystemClient.class).to(InMemoryTxSystemClient.class).in(Singleton.class);
     bind(QueueClientFactory.class).to(InMemoryQueueClientFactory.class).in(Singleton.class);
     bind(QueueAdmin.class).to(InMemoryQueueAdmin.class).in(Singleton.class);
     bind(StreamAdmin.class).to(InMemoryStreamAdmin.class).in(Singleton.class);
@@ -63,7 +60,6 @@ public class DataFabricInMemoryModule extends AbstractModule {
     // We don't need caching for in-memory
     bind(CConfiguration.class).annotatedWith(Names.named("DataFabricOperationExecutorConfig")).toInstance(cConf);
     bind(CConfiguration.class).annotatedWith(Names.named("DataSetAccessorConfig")).toInstance(cConf);
-    bind(CConfiguration.class).annotatedWith(Names.named("TransactionServerConfig")).toInstance(cConf);
 
     install(new FactoryModuleBuilder()
               .implement(TransactionExecutor.class, DefaultTransactionExecutor.class)

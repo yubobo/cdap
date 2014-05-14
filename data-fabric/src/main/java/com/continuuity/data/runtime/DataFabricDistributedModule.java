@@ -97,15 +97,8 @@ public class DataFabricDistributedModule extends AbstractModule {
     bind(MetaDataTable.class).to(SerializingMetaDataTable.class).in(Singleton.class);
 
     // Bind TxDs2 stuff
-    if (conf.getBoolean(Constants.Transaction.Manager.CFG_DO_PERSIST, true)) {
-      bind(TransactionStateStorage.class).to(HDFSTransactionStateStorage.class).in(Singleton.class);
-    } else {
-      bind(TransactionStateStorage.class).to(NoOpTransactionStateStorage.class).in(Singleton.class);
-    }
     bind(ThriftClientProvider.class).toProvider(ThriftClientProviderSupplier.class);
     bind(DataSetAccessor.class).to(DistributedDataSetAccessor.class).in(Singleton.class);
-    bind(InMemoryTransactionManager.class).in(Singleton.class);
-    bind(TransactionSystemClient.class).to(TransactionServiceClient.class).in(Singleton.class);
     bind(QueueClientFactory.class).to(HBaseQueueClientFactory.class).in(Singleton.class);
     bind(QueueAdmin.class).to(HBaseQueueAdmin.class).in(Singleton.class);
     bind(HBaseTableUtil.class).toProvider(HBaseTableUtilFactory.class);

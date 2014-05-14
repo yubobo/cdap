@@ -50,11 +50,6 @@ public class DataFabricLocalModule extends AbstractModule {
     install(Modules.override(new DataFabricLevelDBModule(this.conf)).with(new AbstractModule() {
       @Override
       protected void configure() {
-        if (conf.getBoolean(Constants.Transaction.Manager.CFG_DO_PERSIST, true)) {
-          bind(TransactionStateStorage.class).to(LocalFileTransactionStateStorage.class).in(Singleton.class);
-        } else {
-          bind(TransactionStateStorage.class).to(NoOpTransactionStateStorage.class).in(Singleton.class);
-        }
         bind(QueueClientFactory.class).to(LevelDBAndInMemoryQueueClientFactory.class).in(Singleton.class);
         bind(QueueAdmin.class).to(InMemoryQueueAdmin.class).in(Singleton.class);
       }

@@ -74,12 +74,8 @@ public class DataFabricLevelDBModule extends AbstractModule {
 
     // Bind TxDs2 stuff
     bind(LevelDBOcTableService.class).toInstance(LevelDBOcTableService.getInstance());
-    bind(TransactionStateStorage.class).to(NoOpTransactionStateStorage.class).in(Singleton.class);
-    bind(InMemoryTransactionManager.class).in(Singleton.class);
-    bind(TransactionSystemClient.class).to(InMemoryTxSystemClient.class).in(Singleton.class);
     bind(CConfiguration.class).annotatedWith(Names.named("LevelDBConfiguration")).toInstance(conf);
     bind(CConfiguration.class).annotatedWith(Names.named("DataSetAccessorConfig")).toInstance(conf);
-    bind(CConfiguration.class).annotatedWith(Names.named("TransactionServerConfig")).toInstance(conf);
     bind(DataSetAccessor.class).to(LocalDataSetAccessor.class).in(Singleton.class);
     bind(QueueClientFactory.class).to(LevelDBQueueClientFactory.class).in(Singleton.class);
     bind(QueueAdmin.class).to(LevelDBQueueAdmin.class).in(Singleton.class);
