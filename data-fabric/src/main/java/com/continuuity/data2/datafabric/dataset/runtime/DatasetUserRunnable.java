@@ -12,6 +12,7 @@ import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.common.twill.AbstractReactorTwillRunnable;
 import com.continuuity.data.stream.service.StreamHttpService;
 import com.continuuity.data2.datafabric.dataset.service.DatasetUserHttpModule;
+import com.continuuity.data2.datafabric.dataset.service.DatasetUserService;
 import com.continuuity.gateway.auth.AuthModule;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Service;
@@ -47,14 +48,14 @@ public class DatasetUserRunnable extends AbstractReactorTwillRunnable {
       cConf.set(Constants.Dataset.UserService.ADDRESS, context.getHost().getHostName());
 
       injector = Guice.createInjector(
-        new DatasetUserHttpModule(),
         new ConfigModule(cConf, hConf),
         new IOModule(),
         new ZKClientModule(),
         new KafkaClientModule(),
         new DiscoveryRuntimeModule().getDistributedModules(),
         new LocationRuntimeModule().getDistributedModules(),
-        new AuthModule());
+        new AuthModule(),
+        new DatasetUserHttpModule());
 
     } catch (Exception e) {
       throw Throwables.propagate(e);
@@ -66,7 +67,7 @@ public class DatasetUserRunnable extends AbstractReactorTwillRunnable {
     services.add(injector.getInstance(ZKClientService.class));
     services.add(injector.getInstance(KafkaClientService.class));
     services.add(injector.getInstance(MetricsCollectionService.class));
-    services.add(injector.getInstance(StreamHttpService.class));
+    services.add(injector.getInstance(DatasetUserService.class));
 
   }
 }

@@ -7,6 +7,12 @@ import com.google.inject.Scopes;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+/**
+ *
+ */
 public class DatasetUserHttpModule extends PrivateModule {
 
   @Override
@@ -15,7 +21,19 @@ public class DatasetUserHttpModule extends PrivateModule {
                                                                       Names.named(Constants.Service.DATASET_USER));
     handlerBinder.addBinding().to(DatasetUserAdminHandler.class);
 
+    bind(InetAddress.class)
+      .annotatedWith(Names.named(Constants.Dataset.UserService.ADDRESS))
+      .toInstance(getAddress());
+
     bind(DatasetUserService.class).in(Scopes.SINGLETON);
     expose(DatasetUserService.class);
+  }
+
+  private InetAddress getAddress() {
+    try {
+      return InetAddress.getLocalHost();
+    } catch (UnknownHostException e) {
+      return null;
+    }
   }
 }

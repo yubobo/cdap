@@ -6,6 +6,7 @@ import com.continuuity.data2.dataset2.manager.DatasetManager;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.data.dataset.DatasetAdmin;
+import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
@@ -17,7 +18,8 @@ import javax.ws.rs.PathParam;
 import java.io.IOException;
 
 /**
- * Handles dataset administrative calls.
+ * Handles dataset administrative calls by forwarding calls from a particular user to a
+ * {@link DatasetUserAdminHandler} that belongs to the particular user.
  */
 @Path("/" + Constants.Dataset.UserService.VERSION)
 public class DatasetAdminHandler extends AbstractHttpHandler {
@@ -25,103 +27,46 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(DatasetAdminHandler.class);
 
   private final DatasetManager datasetManager;
-  private final ClassLoader classLoader;
 
+  @Inject
   public DatasetAdminHandler(DatasetManager datasetManager) {
     this.datasetManager = datasetManager;
-    // TODO(alvin): use proper classloader
-    this.classLoader = null;
   }
 
   @GET
   @Path("/datasets/admin/{name}/exists")
   public void exists(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    try {
-      DatasetAdmin datasetAdmin = datasetManager.getAdmin(name, classLoader);
-      boolean exists = datasetAdmin != null && datasetAdmin.exists();
-      responder.sendJson(HttpResponseStatus.OK, exists);
-    } catch (DatasetManagementException e) {
-      LOG.info("Error", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-    } catch (IOException e) {
-      LOG.info("Error", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-    }
+
   }
 
   @GET
-  @Path("/datasets/admin/create")
+  @Path("/datasets/admin/{name}/create")
   public void create(HttpRequest request, final HttpResponder responder) {
     // TODO
-    responder.sendStatus(HttpResponseStatus.NOT_FOUND);
+    responder.sendStatus(HttpResponseStatus.NOT_IMPLEMENTED);
   }
 
   @GET
   @Path("/datasets/admin/{name}/drop")
   public void drop(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
-      @Override
-      public String apply(DatasetAdmin datasetAdmin) throws IOException {
-        datasetAdmin.drop();
-        return "";
-      }
-    });
+    responder.sendStatus(HttpResponseStatus.NOT_IMPLEMENTED);
   }
 
   @GET
   @Path("/datasets/admin/{name}/truncate")
   public void truncate(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
-      @Override
-      public String apply(DatasetAdmin datasetAdmin) throws IOException {
-        datasetAdmin.truncate();
-        return "";
-      }
-    });
+    responder.sendStatus(HttpResponseStatus.NOT_IMPLEMENTED);
   }
 
   @GET
   @Path("/datasets/admin/{name}/upgrade")
   public void upgrade(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-    applyDatasetAdminOperation(responder, name, new DatasetAdminOperation<String>() {
-      @Override
-      public String apply(DatasetAdmin datasetAdmin) throws IOException {
-        datasetAdmin.upgrade();
-        return "";
-      }
-    });
-  }
-
-  private void applyDatasetAdminOperation(final HttpResponder responder, String name,
-                                          DatasetAdminOperation<?> datasetAdminOperation) {
-    try {
-      DatasetAdmin datasetAdmin = datasetManager.getAdmin(name, classLoader);
-      if (datasetAdmin != null) {
-        Object result = datasetAdminOperation.apply(datasetAdmin);
-        if (result != null && !(result instanceof Void)) {
-          responder.sendJson(HttpResponseStatus.OK, result);
-        } else {
-          responder.sendStatus(HttpResponseStatus.OK);
-        }
-      } else {
-        responder.sendStatus(HttpResponseStatus.NOT_FOUND);
-      }
-    } catch (DatasetManagementException e) {
-      LOG.info("Error", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-    } catch (IOException e) {
-      LOG.info("Error", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-    }
+    responder.sendStatus(HttpResponseStatus.NOT_IMPLEMENTED);
   }
 
   // TODO(alvin): implement
-  private String getUser() {
+  private String getUser(HttpRequest request) {
     return "bob";
-  }
-
-  public interface DatasetAdminOperation<T> {
-    T apply(DatasetAdmin datasetAdmin) throws IOException;
   }
 
 }

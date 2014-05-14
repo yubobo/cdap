@@ -2,23 +2,23 @@ package com.continuuity.data2.datafabric.dataset.service;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
+import com.continuuity.data2.datafabric.dataset.DataFabricDatasetManager;
+import com.continuuity.data2.datafabric.dataset.client.DatasetManagerServiceClient;
 import com.continuuity.http.NettyHttpService;
-import com.continuuity.internal.data.dataset.module.DatasetModule;
 import com.google.common.collect.ImmutableList;
-import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
+import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.NavigableMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,28 +29,29 @@ public class DatasetUserService extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(DatasetUserService.class);
 
   private final NettyHttpService httpService;
-  private final DiscoveryService discoveryService;
-  private final NavigableMap<String, Class<? extends DatasetModule>> defaultModules;
   private final String user;
+  private final DataFabricDatasetManager dsService;
+  private final DiscoveryService discoveryService;
+
   private Cancellable cancelDiscovery;
 
   @Inject
   public DatasetUserService(CConfiguration cConf,
                                LocationFactory locationFactory,
-                               @Named(Constants.Dataset.Manager.ADDRESS) InetAddress hostname,
+                               @Named(Constants.Dataset.UserService.ADDRESS) InetAddress hostname,
                                DiscoveryService discoveryService,
-                               @Named("defaultDatasetModules") NavigableMap<String, Class<? extends DatasetModule>> defaultModules
+                               DataFabricDatasetManager dsService
   ) throws Exception {
 
     NettyHttpService.Builder builder = NettyHttpService.builder();
-    this.defaultModules = defaultModules;
     // TODO: pass proper user
     this.user = "bob";
+    this.dsService = dsService;
+    this.discoveryService = discoveryService;
 
     // TODO: use random port, since we want to run one DatasetUserService per reactor user.
     builder.addHttpHandlers(ImmutableList.of(
-      new DatasetUserAdminHandler(
-        user, HostAndPort.fromParts("localhost", Constants.Dataset.Manager.DEFAULT_PORT))));
+      new DatasetUserAdminHandler(user, dsService)));
 
     builder.setHost(hostname.getCanonicalHostName());
 
@@ -66,7 +67,6 @@ public class DatasetUserService extends AbstractIdleService {
                                                  Constants.Dataset.UserService.DEFAULT_WORKER_THREADS));
 
     this.httpService = builder.build();
-    this.discoveryService = discoveryService;
   }
 
   @Override
