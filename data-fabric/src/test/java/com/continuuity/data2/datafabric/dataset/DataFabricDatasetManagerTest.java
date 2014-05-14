@@ -53,7 +53,8 @@ public class DataFabricDatasetManagerTest extends AbstractDatasetManagerTest {
                                                new LocalLocationFactory(),
                                                InetAddress.getByName("localhost"),
                                                discoveryService,
-                                               new FakeTwillRunnerService(),
+                                               // TODO(alvin): ??
+                                               new FakeTwillRunnerService(null),
                                                discoveryService,
                                                new InMemoryDatasetManager(),
                                                ImmutableSortedMap.<String, Class<? extends DatasetModule>>of(

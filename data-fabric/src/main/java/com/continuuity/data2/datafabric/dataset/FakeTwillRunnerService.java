@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class FakeTwillRunnerService extends AbstractTwillService implements TwillRunnerService {
 
-  protected FakeTwillRunnerService(Location applicationLocation) {
+  public FakeTwillRunnerService(Location applicationLocation) {
     super(applicationLocation);
   }
 
