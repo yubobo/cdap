@@ -2,22 +2,21 @@ package com.continuuity.watchdog.election;
 
 import com.continuuity.common.zookeeper.election.ElectionHandler;
 import com.continuuity.common.zookeeper.election.LeaderElection;
-import com.google.common.base.Throwables;
-import org.apache.twill.common.Threads;
-import org.apache.twill.zookeeper.ZKClient;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.apache.twill.common.Threads;
+import org.apache.twill.zookeeper.ZKClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +35,6 @@ public class MultiLeaderElection extends AbstractIdleService {
   private final PartitionChangeHandler handler;
   private final Set<Integer> leaderPartitions;
   private final List<LeaderElection> electionCancels;
-  private final CountDownLatch latch;
 
   private Set<Integer> prevLeaderPartitions;
   private int leaderElectionSleepMs = 8 * 1000;
@@ -51,7 +49,6 @@ public class MultiLeaderElection extends AbstractIdleService {
     this.leaderPartitions = Sets.newCopyOnWriteArraySet();
     this.electionCancels = Lists.newArrayList();
     this.prevLeaderPartitions = ImmutableSet.of();
-    this.latch = new CountDownLatch(1);
   }
 
   @Override
@@ -80,7 +77,6 @@ public class MultiLeaderElection extends AbstractIdleService {
     TimeUnit.MILLISECONDS.sleep(ms);
     runElection(partitions2);
 
-    latch.countDown();
     LOG.info("Leader election started.");
   }
 
@@ -131,13 +127,6 @@ public class MultiLeaderElection extends AbstractIdleService {
   private final Runnable runHandler = new Runnable() {
     @Override
     public void run() {
-      try {
-        LOG.debug("Waiting for multi leader to finish starting before handling partition change");
-        latch.await();
-      } catch (InterruptedException e) {
-        LOG.error("Interrupted waiting for multi leader to finish starting before handling partition change");
-        Throwables.propagate(e);
-      }
       Set<Integer> newLeaders = ImmutableSet.copyOf(leaderPartitions);
       if (!newLeaders.equals(prevLeaderPartitions)) {
         LOG.info("Leader partitions changed - {}", newLeaders);
