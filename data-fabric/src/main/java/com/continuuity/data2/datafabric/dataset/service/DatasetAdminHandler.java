@@ -36,7 +36,7 @@ public class DatasetAdminHandler extends AbstractHttpHandler {
   @GET
   @Path("/datasets/admin/{name}/exists")
   public void exists(HttpRequest request, final HttpResponder responder, @PathParam("name") String name) {
-
+    responder.sendStatus(HttpResponseStatus.NOT_IMPLEMENTED);
   }
 
   @GET
