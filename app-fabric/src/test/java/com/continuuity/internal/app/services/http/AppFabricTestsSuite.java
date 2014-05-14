@@ -10,8 +10,6 @@ import com.continuuity.data2.transaction.TransactionSystemClient;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.gateway.handlers.dataset.DataSetInstantiatorFromMetaData;
 import com.continuuity.internal.app.services.AppFabricServer;
-import com.continuuity.internal.app.services.http.handlers.AppFabricHttpHandlerTest;
-import com.continuuity.internal.app.services.http.handlers.PingHandlerTest;
 import com.continuuity.metrics.query.MetricsQueryService;
 import com.continuuity.test.internal.guice.AppFabricTestModule;
 import com.google.common.collect.ObjectArrays;
@@ -30,19 +28,14 @@ import org.apache.http.message.BasicHeader;
 import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-
 
 import java.util.concurrent.TimeUnit;
 
-
 /**
- * Test Suite for running all API tests.
+ * AppFabric HttpHandler Test classes can extend this class, this will allow the HttpService be setup before
+ * running the handler tests, this also gives the ability to run individual test cases.
  */
-@RunWith(value = Suite.class)
-@Suite.SuiteClasses(value = {PingHandlerTest.class, AppFabricHttpHandlerTest.class})
-public class AppFabricTestsSuite {
+public abstract class AppFabricTestsSuite {
   private static final String API_KEY = "SampleTestApiKey";
   private static final String CLUSTER = "SampleTestClusterName";
   private static final Header AUTH_HEADER = new BasicHeader(Constants.Gateway.CONTINUUITY_API_KEY, API_KEY);
@@ -61,7 +54,6 @@ public class AppFabricTestsSuite {
   public static ExternalResource resources = new ExternalResource() {
     @Override
     protected void before() throws Throwable {
-
       conf.setInt(Constants.AppFabric.SERVER_PORT, 0);
       conf.set(Constants.AppFabric.SERVER_ADDRESS, hostname);
       conf.set(Constants.AppFabric.OUTPUT_DIR, System.getProperty("java.io.tmpdir"));

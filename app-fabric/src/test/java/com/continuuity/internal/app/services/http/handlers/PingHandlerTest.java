@@ -8,7 +8,7 @@ import org.junit.Test;
 /**
  * Test ping handler.
  */
-public class PingHandlerTest {
+public class PingHandlerTest extends AppFabricTestsSuite {
   @Test
   public void testPing() throws Exception {
     HttpResponse response = AppFabricTestsSuite.doGet("/ping");

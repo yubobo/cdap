@@ -78,9 +78,9 @@ import static com.continuuity.common.conf.Constants.DEVELOPER_ACCOUNT_ID;
 
 
 /**
- *
+ * Test {@link com.continuuity.gateway.handlers.AppFabricHttpHandler}
  */
-public class AppFabricHttpHandlerTest {
+public class AppFabricHttpHandlerTest extends AppFabricTestsSuite {
 
   private static final Gson GSON = new Gson();
   private static final Type MAP_STRING_STRING_TYPE = new TypeToken<Map<String, String>>() { }.getType();
@@ -675,6 +675,7 @@ public class AppFabricHttpHandlerTest {
     Assert.assertEquals("RUNNING", getRunnableStatus("procedures", "WordCountApp", "WordFrequency"));
     Assert.assertEquals(200, getRunnableStartStop("procedures", "WordCountApp", "WordFrequency", "stop"));
 
+    deploy(DummyAppWithTrackingTable.class);
     //start map-reduce and check status and stop the map-reduce job and check the status ..
     Assert.assertEquals(200, getRunnableStartStop("mapreduce", "dummy", "dummy-batch", "start"));
     Assert.assertEquals("RUNNING", getRunnableStatus("mapreduce", "dummy", "dummy-batch"));
