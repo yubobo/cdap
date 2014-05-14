@@ -71,7 +71,7 @@ public final class AppFabricMain extends DaemonMain {
       new AuthModule(),
       new ZKClientModule(),
       new KafkaClientModule(),
-      new TwillModule(),
+      new TwillModule().getDistributedModules(),
       new LocationRuntimeModule().getDistributedModules(),
       new DiscoveryRuntimeModule().getDistributedModules(),
       new AppFabricServiceRuntimeModule().getDistributedModules(),

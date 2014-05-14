@@ -100,7 +100,7 @@ public abstract class TwillRunnerMain extends DaemonMain {
       @Override
       public void leader() {
         LOG.info("Became leader.");
-        Injector injector = baseInjector.createChildInjector(new TwillModule());
+        Injector injector = baseInjector.createChildInjector(new TwillModule().getDistributedModules());
         twillRunnerService = injector.getInstance(TwillRunnerService.class);
         twillRunnerService.startAndWait();
         scheduleSecureStoreUpdate(twillRunnerService);
