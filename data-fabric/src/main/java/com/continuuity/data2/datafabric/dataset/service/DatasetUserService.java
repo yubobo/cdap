@@ -9,6 +9,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.apache.twill.api.TwillRunner;
+import org.apache.twill.api.TwillRunnerService;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
@@ -40,6 +42,8 @@ public class DatasetUserService extends AbstractIdleService {
                                LocationFactory locationFactory,
                                @Named(Constants.Dataset.UserService.ADDRESS) InetAddress hostname,
                                DiscoveryService discoveryService,
+                               TwillRunner twillRunner,
+                               DiscoveryServiceClient discoveryServiceClient,
                                DataFabricDatasetManager dsService
   ) throws Exception {
 
@@ -51,7 +55,7 @@ public class DatasetUserService extends AbstractIdleService {
 
     // TODO: use random port, since we want to run one DatasetUserService per reactor user.
     builder.addHttpHandlers(ImmutableList.of(
-      new DatasetUserAdminHandler(user, dsService)));
+      new DatasetUserAdminHandler(user, twillRunner, discoveryServiceClient, dsService)));
 
     builder.setHost(hostname.getCanonicalHostName());
 
