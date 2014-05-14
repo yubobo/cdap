@@ -13,6 +13,8 @@ import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.data2.transaction.inmemory.InMemoryTxSystemClient;
 import com.continuuity.internal.data.dataset.module.DatasetModule;
 import com.google.common.collect.ImmutableSortedMap;
+import org.apache.twill.api.TwillRunner;
+import org.apache.twill.api.TwillRunnerService;
 import org.apache.twill.discovery.InMemoryDiscoveryService;
 import org.apache.twill.filesystem.LocalLocationFactory;
 import org.apache.twill.yarn.YarnTwillRunnerService;
@@ -41,6 +43,9 @@ public class DataFabricDatasetManagerTest extends AbstractDatasetManagerTest {
     datasetDir.mkdirs();
     cConf.set(Constants.Dataset.Manager.OUTPUT_DIR, datasetDir.getAbsolutePath());
 
+    YarnTestUtils.initOnce(tmpFolder.newFolder());
+    TwillRunnerService runner = (TwillRunnerService) YarnTestUtils.getTwillRunner();
+
     // Starting DatasetManagerService service
     InMemoryDiscoveryService discoveryService = new InMemoryDiscoveryService();
 
@@ -53,8 +58,7 @@ public class DataFabricDatasetManagerTest extends AbstractDatasetManagerTest {
                                                new LocalLocationFactory(),
                                                InetAddress.getByName("localhost"),
                                                discoveryService,
-                                               // TODO(alvin): ??
-                                               new FakeTwillRunnerService(null),
+                                               runner,
                                                discoveryService,
                                                new InMemoryDatasetManager(),
                                                ImmutableSortedMap.<String, Class<? extends DatasetModule>>of(

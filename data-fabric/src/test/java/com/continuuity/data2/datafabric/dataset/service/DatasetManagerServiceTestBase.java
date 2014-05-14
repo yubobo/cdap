@@ -2,7 +2,7 @@ package com.continuuity.data2.datafabric.dataset.service;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
-import com.continuuity.data2.datafabric.dataset.FakeTwillRunnerService;
+import com.continuuity.data2.datafabric.dataset.YarnTestUtils;
 import com.continuuity.data2.dataset2.manager.inmemory.InMemoryDatasetManager;
 import com.continuuity.data2.dataset2.module.lib.inmemory.InMemoryTableModule;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
@@ -12,6 +12,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.Gson;
 import org.apache.http.HttpResponse;
+import org.apache.twill.api.TwillRunnerService;
 import org.apache.twill.discovery.InMemoryDiscoveryService;
 import org.apache.twill.filesystem.LocalLocationFactory;
 import org.junit.After;
@@ -48,6 +49,9 @@ public abstract class DatasetManagerServiceTestBase {
     }
     cConf.set(Constants.Dataset.Manager.OUTPUT_DIR, datasetDir.getAbsolutePath());
 
+    YarnTestUtils.initOnce(tmpFolder.newFolder());
+    TwillRunnerService runner = (TwillRunnerService) YarnTestUtils.getTwillRunner();
+
     // Starting DatasetManagerService service
     InMemoryDiscoveryService discoveryService = new InMemoryDiscoveryService();
 
@@ -60,8 +64,7 @@ public abstract class DatasetManagerServiceTestBase {
                                         new LocalLocationFactory(),
                                         InetAddress.getByName("localhost"),
                                         discoveryService,
-                                        // TODO(alvin): ???
-                                        new FakeTwillRunnerService(null),
+                                        runner,
                                         discoveryService,
                                         new InMemoryDatasetManager(),
                                         ImmutableSortedMap.<String, Class<? extends DatasetModule>>of(
