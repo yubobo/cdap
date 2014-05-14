@@ -43,7 +43,7 @@ public abstract class AppFabricTestsSuite {
   private static final String hostname = "127.0.0.1";
 
   private static int port;
-  private static CConfiguration conf = CConfiguration.create();
+  private static CConfiguration conf;
   private static Injector injector;
   private static AppFabricServer appFabricServer;
   private static EndpointStrategy endpointStrategy;
@@ -54,6 +54,7 @@ public abstract class AppFabricTestsSuite {
   public static ExternalResource resources = new ExternalResource() {
     @Override
     protected void before() throws Throwable {
+      conf = CConfiguration.create();
       conf.setInt(Constants.AppFabric.SERVER_PORT, 0);
       conf.set(Constants.AppFabric.SERVER_ADDRESS, hostname);
       conf.set(Constants.AppFabric.OUTPUT_DIR, System.getProperty("java.io.tmpdir"));
