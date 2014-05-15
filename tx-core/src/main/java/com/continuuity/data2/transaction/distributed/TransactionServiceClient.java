@@ -6,14 +6,14 @@ import com.continuuity.common.guice.ConfigModule;
 import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.LocationRuntimeModule;
 import com.continuuity.common.guice.ZKClientModule;
-import com.continuuity.data.runtime.DataFabricModules;
-import com.continuuity.data2.OperationException;
 import com.continuuity.data2.transaction.Transaction;
 import com.continuuity.data2.transaction.TransactionCouldNotTakeSnapshotException;
 import com.continuuity.data2.transaction.TransactionNotInProgressException;
 import com.continuuity.data2.transaction.TransactionSystemClient;
 import com.continuuity.data2.transaction.distributed.thrift.TTransactionCouldNotTakeSnapshotException;
 import com.continuuity.data2.transaction.distributed.thrift.TTransactionNotInProgressException;
+import com.continuuity.data2.transaction.runtime.TransactionModules;
+
 import com.google.common.base.Throwables;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -67,7 +67,7 @@ public class TransactionServiceClient implements TransactionSystemClient {
       new ZKClientModule(),
       new LocationRuntimeModule().getDistributedModules(),
       new DiscoveryRuntimeModule().getDistributedModules(),
-      new DataFabricModules(cConf, hConf).getDistributedModules()
+      new TransactionModules(cConf).getDistributedModules()
     );
 
     ZKClientService zkClient = injector.getInstance(ZKClientService.class);
@@ -186,8 +186,6 @@ public class TransactionServiceClient implements TransactionSystemClient {
    *                 obtained using the client provider
    * @param <T> The return type of the operation
    * @return the result of the operation, or a value returned by error()
-   * @throws OperationException if the operation fails with an exception
-   *    other than TException
    */
   private <T> T execute(Operation<T> operation, ThriftClientProvider provider) throws Exception {
     RetryStrategy retryStrategy = retryStrategyProvider.newRetryStrategy();
