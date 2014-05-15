@@ -21,6 +21,7 @@ public final class Constants {
     public static final String DATASET_MANAGER = "dataset.manager";
     public static final String APP_FABRIC_LEADER_ELECTION_PREFIX = "election/appfabric";
     public static final String EXTERNAL_AUTHENTICATION = "external.authentication";
+    public static final String DATASET_USER_ADMIN = "dataset.user.admin";
   }
 
   /**
@@ -302,6 +303,24 @@ public final class Constants {
 
       // Defaults
       public static final int DEFAULT_PORT = 10009;
+      public static final int DEFAULT_BACKLOG = 20000;
+      public static final int DEFAULT_EXEC_THREADS = 10;
+      public static final int DEFAULT_BOSS_THREADS = 1;
+      public static final int DEFAULT_WORKER_THREADS = 4;
+    }
+
+    public static final class UserAdmin {
+      public static final String VERSION = "v1";
+      public static final String ADDRESS = "dataset.user.admin.bind.address";
+      public static final String PORT = "dataset.user.admin.bind.port";
+      public static final String BACKLOG_CONNECTIONS = "dataset.user.admin.connection.backlog";
+      public static final String EXEC_THREADS = "dataset.user.admin.exec.threads";
+      public static final String BOSS_THREADS = "dataset.user.admin.boss.threads";
+      public static final String WORKER_THREADS = "dataset.user.admin.worker.threads";
+      public static final String OUTPUT_DIR = "dataset.user.admin.output.dir";
+
+      // Defaults
+      public static final int DEFAULT_PORT = 10010;
       public static final int DEFAULT_BACKLOG = 20000;
       public static final int DEFAULT_EXEC_THREADS = 10;
       public static final int DEFAULT_BOSS_THREADS = 1;
