@@ -125,9 +125,7 @@ public class NettyRouter extends AbstractIdleService {
       }
     };
 
-    if (tokenValidator instanceof Service) {
-      ((Service) tokenValidator).startAndWait();
-    }
+    tokenValidator.startAndWait();
     bootstrapClient(connectionTracker);
 
     bootstrapServer(connectionTracker);
@@ -146,9 +144,7 @@ public class NettyRouter extends AbstractIdleService {
       clientBootstrap.shutdown();
       clientBootstrap.releaseExternalResources();
       serverBootstrap.releaseExternalResources();
-    }
-    if (tokenValidator instanceof Service) {
-      ((Service) tokenValidator).stopAndWait();
+      tokenValidator.stopAndWait();
     }
 
     LOG.info("Stopped Netty Router.");

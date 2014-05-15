@@ -25,6 +25,16 @@ public class AccessTokenValidator extends AbstractIdleService implements TokenVa
   }
 
   @Override
+  protected void startUp() throws Exception {
+    tokenManager.startAndWait();
+  }
+
+  @Override
+  protected void shutDown() throws Exception {
+    tokenManager.stopAndWait();
+  }
+
+  @Override
   public TokenState validate(String token) {
     AccessToken accessToken;
     TokenState state = TokenState.VALID;
@@ -45,15 +55,5 @@ public class AccessTokenValidator extends AbstractIdleService implements TokenVa
       LOG.debug("{} {}", state, ite);
     }
     return state;
-  }
-
-  @Override
-  protected void startUp() throws Exception {
-    this.tokenManager.startAndWait();
-  }
-
-  @Override
-  protected void shutDown() throws Exception {
-    this.tokenManager.stopAndWait();
   }
 }

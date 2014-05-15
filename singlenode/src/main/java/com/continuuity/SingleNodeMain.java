@@ -68,8 +68,8 @@ public class SingleNodeMain {
 
   private final LogAppenderInitializer logAppenderInitializer;
   private final InMemoryTransactionManager transactionManager;
-  private final ExternalAuthenticationServer externalAuthenticationServer;
 
+  private ExternalAuthenticationServer externalAuthenticationServer;
   private InMemoryZKServer zookeeper;
 
   public SingleNodeMain(List<Module> modules, CConfiguration configuration, String webAppPath) {
@@ -87,7 +87,11 @@ public class SingleNodeMain {
 
     metricsCollectionService = injector.getInstance(MetricsCollectionService.class);
     streamHttpService = injector.getInstance(StreamHttpService.class);
-    externalAuthenticationServer = injector.getInstance(ExternalAuthenticationServer.class);
+
+    boolean securityEnabled = configuration.getBoolean(Constants.Security.CFG_SECURITY_ENABLED);
+    if (securityEnabled) {
+      externalAuthenticationServer = injector.getInstance(ExternalAuthenticationServer.class);
+    }
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
@@ -109,7 +113,6 @@ public class SingleNodeMain {
    */
   protected void startUp(String[] args) throws Exception {
     logAppenderInitializer.initialize();
-    externalAuthenticationServer.startAndWait();
     File zkDir = new File(configuration.get(Constants.CFG_LOCAL_DATA_DIR) + "/zookeeper");
     //noinspection ResultOfMethodCallIgnored
     zkDir.mkdir();
@@ -133,6 +136,9 @@ public class SingleNodeMain {
     flumeCollector.startAndWait();
     webCloudAppService.startAndWait();
     streamHttpService.startAndWait();
+    if (externalAuthenticationServer != null) {
+      externalAuthenticationServer.startAndWait();
+    }
 
     String hostname = InetAddress.getLocalHost().getHostName();
     System.out.println("Continuuity Reactor started successfully");
@@ -153,6 +159,9 @@ public class SingleNodeMain {
     metricsQueryService.stopAndWait();
     appFabricServer.stopAndWait();
     transactionManager.stopAndWait();
+    if (externalAuthenticationServer != null) {
+      externalAuthenticationServer.stopAndWait();
+    }
     zookeeper.stopAndWait();
     logAppenderInitializer.close();
   }
@@ -269,6 +278,7 @@ public class SingleNodeMain {
       new MetricsClientRuntimeModule().getInMemoryModules(),
       new LoggingModules().getInMemoryModules(),
       new RouterModules().getInMemoryModules(),
+      new SecurityModules().getSingleNodeModules(),
       new StreamHttpModule()
     );
   }
