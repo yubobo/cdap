@@ -33,7 +33,7 @@
         <pattern>%msg%n</pattern>
       </encoder>
     </appender>
-    <logger name="http-access" level="TRACE">
+    <logger name="http-access" level="TRACE" additivity="false">
       <appender-ref ref="AUDIT" />
     </logger>
 
