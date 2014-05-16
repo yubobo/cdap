@@ -307,6 +307,27 @@ public final class Constants {
       public static final int DEFAULT_BOSS_THREADS = 1;
       public static final int DEFAULT_WORKER_THREADS = 4;
     }
+
+    /**
+     * DatasetUserService service configuration.
+     */
+    public static final class User {
+      public static final String VERSION = "v1";
+      public static final String ADDRESS = "dataset.user.bind.address";
+      public static final String PORT = "dataset.user.bind.port";
+      public static final String BACKLOG_CONNECTIONS = "dataset.user.connection.backlog";
+      public static final String EXEC_THREADS = "dataset.user.exec.threads";
+      public static final String BOSS_THREADS = "dataset.user.boss.threads";
+      public static final String WORKER_THREADS = "dataset.user.worker.threads";
+      public static final String OUTPUT_DIR = "dataset.user.output.dir";
+
+      // Defaults
+      public static final int DEFAULT_PORT = 10010;
+      public static final int DEFAULT_BACKLOG = 20000;
+      public static final int DEFAULT_EXEC_THREADS = 10;
+      public static final int DEFAULT_BOSS_THREADS = 1;
+      public static final int DEFAULT_WORKER_THREADS = 4;
+    }
   }
 
   /**
