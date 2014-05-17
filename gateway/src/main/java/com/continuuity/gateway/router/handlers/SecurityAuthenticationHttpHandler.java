@@ -9,9 +9,11 @@ import com.google.common.base.Stopwatch;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.ning.org.jboss.netty.handler.codec.http.HttpConstants;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBufferIndexFinder;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -20,6 +22,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.WriteCompletionEvent;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -181,17 +184,58 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
       HttpResponse response = (HttpResponse) message;
       logEntry.responseCode = Integer.toString(response.getStatus().getCode());
     } else if (message instanceof ChannelBuffer) {
-      ChannelBuffer channelBuffer = (ChannelBuffer) message;
-      ChannelBuffer sliced = channelBuffer.slice(channelBuffer.readerIndex(), channelBuffer.readableBytes());
-      byte b = ' ';
-      int indx = sliced.indexOf(sliced.readerIndex(), sliced.readableBytes(), b);
-      logEntry.responseCode = sliced.slice(indx, 4).toString(Charsets.UTF_8);
-      logEntry.responseContentLength = "" + channelBuffer.readableBytes();
+      // for chunked responses the response code will only be present on the first chunk
+      // so we only look for it the first time around
+      if (logEntry.responseCode == null) {
+        ChannelBuffer channelBuffer = (ChannelBuffer) message;
+        ChannelBuffer sliced = channelBuffer.slice(channelBuffer.readerIndex(), channelBuffer.readableBytes());
+        logEntry.responseCode = findResponseCode(sliced);
+        if (logEntry.responseCode != null) {
+          // only expect content length if it's an initial HTTP response
+          logEntry.responseContentLength = findContentLength(sliced);
+        }
+      }
     } else {
       LOG.info("Response message is of type " + message.getClass());
     }
-    AUDIT_LOG.trace(logEntry.toString());
     super.writeRequested(ctx, e);
+  }
+
+  @Override
+  public void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e) throws Exception {
+    AuditLogEntry logEntry = getLogEntry(ctx);
+    if (!logEntry.logged) {
+      AUDIT_LOG.trace(logEntry.toString());
+      logEntry.logged = true;
+    }
+  }
+
+  private String findResponseCode(ChannelBuffer buffer) {
+    String responseCode = null;
+
+    // we assume that the response code should follow the first space in the first line of the response
+    int indx = buffer.indexOf(buffer.readerIndex(), buffer.writerIndex(), ChannelBufferIndexFinder.LINEAR_WHITESPACE);
+    if (indx >= 0 && indx < buffer.writerIndex() - 4) {
+      responseCode = buffer.slice(indx, 4).toString(Charsets.UTF_8);
+    } else {
+      LOG.debug("Invalid index for space in response: index={}, buffer size={}", indx, buffer.readableBytes());
+    }
+    return responseCode;
+  }
+
+  private String findContentLength(ChannelBuffer buffer) {
+    String contentLength = null;
+    int bufferEnd = buffer.writerIndex();
+    int index = buffer.indexOf(buffer.readerIndex(), bufferEnd, CONTENT_LENGTH_FINDER);
+    if (index >= 0) {
+      // find the following ':'
+      int colonIndex = buffer.indexOf(index, bufferEnd, HttpConstants.COLON);
+      int eolIndex = buffer.indexOf(index, bufferEnd, ChannelBufferIndexFinder.CRLF);
+      if (colonIndex > 0 && colonIndex < eolIndex) {
+        contentLength = buffer.slice(colonIndex + 1, eolIndex - colonIndex + 1).toString(Charsets.UTF_8).trim();
+      }
+    }
+    return contentLength;
   }
 
   private AuditLogEntry getLogEntry(ChannelHandlerContext ctx) {
@@ -210,20 +254,50 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     /** Each audit log field will default to "-" if the field is missing or not supported. */
     private static final String DEFAULT_VALUE = "-";
 
-    private String clientIP = DEFAULT_VALUE;
-    private String userName = DEFAULT_VALUE;
+    /** Indicates whether this entry has already been logged. */
+    private boolean logged;
+
+    private String clientIP;
+    private String userName;
     private Date date;
-    private String requestLine = DEFAULT_VALUE;
-    private String responseCode = DEFAULT_VALUE;
-    private String responseContentLength = DEFAULT_VALUE;
+    private String requestLine;
+    private String responseCode;
+    private String responseContentLength;
 
     public AuditLogEntry() {
       this.date = new Date();
     }
 
     public String toString() {
-      return String.format("%s %s [%s] \"%s\" %s %s", clientIP, userName, dateFormat.format(date),
-                           requestLine, responseCode, responseContentLength);
+      return String.format("%s %s [%s] \"%s\" %s %s",
+                           fieldOrDefault(clientIP),
+                           fieldOrDefault(userName),
+                           dateFormat.format(date),
+                           fieldOrDefault(requestLine),
+                           fieldOrDefault(responseCode),
+                           fieldOrDefault(responseContentLength));
+    }
+
+    private String fieldOrDefault(String field) {
+      return field == null ? DEFAULT_VALUE : field;
     }
   }
+
+  private static final ChannelBufferIndexFinder CONTENT_LENGTH_FINDER = new ChannelBufferIndexFinder() {
+    private byte[] headerName = HttpHeaders.Names.CONTENT_LENGTH.getBytes(Charsets.UTF_8);
+
+    @Override
+    public boolean find(ChannelBuffer buffer, int guessedIndex) {
+      if (buffer.capacity() - guessedIndex < headerName.length) {
+        return false;
+      }
+
+      for (int i = 0; i < headerName.length; i++) {
+        if (headerName[i] != buffer.getByte(guessedIndex + i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+  };
 }
