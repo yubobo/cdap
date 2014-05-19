@@ -10,12 +10,20 @@ import com.continuuity.security.auth.AccessToken;
 import com.continuuity.security.auth.AccessTokenCodec;
 import com.continuuity.security.guice.InMemorySecurityModule;
 import com.continuuity.security.io.Codec;
+import com.google.common.base.Throwables;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.Service;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.unboundid.ldap.listener.InMemoryDirectoryServer;
+import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
+import com.unboundid.ldap.listener.InMemoryListenerConfig;
+import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.util.ssl.KeyStoreKeyManager;
+import com.unboundid.util.ssl.SSLUtil;
+import com.unboundid.util.ssl.TrustStoreTrustManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -30,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.net.InetAddress;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
@@ -46,16 +55,69 @@ public class TestExternalAuthenticationServer {
   private static int port;
   private static Codec<AccessToken> tokenCodec;
   private static DiscoveryServiceClient discoveryServiceClient;
+  private static InMemoryDirectoryServer ldapServer;
 
   @BeforeClass
   public static void setup() {
-    Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule(), new ConfigModule(),
+    Injector injector = Guice.createInjector(new IOModule(), new InMemorySecurityModule(),
+                                             new ConfigModule(getConfiguration()),
                                              new DiscoveryRuntimeModule().getInMemoryModules());
     server = injector.getInstance(ExternalAuthenticationServer.class);
     configuration = injector.getInstance(CConfiguration.class);
     tokenCodec = injector.getInstance(AccessTokenCodec.class);
     discoveryServiceClient = injector.getInstance(DiscoveryServiceClient.class);
     port = configuration.getInt(Constants.Security.AUTH_SERVER_PORT);
+    try {
+      startLDAPServer();
+    } catch (Exception e) {
+      throw Throwables.propagate(e);
+    }
+  }
+
+  /**
+   * LDAP server and related handler configurations.
+   * @return
+   */
+  private static CConfiguration getConfiguration() {
+    String configBase = Constants.Security.AUTH_HANDLER_CONFIG_BASE;
+    CConfiguration cConf = CConfiguration.create();
+    cConf.set(Constants.Security.AUTH_HANDLER_CLASS,
+              "com.continuuity.security.server.LDAPAuthenticationHandler");
+    cConf.set(Constants.Security.LOGIN_MODULE_CLASS_NAME, "org.eclipse.jetty.plus.jaas.spi.LdapLoginModule");
+    cConf.set(configBase.concat("debug"), "true");
+    cConf.set(configBase.concat("hostname"), "localhost");
+    cConf.set(configBase.concat("port"), "2344");
+    cConf.set(configBase.concat("userBaseDn"), "dc=example,dc=com");
+    cConf.set(configBase.concat("userRdnAttribute"), "cn");
+    cConf.set(configBase.concat("userObjectClass"), "inetorgperson");
+    return cConf;
+  }
+
+  private static void startLDAPServer() throws Exception {
+    SSLUtil serverSSLUtil = new SSLUtil(
+                                new KeyStoreKeyManager("/Users/gandu/workspace/keystore-ldap", "realtime".toCharArray()),
+                                null
+                               );
+    SSLUtil clientSSLUtil = new SSLUtil(
+      new TrustStoreTrustManager("/Users/gandu/workspace/keystore-ldap"));
+    InMemoryDirectoryServerConfig config = new InMemoryDirectoryServerConfig("dc=example,dc=com");
+    config.setListenerConfigs(InMemoryListenerConfig.createLDAPSConfig("LDAPS", InetAddress.getByName("127.0.0.1"),
+                                                                       2344, serverSSLUtil.createSSLServerSocketFactory(),
+                                                                       clientSSLUtil.createSSLSocketFactory()));
+    Entry defaultEntry = new Entry(
+                              "dn: dc=example,dc=com",
+                              "objectClass: top",
+                              "objectClass: domain",
+                              "dc: example");
+    Entry userEntry = new Entry(
+                              "dn: uid=user,dc=example,dc=com",
+                              "objectClass: inetorgperson",
+                              "cn: admin",
+                              "sn: User",
+                              "uid: user",
+                              "userPassword: realtime");
+    ldapServer = new InMemoryDirectoryServer(config);
+    ldapServer.addEntries(defaultEntry, userEntry);
   }
 
   /**
@@ -78,8 +140,9 @@ public class TestExternalAuthenticationServer {
   @Test
   public void testValidAuthentication() throws Exception {
     server.startAndWait();
+    ldapServer.startListening();
     HttpClient client = new DefaultHttpClient();
-    String uri = String.format("http://localhost:%d/", port);
+    String uri = String.format("https://localhost:%d/", port);
     HttpGet request = new HttpGet(uri);
     request.addHeader("Authorization", "Basic YWRtaW46cmVhbHRpbWU=");
     HttpResponse response = client.execute(request);
@@ -118,6 +181,7 @@ public class TestExternalAuthenticationServer {
     LOG.info("AccessToken got from ExternalAuthenticationServer is: " + Bytes.toStringBinary(tokenCodec.encode(token)));
 
     server.stopAndWait();
+    ldapServer.shutDown(true);
   }
 
   /**
@@ -127,6 +191,7 @@ public class TestExternalAuthenticationServer {
   @Test
   public void testInvalidAuthentication() throws Exception {
     server.startAndWait();
+    ldapServer.startListening();
     HttpClient client = new DefaultHttpClient();
     String uri = String.format("http://localhost:%d/", port);
     HttpGet request = new HttpGet(uri);
@@ -137,6 +202,7 @@ public class TestExternalAuthenticationServer {
     assertTrue(response.getStatusLine().getStatusCode() == 401);
 
     server.stopAndWait();
+    ldapServer.shutDown(true);
   }
 
   /**

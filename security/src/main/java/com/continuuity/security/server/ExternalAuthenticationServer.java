@@ -2,18 +2,27 @@ package com.continuuity.security.server;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
+import com.continuuity.common.guice.ConfigModule;
+import com.continuuity.common.guice.DiscoveryRuntimeModule;
+import com.continuuity.common.guice.IOModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.HandlerList;
-import org.mortbay.jetty.nio.SelectChannelConnector;
-import org.mortbay.thread.QueuedThreadPool;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +40,7 @@ public class ExternalAuthenticationServer extends AbstractExecutionThreadService
   private final int maxThreads;
   private final HandlerList handlers;
   private final DiscoveryService discoveryService;
+  private final CConfiguration configuration;
   private Cancellable serviceCancellable;
   private InetSocketAddress socketAddress;
   private static final Logger LOG = LoggerFactory.getLogger(ExternalAuthenticationServer.class);
@@ -53,6 +63,7 @@ public class ExternalAuthenticationServer extends AbstractExecutionThreadService
     this.maxThreads = configuration.getInt(Constants.Security.MAX_THREADS);
     this.handlers = handlers;
     this.discoveryService = discoveryService;
+    this.configuration = configuration;
   }
 
   /**
@@ -96,11 +107,32 @@ public class ExternalAuthenticationServer extends AbstractExecutionThreadService
       threadPool.setMaxThreads(maxThreads);
       server.setThreadPool(threadPool);
 
-      Connector connector = new SelectChannelConnector();
+      ContextHandler context = new ContextHandler();
+      context.setContextPath("*");
+      context.setHandler(handlers);
+
+      SelectChannelConnector connector;
+
+      if (configuration.getBoolean(Constants.Security.SSL_ENABLED, false)) {
+        SslContextFactory sslContextFactory = new SslContextFactory();
+        String keystorePath = configuration.get("security.server.ssl.keystore.path");
+        String keyStorePassword = configuration.get("security.server.ssl.keystore.password");
+        if (keystorePath == null || keyStorePassword == null) {
+          throw Throwables.propagate(new RuntimeException("Keystore not configured correctly"));
+        }
+        sslContextFactory.setKeyStorePath(keystorePath);
+        sslContextFactory.setKeyStorePassword(keyStorePassword);
+//        sslContextFactory.setTrustAll(true);
+//        sslContextFactory.setValidateCerts(false);
+
+        connector = new SslSelectChannelConnector(sslContextFactory);
+      } else {
+        connector = new SelectChannelConnector();
+      }
+
       connector.setPort(port);
       server.setConnectors(new Connector[]{connector});
-
-      server.setHandler(handlers);
+      server.setHandler(context);
     } catch (Exception e) {
       LOG.error("Error while starting server.");
       LOG.error(e.getMessage());
@@ -127,5 +159,12 @@ public class ExternalAuthenticationServer extends AbstractExecutionThreadService
       LOG.error("Error stopping ExternalAuthenticationServer.");
       LOG.error(e.getMessage());
     }
+  }
+
+  public static void main(String[] args) {
+    Injector injector = Guice.createInjector(new IOModule(), new SecurityModules().getInMemoryModules(), new DiscoveryRuntimeModule().getInMemoryModules(),
+                                             new ConfigModule());
+    ExternalAuthenticationServer server = injector.getInstance(ExternalAuthenticationServer.class);
+    server.startAndWait();
   }
 }

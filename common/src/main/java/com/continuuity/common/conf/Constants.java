@@ -525,6 +525,18 @@ public final class Constants {
     public static final String CFG_SECURITY_ENABLED = "security.enabled";
     /** Configuration for security realm. */
     public static final String CFG_REALM = "security.realm";
+    /** Authentication Handler class name */
+    public static final String AUTH_HANDLER_CLASS = "security.authentication.handlerClassName";
+    /** Authentication Handler config base */
+    public static final String AUTH_HANDLER_CONFIG_BASE = "security.authentication.handler.";
+    /** Authentication Login Module class name */
+    public static final String LOGIN_MODULE_CLASS_NAME = "security.authentication.loginmodule.className";
+    /** Configuration for enabling SSL */
+    public static final String SSL_ENABLED = "security.server.ssl.enabled";
+    /** SSL keystore path */
+    public static final String SSL_KEYSTORE_PATH = "security.server.ssl.keystore.path";
+    /** SSL keystore password */
+    public static final String SSL_KEYSTORE_PASSWORD = "security.server.ssl.keystore.password";
   }
 
   public static final String CFG_LOCAL_DATA_DIR = "local.data.dir";
