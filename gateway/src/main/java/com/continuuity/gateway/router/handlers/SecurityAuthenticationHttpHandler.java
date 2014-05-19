@@ -131,12 +131,14 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelUpstreamHand
     Stopwatch stopwatch = new Stopwatch();
     stopwatch.start();
     String protocol;
+    String port;
     if (configuration.getBoolean(Constants.Security.SSL_ENABLED)) {
       protocol = "https://";
+      port = configuration.get(Constants.Security.SSL_PORT);
     } else {
       protocol = "http://";
+      port = configuration.get(Constants.Security.AUTH_SERVER_PORT);
     }
-    String port = configuration.get(Constants.Security.AUTH_SERVER_PORT);
 
     do {
       for (Discoverable d : discoverables)  {
