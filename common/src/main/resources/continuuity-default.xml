@@ -888,7 +888,7 @@
 
     <property>
       <name>security.server.ssl.keystore.path</name>
-      <value>/Users/gandu/workspace/keystore</value>
+      <value>/home/parth/keystore-ext-auth</value>
     </property>
 
     <property>
