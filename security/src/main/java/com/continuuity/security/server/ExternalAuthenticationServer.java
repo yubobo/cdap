@@ -109,15 +109,13 @@ public class ExternalAuthenticationServer extends AbstractExecutionThreadService
 
       if (configuration.getBoolean(Constants.Security.SSL_ENABLED, false)) {
         SslContextFactory sslContextFactory = new SslContextFactory();
-        String keystorePath = configuration.get("security.server.ssl.keystore.path");
-        String keyStorePassword = configuration.get("security.server.ssl.keystore.password");
+        String keystorePath = configuration.get(Constants.Security.SSL_KEYSTORE_PATH);
+        String keyStorePassword = configuration.get(Constants.Security.SSL_KEYSTORE_PASSWORD);
         if (keystorePath == null || keyStorePassword == null) {
           throw Throwables.propagate(new RuntimeException("Keystore not configured correctly"));
         }
         sslContextFactory.setKeyStorePath(keystorePath);
         sslContextFactory.setKeyStorePassword(keyStorePassword);
-//        sslContextFactory.setTrustAll(true);
-//        sslContextFactory.setValidateCerts(false);
 
         connector = new SslSelectChannelConnector(sslContextFactory);
       } else {
