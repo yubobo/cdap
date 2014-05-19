@@ -3,6 +3,7 @@ package com.continuuity.security.zookeeper;
 import com.continuuity.common.zookeeper.ZKExtOperations;
 import com.continuuity.security.io.Codec;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.cache.AbstractLoadingCache;
@@ -228,6 +229,16 @@ public class SharedResourceCache<T> extends AbstractLoadingCache<String, T> {
     SharedResourceCache other = (SharedResourceCache) object;
     return this.parentZnode.equals(other.parentZnode) &&
       this.resources.equals(other.resources);
+  }
+
+  @Override
+  public String toString() {
+    Objects.ToStringHelper helper = Objects.toStringHelper(this)
+      .add("parent", parentZnode);
+    for (Map.Entry<String,T> entry : resources.entrySet()) {
+      helper.add("r[" + entry.getKey() + "]", entry.getValue());
+    }
+    return helper.toString();
   }
 
   private String joinZNode(String parent, String name) {
