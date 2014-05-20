@@ -17,6 +17,8 @@ import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data.stream.service.StreamHttpModule;
 import com.continuuity.data.stream.service.StreamHttpService;
 import com.continuuity.data2.datafabric.dataset.service.DatasetManagerService;
+import com.continuuity.data2.dataset2.user.DatasetUserHttpModule;
+import com.continuuity.data2.dataset2.user.DatasetUserService;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.gateway.Gateway;
 import com.continuuity.gateway.auth.AuthModule;
@@ -73,6 +75,7 @@ public class SingleNodeMain {
 
   private ExternalAuthenticationServer externalAuthenticationServer;
   private final DatasetManagerService datasetService;
+  private final DatasetUserService datasetUserService;
 
   private InMemoryZKServer zookeeper;
 
@@ -91,6 +94,7 @@ public class SingleNodeMain {
 
     metricsCollectionService = injector.getInstance(MetricsCollectionService.class);
     datasetService = injector.getInstance(DatasetManagerService.class);
+    datasetUserService = injector.getInstance(DatasetUserService.class);
 
     streamHttpService = injector.getInstance(StreamHttpService.class);
 
@@ -132,6 +136,7 @@ public class SingleNodeMain {
     transactionManager.startAndWait();
     metricsCollectionService.startAndWait();
     datasetService.startAndWait();
+    datasetUserService.startAndWait();
 
     Service.State state = appFabricServer.startAndWait();
     if (state != Service.State.RUNNING) {
@@ -167,6 +172,7 @@ public class SingleNodeMain {
     metricsQueryService.stopAndWait();
     appFabricServer.stopAndWait();
     transactionManager.stopAndWait();
+    datasetUserService.stopAndWait();
     datasetService.stopAndWait();
     if (externalAuthenticationServer != null) {
       externalAuthenticationServer.stopAndWait();
@@ -291,7 +297,8 @@ public class SingleNodeMain {
       new LoggingModules().getInMemoryModules(),
       new RouterModules().getInMemoryModules(),
       new SecurityModules().getSingleNodeModules(),
-      new StreamHttpModule()
+      new StreamHttpModule(),
+      new DatasetUserHttpModule()
     );
   }
 
@@ -336,6 +343,7 @@ public class SingleNodeMain {
       new LoggingModules().getSingleNodeModules(),
       new RouterModules().getSingleNodeModules(),
       new SecurityModules().getSingleNodeModules(),
-      new StreamHttpModule());
+      new StreamHttpModule(),
+      new DatasetUserHttpModule());
   }
 }

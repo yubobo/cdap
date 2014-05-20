@@ -322,7 +322,7 @@ public final class Constants {
       /** for the address (hostname) of the dataset server. */
       public static final String ADDRESS = "dataset.user.bind.address";
 
-      public static final String VERSION = "v1";
+      public static final String VERSION = "v2";
       public static final String BACKLOG_CONNECTIONS = "dataset.user.connection.backlog";
       public static final String EXEC_THREADS = "dataset.user.exec.threads";
       public static final String BOSS_THREADS = "dataset.user.boss.threads";

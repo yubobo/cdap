@@ -3,9 +3,13 @@ package com.continuuity.data2.dataset2.user;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.datafabric.dataset.DataFabricDatasetManager;
 import com.continuuity.data2.dataset2.manager.DatasetManagementException;
+import com.continuuity.data2.dataset2.user.admin.AdminOp;
+import com.continuuity.data2.dataset2.user.admin.AdminOps;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.data.dataset.DatasetAdmin;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -16,6 +20,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Provides REST endpoints for {@link DatasetAdmin} operations.
@@ -26,24 +31,33 @@ public class DatasetUserAdminHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(DatasetUserAdminHandler.class);
 
   private final DataFabricDatasetManager client;
+  private final Map<String, AdminOp> adminOps;
 
   @Inject
-  public DatasetUserAdminHandler(DataFabricDatasetManager client) {
+  public DatasetUserAdminHandler(final DataFabricDatasetManager client) {
     this.client = client;
+    this.adminOps = AdminOps.getDefaultAdminOps();
   }
 
   @GET
   @Path("/datasets/{instance}/execute/{op}")
-  public void exists(HttpRequest request, final HttpResponder responder,
+  public void executeOp(HttpRequest request, final HttpResponder responder,
                      @PathParam("instance") String instanceName,
                      @PathParam("op") String opName) {
 
     AdminOpResponse response;
+    AdminOp adminOp = adminOps.get(opName);
+
+    if (adminOp == null) {
+      response = new AdminOpResponse(null, false, "Invalid operation: " + opName);
+      responder.sendJson(HttpResponseStatus.INTERNAL_SERVER_ERROR, response);
+      return;
+    }
 
     try {
-      DatasetAdmin admin = client.getAdmin(instanceName, getClassLoader(request, instanceName));
-      boolean exists = admin.exists();
-      response = new AdminOpResponse(exists, true, null);
+      ClassLoader classLoader = getClassLoader(instanceName);
+      Object result = adminOp.execute(client, instanceName, classLoader);
+      response = new AdminOpResponse(result, true, null);
     } catch (Exception e) {
       LOG.error("Error", e);
       response = new AdminOpResponse(null, false, "Error: " + e.getMessage());
@@ -54,7 +68,7 @@ public class DatasetUserAdminHandler extends AbstractHttpHandler {
 
   // TODO: other
 
-  private ClassLoader getClassLoader(HttpRequest request, String name) {
+  private ClassLoader getClassLoader(String instanceName) {
     // TODO
     return null;
   }

@@ -37,6 +37,8 @@ public class DatasetUserService extends AbstractIdleService {
     int workerThreads = cConf.getInt(Constants.Dataset.User.WORKER_THREADS, 10);
     this.httpService = NettyHttpService.builder()
       .addHttpHandlers(handlers)
+      // TODO: remove
+      .setPort(9000)
       .setHost(cConf.get(Constants.Dataset.User.ADDRESS))
       .setWorkerThreadPoolSize(workerThreads)
       .setExecThreadPoolSize(0)
