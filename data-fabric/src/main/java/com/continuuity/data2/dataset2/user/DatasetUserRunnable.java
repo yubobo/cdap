@@ -45,7 +45,7 @@ public class DatasetUserRunnable extends AbstractReactorTwillRunnable {
     Configuration hConf = getConfiguration();
 
     // Set the host name to the one provided by Twill
-    cConf.set(Constants.Stream.ADDRESS, context.getHost().getHostName());
+    cConf.set(Constants.Dataset.User.ADDRESS, context.getHost().getHostName());
 
     injector = Guice.createInjector(
       new ConfigModule(cConf, hConf),
