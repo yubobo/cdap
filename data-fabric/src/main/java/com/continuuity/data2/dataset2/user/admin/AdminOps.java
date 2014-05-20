@@ -36,7 +36,7 @@ public class AdminOps {
     public Object execute(DataFabricDatasetManager client, String instanceName,
                           ClassLoader classLoader) throws Exception {
       DatasetAdmin admin = client.getAdmin(instanceName, classLoader);
-      Preconditions.checkNotNull(admin);
+      Preconditions.checkNotNull(admin, "Dataset instance " + instanceName + " does not exist");
       admin.create();
       return null;
     }
@@ -47,7 +47,7 @@ public class AdminOps {
     public Object execute(DataFabricDatasetManager client, String instanceName,
                           ClassLoader classLoader) throws Exception {
       DatasetAdmin admin = client.getAdmin(instanceName, classLoader);
-      Preconditions.checkNotNull(admin);
+      Preconditions.checkNotNull(admin, "Dataset instance " + instanceName + " does not exist");
       admin.drop();
       return null;
     }
@@ -58,7 +58,7 @@ public class AdminOps {
     public Object execute(DataFabricDatasetManager client, String instanceName,
                           ClassLoader classLoader) throws Exception {
       DatasetAdmin admin = client.getAdmin(instanceName, classLoader);
-      Preconditions.checkNotNull(admin);
+      Preconditions.checkNotNull(admin, "Dataset instance " + instanceName + " does not exist");
       admin.truncate();
       return null;
     }
@@ -69,7 +69,7 @@ public class AdminOps {
     public Object execute(DataFabricDatasetManager client, String instanceName,
                           ClassLoader classLoader) throws Exception {
       DatasetAdmin admin = client.getAdmin(instanceName, classLoader);
-      Preconditions.checkNotNull(admin);
+      Preconditions.checkNotNull(admin, "Dataset instance " + instanceName + " does not exist");
       admin.upgrade();
       return null;
     }
