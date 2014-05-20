@@ -3,6 +3,7 @@ package com.continuuity.data.runtime.main;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.twill.AbortOnTimeoutEventHandler;
+import com.continuuity.data2.dataset2.user.DatasetUserRunnable;
 import com.continuuity.logging.run.LogSaverTwillRunnable;
 import com.continuuity.metrics.runtime.MetricsProcessorTwillRunnable;
 import com.continuuity.metrics.runtime.MetricsTwillRunnable;
@@ -165,7 +166,7 @@ public class ReactorTwillApplication implements TwillApplication {
       .setInstances(cConf.getInt(Constants.Dataset.User.CONTAINER_INSTANCES, 1))
       .build();
 
-    return builder.add(new DataSetServiceTwillRunnable("dsuser", "cConf.xml", "hConf.xml"), resourceSpec)
+    return builder.add(new DatasetUserRunnable("dsuser", "cConf.xml", "hConf.xml"), resourceSpec)
       .withLocalFiles()
       .add("cConf.xml", cConfFile.toURI())
       .add("hConf.xml", hConfFile.toURI())
