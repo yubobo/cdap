@@ -22,6 +22,9 @@ public class AdminOps {
       .build();
   }
 
+  /**
+   * Wrapper for {@link DatasetAdmin#exists()}.
+   */
   public static final class Exists implements AdminOp {
     @Override
     public Object execute(DataFabricDatasetManager client, String instanceName,
@@ -31,6 +34,9 @@ public class AdminOps {
     }
   }
 
+  /**
+   * Wrapper for {@link DatasetAdmin#create()}.
+   */
   public static final class Create implements AdminOp {
     @Override
     public Object execute(DataFabricDatasetManager client, String instanceName,
@@ -42,6 +48,9 @@ public class AdminOps {
     }
   }
 
+  /**
+   * Wrapper for {@link DatasetAdmin#drop()}.
+   */
   public static final class Drop implements AdminOp {
     @Override
     public Object execute(DataFabricDatasetManager client, String instanceName,
@@ -53,6 +62,9 @@ public class AdminOps {
     }
   }
 
+  /**
+   * Wrapper for {@link DatasetAdmin#truncate()}.
+   */
   public static final class Truncate implements AdminOp {
     @Override
     public Object execute(DataFabricDatasetManager client, String instanceName,
@@ -64,6 +76,9 @@ public class AdminOps {
     }
   }
 
+  /**
+   * Wrapper for {@link DatasetAdmin#upgrade()}.
+   */
   public static final class Upgrade implements AdminOp {
     @Override
     public Object execute(DataFabricDatasetManager client, String instanceName,

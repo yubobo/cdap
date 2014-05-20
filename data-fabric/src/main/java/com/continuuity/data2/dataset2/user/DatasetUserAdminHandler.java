@@ -2,14 +2,11 @@ package com.continuuity.data2.dataset2.user;
 
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.datafabric.dataset.DataFabricDatasetManager;
-import com.continuuity.data2.dataset2.manager.DatasetManagementException;
 import com.continuuity.data2.dataset2.user.admin.AdminOp;
 import com.continuuity.data2.dataset2.user.admin.AdminOps;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.data.dataset.DatasetAdmin;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -19,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import java.io.IOException;
 import java.util.Map;
 
 /**

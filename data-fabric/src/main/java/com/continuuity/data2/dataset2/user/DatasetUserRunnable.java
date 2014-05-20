@@ -59,7 +59,7 @@ public class DatasetUserRunnable extends AbstractReactorTwillRunnable {
   }
 
   @Override
-  protected void getServices(List<? super Service > services) {
+  protected void getServices(List<? super Service> services) {
     services.add(injector.getInstance(ZKClientService.class));
     services.add(injector.getInstance(KafkaClientService.class));
     services.add(injector.getInstance(DatasetUserService.class));
