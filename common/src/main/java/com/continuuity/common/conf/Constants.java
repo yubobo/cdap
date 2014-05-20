@@ -19,6 +19,7 @@ public final class Constants {
     public static final String GATEWAY = "gateway";
     public static final String STREAM_HANDLER = "stream.handler";
     public static final String DATASET_MANAGER = "dataset.manager";
+    public static final String DATASET_USER = "dataset.user";
     public static final String APP_FABRIC_LEADER_ELECTION_PREFIX = "election/appfabric";
     public static final String EXTERNAL_AUTHENTICATION = "external.authentication";
   }
@@ -309,6 +310,24 @@ public final class Constants {
       public static final int DEFAULT_EXEC_THREADS = 10;
       public static final int DEFAULT_BOSS_THREADS = 1;
       public static final int DEFAULT_WORKER_THREADS = 4;
+    }
+
+    /**
+     * DatasetUser service configuration.
+     */
+    public static final class User {
+      /** for the port of the dataset server. */
+      public static final String PORT = "dataset.user.bind.port";
+
+      /** for the address (hostname) of the dataset server. */
+      public static final String ADDRESS = "dataset.user.bind.address";
+
+      public static final String VERSION = "v1";
+      public static final String BACKLOG_CONNECTIONS = "dataset.user.connection.backlog";
+      public static final String EXEC_THREADS = "dataset.user.exec.threads";
+      public static final String BOSS_THREADS = "dataset.user.boss.threads";
+      public static final String WORKER_THREADS = "dataset.user.worker.threads";
+      public static final String OUTPUT_DIR = "dataset.user.output.dir";
     }
   }
 
