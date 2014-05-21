@@ -1,6 +1,7 @@
 package com.continuuity.data2.dataset2.user;
 
 import com.continuuity.common.conf.Constants;
+import com.continuuity.common.exception.HandlerException;
 import com.continuuity.data2.datafabric.dataset.DataFabricDatasetManager;
 import com.continuuity.data2.dataset2.manager.DatasetManagementException;
 import com.continuuity.gateway.auth.Authenticator;
@@ -8,7 +9,6 @@ import com.continuuity.gateway.handlers.AuthenticatedHttpHandler;
 import com.continuuity.http.HandlerContext;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.data.dataset.DatasetAdmin;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -16,11 +16,10 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import java.io.IOException;
 
 /**
  * Provides REST endpoints for {@link DatasetAdmin} operations.
@@ -31,7 +30,6 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(DataSetAdminHTTPHandler.class);
 
   private final DataFabricDatasetManager client;
-  private final Map<String, AdminOp> adminOps;
 
   @Override
   public void init(HandlerContext context) {
@@ -49,71 +47,94 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   public DataSetAdminHTTPHandler(Authenticator authenticator, DataFabricDatasetManager client) {
     super(authenticator);
     this.client = client;
-    this.adminOps = ImmutableMap.<String, AdminOp>builder()
-      .put("exists", new AdminOp() {
-        public AdminOpResponse apply(DatasetAdmin datasetAdmin) throws IOException {
-          return new AdminOpResponse(datasetAdmin.exists(), null);
-        }
-      }).put("create", new AdminOp() {
-        public AdminOpResponse apply(DatasetAdmin datasetAdmin) throws IOException {
-          datasetAdmin.create();
-          return new AdminOpResponse(null, null);
-        }
-      }).put("drop", new AdminOp() {
-        public AdminOpResponse apply(DatasetAdmin datasetAdmin) throws IOException {
-          datasetAdmin.drop();
-          return new AdminOpResponse(null, null);
-        }
-      }).put("truncate", new AdminOp() {
-        public AdminOpResponse apply(DatasetAdmin datasetAdmin) throws IOException {
-          datasetAdmin.truncate();
-          return new AdminOpResponse(null, null);
-        }
-      }).put("upgrade", new AdminOp() {
-        public AdminOpResponse apply(DatasetAdmin datasetAdmin) throws IOException {
-          datasetAdmin.upgrade();
-          return new AdminOpResponse(null, null);
-        }
-      }).build();
   }
 
   @GET
-  @Path("/datasets/{instance}/execute/{op}")
-  public void executeOp(HttpRequest request, final HttpResponder responder,
-                        @PathParam("instance") String instanceName, @PathParam("op") String opName) {
-
-    AdminOp adminOp = adminOps.get(opName);
-    if (adminOp == null) {
-      responder.sendJson(HttpResponseStatus.NOT_FOUND, new AdminOpResponse(null, "AdminOp " + opName + " was invalid"));
-      return;
-    }
-
-    DatasetAdmin datasetAdmin;
-
+  @Path("/datasets/{instance}/execute/exists")
+  public void exists(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
-      datasetAdmin = tryGetDatasetAdmin(instanceName);
-      if (datasetAdmin == null) {
-        responder.sendJson(HttpResponseStatus.NOT_FOUND,
-                           new AdminOpResponse(null, "DatasetAdmin was null for dataset instance" + instanceName));
-        return;
-      }
+      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(datasetAdmin.exists(), null));
+    } catch (HandlerException e) {
+      LOG.debug("Error", e);
+      responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
-      LOG.error("Error obtaining DatasetAdmin for dataset instance {}", instanceName);
+      LOG.error("Error executing admin operation {} for dataset instance {}", e, "exists", instanceName);
       responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
-      return;
     }
+  }
 
+  @GET
+  @Path("/datasets/{instance}/execute/create")
+  public void create(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
-      AdminOpResponse response = adminOp.apply(datasetAdmin);
-      responder.sendJson(HttpResponseStatus.OK, response);
-    } catch (IOException e) {
-      LOG.error("Error executing admin operation {} for dataset instance {}", e, opName, instanceName);
+      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      datasetAdmin.create();
+      responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
+    } catch (HandlerException e) {
+      LOG.debug("Error", e);
+      responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
+    } catch (Exception e) {
+      LOG.error("Error executing admin operation {} for dataset instance {}", e, "create", instanceName);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+    }
+  }
+
+  @GET
+  @Path("/datasets/{instance}/execute/drop")
+  public void drop(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
+    try {
+      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      datasetAdmin.drop();
+      responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
+    } catch (HandlerException e) {
+      LOG.debug("Error", e);
+      responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
+    } catch (Exception e) {
+      LOG.error("Error executing admin operation {} for dataset instance {}", e, "drop", instanceName);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+    }
+  }
+
+  @GET
+  @Path("/datasets/{instance}/execute/truncate")
+  public void truncate(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
+    try {
+      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      datasetAdmin.truncate();
+      responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
+    } catch (HandlerException e) {
+      LOG.debug("Error", e);
+      responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
+    } catch (Exception e) {
+      LOG.error("Error executing admin operation {} for dataset instance {}", e, "truncate", instanceName);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+    }
+  }
+
+  @GET
+  @Path("/datasets/{instance}/execute/upgrade")
+  public void upgrade(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
+    try {
+      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      datasetAdmin.upgrade();
+      responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
+    } catch (HandlerException e) {
+      LOG.debug("Error", e);
+      responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
+    } catch (Exception e) {
+      LOG.error("Error executing admin operation {} for dataset instance {}", e, "upgrade", instanceName);
       responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
     }
   }
 
   private DatasetAdmin tryGetDatasetAdmin(String instanceName) throws IOException, DatasetManagementException {
-    return client.getAdmin(instanceName, getClassLoader(instanceName));
+    DatasetAdmin admin = client.getAdmin(instanceName, getClassLoader(instanceName));
+    if (admin == null) {
+      throw new HandlerException(HttpResponseStatus.NOT_FOUND,
+                                 "Couldn't obtain DatasetAdmin for dataset instance " + instanceName);
+    }
+    return admin;
   }
 
   private ClassLoader getClassLoader(String instanceName) {
@@ -122,7 +143,7 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   }
 
   /**
-   * TODO: improve this response.
+   * Used to respond to various admin operation requests.
    */
   private static final class AdminOpResponse {
 
