@@ -38,7 +38,7 @@ public class DatasetUserRunnable extends AbstractReactorTwillRunnable {
   }
 
   @Override
-  public void doInit(TwillContext context) {
+  protected void doInit(TwillContext context) {
     this.user = DEFAULT_USER;
 
     CConfiguration cConf = getCConfiguration();

@@ -8,9 +8,12 @@ import com.continuuity.logging.run.LogSaverTwillRunnable;
 import com.continuuity.metrics.runtime.MetricsProcessorTwillRunnable;
 import com.continuuity.metrics.runtime.MetricsTwillRunnable;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import org.apache.twill.api.ResourceSpecification;
+import org.apache.twill.api.RuntimeSpecification;
 import org.apache.twill.api.TwillApplication;
 import org.apache.twill.api.TwillSpecification;
+import org.apache.twill.internal.DefaultTwillSpecification;
 
 import java.io.File;
 
