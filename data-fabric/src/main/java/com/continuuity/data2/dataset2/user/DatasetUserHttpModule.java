@@ -19,11 +19,10 @@ public class DatasetUserHttpModule extends PrivateModule {
   @Override
   protected void configure() {
     Named name = Names.named(Constants.Service.DATASET_USER);
-    bind(DatasetDefinitionRegistry.class).to(DefaultDatasetDefinitionRegistry.class);
-
     Multibinder<HttpHandler> handlerBinder = Multibinder.newSetBinder(binder(), HttpHandler.class, name);
     handlerBinder.addBinding().to(DatasetUserAdminHandler.class);
 
+    bind(DatasetDefinitionRegistry.class).to(DefaultDatasetDefinitionRegistry.class);
     bind(DatasetUserService.class).in(Scopes.SINGLETON);
     expose(DatasetUserService.class);
   }
