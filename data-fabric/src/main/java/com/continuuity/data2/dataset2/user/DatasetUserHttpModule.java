@@ -2,7 +2,7 @@ package com.continuuity.data2.dataset2.user;
 
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.dataset2.manager.inmemory.DefaultDatasetDefinitionRegistry;
-import com.continuuity.data2.dataset2.manager.inmemory.InMemoryDatasetDefinitionRegistry;
+import com.continuuity.gateway.handlers.PingHandler;
 import com.continuuity.http.HttpHandler;
 import com.continuuity.internal.data.dataset.module.DatasetDefinitionRegistry;
 import com.google.inject.PrivateModule;
@@ -20,7 +20,8 @@ public class DatasetUserHttpModule extends PrivateModule {
   protected void configure() {
     Named name = Names.named(Constants.Service.DATASET_USER);
     Multibinder<HttpHandler> handlerBinder = Multibinder.newSetBinder(binder(), HttpHandler.class, name);
-    handlerBinder.addBinding().to(DatasetUserAdminHandler.class);
+    handlerBinder.addBinding().to(DatasetAdminHTTPHandler.class);
+    handlerBinder.addBinding().to(PingHandler.class);
 
     bind(DatasetDefinitionRegistry.class).to(DefaultDatasetDefinitionRegistry.class);
     bind(DatasetUserService.class).in(Scopes.SINGLETON);

@@ -40,14 +40,13 @@ import javax.annotation.Nullable;
 public class DatasetManagerServiceClient {
   private static final Gson GSON = new Gson();
 
+  private final DiscoveryServiceClient discoveryClient;
+
   private EndpointStrategy endpointStrategy;
 
   @Inject
   public DatasetManagerServiceClient(DiscoveryServiceClient discoveryClient) {
-
-    this.endpointStrategy = new TimeLimitEndpointStrategy(
-      new RandomEndpointStrategy(discoveryClient.discover(Constants.Service.DATASET_MANAGER)),
-      1L, TimeUnit.SECONDS);
+    this.discoveryClient = discoveryClient;
   }
 
   public DatasetInstanceMeta getInstance(String instanceName) throws DatasetManagementException {

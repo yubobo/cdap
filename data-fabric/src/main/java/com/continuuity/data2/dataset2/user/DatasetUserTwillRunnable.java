@@ -25,7 +25,7 @@ import java.util.List;
  * Executes user code on behalf of a particular user inside
  * a container running as that user. For security.
  */
-public class DatasetUserRunnable extends AbstractReactorTwillRunnable {
+public class DatasetUserTwillRunnable extends AbstractReactorTwillRunnable {
 
   // TODO: remove
   public static final String DEFAULT_USER = "bob";
@@ -33,7 +33,7 @@ public class DatasetUserRunnable extends AbstractReactorTwillRunnable {
   private Injector injector;
   private String user;
 
-  public DatasetUserRunnable(String name, String cConfName, String hConfName) {
+  public DatasetUserTwillRunnable(String name, String cConfName, String hConfName) {
     super(name, cConfName, hConfName);
   }
 

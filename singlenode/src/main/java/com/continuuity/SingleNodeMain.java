@@ -94,6 +94,7 @@ public class SingleNodeMain {
 
     metricsCollectionService = injector.getInstance(MetricsCollectionService.class);
     datasetService = injector.getInstance(DatasetManagerService.class);
+    // TODO: datasetService should start datasetUserService
     datasetUserService = injector.getInstance(DatasetUserService.class);
 
     streamHttpService = injector.getInstance(StreamHttpService.class);

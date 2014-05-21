@@ -18,7 +18,7 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 
 /**
- * Provides various REST endpoints to execute user code via {@link DatasetUserAdminHandler}.
+ * Provides various REST endpoints to execute user code via {@link DatasetAdminHTTPHandler}.
  */
 public class DatasetUserService extends AbstractIdleService {
 
@@ -35,11 +35,13 @@ public class DatasetUserService extends AbstractIdleService {
     this.discoveryService = discoveryService;
 
     int workerThreads = cConf.getInt(Constants.Dataset.User.WORKER_THREADS, 10);
+    int execThreads = cConf.getInt(Constants.Dataset.User.EXEC_THREADS, 10);
+
     this.httpService = NettyHttpService.builder()
       .addHttpHandlers(handlers)
       .setHost(cConf.get(Constants.Dataset.User.ADDRESS))
       .setWorkerThreadPoolSize(workerThreads)
-      .setExecThreadPoolSize(0)
+      .setExecThreadPoolSize(execThreads)
       .setConnectionBacklog(20000)
       .build();
   }

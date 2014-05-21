@@ -3,7 +3,7 @@ package com.continuuity.data.runtime.main;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.twill.AbortOnTimeoutEventHandler;
-import com.continuuity.data2.dataset2.user.DatasetUserRunnable;
+import com.continuuity.data2.dataset2.user.DatasetUserTwillRunnable;
 import com.continuuity.logging.run.LogSaverTwillRunnable;
 import com.continuuity.metrics.runtime.MetricsProcessorTwillRunnable;
 import com.continuuity.metrics.runtime.MetricsTwillRunnable;
@@ -164,10 +164,10 @@ public class ReactorTwillApplication implements TwillApplication {
     ResourceSpecification resourceSpec = ResourceSpecification.Builder.with()
       .setVirtualCores(cConf.getInt(Constants.Dataset.User.CONTAINER_VIRTUAL_CORES, 1))
       .setMemory(cConf.getInt(Constants.Dataset.User.CONTAINER_MEMORY_MB, 512), ResourceSpecification.SizeUnit.MEGA)
-      .setInstances(cConf.getInt(Constants.Dataset.User.CONTAINER_INSTANCES, 2))
+      .setInstances(cConf.getInt(Constants.Dataset.User.CONTAINER_INSTANCES, 1))
       .build();
 
-    return builder.add(new DatasetUserRunnable("dsuser", "cConf.xml", "hConf.xml"), resourceSpec)
+    return builder.add(new DatasetUserTwillRunnable("dsuser", "cConf.xml", "hConf.xml"), resourceSpec)
       .withLocalFiles()
       .add("cConf.xml", cConfFile.toURI())
       .add("hConf.xml", hConfFile.toURI())
