@@ -116,21 +116,33 @@ public class SharedResourceCacheTest {
     assertEquals(value2new, cache2.get(key2));
 
     cache2.removeListener(value2listener);
-    // remove items from the second and wait for them to disappear from the first
-    final SettableFuture<String> key3RemoveFuture = SettableFuture.create();
-    ResourceListener<String> key3Listener = new BaseResourceListener<String>() {
+    // remove items from the first and wait for them to disappear from the second
+    final SettableFuture<String> cache1Key3RemoveFuture = SettableFuture.create();
+    ResourceListener<String> cache1Key3Listener = new BaseResourceListener<String>() {
       @Override
       public void onResourceDelete(String name) {
         LOG.info("Resource deleted {}", name);
         if (name.equals(key3)) {
-          key3RemoveFuture.set(name);
+          cache1Key3RemoveFuture.set(name);
+        }
+      }
+    };
+    final SettableFuture<String> cache2Key3RemoveFuture = SettableFuture.create();
+    ResourceListener<String> cache2Key3Listener = new BaseResourceListener<String>() {
+      @Override
+      public void onResourceDelete(String name) {
+        LOG.info("Resource deleted {}", name);
+        if (name.equals(key3)) {
+          cache2Key3RemoveFuture.set(name);
         }
       }
     };
 
-    cache2.addListener(key3Listener);
+    cache1.addListener(cache1Key3Listener);
+    cache2.addListener(cache2Key3Listener);
     cache1.remove(key3);
-    String removedKey = key3RemoveFuture.get();
+    cache1Key3RemoveFuture.get();
+    String removedKey = cache2Key3RemoveFuture.get();
     assertEquals(key3, removedKey);
     assertNull(cache2.get(key3));
 
