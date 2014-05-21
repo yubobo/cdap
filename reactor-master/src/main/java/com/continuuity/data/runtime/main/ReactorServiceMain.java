@@ -3,6 +3,7 @@ package com.continuuity.data.runtime.main;
 import com.continuuity.app.guice.AppFabricServiceRuntimeModule;
 import com.continuuity.app.guice.ProgramRunnerRuntimeModule;
 import com.continuuity.common.conf.CConfiguration;
+import com.continuuity.common.conf.Constants;
 import com.continuuity.common.guice.ConfigModule;
 import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.IOModule;
@@ -17,6 +18,8 @@ import com.continuuity.common.zookeeper.election.LeaderElection;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data.security.HBaseSecureStoreUpdater;
 import com.continuuity.data.security.HBaseTokenUtils;
+import com.continuuity.data2.datafabric.dataset.service.DatasetManagerService;
+import com.continuuity.data2.dataset2.user.DatasetUserService;
 import com.continuuity.data2.util.hbase.HBaseTableUtilFactory;
 import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.internal.app.services.AppFabricServer;
@@ -48,6 +51,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,6 +86,7 @@ public class ReactorServiceMain extends DaemonMain {
   private volatile TwillController twillController;
   private AppFabricServer appFabricServer;
   private MetricsCollectionService metricsCollectionService;
+  private DatasetManagerService dsService;
 
   private String serviceName;
   private TwillApplication twillApplication;
@@ -101,6 +107,10 @@ public class ReactorServiceMain extends DaemonMain {
 
     serviceName = twillApplication.configure().getName();
 
+    cConf.set(Constants.Dataset.Manager.ADDRESS, getLocalHost().getCanonicalHostName());
+    // TODO(alvin): remove once DatasetUserService runs outside of DatasetManagerService
+    cConf.set(Constants.Dataset.User.ADDRESS, getLocalHost().getCanonicalHostName());
+
     baseInjector = Guice.createInjector(
       new ConfigModule(cConf, hConf),
       new ZKClientModule(),
@@ -117,6 +127,7 @@ public class ReactorServiceMain extends DaemonMain {
     );
     // Initialize ZK client
     zkClientService = baseInjector.getInstance(ZKClientService.class);
+    dsService = baseInjector.getInstance(DatasetManagerService.class);
   }
 
   @Override
@@ -135,12 +146,15 @@ public class ReactorServiceMain extends DaemonMain {
         twillRunnerService.startAndWait();
         scheduleSecureStoreUpdate(twillRunnerService);
         runTwillApps();
+
         isLeader.set(true);
       }
 
       @Override
       public void follower() {
         LOG.info("Became follower.");
+
+        dsService.stopAndWait();
         if (twillRunnerService != null) {
           twillRunnerService.stopAndWait();
         }
@@ -156,6 +170,8 @@ public class ReactorServiceMain extends DaemonMain {
   public void stop() {
     LOG.info("Stopping {}", serviceName);
     stopFlag = true;
+
+    dsService.stopAndWait();
     if (isLeader.get() && twillController != null) {
       twillController.stopAndWait();
     }
@@ -165,6 +181,15 @@ public class ReactorServiceMain extends DaemonMain {
 
   @Override
   public void destroy() {
+  }
+
+  private InetAddress getLocalHost() {
+    try {
+      return InetAddress.getLocalHost();
+    } catch (UnknownHostException e) {
+      LOG.error("Error obtaining localhost address", e);
+      throw Throwables.propagate(e);
+    }
   }
 
   private TwillApplication createTwillApplication() {
@@ -212,6 +237,15 @@ public class ReactorServiceMain extends DaemonMain {
       twillController = twillPreparer.start();
 
       twillController.addListener(new ServiceListenerAdapter() {
+
+        @Override
+        public void running() {
+          if (!dsService.isRunning()) {
+            LOG.info("Starting dataset service");
+            dsService.startAndWait();
+          }
+        }
+
         @Override
         public void failed(Service.State from, Throwable failure) {
           LOG.error("{} failed with exception... restarting with back-off.", serviceName, failure);
