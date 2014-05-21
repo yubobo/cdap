@@ -85,7 +85,7 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
       responder.sendJson(HttpResponseStatus.OK, response);
     } catch (IOException e) {
       LOG.error("Error executing admin operation {} for dataset instance {}", e, opName, instanceName);
-      responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, e.getMessage()));
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
     }
   }
 
