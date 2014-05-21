@@ -18,7 +18,7 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 
 /**
- * Provides various REST endpoints to execute user code via {@link DatasetAdminHTTPHandler}.
+ * Provides various REST endpoints to execute user code via {@link DataSetAdminHTTPHandler}.
  */
 public class DatasetUserService extends AbstractIdleService {
 

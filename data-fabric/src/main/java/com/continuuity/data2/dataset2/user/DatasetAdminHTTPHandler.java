@@ -24,15 +24,15 @@ import javax.ws.rs.PathParam;
  * Provides REST endpoints for {@link DatasetAdmin} operations.
  */
 @Path("/" + Constants.Dataset.User.VERSION)
-public class DatasetAdminHTTPHandler extends AuthenticatedHttpHandler {
+public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
 
-  private static final Logger LOG = LoggerFactory.getLogger(DatasetAdminHTTPHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(DataSetAdminHTTPHandler.class);
 
   private final DataFabricDatasetManager client;
   private final Map<String, AdminOp> adminOps;
 
   @Inject
-  public DatasetAdminHTTPHandler(Authenticator authenticator, DataFabricDatasetManager client) {
+  public DataSetAdminHTTPHandler(Authenticator authenticator, DataFabricDatasetManager client) {
     super(authenticator);
     this.client = client;
     this.adminOps = AdminOps.getDefaultAdminOps();
