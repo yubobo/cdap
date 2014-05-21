@@ -14,7 +14,6 @@ import com.continuuity.data2.dataset2.manager.inmemory.DefaultDatasetDefinitionR
 import com.continuuity.data2.dataset2.manager.inmemory.InMemoryDatasetManager;
 import com.continuuity.data2.dataset2.module.lib.TableModule;
 import com.continuuity.data2.dataset2.module.lib.inmemory.InMemoryTableModule;
-import com.continuuity.data2.dataset2.user.DatasetUserHttpModule;
 import com.continuuity.data2.queue.QueueClientFactory;
 import com.continuuity.data2.transaction.DefaultTransactionExecutor;
 import com.continuuity.data2.transaction.TransactionExecutor;
