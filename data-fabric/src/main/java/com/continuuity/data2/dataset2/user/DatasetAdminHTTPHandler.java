@@ -31,6 +31,12 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
 
   private final DataFabricDatasetManager client;
 
+  @Inject
+  public DataSetAdminHTTPHandler(Authenticator authenticator, DataFabricDatasetManager client) {
+    super(authenticator);
+    this.client = client;
+  }
+
   @Override
   public void init(HandlerContext context) {
     super.init(context);
@@ -41,12 +47,6 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   public void destroy(HandlerContext context) {
     super.destroy(context);
     client.stopAndWait();
-  }
-
-  @Inject
-  public DataSetAdminHTTPHandler(Authenticator authenticator, DataFabricDatasetManager client) {
-    super(authenticator);
-    this.client = client;
   }
 
   @GET
