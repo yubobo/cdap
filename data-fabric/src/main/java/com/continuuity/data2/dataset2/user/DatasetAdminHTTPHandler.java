@@ -61,8 +61,7 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
           datasetAdmin.upgrade();
           return new AdminOpResponse(null, null);
         }
-      })
-      .build();
+      }).build();
   }
 
   @GET
@@ -76,7 +75,7 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
       return;
     }
 
-    DatasetAdmin datasetAdmin = null;
+    DatasetAdmin datasetAdmin;
 
     try {
       datasetAdmin = tryGetDatasetAdmin(instanceName);
