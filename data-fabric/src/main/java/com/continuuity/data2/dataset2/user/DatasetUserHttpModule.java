@@ -2,6 +2,8 @@ package com.continuuity.data2.dataset2.user;
 
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.dataset2.manager.inmemory.DefaultDatasetDefinitionRegistry;
+import com.continuuity.gateway.auth.Authenticator;
+import com.continuuity.gateway.auth.NoAuthenticator;
 import com.continuuity.gateway.handlers.PingHandler;
 import com.continuuity.http.HttpHandler;
 import com.continuuity.internal.data.dataset.module.DatasetDefinitionRegistry;

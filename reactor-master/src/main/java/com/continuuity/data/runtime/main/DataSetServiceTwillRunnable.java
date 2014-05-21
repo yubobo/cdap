@@ -12,6 +12,7 @@ import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.common.twill.AbstractReactorTwillRunnable;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data2.datafabric.dataset.service.DatasetManagerService;
+import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.google.common.base.Throwables;
@@ -50,6 +51,8 @@ public class DataSetServiceTwillRunnable extends AbstractReactorTwillRunnable {
       // Set the hostname of the machine so that cConf can be used to start internal services
       LOG.info("{} Setting host name to {}", name, context.getHost().getCanonicalHostName());
       getCConfiguration().set(Constants.Dataset.Manager.ADDRESS, context.getHost().getCanonicalHostName());
+      // TODO(alvin): remove once DatasetUserService runs outside of DatasetManagerService
+      getCConfiguration().set(Constants.Dataset.User.ADDRESS, context.getHost().getCanonicalHostName());
 
       Injector injector = createGuiceInjector(getCConfiguration(), getConfiguration());
 
@@ -84,6 +87,8 @@ public class DataSetServiceTwillRunnable extends AbstractReactorTwillRunnable {
       new IOModule(),
       new ZKClientModule(),
       new KafkaClientModule(),
+      // TODO(alvin): remove once DatasetUserService runs outside of DatasetManagerService
+      new AuthModule(),
       new DataFabricModules(cConf, hConf).getDistributedModules(),
       new LocationRuntimeModule().getDistributedModules(),
       new DiscoveryRuntimeModule().getDistributedModules(),
