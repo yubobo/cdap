@@ -23,7 +23,6 @@ public class DatasetUserHttpModule extends PrivateModule {
     handlerBinder.addBinding().to(DataSetAdminHTTPHandler.class);
     handlerBinder.addBinding().to(PingHandler.class);
 
-    bind(DatasetDefinitionRegistry.class).to(DefaultDatasetDefinitionRegistry.class);
     bind(DatasetUserService.class).in(Scopes.SINGLETON);
     expose(DatasetUserService.class);
   }

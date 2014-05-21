@@ -9,6 +9,7 @@ import com.continuuity.data2.datafabric.dataset.type.DatasetModuleConflictExcept
 import com.continuuity.data2.datafabric.dataset.type.DatasetTypeManager;
 import com.continuuity.data2.dataset2.manager.DatasetManager;
 import com.continuuity.data2.dataset2.manager.NamespacedDatasetManager;
+import com.continuuity.data2.dataset2.user.DatasetUserService;
 import com.continuuity.data2.transaction.TransactionSystemClient;
 import com.continuuity.http.NettyHttpService;
 import com.continuuity.internal.data.dataset.module.DatasetModule;
@@ -38,6 +39,7 @@ public class DatasetManagerService extends AbstractIdleService {
 
   private final NettyHttpService httpService;
   private final DiscoveryService discoveryService;
+  private final DatasetUserService userService;
   private Cancellable cancelDiscovery;
 
   private final DatasetInstanceManager instanceManager;
@@ -53,7 +55,8 @@ public class DatasetManagerService extends AbstractIdleService {
                                @Named("datasetMDS") DatasetManager mdsDatasetManager,
                                @Named("defaultDatasetModules")
                                SortedMap<String, Class<? extends DatasetModule>> defaultModules,
-                               TransactionSystemClient txSystemClient
+                               TransactionSystemClient txSystemClient,
+                               DatasetUserService userService
   ) throws Exception {
 
     NettyHttpService.Builder builder = NettyHttpService.builder();
@@ -84,6 +87,7 @@ public class DatasetManagerService extends AbstractIdleService {
 
     this.httpService = builder.build();
     this.discoveryService = discoveryService;
+    this.userService = userService;
   }
 
   @Override
@@ -99,6 +103,7 @@ public class DatasetManagerService extends AbstractIdleService {
     instanceManager.startAndWait();
 
     httpService.startAndWait();
+    userService.startAndWait();
 
     // adding default modules to be available in dataset manager service
     for (Map.Entry<String, Class<? extends DatasetModule>> module : defaultModules.entrySet()) {
@@ -146,6 +151,7 @@ public class DatasetManagerService extends AbstractIdleService {
       LOG.error("Interrupted while waiting...", e);
     }
 
+    userService.stopAndWait();
     httpService.stopAndWait();
   }
 }

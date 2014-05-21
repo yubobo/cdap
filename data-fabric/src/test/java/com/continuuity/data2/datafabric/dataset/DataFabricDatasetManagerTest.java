@@ -10,6 +10,7 @@ import com.continuuity.data2.dataset2.manager.DatasetManager;
 import com.continuuity.data2.dataset2.manager.inmemory.InMemoryDatasetDefinitionRegistry;
 import com.continuuity.data2.dataset2.manager.inmemory.InMemoryDatasetManager;
 import com.continuuity.data2.dataset2.module.lib.inmemory.InMemoryTableModule;
+import com.continuuity.data2.dataset2.user.DatasetUserService;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.data2.transaction.inmemory.InMemoryTxSystemClient;
 import com.continuuity.internal.data.dataset.module.DatasetModule;
@@ -22,6 +23,7 @@ import org.junit.ClassRule;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.util.Collections;
 
 /**
  *
@@ -45,6 +47,9 @@ public class DataFabricDatasetManagerTest extends AbstractDatasetManagerTest {
     // Starting DatasetManagerService service
     InMemoryDiscoveryService discoveryService = new InMemoryDiscoveryService();
 
+    DatasetUserService userService = new DatasetUserService(cConf, discoveryService, Collections.EMPTY_SET);
+    userService.startAndWait();
+
     // Tx Manager to support working with datasets
     InMemoryTransactionManager txManager = new InMemoryTransactionManager();
     txManager.startAndWait();
@@ -56,7 +61,8 @@ public class DataFabricDatasetManagerTest extends AbstractDatasetManagerTest {
                                                new InMemoryDatasetManager(),
                                                ImmutableSortedMap.<String, Class<? extends DatasetModule>>of(
                                                  "memoryTable", InMemoryTableModule.class),
-                                               txSystemClient);
+                                               txSystemClient,
+                                               userService);
     datasetManager.startAndWait();
 
     DatasetManagerServiceClient dsManagerClient = new DatasetManagerServiceClient(discoveryService);
