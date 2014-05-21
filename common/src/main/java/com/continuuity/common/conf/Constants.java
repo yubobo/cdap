@@ -316,6 +316,11 @@ public final class Constants {
       public static final String BOSS_THREADS = "dataset.user.boss.threads";
       public static final String WORKER_THREADS = "dataset.user.worker.threads";
       public static final String OUTPUT_DIR = "dataset.user.output.dir";
+
+      /** Twill Runnable configuration **/
+      public static final String CONTAINER_VIRTUAL_CORES = "dataset.user.container.num.cores";
+      public static final String CONTAINER_MEMORY_MB = "dataset.user.container.memory.mb";
+      public static final String CONTAINER_INSTANCES = "dataset.user.container.instances";
     }
   }
 
