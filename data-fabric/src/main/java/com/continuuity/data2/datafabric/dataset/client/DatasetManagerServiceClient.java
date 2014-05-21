@@ -231,6 +231,11 @@ public class DatasetManagerServiceClient {
   }
 
   private String resolve(String resource) {
+    // TODO: move this back into constructor
+    this.endpointStrategy = new TimeLimitEndpointStrategy(
+      new RandomEndpointStrategy(discoveryClient.discover(Constants.Service.DATASET_MANAGER)),
+      1L, TimeUnit.SECONDS);
+
     InetSocketAddress addr = this.endpointStrategy.pick().getSocketAddress();
     return String.format("http://%s:%s/%s/datasets/%s", addr.getHostName(), addr.getPort(),
                          Constants.Dataset.Manager.VERSION, resource);

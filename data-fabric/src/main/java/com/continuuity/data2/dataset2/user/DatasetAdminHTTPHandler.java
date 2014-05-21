@@ -2,24 +2,24 @@ package com.continuuity.data2.dataset2.user;
 
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.datafabric.dataset.DataFabricDatasetManager;
+import com.continuuity.data2.dataset2.manager.DatasetManagementException;
 import com.continuuity.gateway.auth.Authenticator;
 import com.continuuity.gateway.handlers.AuthenticatedHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.data.dataset.DatasetAdmin;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import org.apache.commons.lang.StringUtils;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import java.io.IOException;
 import java.util.Map;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 
 /**
  * Provides REST endpoints for {@link DatasetAdmin} operations.
@@ -72,12 +72,23 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
 
     AdminOp adminOp = adminOps.get(opName);
     if (adminOp == null) {
-      throw new NotFoundException("AdminOp " + opName + " was invalid");
+      responder.sendJson(HttpResponseStatus.NOT_FOUND, new AdminOpResponse(null, "AdminOp " + opName + " was invalid"));
+      return;
     }
 
-    DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
-    if (datasetAdmin == null) {
-      throw new NotFoundException("DatasetAdmin was null for dataset instance" + instanceName);
+    DatasetAdmin datasetAdmin = null;
+
+    try {
+      datasetAdmin = tryGetDatasetAdmin(instanceName);
+      if (datasetAdmin == null) {
+        responder.sendJson(HttpResponseStatus.NOT_FOUND,
+                           new AdminOpResponse(null, "DatasetAdmin was null for dataset instance" + instanceName));
+        return;
+      }
+    } catch (Exception e) {
+      LOG.error("Error obtaining DatasetAdmin for dataset instance {}", instanceName);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+      return;
     }
 
     try {
@@ -85,17 +96,12 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
       responder.sendJson(HttpResponseStatus.OK, response);
     } catch (IOException e) {
       LOG.error("Error executing admin operation {} for dataset instance {}", e, opName, instanceName);
-      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
     }
   }
 
-  private DatasetAdmin tryGetDatasetAdmin(String instanceName) throws InternalServerErrorException {
-    try {
-      return client.getAdmin(instanceName, getClassLoader(instanceName));
-    } catch (Exception e) {
-      LOG.error("Error obtaining DatasetAdmin for instance " + instanceName, e);
-      throw new InternalServerErrorException();
-    }
+  private DatasetAdmin tryGetDatasetAdmin(String instanceName) throws IOException, DatasetManagementException {
+    return client.getAdmin(instanceName, getClassLoader(instanceName));
   }
 
   private ClassLoader getClassLoader(String instanceName) {
