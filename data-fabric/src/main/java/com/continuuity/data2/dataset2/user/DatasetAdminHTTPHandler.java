@@ -5,6 +5,7 @@ import com.continuuity.data2.datafabric.dataset.DataFabricDatasetManager;
 import com.continuuity.data2.dataset2.manager.DatasetManagementException;
 import com.continuuity.gateway.auth.Authenticator;
 import com.continuuity.gateway.handlers.AuthenticatedHttpHandler;
+import com.continuuity.http.HandlerContext;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.data.dataset.DatasetAdmin;
 import com.google.common.collect.ImmutableMap;
@@ -31,6 +32,18 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
 
   private final DataFabricDatasetManager client;
   private final Map<String, AdminOp> adminOps;
+
+  @Override
+  public void init(HandlerContext context) {
+    super.init(context);
+    client.startAndWait();
+  }
+
+  @Override
+  public void destroy(HandlerContext context) {
+    super.destroy(context);
+    client.stopAndWait();
+  }
 
   @Inject
   public DataSetAdminHTTPHandler(Authenticator authenticator, DataFabricDatasetManager client) {
