@@ -84,6 +84,7 @@ public class ReactorServiceMain extends DaemonMain {
 
   private String serviceName;
   private TwillApplication twillApplication;
+  private TwillApplication dummyTwillApp;
   private long lastRunTimeMs = System.currentTimeMillis();
   private int currentRun = 0;
 
@@ -95,6 +96,7 @@ public class ReactorServiceMain extends DaemonMain {
   @Override
   public void init(String[] args) {
     twillApplication = createTwillApplication();
+    dummyTwillApp = createDummyTwillApplication();
     if (twillApplication == null) {
       throw new IllegalArgumentException("TwillApplication cannot be null");
     }
@@ -170,6 +172,14 @@ public class ReactorServiceMain extends DaemonMain {
   private TwillApplication createTwillApplication() {
     try {
       return new ReactorTwillApplication(cConf, getSavedCConf(), getSavedHConf());
+    } catch (Exception e) {
+      throw  Throwables.propagate(e);
+    }
+  }
+
+  private TwillApplication createDummyTwillApplication() {
+    try {
+      return new DummyTwillApplication();
     } catch (Exception e) {
       throw  Throwables.propagate(e);
     }
