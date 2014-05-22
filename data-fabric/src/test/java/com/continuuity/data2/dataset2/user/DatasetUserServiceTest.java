@@ -64,7 +64,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- *
+ * Test for {@link DatasetUserService}.
  */
 public class DatasetUserServiceTest {
 
