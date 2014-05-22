@@ -32,7 +32,6 @@ import com.continuuity.app.program.Type;
 import com.continuuity.data.operation.OperationContext;
 import com.continuuity.data2.OperationException;
 import com.continuuity.internal.app.Specifications;
-import com.continuuity.internal.app.runtime.schedule.SchedulerService;
 import com.continuuity.internal.app.store.MDTBasedStore;
 import com.continuuity.metadata.MetaDataTable;
 import com.continuuity.test.internal.AppFabricTestHelper;
@@ -42,10 +41,8 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import org.apache.twill.filesystem.LocalLocationFactory;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
@@ -57,20 +54,6 @@ import java.util.Set;
  */
 public class MDTBasedStoreTest {
   private MDTBasedStore store;
-
-  @BeforeClass
-  public static void setup() throws Exception {
-    // Work-around to force startup of components used in tests.  The better approach would be to make the
-    // resource lifecycle more explicit in the test helper.
-    SchedulerService schedulerService = AppFabricTestHelper.getInjector().getInstance(SchedulerService.class);
-    schedulerService.startAndWait();
-  }
-
-  @AfterClass
-  public static void shutdown() throws Exception {
-    SchedulerService schedulerService = AppFabricTestHelper.getInjector().getInstance(SchedulerService.class);
-    schedulerService.stopAndWait();
-  }
 
   // we do it in @Before (not in @BeforeClass) to have easy automatic cleanup between tests
   @Before
