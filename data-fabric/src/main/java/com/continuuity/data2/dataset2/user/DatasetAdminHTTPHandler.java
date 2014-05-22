@@ -53,10 +53,10 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   @Path("/data/instances/{instance}/execute/exists")
   public void exists(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
-      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      DatasetAdmin datasetAdmin = getDatasetAdmin(instanceName);
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(datasetAdmin.exists(), null));
     } catch (HandlerException e) {
-      LOG.info("Got handler exception", e);
+      LOG.debug("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
       LOG.error(getAdminOpErrorMessage("exists", instanceName), e);
@@ -68,11 +68,11 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   @Path("/data/instances/{instance}/execute/create")
   public void create(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
-      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      DatasetAdmin datasetAdmin = getDatasetAdmin(instanceName);
       datasetAdmin.create();
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
     } catch (HandlerException e) {
-      LOG.info("Got handler exception", e);
+      LOG.debug("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
       LOG.error(getAdminOpErrorMessage("create", instanceName), e);
@@ -84,11 +84,11 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   @Path("/data/instances/{instance}/execute/drop")
   public void drop(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
-      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      DatasetAdmin datasetAdmin = getDatasetAdmin(instanceName);
       datasetAdmin.drop();
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
     } catch (HandlerException e) {
-      LOG.info("Got handler exception", e);
+      LOG.debug("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
       LOG.error(getAdminOpErrorMessage("drop", instanceName), e);
@@ -100,11 +100,11 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   @Path("/data/instances/{instance}/execute/truncate")
   public void truncate(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
-      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      DatasetAdmin datasetAdmin = getDatasetAdmin(instanceName);
       datasetAdmin.truncate();
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
     } catch (HandlerException e) {
-      LOG.info("Got handler exception", e);
+      LOG.debug("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
       LOG.error(getAdminOpErrorMessage("truncate", instanceName), e);
@@ -116,11 +116,11 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   @Path("/data/instances/{instance}/execute/upgrade")
   public void upgrade(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
-      DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
+      DatasetAdmin datasetAdmin = getDatasetAdmin(instanceName);
       datasetAdmin.upgrade();
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
     } catch (HandlerException e) {
-      LOG.info("Got handler exception", e);
+      LOG.debug("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
       LOG.error(getAdminOpErrorMessage("upgrade", instanceName), e);
@@ -132,7 +132,7 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
     return String.format("Error executing admin operation %s for dataset instance %s", opName, instanceName);
   }
 
-  private DatasetAdmin tryGetDatasetAdmin(String instanceName) throws IOException, DatasetManagementException {
+  private DatasetAdmin getDatasetAdmin(String instanceName) throws IOException, DatasetManagementException {
     DatasetAdmin admin = client.getAdmin(instanceName, getClassLoader(instanceName));
     if (admin == null) {
       throw new HandlerException(HttpResponseStatus.NOT_FOUND,
