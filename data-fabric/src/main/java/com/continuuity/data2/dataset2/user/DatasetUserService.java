@@ -48,6 +48,8 @@ public class DatasetUserService extends AbstractIdleService {
 
   @Override
   protected void startUp() throws Exception {
+    LOG.info("Starting DatasetUserService...");
+
     httpService.startAndWait();
     cancellable = discoveryService.register(new Discoverable() {
       @Override
@@ -60,10 +62,14 @@ public class DatasetUserService extends AbstractIdleService {
         return httpService.getBindAddress();
       }
     });
+
+    LOG.info("DatasetUserService started successfully on {}", httpService.getBindAddress());
   }
 
   @Override
   protected void shutDown() throws Exception {
+    LOG.info("Stopping DatasetUserService...");
+
     try {
       if (cancellable != null) {
         cancellable.cancel();
@@ -78,5 +84,9 @@ public class DatasetUserService extends AbstractIdleService {
     return Objects.toStringHelper(this)
       .add("bindAddress", httpService.getBindAddress())
       .toString();
+  }
+
+  public NettyHttpService getHttpService() {
+    return httpService;
   }
 }

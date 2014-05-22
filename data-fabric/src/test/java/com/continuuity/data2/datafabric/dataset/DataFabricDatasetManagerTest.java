@@ -48,7 +48,6 @@ public class DataFabricDatasetManagerTest extends AbstractDatasetManagerTest {
     InMemoryDiscoveryService discoveryService = new InMemoryDiscoveryService();
 
     DatasetUserService userService = new DatasetUserService(cConf, discoveryService, Collections.EMPTY_SET);
-    userService.startAndWait();
 
     // Tx Manager to support working with datasets
     InMemoryTransactionManager txManager = new InMemoryTransactionManager();
