@@ -145,6 +145,8 @@ public class DatasetUserServiceTest {
     managerClient.addInstance("table", "bob", DatasetInstanceProperties.EMPTY);
     testAdminOp("bob", "exists", 200, false);
 
+    testAdminOp("joe", "exists", 404, null);
+
     // create and check existence
     testAdminOp("bob", "create", 200, null);
     testAdminOp("bob", "exists", 200, true);
