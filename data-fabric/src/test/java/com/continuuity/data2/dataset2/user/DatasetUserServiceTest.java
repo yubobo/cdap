@@ -91,6 +91,7 @@ public class DatasetUserServiceTest {
     cConf.setInt(Constants.Dataset.Manager.PORT, Networks.getRandomPort());
 
     cConf.set(Constants.Dataset.User.ADDRESS, "localhost");
+    cConf.setInt(Constants.Dataset.User.PORT, Networks.getRandomPort());
 
     Injector injector = Guice.createInjector(
       new ConfigModule(cConf, hConf),
