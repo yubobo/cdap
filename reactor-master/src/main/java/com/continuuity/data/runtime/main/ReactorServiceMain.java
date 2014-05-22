@@ -79,6 +79,8 @@ public class ReactorServiceMain extends DaemonMain {
   private LeaderElection leaderElection;
   private volatile TwillRunnerService twillRunnerService;
   private volatile TwillController twillController;
+  private volatile TwillController dtwillController;
+
   private AppFabricServer appFabricServer;
   private MetricsCollectionService metricsCollectionService;
 
@@ -234,6 +236,22 @@ public class ReactorServiceMain extends DaemonMain {
           backOffRun();
         }
       }, MoreExecutors.sameThreadExecutor());
+
+      dtwillController = getDummyPreparer().start();
+
+      dtwillController.addListener(new ServiceListenerAdapter() {
+        @Override
+        public void failed(Service.State from, Throwable failure) {
+          LOG.error("{} failed with exception... restarting with back-off.", serviceName, failure);
+          backOffRun();
+        }
+
+        @Override
+        public void terminated(Service.State from) {
+          LOG.warn("{} got terminated... restarting with back-off", serviceName);
+          backOffRun();
+        }
+      }, MoreExecutors.sameThreadExecutor());
     }
   }
 
@@ -275,6 +293,13 @@ public class ReactorServiceMain extends DaemonMain {
 
   private TwillPreparer getPreparer() {
     return prepare(twillRunnerService.prepare(twillApplication)
+                     .addLogHandler(new PrinterLogHandler(new PrintWriter(System.out)))
+    );
+  }
+
+
+  private TwillPreparer getDummyPreparer() {
+    return prepare(twillRunnerService.prepare(dummyTwillApp)
                      .addLogHandler(new PrinterLogHandler(new PrintWriter(System.out)))
     );
   }
