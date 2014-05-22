@@ -40,6 +40,7 @@ public class DatasetUserService extends AbstractIdleService {
     this.httpService = NettyHttpService.builder()
       .addHttpHandlers(handlers)
       .setHost(cConf.get(Constants.Dataset.User.ADDRESS))
+      .setPort(cConf.getInt(Constants.Dataset.User.PORT))
       .setWorkerThreadPoolSize(workerThreads)
       .setExecThreadPoolSize(execThreads)
       .setConnectionBacklog(20000)

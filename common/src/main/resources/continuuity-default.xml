@@ -521,6 +521,18 @@
     </property>
 
     <property>
+        <name>dataset.user.bind.address</name>
+        <value>127.0.0.1</value>
+        <description>DataSet user service hostname</description>
+    </property>
+
+    <property>
+        <name>dataset.user.bind.port</name>
+        <value>45056</value>
+        <description>DataSet user service port</description>
+    </property>
+
+    <property>
         <name>app.temp.dir</name>
         <value>/tmp</value>
         <description>Directory temp.</description>
