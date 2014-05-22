@@ -235,7 +235,7 @@ public class SharedResourceCache<T> extends AbstractLoadingCache<String, T> {
   public String toString() {
     Objects.ToStringHelper helper = Objects.toStringHelper(this)
       .add("parent", parentZnode);
-    for (Map.Entry<String,T> entry : resources.entrySet()) {
+    for (Map.Entry<String, T> entry : resources.entrySet()) {
       helper.add("r[" + entry.getKey() + "]", entry.getValue());
     }
     return helper.toString();
