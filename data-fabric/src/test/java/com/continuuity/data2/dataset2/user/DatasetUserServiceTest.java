@@ -164,7 +164,7 @@ public class DatasetUserServiceTest {
     throws URISyntaxException, IOException {
 
     URI baseUri = new URI("http://" + userServiceAddress.getHostName() + ":" + userServiceAddress.getPort());
-    String template = "/" + Constants.Dataset.User.VERSION + "/datasets/%s/execute/%s";
+    String template =  Constants.Gateway.GATEWAY_VERSION + "/data/instances/%s/execute/%s";
     URI targetUri = baseUri.resolve(String.format(template, instanceName, opName));
 
     Response<AdminOpResponse> response = doGet(targetUri, AdminOpResponse.class);

@@ -24,7 +24,7 @@ import javax.ws.rs.PathParam;
 /**
  * Provides REST endpoints for {@link DatasetAdmin} operations.
  */
-@Path("/" + Constants.Dataset.User.VERSION)
+@Path(Constants.Gateway.GATEWAY_VERSION)
 public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(DataSetAdminHTTPHandler.class);
@@ -50,82 +50,86 @@ public class DataSetAdminHTTPHandler extends AuthenticatedHttpHandler {
   }
 
   @GET
-  @Path("/datasets/{instance}/execute/exists")
+  @Path("/data/instances/{instance}/execute/exists")
   public void exists(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
       DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(datasetAdmin.exists(), null));
     } catch (HandlerException e) {
-      LOG.debug("Error", e);
+      LOG.info("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
-      LOG.error("Error executing admin operation {} for dataset instance {}", e, "exists", instanceName);
-      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+      LOG.error(getAdminOpErrorMessage("exists", instanceName), e);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, getAdminOpErrorMessage("exists", instanceName));
     }
   }
 
   @GET
-  @Path("/datasets/{instance}/execute/create")
+  @Path("/data/instances/{instance}/execute/create")
   public void create(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
       DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
       datasetAdmin.create();
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
     } catch (HandlerException e) {
-      LOG.debug("Error", e);
+      LOG.info("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
-      LOG.error("Error executing admin operation {} for dataset instance {}", e, "create", instanceName);
-      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+      LOG.error(getAdminOpErrorMessage("create", instanceName), e);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, getAdminOpErrorMessage("create", instanceName));
     }
   }
 
   @GET
-  @Path("/datasets/{instance}/execute/drop")
+  @Path("/data/instances/{instance}/execute/drop")
   public void drop(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
       DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
       datasetAdmin.drop();
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
     } catch (HandlerException e) {
-      LOG.debug("Error", e);
+      LOG.info("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
-      LOG.error("Error executing admin operation {} for dataset instance {}", e, "drop", instanceName);
-      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+      LOG.error(getAdminOpErrorMessage("drop", instanceName), e);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, getAdminOpErrorMessage("drop", instanceName));
     }
   }
 
   @GET
-  @Path("/datasets/{instance}/execute/truncate")
+  @Path("/data/instances/{instance}/execute/truncate")
   public void truncate(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
       DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
       datasetAdmin.truncate();
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
     } catch (HandlerException e) {
-      LOG.debug("Error", e);
+      LOG.info("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
-      LOG.error("Error executing admin operation {} for dataset instance {}", e, "truncate", instanceName);
-      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+      LOG.error(getAdminOpErrorMessage("truncate", instanceName), e);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, getAdminOpErrorMessage("truncate", instanceName));
     }
   }
 
   @GET
-  @Path("/datasets/{instance}/execute/upgrade")
+  @Path("/data/instances/{instance}/execute/upgrade")
   public void upgrade(HttpRequest request, HttpResponder responder, @PathParam("instance") String instanceName) {
     try {
       DatasetAdmin datasetAdmin = tryGetDatasetAdmin(instanceName);
       datasetAdmin.upgrade();
       responder.sendJson(HttpResponseStatus.OK, new AdminOpResponse(null, null));
     } catch (HandlerException e) {
-      LOG.debug("Error", e);
+      LOG.info("Got handler exception", e);
       responder.sendError(e.getFailureStatus(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
     } catch (Exception e) {
-      LOG.error("Error executing admin operation {} for dataset instance {}", e, "upgrade", instanceName);
-      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, StringUtils.defaultIfEmpty(e.getMessage(), ""));
+      LOG.error(getAdminOpErrorMessage("upgrade", instanceName), e);
+      responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, getAdminOpErrorMessage("upgrade", instanceName));
     }
+  }
+
+  private String getAdminOpErrorMessage(String opName, String instanceName) {
+    return String.format("Error executing admin operation %s for dataset instance %s", opName, instanceName);
   }
 
   private DatasetAdmin tryGetDatasetAdmin(String instanceName) throws IOException, DatasetManagementException {
