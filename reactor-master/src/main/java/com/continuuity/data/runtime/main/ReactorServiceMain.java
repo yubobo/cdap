@@ -19,6 +19,7 @@ import com.continuuity.data.security.HBaseSecureStoreUpdater;
 import com.continuuity.data.security.HBaseTokenUtils;
 import com.continuuity.data2.util.hbase.HBaseTableUtilFactory;
 import com.continuuity.gateway.auth.AuthModule;
+import com.continuuity.internal.app.runtime.twill.WrapperTwillApplication;
 import com.continuuity.internal.app.services.AppFabricServer;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.google.common.base.Charsets;
@@ -86,7 +87,7 @@ public class ReactorServiceMain extends DaemonMain {
 
   private String serviceName;
   private TwillApplication twillApplication;
-  private TwillApplication dummyTwillApp;
+  private TwillApplication wrapperTwillApp;
   private long lastRunTimeMs = System.currentTimeMillis();
   private int currentRun = 0;
 
@@ -98,9 +99,15 @@ public class ReactorServiceMain extends DaemonMain {
   @Override
   public void init(String[] args) {
     twillApplication = createTwillApplication();
-    dummyTwillApp = createDummyTwillApplication();
+    wrapperTwillApp = createWrapperTwillApplication();
     if (twillApplication == null) {
       throw new IllegalArgumentException("TwillApplication cannot be null");
+    }
+
+    if (wrapperTwillApp == null) {
+      throw new IllegalArgumentException("WrapperTwillApplication cannot be null");
+    }  else {
+      LOG.info("Wrapper Twill Application is not null");
     }
 
     serviceName = twillApplication.configure().getName();
@@ -162,6 +169,7 @@ public class ReactorServiceMain extends DaemonMain {
     stopFlag = true;
     if (isLeader.get() && twillController != null) {
       twillController.stopAndWait();
+      dtwillController.stopAndWait();
     }
     leaderElection.cancel();
     zkClientService.stopAndWait();
@@ -179,9 +187,9 @@ public class ReactorServiceMain extends DaemonMain {
     }
   }
 
-  private TwillApplication createDummyTwillApplication() {
+  private TwillApplication createWrapperTwillApplication() {
     try {
-      return new DummyTwillApplication();
+      return new WrapperTwillApplication(new DummyTwillApplication());
     } catch (Exception e) {
       throw  Throwables.propagate(e);
     }
@@ -237,18 +245,18 @@ public class ReactorServiceMain extends DaemonMain {
         }
       }, MoreExecutors.sameThreadExecutor());
 
-      dtwillController = getDummyPreparer().start();
+      dtwillController = getWrapperPreparer().start();
 
       dtwillController.addListener(new ServiceListenerAdapter() {
         @Override
         public void failed(Service.State from, Throwable failure) {
-          LOG.error("{} failed with exception... restarting with back-off.", serviceName, failure);
+          LOG.error("{} failed with exception... restarting with back-off.", "wrapper-app", failure);
           backOffRun();
         }
 
         @Override
         public void terminated(Service.State from) {
-          LOG.warn("{} got terminated... restarting with back-off", serviceName);
+          LOG.warn("{} got terminated... restarting with back-off", "wrapper-app");
           backOffRun();
         }
       }, MoreExecutors.sameThreadExecutor());
@@ -298,10 +306,9 @@ public class ReactorServiceMain extends DaemonMain {
   }
 
 
-  private TwillPreparer getDummyPreparer() {
-    return prepare(twillRunnerService.prepare(dummyTwillApp)
-                     .addLogHandler(new PrinterLogHandler(new PrintWriter(System.out)))
-    );
+  private TwillPreparer getWrapperPreparer() {
+    return twillRunnerService.prepare(wrapperTwillApp)
+                     .addLogHandler(new PrinterLogHandler(new PrintWriter(System.out)));
   }
 
   private void backOffRun() {
