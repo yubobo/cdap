@@ -9,6 +9,7 @@ import com.continuuity.data.runtime.DataFabricInMemoryModule;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.hive.HiveServerTest;
 import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.HiveCommandExecutor;
 import com.continuuity.hive.client.guice.HiveClientModule;
 import com.continuuity.hive.guice.HiveRuntimeModule;
 import com.continuuity.hive.server.HiveServer;
