@@ -50,6 +50,7 @@ final class AggregatedMetricsEmitter implements MetricsEmitter {
   }
 
   void gauge(int value, String... tags) {
+    LOG.info("AggregatedMetricsEmitter value received is: {}", value);
     this.value.addAndGet(value);
     for (String tag : tags) {
       tagValues.getUnchecked(tag).addAndGet(value);
@@ -60,6 +61,7 @@ final class AggregatedMetricsEmitter implements MetricsEmitter {
   public MetricsRecord emit(long timestamp) {
     ImmutableList.Builder<TagMetric> builder = ImmutableList.builder();
     int value = this.value.getAndSet(0);
+    LOG.info("AggregatedMetricsEmitter value Emitted is: {}", value);
     for (Map.Entry<String, AtomicInteger> entry : tagValues.asMap().entrySet()) {
       builder.add(new TagMetric(entry.getKey(), entry.getValue().getAndSet(0)));
     }

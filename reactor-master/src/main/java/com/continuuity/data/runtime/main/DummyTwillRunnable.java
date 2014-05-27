@@ -7,6 +7,8 @@ import org.apache.twill.api.TwillRunnableSpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  *
  */
@@ -43,6 +45,12 @@ public class DummyTwillRunnable extends AbstractTwillRunnable {
   @Override
   public void run() {
     LOG.info("Dummy Runnable Started");
-    metrics.count("dummy.twill.metrics", 10);
+    metrics.count("twill.metrics", 100);
+    try {
+      TimeUnit.SECONDS.sleep(5);
+    } catch (InterruptedException e) {
+      LOG.error("Twill Runnable interrupted from sleep");
+    }
+    LOG.info("Dummy Runnable Run ends");
   }
 }

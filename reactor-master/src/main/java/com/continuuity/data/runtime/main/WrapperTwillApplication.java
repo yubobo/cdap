@@ -181,10 +181,7 @@ public class WrapperTwillApplication implements TwillApplication {
     @Override
     public TwillRunnableSpecification configure() {
       LOG.info("Configuring WrapperTwillRunnable");
-      return TwillRunnableSpecification.Builder.with()
-        .setName("wrapper")
-        .noConfigs()
-        .build();
+      return TwillRunnableSpecification.Builder.with().setName("wrapper").noConfigs().build();
     }
 
     @Override
@@ -223,7 +220,9 @@ public class WrapperTwillApplication implements TwillApplication {
           public void count(String counterName, int delta) {
             LOG.info("collectionService status:" + collectionService.isRunning());
             collectionService.getCollector(MetricsScope.USER,
-                                           String.format("twillmetrics"), "0").gauge(counterName, delta);
+                                           String.format("HelloWorld.f.WhoFlow.saver"), "0").
+                                                          gauge(counterName, delta);
+
           }
         }));
         delegate.configure();
@@ -244,28 +243,17 @@ public class WrapperTwillApplication implements TwillApplication {
       } catch (MalformedURLException e) {
         LOG.error(e.getMessage(), e);
         Throwables.propagate(e);
-      } /*catch (InterruptedException e) {
-        LOG.error("Waiting on completion interrupted", e);
-        Thread.currentThread().interrupt();
-      } catch (ExecutionException e) {
-        // Propagate the execution exception will causes TwillRunnable terminate with error,
-        // and AM would detect and restarts it.
-        LOG.error("Completed with exception. Exception get propagated", e);
-        throw Throwables.propagate(e);
-      }*/
+      }
     }
 
     private Injector createGuiceInjector(CConfiguration cConf, Configuration hConf) {
-      return Guice.createInjector(
-        new ConfigModule(cConf, hConf),
-        new IOModule(),
-        new ZKClientModule(),
-        new KafkaClientModule(),
-        new LocationRuntimeModule().getDistributedModules(),
-        new DiscoveryRuntimeModule().getDistributedModules(),
-        new AuthModule(),
-        new MetricsClientRuntimeModule().getDistributedModules()
-        );
+      return Guice.createInjector(new ConfigModule(cConf, hConf), new IOModule(),
+                                  new ZKClientModule(),
+                                  new KafkaClientModule(),
+                                  new LocationRuntimeModule().getDistributedModules(),
+                                  new DiscoveryRuntimeModule().getDistributedModules(),
+                                  new AuthModule(),
+                                  new MetricsClientRuntimeModule().getDistributedModules());
     }
 
     @Override
@@ -290,7 +278,4 @@ public class WrapperTwillApplication implements TwillApplication {
       delegate.run();
     }
   }
-
 }
-
-

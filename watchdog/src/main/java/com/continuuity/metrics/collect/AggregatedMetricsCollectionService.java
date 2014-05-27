@@ -149,6 +149,7 @@ public abstract class AggregatedMetricsCollectionService extends AbstractSchedul
 
           @Override
           public void gauge(String metricName, int value, String... tags) {
+            LOG.info("In AggregatedMetricsCollectionService, metric name : {} count : {}", metricName, value);
             emitters.getUnchecked(keys.getUnchecked(metricName)).gauge(value, tags);
           }
         };
