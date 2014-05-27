@@ -39,7 +39,7 @@ public class LocalHiveServerTest extends HiveServerTest {
         new ConfigModule(conf, hConf),
         new HiveRuntimeModule().getInMemoryModules(),
         new DiscoveryRuntimeModule().getInMemoryModules(),
-        new HiveClientModule());
+        new HiveClientModule().getInMemoryModules());
     hiveServer = injector.getInstance(HiveServer.class);
     hiveMetastore = injector.getInstance(InMemoryHiveMetastore.class);
     hiveClient = injector.getInstance(HiveClient.class);

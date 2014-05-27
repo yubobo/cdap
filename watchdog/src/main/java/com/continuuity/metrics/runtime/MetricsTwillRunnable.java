@@ -11,12 +11,15 @@ import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.common.twill.AbstractReactorTwillRunnable;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.gateway.auth.AuthModule;
+import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.NoOpHiveClient;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.continuuity.metrics.guice.MetricsHandlerModule;
 import com.continuuity.metrics.query.MetricsQueryService;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Service;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
@@ -83,7 +86,13 @@ public class MetricsTwillRunnable extends AbstractReactorTwillRunnable {
       new LoggingModules().getDistributedModules(),
       new AuthModule(),
       new MetricsHandlerModule(),
-      new MetricsClientRuntimeModule().getDistributedModules()
+      new MetricsClientRuntimeModule().getDistributedModules(),
+      new AbstractModule() {
+        @Override
+        protected void configure() {
+          bind(HiveClient.class).to(NoOpHiveClient.class);
+        }
+      }
     );
   }
 }

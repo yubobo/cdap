@@ -8,6 +8,10 @@ import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data2.dataset2.manager.DatasetManager;
 import com.continuuity.data2.transaction.TransactionSystemClient;
+import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.NoOpHiveClient;
+
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
@@ -53,7 +57,13 @@ public class ContextManager {
       new ZKClientModule(),
       new LocationRuntimeModule().getDistributedModules(),
       new DiscoveryRuntimeModule().getDistributedModules(),
-      new DataFabricModules(cConf, hConf).getDistributedModules()
+      new DataFabricModules(cConf, hConf).getDistributedModules(),
+      new AbstractModule() {
+        @Override
+        protected void configure() {
+          bind(HiveClient.class).to(NoOpHiveClient.class);
+        }
+      }
     );
 
     ZKClientService zkClientService = injector.getInstance(ZKClientService.class);

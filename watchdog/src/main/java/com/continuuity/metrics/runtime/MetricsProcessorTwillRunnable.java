@@ -10,6 +10,8 @@ import com.continuuity.common.guice.LocationRuntimeModule;
 import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.common.twill.AbstractReactorTwillRunnable;
 import com.continuuity.data.runtime.DataFabricModules;
+import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.NoOpHiveClient;
 import com.continuuity.internal.migrate.MetricsTableMigrator20to21;
 import com.continuuity.internal.migrate.TableMigrator;
 import com.continuuity.metrics.MetricsConstants;
@@ -22,6 +24,7 @@ import com.continuuity.metrics.process.MessageCallbackFactory;
 import com.continuuity.metrics.process.MetricsMessageCallbackFactory;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Service;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.PrivateModule;
@@ -88,7 +91,13 @@ public final class MetricsProcessorTwillRunnable extends AbstractReactorTwillRun
       new DiscoveryRuntimeModule().getDistributedModules(),
       new LocationRuntimeModule().getDistributedModules(),
       new DataFabricModules(cConf, hConf).getDistributedModules(),
-      new KafkaMetricsProcessorModule()
+      new KafkaMetricsProcessorModule(),
+      new AbstractModule() {
+        @Override
+        protected void configure() {
+          bind(HiveClient.class).to(NoOpHiveClient.class);
+        }
+      }
      );
   }
 

@@ -12,9 +12,35 @@ dependencies {
 
     compile (libraries.hive_beeline) {
         exclude group: 'org.apache.hive', module: 'hive-exec'
+        exclude group: 'com.continuuity', module: 'hive-exec'
     }
     compile (libraries.hive_jdbc) {
         exclude group: 'org.apache.hive', module: 'hive-exec'
+        exclude group: 'com.continuuity', module: 'hive-exec'
+    }
+    compile (libraries.hive_service) {
+        exclude group: 'org.apache.hive', module: 'hive-exec'
+        exclude group: 'com.continuuity', module: 'hive-exec'
+    }
+    compile (libraries.hive_serde) {
+        exclude group: 'org.apache.hive', module: 'hive-exec'
+        exclude group: 'com.continuuity', module: 'hive-exec'
+    }
+    compile (libraries.hive_jdbc) {
+        exclude group: 'org.apache.hive', module: 'hive-exec'
+        exclude group: 'com.continuuity', module: 'hive-exec'
+    }
+    compile (libraries.hive_shims) {
+        exclude group: 'org.apache.hive', module: 'hive-exec'
+        exclude group: 'com.continuuity', module: 'hive-exec'
+    }
+    compile (libraries.hive_common) {
+        exclude group: 'org.apache.hive', module: 'hive-exec'
+        exclude group: 'com.continuuity', module: 'hive-exec'
+    }
+    compile (libraries.hive_metastore) {
+        exclude group: 'org.apache.hive', module: 'hive-exec'
+        exclude group: 'com.continuuity', module: 'hive-exec'
     }
     compile libraries.thrift
 

@@ -76,10 +76,11 @@ public final class DatasetsUtil {
         "Can't create Hive table for dataset '%s' because its row type is not supported", name), e);
       return null;
     }
-    String hiveStatement = String.format("CREATE EXTERNAL TABLE %s %s COMMENT 'Continuuity Reactor Dataset' " +
-                                         "STORED BY 'com.continuuity.hive.datasets.DatasetStorageHandler' WITH " +
+    String hiveStatement = String.format("CREATE EXTERNAL TABLE %s %s COMMENT \"Continuuity Reactor Dataset\" " +
+                                         "STORED BY \"com.continuuity.hive.datasets.DatasetStorageHandler\" WITH " +
                                          "SERDEPROPERTIES(\"reactor.dataset.name\" = \"%s\")", name, hiveSchema, name);
     LOG.info("Command for Hive: {}", hiveStatement);
+//    return "show tables";
     return hiveStatement;
   }
 

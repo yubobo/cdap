@@ -19,15 +19,19 @@ import com.continuuity.data.security.HBaseSecureStoreUpdater;
 import com.continuuity.data.security.HBaseTokenUtils;
 import com.continuuity.data2.util.hbase.HBaseTableUtilFactory;
 import com.continuuity.gateway.auth.AuthModule;
+import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.NoOpHiveClient;
 import com.continuuity.hive.guice.HiveRuntimeModule;
 import com.continuuity.hive.server.HiveServer;
 import com.continuuity.internal.app.services.AppFabricServer;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
@@ -120,7 +124,13 @@ public class ReactorServiceMain extends DaemonMain {
       new ProgramRunnerRuntimeModule().getDistributedModules(),
       new DataFabricModules(cConf, hConf).getDistributedModules(),
       new MetricsClientRuntimeModule().getDistributedModules(),
-      new HiveRuntimeModule().getDistributedModules()
+      new HiveRuntimeModule().getDistributedModules(),
+      new AbstractModule() {
+        @Override
+        protected void configure() {
+          bind(HiveClient.class).to(NoOpHiveClient.class);
+        }
+      }
     );
     // Initialize ZK client
     zkClientService = baseInjector.getInstance(ZKClientService.class);

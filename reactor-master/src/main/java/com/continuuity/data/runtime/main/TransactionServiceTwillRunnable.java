@@ -16,6 +16,8 @@ import com.continuuity.data.runtime.InMemoryTransactionManagerProvider;
 import com.continuuity.data2.transaction.distributed.TransactionService;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.data2.transaction.persist.HDFSTransactionStateStorage;
+import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.NoOpHiveClient;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.google.common.base.Throwables;
@@ -105,6 +107,8 @@ public class TransactionServiceTwillRunnable extends AbstractReactorTwillRunnabl
         // Bind to provider that create new instances of storage and tx manager every time.
         bind(HDFSTransactionStateStorage.class).toProvider(HDFSTransactionStateStorageProvider.class);
         bind(InMemoryTransactionManager.class).toProvider(InMemoryTransactionManagerProvider.class);
+        // just in case...
+        bind(HiveClient.class).to(NoOpHiveClient.class);
       }
     });
   }

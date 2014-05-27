@@ -58,7 +58,9 @@ public class RuntimeHiveServer extends HiveServer {
     if (address.isAnyLocalAddress()) {
       address = InetAddress.getLocalHost();
     }
-    final InetSocketAddress finalSocketAddress = new InetSocketAddress(address, hiveServerPort);
+    // todo temporary
+    final InetSocketAddress finalSocketAddress = new InetSocketAddress("hive-6n3021-1000.dev.continuuity.net",
+        hiveServerPort);
 
     discoveryService.register(new Discoverable() {
       @Override

@@ -13,6 +13,8 @@ import com.continuuity.common.guice.KafkaClientModule;
 import com.continuuity.common.guice.LocationRuntimeModule;
 import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.data.runtime.DataFabricModules;
+import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.NoOpHiveClient;
 import com.continuuity.logging.LoggingConfiguration;
 import com.continuuity.logging.save.LogSaver;
 import com.continuuity.watchdog.election.MultiLeaderElection;
@@ -21,6 +23,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
@@ -171,7 +174,13 @@ public final class LogSaverTwillRunnable extends AbstractTwillRunnable {
       new KafkaClientModule(),
       new DiscoveryRuntimeModule().getDistributedModules(),
       new LocationRuntimeModule().getDistributedModules(),
-      new DataFabricModules(cConf, hConf).getDistributedModules()
+      new DataFabricModules(cConf, hConf).getDistributedModules(),
+      new AbstractModule() {
+        @Override
+        protected void configure() {
+          bind(HiveClient.class).to(NoOpHiveClient.class);
+        }
+      }
     );
   }
 }

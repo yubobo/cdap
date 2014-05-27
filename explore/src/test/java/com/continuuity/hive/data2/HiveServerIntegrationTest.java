@@ -143,7 +143,7 @@ public class HiveServerIntegrationTest {
       new LocationRuntimeModule().getInMemoryModules(),
       new DataFabricModules().getInMemoryModules(),
       new HiveRuntimeModule().getInMemoryModules(),
-      new HiveClientModule()
+      new HiveClientModule().getInMemoryModules()
     );
   }
 

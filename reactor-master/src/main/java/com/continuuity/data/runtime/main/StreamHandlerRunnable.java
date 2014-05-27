@@ -17,10 +17,13 @@ import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data.stream.service.StreamHttpModule;
 import com.continuuity.data.stream.service.StreamHttpService;
 import com.continuuity.gateway.auth.AuthModule;
+import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.NoOpHiveClient;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Service;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
@@ -64,7 +67,13 @@ public class StreamHandlerRunnable extends AbstractReactorTwillRunnable {
                                       new DataFabricModules(cConf, hConf).getDistributedModules(),
                                       new LoggingModules().getDistributedModules(),
                                       new AuthModule(),
-                                      new StreamHttpModule());
+                                      new StreamHttpModule(),
+                                      new AbstractModule() {
+                                        @Override
+                                        protected void configure() {
+                                          bind(HiveClient.class).to(NoOpHiveClient.class);
+                                        }
+                                      });
 
     } catch (Exception e) {
       throw Throwables.propagate(e);

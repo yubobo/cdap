@@ -21,6 +21,8 @@ import com.continuuity.common.guice.LocationRuntimeModule;
 import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.data.runtime.DataFabricModules;
+import com.continuuity.hive.client.HiveClient;
+import com.continuuity.hive.client.NoOpHiveClient;
 import com.continuuity.internal.app.queue.QueueReaderFactory;
 import com.continuuity.internal.app.runtime.AbstractListener;
 import com.continuuity.internal.app.runtime.BasicArguments;
@@ -29,6 +31,7 @@ import com.continuuity.internal.app.runtime.SimpleProgramOptions;
 import com.continuuity.logging.appender.LogAppenderInitializer;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+
 import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -318,6 +321,10 @@ public abstract class AbstractProgramTwillRunnable<T extends ProgramRunner> impl
               return context.announce(serviceName, port);
             }
           });
+
+          // Starting a flow is done here, so the dataset will be created in this container
+          // so we need to have this HiveClient here, not the noOp one
+          bind(HiveClient.class).to(NoOpHiveClient.class);
         }
       }
     );

@@ -2,9 +2,11 @@ package com.continuuity.hive.client;
 
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.discovery.RandomEndpointStrategy;
+import com.continuuity.common.discovery.TimeLimitEndpointStrategy;
 
 import com.google.inject.Inject;
 import org.apache.hive.beeline.BeeLine;
+import org.apache.hive.jdbc.HiveDriver;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.slf4j.Logger;
@@ -13,24 +15,36 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Executes commands on Hive using beeline on a discovered HiveServer2.
+ *
  */
-public class HiveCommandExecutor implements HiveClient {
-  private static final Logger LOG = LoggerFactory.getLogger(HiveCommandExecutor.class);
+public class DistributedHiveCommandExecutor implements HiveClient {
+  private static final Logger LOG = LoggerFactory.getLogger(DistributedHiveCommandExecutor.class);
 
   public final DiscoveryServiceClient discoveryClient;
 
   @Inject
-  public HiveCommandExecutor(DiscoveryServiceClient discoveryClient) {
+  public DistributedHiveCommandExecutor(DiscoveryServiceClient discoveryClient) {
     this.discoveryClient = discoveryClient;
   }
 
   @Override
   public void sendCommand(String cmd) throws IOException {
 
-    Discoverable hiveDiscoverable = new RandomEndpointStrategy(discoveryClient.discover(Constants.Service.HIVE)).pick();
+    LOG.info("Trying to send command: {}", cmd);
+    try {
+      Class.forName("org.apache.hive.jdbc.HiveDriver");
+      new HiveDriver();
+    } catch (Exception e) {
+      LOG.error("Could not load hive driver", e);
+    }
+
+//    Discoverable hiveDiscoverable = new RandomEndpointStrategy(discoveryClient.discover(Constants.Service.HIVE)).pick();
+    Discoverable hiveDiscoverable = new TimeLimitEndpointStrategy(
+        new RandomEndpointStrategy(discoveryClient.discover(Constants.Service.HIVE)),
+        1L, TimeUnit.SECONDS).pick();
     if (hiveDiscoverable == null) {
       LOG.error("No endpoint for service {}", Constants.Service.HIVE);
       throw new IOException("No endpoint for service " + Constants.Service.HIVE);
@@ -41,7 +55,7 @@ public class HiveCommandExecutor implements HiveClient {
         "-u", "'" + BeeLine.BEELINE_DEFAULT_JDBC_URL +
         hiveDiscoverable.getSocketAddress().getHostName() +
         ":" + hiveDiscoverable.getSocketAddress().getPort() +
-        "/default;auth=noSasl?" +
+        "/default?" +
         "hive.exec.pre.hooks=com.continuuity.hive.hooks.TransactionPreHook;" +
         "hive.exec.post.hooks=com.continuuity.hive.hooks.TransactionPostHook'",
         "-n", "hive",

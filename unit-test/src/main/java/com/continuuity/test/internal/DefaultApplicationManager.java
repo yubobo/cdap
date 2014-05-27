@@ -80,7 +80,7 @@ public class DefaultApplicationManager implements ApplicationManager {
     try {
       // Since we expose the DataSet class, it has to be loaded using ClassLoader delegation.
       // The drawback is we'll not be able to instrument DataSet classes using ASM.
-      this.dataSetInstantiator = new DataSetInstantiator(dataFabric, datasetManager,
+      this.dataSetInstantiator = new DataSetInstantiator(dataFabric, datasetManager, null,
                                                          new DataSetClassLoader(new JarClassLoader(deployedJar)));
     } catch (IOException e) {
       throw Throwables.propagate(e);

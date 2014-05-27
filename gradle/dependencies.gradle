@@ -169,5 +169,8 @@ libraries.hive_hcatalog = "org.apache.hive.hcatalog:hcatalog:$versions.hiveVersi
 libraries.hive_hcatalog_core = "org.apache.hive.hcatalog:hcatalog-core:$versions.hiveVersion"
 libraries.hive_serde = "org.apache.hive:hive-serde:$versions.hiveVersion"
 libraries.hive_jdbc = "org.apache.hive:hive-jdbc:$versions.hiveVersion"
+libraries.hive_common = "org.apache.hive:hive-common:$versions.hiveVersion"
+libraries.hive_service = "org.apache.hive:hive-service:$versions.hiveVersion"
+libraries.hive_shims = "org.apache.hive:hive-shims:$versions.hiveVersion"
 
 //--------------------------------------------------------------------------
