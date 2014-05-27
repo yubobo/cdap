@@ -1,16 +1,34 @@
-package com.continuuity.internal.app.runtime.twill;
+package com.continuuity.data.runtime.main;
 
 
 import com.continuuity.api.metrics.Metrics;
+import com.continuuity.common.conf.CConfiguration;
+import com.continuuity.common.guice.ConfigModule;
+import com.continuuity.common.guice.DiscoveryRuntimeModule;
+import com.continuuity.common.guice.IOModule;
+import com.continuuity.common.guice.KafkaClientModule;
+import com.continuuity.common.guice.LocationRuntimeModule;
+import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.common.metrics.MetricsScope;
+import com.continuuity.data.runtime.DataFabricModules;
+import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.internal.app.runtime.MetricsFieldSetter;
-import com.continuuity.internal.lang.ClassLoaders;
 import com.continuuity.internal.lang.Reflections;
+import com.continuuity.logging.guice.LoggingModules;
+import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.metrics.guice.MetricsHandlerModule;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.twill.api.Command;
 import org.apache.twill.api.EventHandlerSpecification;
 import org.apache.twill.api.LocalFile;
@@ -21,13 +39,19 @@ import org.apache.twill.api.TwillContext;
 import org.apache.twill.api.TwillRunnable;
 import org.apache.twill.api.TwillRunnableSpecification;
 import org.apache.twill.api.TwillSpecification;
+import org.apache.twill.common.Services;
+import org.apache.twill.internal.DefaultLocalFile;
+import org.apache.twill.kafka.client.KafkaClientService;
+import org.apache.twill.zookeeper.ZKClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.Reflection;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
 
@@ -39,13 +63,17 @@ public class WrapperTwillApplication implements TwillApplication {
   private static final Logger LOG = LoggerFactory.getLogger(WrapperTwillApplication.class);
   TwillApplication delegate;
   Map<String, RuntimeSpecification> runSpec;
+  private final File cConfFile;
+  private final File hConfFile;
 
   /**
    *
    * @param delegate
    */
-  public WrapperTwillApplication(TwillApplication delegate) {
+  public WrapperTwillApplication(TwillApplication delegate, File cConfFile, File hConfFile) {
     this.delegate = delegate;
+    this.cConfFile = cConfFile;
+    this.hConfFile = hConfFile;
   }
 
   /**
@@ -95,6 +123,8 @@ public class WrapperTwillApplication implements TwillApplication {
                 public Map<String, String> getConfigs() {
                   Map<String, String> newMap = Maps.newHashMap();
                   newMap.put("reactor.class.name", runnable.getValue().getRunnableSpecification().getClassName());
+                  newMap.put("hConf", "hConf.xml");
+                  newMap.put("cConf", "cConf.xml");
                   return newMap;
                 }
               };
@@ -108,6 +138,9 @@ public class WrapperTwillApplication implements TwillApplication {
             @Override
             public Collection<LocalFile> getLocalFiles() {
               Collection<LocalFile> files = Lists.newArrayList();
+              files.add(new DefaultLocalFile("hConf.xml", hConfFile.toURI(), -1, -1, false, null));
+              files.add(new DefaultLocalFile("cConf.xml", cConfFile.toURI(), -1, -1, false, null));
+
               for (LocalFile file : runnable.getValue().getLocalFiles()) {
                 files.add(file);
               }
@@ -140,11 +173,10 @@ public class WrapperTwillApplication implements TwillApplication {
   class WrapperTwillRunnable implements TwillRunnable {
     TwillRunnable delegate;
     MetricsCollectionService collectionService;
+    private ZKClientService zkClientService;
+    private KafkaClientService kafkaClientService;
+    private SettableFuture<?> completion;
 
-    @Inject
-    WrapperTwillRunnable(MetricsCollectionService metricsCollectionService) {
-      this.collectionService = metricsCollectionService;
-    }
 
     @Override
     public TwillRunnableSpecification configure() {
@@ -159,32 +191,81 @@ public class WrapperTwillApplication implements TwillApplication {
     public void initialize(TwillContext context) {
       LOG.info("Initializing in WrapperTwillRunnable");
       TwillRunnableSpecification spec = context.getSpecification();
+      Map<String, String> configs = spec.getConfigs();
       //runtime specification of user twill runnable
-      final String className = spec.getConfigs().get("reactor.class.name");
+      final String className = configs.get("reactor.class.name");
+
+
       LOG.info("User Twill Runnable className is : {}", className);
       try {
+
+        Configuration hConf = new Configuration();
+        hConf.clear();
+        hConf.addResource(new File(configs.get("hConf")).toURI().toURL());
+
+        UserGroupInformation.setConfiguration(hConf);
+
+        CConfiguration cConf = CConfiguration.create();
+        cConf.clear();
+        cConf.addResource(new File(configs.get("cConf")).toURI().toURL());
+        Injector injector = createGuiceInjector(cConf, hConf);
+        collectionService = injector.getInstance(MetricsCollectionService.class);
+        zkClientService = injector.getInstance(ZKClientService.class);
+        kafkaClientService = injector.getInstance(KafkaClientService.class);
+        completion = SettableFuture.create();
+        Futures.getUnchecked(Services.chainStart(zkClientService, kafkaClientService, collectionService));
+        LOG.info("Starting Wrapper Services");
         Class obj = Class.forName(className);
         delegate = (TwillRunnable) obj.newInstance();
         Reflections.visit(delegate, TypeToken.of(delegate.getClass()), new MetricsFieldSetter(new Metrics() {
 
           @Override
           public void count(String counterName, int delta) {
+            LOG.info("collectionService status:" + collectionService.isRunning());
             collectionService.getCollector(MetricsScope.USER,
-                                           String.format("%s.t", className), "0").gauge(counterName, delta);
+                                           String.format("twillmetrics"), "0").gauge(counterName, delta);
           }
         }));
         delegate.configure();
 
-        //try to inject metrics here
-        //can we pass the same context?
         delegate.initialize(context);
+        //completion.get();
+        LOG.info("Wrapper Services Stopped");
+
       } catch (ClassNotFoundException e) {
         LOG.error(e.getMessage(), e);
+        Throwables.propagate(e);
       } catch (InstantiationException e) {
         LOG.error(e.getMessage(), e);
+        Throwables.propagate(e);
       } catch (IllegalAccessException e) {
         LOG.error(e.getMessage(), e);
-      }
+        Throwables.propagate(e);
+      } catch (MalformedURLException e) {
+        LOG.error(e.getMessage(), e);
+        Throwables.propagate(e);
+      } /*catch (InterruptedException e) {
+        LOG.error("Waiting on completion interrupted", e);
+        Thread.currentThread().interrupt();
+      } catch (ExecutionException e) {
+        // Propagate the execution exception will causes TwillRunnable terminate with error,
+        // and AM would detect and restarts it.
+        LOG.error("Completed with exception. Exception get propagated", e);
+        throw Throwables.propagate(e);
+      }*/
+    }
+
+    private Injector createGuiceInjector(CConfiguration cConf, Configuration hConf) {
+      return Guice.createInjector(
+        new ConfigModule(cConf, hConf),
+        new IOModule(),
+        new ZKClientModule(),
+        new KafkaClientModule(),
+        new LocationRuntimeModule().getDistributedModules(),
+        new DiscoveryRuntimeModule().getDistributedModules(),
+        new AuthModule(),
+        new MetricsClientRuntimeModule().getDistributedModules()
+        );
     }
 
     @Override
@@ -195,6 +276,7 @@ public class WrapperTwillApplication implements TwillApplication {
     @Override
     public void stop() {
       delegate.stop();
+      Futures.getUnchecked(Services.chainStop(collectionService, kafkaClientService, zkClientService));
     }
 
     @Override

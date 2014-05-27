@@ -19,7 +19,6 @@ import com.continuuity.data.security.HBaseSecureStoreUpdater;
 import com.continuuity.data.security.HBaseTokenUtils;
 import com.continuuity.data2.util.hbase.HBaseTableUtilFactory;
 import com.continuuity.gateway.auth.AuthModule;
-import com.continuuity.internal.app.runtime.twill.WrapperTwillApplication;
 import com.continuuity.internal.app.services.AppFabricServer;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.google.common.base.Charsets;
@@ -189,7 +188,7 @@ public class ReactorServiceMain extends DaemonMain {
 
   private TwillApplication createWrapperTwillApplication() {
     try {
-      return new WrapperTwillApplication(new DummyTwillApplication());
+      return new WrapperTwillApplication(new DummyTwillApplication(), getSavedCConf(), getSavedHConf());
     } catch (Exception e) {
       throw  Throwables.propagate(e);
     }

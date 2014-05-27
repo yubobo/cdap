@@ -1,6 +1,5 @@
 package com.continuuity.data.runtime.main;
 
-import com.continuuity.internal.app.runtime.twill.DummyTwillRunnable;
 import org.apache.twill.api.ResourceSpecification;
 import org.apache.twill.api.TwillApplication;
 import org.apache.twill.api.TwillSpecification;
