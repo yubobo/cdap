@@ -22,7 +22,7 @@ import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.hive.client.HiveClient;
-import com.continuuity.hive.client.NoOpHiveClient;
+import com.continuuity.hive.client.guice.RuntimeDistributedHiveClientProvider;
 import com.continuuity.internal.app.queue.QueueReaderFactory;
 import com.continuuity.internal.app.runtime.AbstractListener;
 import com.continuuity.internal.app.runtime.BasicArguments;
@@ -290,6 +290,14 @@ public abstract class AbstractProgramTwillRunnable<T extends ProgramRunner> impl
 
   // TODO(terence) make this works for different mode
   protected Module createModule(final TwillContext context) {
+    final Class hiveClientClass;
+    try {
+      hiveClientClass = context.getClass().getClassLoader()
+          .loadClass("com.continuuity.hive.client.DistributedHiveCommandExecutor");
+    } catch (Exception e) {
+      throw Throwables.propagate(e);
+    }
+
     return Modules.combine(
       new ConfigModule(cConf, hConf),
       new IOModule(),
@@ -324,7 +332,7 @@ public abstract class AbstractProgramTwillRunnable<T extends ProgramRunner> impl
 
           // Starting a flow is done here, so the dataset will be created in this container
           // so we need to have this HiveClient here, not the noOp one
-          bind(HiveClient.class).to(NoOpHiveClient.class);
+          bind(HiveClient.class).to(hiveClientClass);
         }
       }
     );
