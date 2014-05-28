@@ -17,20 +17,24 @@ import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.twill.zookeeper.ZKClientService;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Stores/creates context for Hive queries to run in MapReduce jobs.
  */
 public class ContextManager {
+  private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
   private static TransactionSystemClient txClient;
   private static DatasetManager datasetManager;
 
   public static void initialize(TransactionSystemClient txClient, DatasetManager datasetManager) {
     ContextManager.txClient = txClient;
     ContextManager.datasetManager = datasetManager;
+    INITIALIZED.set(true);
   }
 
   public static TransactionSystemClient getTxClient(Configuration conf) {
-    if (txClient == null) {
+    if (!INITIALIZED.get()) {
       selfInit(conf);
     }
 
@@ -38,16 +42,20 @@ public class ContextManager {
   }
 
   public static DatasetManager getDatasetManager(Configuration conf) {
-    if (datasetManager == null) {
+    if (!INITIALIZED.get()) {
       selfInit(conf);
     }
 
     return datasetManager;
   }
 
-  private static void selfInit(Configuration conf) {
+  private static synchronized void selfInit(Configuration conf) {
     // Self init needs to happen only when running in as a MapReduce job.
     // In other cases, ContextManager will be initialized using initialize method.
+
+    if (INITIALIZED.get()) {
+      return;
+    }
 
     CConfiguration cConf = CConfSerDe.deserialize(conf);
     Configuration hConf = HConfSerDe.deserialize(conf);
@@ -72,5 +80,7 @@ public class ContextManager {
 
     datasetManager = injector.getInstance(DatasetManager.class);
     txClient = injector.getInstance(TransactionSystemClient.class);
+
+    INITIALIZED.set(true);
   }
 }

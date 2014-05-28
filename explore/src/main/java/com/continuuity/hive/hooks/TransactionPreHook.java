@@ -34,10 +34,7 @@ public class TransactionPreHook implements ExecuteWithHookContext {
       HiveConf hiveConf = hookContext.getConf();
       TransactionSystemClient txClient = ContextManager.getTxClient(hiveConf);
       Transaction tx = txClient.startLong();
-
       TxnSerDe.serialize(tx, hiveConf);
-      CConfSerDe.serialize(CConfiguration.create(), hiveConf);
-      HConfSerDe.serialize(HBaseConfiguration.create(), hiveConf);
     }
   }
 }
