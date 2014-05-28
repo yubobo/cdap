@@ -1,5 +1,7 @@
 package com.continuuity.api.data.stream;
 
+import com.continuuity.data2.transaction.stream.StreamConfig;
+
 /**
  * Specification for {@link Stream}.
  */
@@ -17,9 +19,16 @@ public final class StreamSpecification {
     return name;
   }
 
- /**
-  * {@code StreamSpecification} builder used to build specification of stream.
-  */
+  /**
+   * @return A {@link StreamSpecification} from a {@link StreamConfig}.
+   */
+  public static StreamSpecification from(StreamConfig config) {
+    return new StreamSpecification(config.getName());
+  }
+
+  /**
+   * {@code StreamSpecification} builder used to build specification of stream.
+   */
   public static final class Builder {
     private String name;
 

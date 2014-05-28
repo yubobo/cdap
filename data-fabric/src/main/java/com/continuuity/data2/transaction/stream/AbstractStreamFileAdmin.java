@@ -12,6 +12,7 @@ import com.continuuity.data.stream.StreamUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
@@ -27,6 +28,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -70,7 +72,9 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
 
     LOG.info("Configure instances: {} {}", groupId, instances);
 
-    StreamConfig config = StreamUtils.ensureExists(this, name.getSimpleName());
+    // TODO: implement accountId
+    String accountId = null;
+    StreamConfig config = StreamUtils.ensureExists(this, accountId, name.getSimpleName());
     StreamConsumerStateStore stateStore = stateStoreFactory.create(config);
     try {
       Set<StreamConsumerState> states = Sets.newHashSet();
@@ -107,7 +111,9 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
 
     LOG.info("Configure groups for {}: {}", name, groupInfo);
 
-    StreamConfig config = StreamUtils.ensureExists(this, name.getSimpleName());
+    // TODO: implement accountId
+    String accountId = null;
+    StreamConfig config = StreamUtils.ensureExists(this, accountId, name.getSimpleName());
     StreamConsumerStateStore stateStore = stateStoreFactory.create(config);
     try {
       Set<StreamConsumerState> states = Sets.newHashSet();
@@ -162,24 +168,27 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
   }
 
   @Override
-  public StreamConfig getConfig(String streamName) throws IOException {
-    Location streamLocation = streamBaseLocation.append(streamName);
+  public StreamConfig getConfig(String accountId, String streamName) throws IOException {
+    // TODO: implement accountId
+    Location streamLocation = streamNameToLocation(streamBaseLocation, streamName);
     Preconditions.checkArgument(streamLocation.isDirectory(), "Stream '{}' not exists.", streamName);
 
-    Location configLocation = streamLocation.append(CONFIG_FILE_NAME);
-    Reader reader = new InputStreamReader(configLocation.getInputStream(), Charsets.UTF_8);
-    try {
-      StreamConfig config = GSON.fromJson(reader, StreamConfig.class);
-      return new StreamConfig(streamName, config.getPartitionDuration(), config.getIndexInterval(), streamLocation);
-    } finally {
-      Closeables.closeQuietly(reader);
+    return getStreamConfig(streamLocation);
+  }
+
+  @Override
+  public Collection<StreamConfig> getAll(String accountId) throws IOException {
+    List<StreamConfig> all = Lists.newArrayList();
+    for (Location streamLocation : streamBaseLocation.list()) {
+      all.add(getStreamConfig(streamLocation));
     }
+    return all;
   }
 
   @Override
   public boolean exists(String name) throws Exception {
     try {
-      return streamBaseLocation.append(name).append(CONFIG_FILE_NAME).exists()
+      return streamNameToLocation(streamBaseLocation, name).append(CONFIG_FILE_NAME).exists()
         || oldStreamAdmin.exists(QueueName.fromStream(name).toURI().toString());
     } catch (IOException e) {
       LOG.error("Exception when check for stream exist.", e);
@@ -194,12 +203,12 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
 
   @Override
   public void create(String name, @Nullable Properties props) throws Exception {
-    Location streamLocation = streamBaseLocation.append(name);
+    Location streamLocation = streamNameToLocation(streamBaseLocation, name);
     if (!streamLocation.mkdirs() && !streamLocation.isDirectory()) {
       throw new IllegalStateException("Failed to create stream '" + name + "' at " + streamLocation.toURI());
     }
 
-    Location configLocation = streamBaseLocation.append(name).append(CONFIG_FILE_NAME);
+    Location configLocation = streamLocation.append(CONFIG_FILE_NAME);
     if (!configLocation.createNew()) {
       // Stream already exists
       return;
@@ -246,6 +255,27 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
     String streamName = QueueName.fromStream(name).toURI().toString();
     if (oldStreamAdmin.exists(streamName)) {
       oldStreamAdmin.upgrade(streamName, properties);
+    }
+  }
+
+  private Location streamNameToLocation(Location streamBaseLocation, String streamName) throws IOException {
+    return streamBaseLocation.append(streamName);
+  }
+
+  private String streamLocationToName(Location streamLocation) {
+    String[] tokens = streamLocation.toURI().getRawPath().split("/");
+    return tokens[tokens.length - 1];
+  }
+
+  private StreamConfig getStreamConfig(Location streamLocation) throws IOException {
+    String streamName = streamLocationToName(streamLocation);
+    Location configLocation = streamLocation.append(CONFIG_FILE_NAME);
+    Reader reader = new InputStreamReader(configLocation.getInputStream(), Charsets.UTF_8);
+    try {
+      StreamConfig config = GSON.fromJson(reader, StreamConfig.class);
+      return new StreamConfig(streamName, config.getPartitionDuration(), config.getIndexInterval(), streamLocation);
+    } finally {
+      Closeables.closeQuietly(reader);
     }
   }
 

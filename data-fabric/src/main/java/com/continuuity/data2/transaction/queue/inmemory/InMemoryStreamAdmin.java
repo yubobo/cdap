@@ -5,6 +5,8 @@ import com.continuuity.data2.transaction.stream.StreamConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import java.util.Collection;
+
 /**
  * admin for queues in memory.
  */
@@ -22,7 +24,12 @@ public class InMemoryStreamAdmin extends InMemoryQueueAdmin implements StreamAdm
   }
 
   @Override
-  public StreamConfig getConfig(String streamName) {
+  public StreamConfig getConfig(String accountId, String streamName) {
     return new StreamConfig(streamName, Long.MAX_VALUE, Long.MAX_VALUE, null);
   }
+
+  public Collection<StreamConfig> getAll(String accountId) {
+    return null;
+  }
+
 }
