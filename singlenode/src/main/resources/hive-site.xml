@@ -34,4 +34,16 @@
         <name>javax.jdo.option.ConnectionURL</name>
         <value>jdbc:derby:;databaseName=${reactor.hive.database.dir};create=true</value>
     </property>
+    <property>
+        <name>hive.server2.transport.mode</name>
+        <value>http</value>
+    </property>
+    <property>
+        <name>hive.exec.pre.hooks</name>
+        <value>com.continuuity.hive.hooks.TransactionPreHook</value>
+    </property>
+    <property>
+        <name>hive.exec.post.hooks</name>
+        <value>com.continuuity.hive.hooks.TransactionPostHook</value>
+    </property>
 </configuration>

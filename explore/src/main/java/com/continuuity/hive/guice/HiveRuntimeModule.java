@@ -52,7 +52,8 @@ public class HiveRuntimeModule extends RuntimeModule {
       final HiveConf hiveConf = new HiveConf();
 
       final int hiveServerPort = PortDetector.findFreePort();
-      hiveConf.setInt("hive.server2.thrift.port", hiveServerPort);
+      // todo careful, this has changed to http
+      hiveConf.setInt("hive.server2.thrift.http.port", hiveServerPort);
 
       final int hiveMetaStorePort = PortDetector.findFreePort();
       hiveConf.set("hive.metastore.uris", "thrift://localhost:" + hiveMetaStorePort);
