@@ -168,7 +168,7 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
   }
 
   @Override
-  public StreamConfig getConfig(String accountId, String streamName) throws IOException {
+  public StreamConfig getConfig(String streamName) throws IOException {
     // TODO: implement accountId
     Location streamLocation = streamNameToLocation(streamBaseLocation, streamName);
     Preconditions.checkArgument(streamLocation.isDirectory(), "Stream '{}' not exists.", streamName);

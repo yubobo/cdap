@@ -55,7 +55,7 @@ public class LevelDBStreamAdmin extends LevelDBQueueAdmin implements StreamAdmin
   }
 
   @Override
-  public StreamConfig getConfig(String accountId, String streamName) throws IOException {
+  public StreamConfig getConfig(String streamName) throws IOException {
     return null;
   }
 }

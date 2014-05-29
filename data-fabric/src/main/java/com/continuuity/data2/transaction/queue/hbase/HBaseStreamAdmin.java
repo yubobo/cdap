@@ -63,12 +63,12 @@ public class HBaseStreamAdmin extends HBaseQueueAdmin implements StreamAdmin {
   }
 
   @Override
-  public StreamConfig getConfig(String accountId, String streamName) throws IOException {
+  public Collection<StreamConfig> getAll(String accountId) throws IOException {
     return null;
   }
 
   @Override
-  public Collection<StreamConfig> getAll(String accountId) {
-    // TODO
+  public StreamConfig getConfig(String streamName) throws IOException {
+    return null;
   }
 }

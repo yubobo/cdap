@@ -233,14 +233,16 @@ public final class StreamUtils {
   }
 
   public static StreamConfig ensureExists(StreamAdmin admin, String accountId, String streamName) throws IOException {
+    // TODO: implement accountId
+
     try {
-      return admin.getConfig(accountId, streamName);
+      return admin.getConfig(streamName);
     } catch (Exception e) {
       // Ignored
     }
     try {
       admin.create(streamName);
-      return admin.getConfig(accountId, streamName);
+      return admin.getConfig(streamName);
     } catch (Exception e) {
       Throwables.propagateIfInstanceOf(e, IOException.class);
       throw new IOException(e);

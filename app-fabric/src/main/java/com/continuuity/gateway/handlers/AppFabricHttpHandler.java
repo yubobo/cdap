@@ -2906,7 +2906,8 @@ public class AppFabricHttpHandler extends AuthenticatedHttpHandler {
         }
         return GSON.toJson(makeDataSetRecord(name, typeName, spec));
       } else if (type == Data.STREAM) {
-        StreamSpecification spec = StreamSpecification.from(streamAdmin.getConfig(account.getId(), name));
+        // TODO: implement accountId
+        StreamSpecification spec = StreamSpecification.from(streamAdmin.getConfig(name));
         return spec == null ? "" : GSON.toJson(makeStreamRecord(spec.getName(), spec));
       }
       return "";
