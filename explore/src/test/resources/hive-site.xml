@@ -31,6 +31,10 @@
         <value>${reactor.hive.metastore.warehouse.dir}</value>
     </property>
     <property>
+        <name>hive.server2.transport.mode</name>
+        <value>http</value>
+    </property>
+    <property>
         <name>javax.jdo.option.ConnectionURL</name>
         <value>jdbc:derby:;databaseName=${reactor.hive.database.dir};create=true</value>
     </property>
