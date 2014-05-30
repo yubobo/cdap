@@ -2,7 +2,6 @@ package com.continuuity.hive.inmemory;
 
 import com.continuuity.common.conf.Constants;
 import com.continuuity.hive.server.RuntimeHiveServer;
-
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -11,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Hive Metastore run in memory.
+ * Hive Metastore running in memory.
  */
 public class InMemoryHiveMetastore extends AbstractIdleService {
 
@@ -47,6 +46,6 @@ public class InMemoryHiveMetastore extends AbstractIdleService {
 
   @Override
   protected void shutDown() throws Exception {
-    // do nothing
+    // do nothing since HiveMetaStore DB connection gets closed when its client's connection closes.
   }
 }
