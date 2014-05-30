@@ -44,7 +44,7 @@ public class LocalHiveServerTest extends HiveServerTest {
         new MetricsClientRuntimeModule().getInMemoryModules(),
         new DataSetServiceModules().getInMemoryModule(),
         new AuthModule(),
-        new HiveClientModule());
+        new HiveClientModule().getBeelineThriftHttpModule());
     hiveServer = injector.getInstance(HiveServer.class);
     hiveMetastore = injector.getInstance(InMemoryHiveMetastore.class);
     hiveClient = injector.getInstance(HiveClient.class);

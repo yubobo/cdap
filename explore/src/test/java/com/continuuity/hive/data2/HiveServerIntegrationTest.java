@@ -23,6 +23,7 @@ import com.continuuity.hive.server.HiveServer;
 import com.continuuity.internal.data.dataset.DatasetAdmin;
 import com.continuuity.internal.data.dataset.DatasetInstanceProperties;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -141,7 +142,7 @@ public class HiveServerIntegrationTest {
       new MetricsClientRuntimeModule().getInMemoryModules(),
       new AuthModule(),
       new HiveRuntimeModule().getInMemoryModules(),
-      new HiveClientModule()
+      new HiveClientModule().getBeelineThriftHttpModule()
     );
   }
 

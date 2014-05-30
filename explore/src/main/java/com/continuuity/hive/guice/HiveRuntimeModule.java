@@ -117,6 +117,7 @@ public class HiveRuntimeModule extends RuntimeModule {
         // The port number is a parameter that is directly read from the hiveConf passed to hive server,
         // contrary to most parameters which need to be in hive-site.xml in the classpath.
         final int hiveServerPort = PortDetector.findFreePort();
+        // todo need to change to thrift.http and test in cluster
         newHiveConf.setInt("hive.server2.thrift.port", hiveServerPort);
 
         return new HiveModule(newHiveConf, hiveServerPort);
