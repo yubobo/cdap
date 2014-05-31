@@ -230,4 +230,11 @@ public class RouterPathTest extends GatewayTestBase {
     Assert.assertEquals(Constants.Service.METRICS, result);
   }
 
+  @Test
+  public void testRouterHivePathLookUp() throws Exception {
+    String procPath = "/cliservice";
+    HttpRequest httpRequest = new DefaultHttpRequest(VERSION, new HttpMethod("PUT"), procPath);
+    String result = pathLookup.getRoutingService(FALLBACKSERVICE, procPath, httpRequest);
+    Assert.assertEquals(Constants.Service.HIVE, result);
+  }
 }
