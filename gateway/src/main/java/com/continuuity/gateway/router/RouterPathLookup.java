@@ -41,7 +41,10 @@ public final class RouterPathLookup extends AuthenticatedHttpHandler {
         return fallbackService;
       }
 
-      if ((uriParts.length >= 2) && uriParts[1].equals("metrics")) {
+      // todo come up with a better name for the route
+      if ((uriParts.length >= 1) && uriParts[0].equals("cliservice")) {
+        return Constants.Service.HIVE;
+      } if ((uriParts.length >= 2) && uriParts[1].equals("metrics")) {
         return Constants.Service.METRICS;
       } else if ((uriParts.length >= 2) && uriParts[1].equals("data")) {
         return Constants.Service.DATASET_MANAGER;
