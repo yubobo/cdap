@@ -52,6 +52,7 @@ javadoc {
 
 test {
     jvmArgs '-Xmx3048m'
+    testLogging.showStandardStreams = true
 }
 
 checkstyleMain {
