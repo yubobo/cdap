@@ -39,7 +39,7 @@ final class InMemoryStreamFileWriterFactory implements StreamFileWriterFactory {
   }
 
   @Override
-  public FileWriter<StreamEvent> create(String streamName) throws IOException {
+  public FileWriter<StreamEvent> create(String streamName, int generation) throws IOException {
     final Queue2Producer producer = queueClientFactory.createProducer(QueueName.fromStream(streamName));
     final List<TransactionAware> txAwares = Lists.newArrayList();
     if (producer instanceof TransactionAware) {

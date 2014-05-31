@@ -14,8 +14,8 @@ import com.continuuity.common.guice.ZKClientModule;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.common.twill.AbstractReactorTwillRunnable;
 import com.continuuity.data.runtime.DataFabricModules;
-import com.continuuity.data.stream.service.StreamHttpModule;
 import com.continuuity.data.stream.service.StreamHttpService;
+import com.continuuity.data.stream.service.StreamServiceModule;
 import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
@@ -54,17 +54,19 @@ public class StreamHandlerRunnable extends AbstractReactorTwillRunnable {
       // Set the instance id
       cConf.setInt(Constants.Stream.CONTAINER_INSTANCE_ID, context.getInstanceId());
 
-      injector = Guice.createInjector(new ConfigModule(cConf, hConf),
-                                      new IOModule(),
-                                      new ZKClientModule(),
-                                      new KafkaClientModule(),
-                                      new DiscoveryRuntimeModule().getDistributedModules(),
-                                      new LocationRuntimeModule().getDistributedModules(),
-                                      new MetricsClientRuntimeModule().getDistributedModules(),
-                                      new DataFabricModules(cConf, hConf).getDistributedModules(),
-                                      new LoggingModules().getDistributedModules(),
-                                      new AuthModule(),
-                                      new StreamHttpModule());
+      injector = Guice.createInjector(
+        new ConfigModule(cConf, hConf),
+        new IOModule(),
+        new ZKClientModule(),
+        new KafkaClientModule(),
+        new DiscoveryRuntimeModule().getDistributedModules(),
+        new LocationRuntimeModule().getDistributedModules(),
+        new MetricsClientRuntimeModule().getDistributedModules(),
+        new DataFabricModules(cConf, hConf).getDistributedModules(),
+        new LoggingModules().getDistributedModules(),
+        new AuthModule(),
+        new StreamServiceModule()
+      );
 
     } catch (Exception e) {
       throw Throwables.propagate(e);

@@ -13,5 +13,5 @@ import java.io.IOException;
  */
 public interface StreamFileWriterFactory {
 
-  FileWriter<StreamEvent> create(String streamName) throws IOException;
+  FileWriter<StreamEvent> create(String streamName, int generation) throws IOException;
 }
