@@ -13,7 +13,7 @@ public interface MetricsCollectionService extends Service {
   /**
    * Returns the metric collector for the given context.
    * @param context Name of the context that generating the metric.
-   * @param runId The Id fo the given run that generating the metric.
+   * @param runId The Id of the given run that generating the metric.
    * @return A {@link MetricsCollector} for emitting metrics.
    */
   MetricsCollector getCollector(MetricsScope scope, String context, String runId);

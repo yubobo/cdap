@@ -9,12 +9,15 @@ import com.continuuity.common.guice.IOModule;
 import com.continuuity.common.guice.KafkaClientModule;
 import com.continuuity.common.guice.LocationRuntimeModule;
 import com.continuuity.common.guice.ZKClientModule;
+import com.continuuity.common.logging.LoggingContextAccessor;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.common.metrics.MetricsScope;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.internal.app.runtime.MetricsFieldSetter;
 import com.continuuity.internal.lang.Reflections;
+import com.continuuity.logging.appender.LogAppenderInitializer;
+import com.continuuity.logging.context.UserServiceLoggingContext;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.continuuity.metrics.guice.MetricsHandlerModule;
@@ -25,7 +28,6 @@ import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -51,8 +53,6 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
 import javax.annotation.Nullable;
 
 /**
@@ -95,7 +95,7 @@ public class WrapperTwillApplication implements TwillApplication {
       @Override
       public Map<String, RuntimeSpecification> getRunnables() {
         LOG.info("WrapperTwillApplication: getRunnables started");
-        Map<String, RuntimeSpecification>  runnables = spec.getRunnables();
+        Map<String, RuntimeSpecification> runnables = spec.getRunnables();
         Map<String, RuntimeSpecification> newRunnables = Maps.newHashMap();
         runSpec = Maps.newHashMap();
         for (final Map.Entry<String, RuntimeSpecification> runnable : runnables.entrySet()) {
@@ -122,6 +122,7 @@ public class WrapperTwillApplication implements TwillApplication {
                 @Override
                 public Map<String, String> getConfigs() {
                   Map<String, String> newMap = Maps.newHashMap();
+                  newMap.put("reactor.app.name", spec.getName());
                   newMap.put("reactor.class.name", runnable.getValue().getRunnableSpecification().getClassName());
                   newMap.put("hConf", "hConf.xml");
                   newMap.put("cConf", "cConf.xml");
@@ -191,6 +192,7 @@ public class WrapperTwillApplication implements TwillApplication {
       Map<String, String> configs = spec.getConfigs();
       //runtime specification of user twill runnable
       final String className = configs.get("reactor.class.name");
+      final String serviceAppName = configs.get("reactor.app.name");
 
 
       LOG.info("User Twill Runnable className is : {}", className);
@@ -206,6 +208,11 @@ public class WrapperTwillApplication implements TwillApplication {
         cConf.clear();
         cConf.addResource(new File(configs.get("cConf")).toURI().toURL());
         Injector injector = createGuiceInjector(cConf, hConf);
+        injector.getInstance(LogAppenderInitializer.class).initialize();
+        //TODO: Get accountId and reactorAppId and use it for setting logging context
+        LoggingContextAccessor.setLoggingContext(new UserServiceLoggingContext("developer", "reactorappname",
+                                                                               serviceAppName, spec.getName()));
+
         collectionService = injector.getInstance(MetricsCollectionService.class);
         zkClientService = injector.getInstance(ZKClientService.class);
         kafkaClientService = injector.getInstance(KafkaClientService.class);
@@ -247,13 +254,18 @@ public class WrapperTwillApplication implements TwillApplication {
     }
 
     private Injector createGuiceInjector(CConfiguration cConf, Configuration hConf) {
-      return Guice.createInjector(new ConfigModule(cConf, hConf), new IOModule(),
-                                  new ZKClientModule(),
-                                  new KafkaClientModule(),
-                                  new LocationRuntimeModule().getDistributedModules(),
-                                  new DiscoveryRuntimeModule().getDistributedModules(),
-                                  new AuthModule(),
-                                  new MetricsClientRuntimeModule().getDistributedModules());
+      return Guice.createInjector(
+        new ConfigModule(cConf, hConf),
+        new IOModule(),
+        new ZKClientModule(),
+        new KafkaClientModule(),
+        new DataFabricModules(cConf, hConf).getDistributedModules(),
+        new LocationRuntimeModule().getDistributedModules(),
+        new DiscoveryRuntimeModule().getDistributedModules(),
+        new LoggingModules().getDistributedModules(),
+        new AuthModule(),
+        new MetricsHandlerModule(),
+        new MetricsClientRuntimeModule().getDistributedModules());
     }
 
     @Override

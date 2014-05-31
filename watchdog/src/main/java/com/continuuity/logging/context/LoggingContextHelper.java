@@ -25,7 +25,7 @@ public final class LoggingContextHelper {
    * Defines entity types.
    */
   public enum EntityType {
-    FLOW, PROCEDURE, MAP_REDUCE
+    FLOW, PROCEDURE, MAP_REDUCE, SERVICE
   }
 
   public static LoggingContext getLoggingContext(Map<String, String> tags) {
@@ -54,6 +54,13 @@ public final class LoggingContextHelper {
     } else if (tags.containsKey(ProcedureLoggingContext.TAG_PROCEDURE_ID)) {
       return new ProcedureLoggingContext(accountId, applicationId,
                                          tags.get(ProcedureLoggingContext.TAG_PROCEDURE_ID));
+    } else if (tags.containsKey(UserServiceLoggingContext.TAG_USERAPP_ID)) {
+      if (!tags.containsKey(UserServiceLoggingContext.TAG_USERRUNNABLE_ID)) {
+        return null;
+      }
+      return new UserServiceLoggingContext(accountId, applicationId,
+                                           tags.get(UserServiceLoggingContext.TAG_USERAPP_ID),
+                                           tags.get(UserServiceLoggingContext.TAG_USERRUNNABLE_ID));
     }
 
     throw new IllegalArgumentException("Unsupported logging context");
@@ -68,6 +75,8 @@ public final class LoggingContextHelper {
         return new ProcedureLoggingContext(accountId, applicationId, entityId);
       case MAP_REDUCE:
         return new MapReduceLoggingContext(accountId, applicationId, entityId);
+      case SERVICE:
+        return new UserServiceLoggingContext(accountId, applicationId, entityId, "");
       default:
         throw new IllegalArgumentException(String.format("Illegal entity type for logging context: %s", entityType));
     }
@@ -88,6 +97,9 @@ public final class LoggingContextHelper {
     } else if (loggingContext instanceof MapReduceLoggingContext) {
       tagName = MapReduceLoggingContext.TAG_MAP_REDUCE_JOB_ID;
       entityId = loggingContext.getSystemTagsMap().get(tagName).getValue();
+    } else if (loggingContext instanceof UserServiceLoggingContext) {
+      tagName = UserServiceLoggingContext.TAG_USERAPP_ID;
+      entityId = loggingContext.getSystemTagsMap().get(tagName).getValue();
     } else if (loggingContext instanceof GenericLoggingContext) {
       entityId = loggingContext.getSystemTagsMap().get(GenericLoggingContext.TAG_ENTITY_ID).getValue();
       return createGenericFilter(accountId, applId, entityId);
@@ -106,11 +118,14 @@ public final class LoggingContextHelper {
     FlowletLoggingContext flowletLoggingContext = new FlowletLoggingContext(accountId, applicationId, entityId, "");
     ProcedureLoggingContext procedureLoggingContext = new ProcedureLoggingContext(accountId, applicationId, entityId);
     MapReduceLoggingContext mapReduceLoggingContext = new MapReduceLoggingContext(accountId, applicationId, entityId);
+    UserServiceLoggingContext userServiceLoggingContext = new UserServiceLoggingContext(accountId, applicationId,
+                                                                                        entityId, "");
 
     return new OrFilter(
       ImmutableList.of(createFilter(flowletLoggingContext),
                        createFilter(procedureLoggingContext),
-                       createFilter(mapReduceLoggingContext)
+                       createFilter(mapReduceLoggingContext),
+                       createFilter(userServiceLoggingContext)
       )
     );
   }
