@@ -8,8 +8,8 @@ import com.continuuity.common.guice.IOModule;
 import com.continuuity.common.guice.LocationRuntimeModule;
 import com.continuuity.data.runtime.DataFabricModules;
 import com.continuuity.data.runtime.DataSetServiceModules;
-import com.continuuity.data2.datafabric.dataset.service.DatasetManagerService;
-import com.continuuity.data2.dataset2.manager.DatasetManager;
+import com.continuuity.data2.datafabric.dataset.service.DatasetService;
+import com.continuuity.data2.dataset2.DatasetFramework;
 import com.continuuity.data2.dataset2.module.lib.inmemory.InMemoryTableModule;
 import com.continuuity.data2.transaction.Transaction;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
@@ -43,8 +43,8 @@ public class HiveServerIntegrationTest {
   private static InMemoryTransactionManager transactionManager;
   private static HiveServer hiveServer;
   private static InMemoryHiveMetastore inMemoryHiveMetastore;
-  private static DatasetManager datasetManager;
-  private static DatasetManagerService datasetManagerService;
+  private static DatasetFramework datasetFramework;
+  private static DatasetService datasetService;
   private static HiveClient hiveClient;
 
   @BeforeClass
@@ -59,24 +59,24 @@ public class HiveServerIntegrationTest {
     inMemoryHiveMetastore.startAndWait();
     hiveServer.startAndWait();
 
-    datasetManagerService = injector.getInstance(DatasetManagerService.class);
-    datasetManagerService.startAndWait();
+    datasetService = injector.getInstance(DatasetService.class);
+    datasetService.startAndWait();
 
-    datasetManager = injector.getInstance(DatasetManager.class);
+    datasetFramework = injector.getInstance(DatasetFramework.class);
     String moduleName = "inMemory";
-    datasetManager.register(moduleName, InMemoryTableModule.class);
-    datasetManager.register("keyValue", KeyValueTableDefinition.KeyValueTableModule.class);
+    datasetFramework.register(moduleName, InMemoryTableModule.class);
+    datasetFramework.register("keyValue", KeyValueTableDefinition.KeyValueTableModule.class);
 
     // Performing admin operations to create dataset instance
-    datasetManager.addInstance("keyValueTable", "my_table", DatasetInstanceProperties.EMPTY);
-    DatasetAdmin admin = datasetManager.getAdmin("my_table", null);
+    datasetFramework.addInstance("keyValueTable", "my_table", DatasetInstanceProperties.EMPTY);
+    DatasetAdmin admin = datasetFramework.getAdmin("my_table", null);
     Assert.assertNotNull(admin);
     admin.create();
 
     Transaction tx1 = transactionManager.startShort(100);
 
     // Accessing dataset instance to perform data operations
-    KeyValueTableDefinition.KeyValueTable table = datasetManager.getDataset("my_table", null);
+    KeyValueTableDefinition.KeyValueTable table = datasetFramework.getDataset("my_table", null);
     Assert.assertNotNull(table);
     table.startTx(tx1);
     table.put("1", "first");
@@ -101,13 +101,13 @@ public class HiveServerIntegrationTest {
     hiveServer.stopAndWait();
     inMemoryHiveMetastore.stopAndWait();
     transactionManager.stopAndWait();
-    datasetManagerService.startAndWait();
+    datasetService.startAndWait();
   }
 
 
   @Test
   public void testTable() throws Exception {
-    KeyValueTableDefinition.KeyValueTable table = datasetManager.getDataset("my_table", null);
+    KeyValueTableDefinition.KeyValueTable table = datasetFramework.getDataset("my_table", null);
     Assert.assertNotNull(table);
     Transaction tx = transactionManager.startShort(100);
     table.startTx(tx);
@@ -118,15 +118,64 @@ public class HiveServerIntegrationTest {
   @Test
   public void testHiveIntegration() throws Exception {
     hiveClient.sendCommand("drop table if exists kv_table", null, null);
-    hiveClient.sendCommand("create external table kv_table (customer STRING, quantity int) " +
+    hiveClient.sendCommand("create external table kv_table (key STRING, value STRING) " +
                            "stored by 'com.continuuity.hive.datasets.DatasetStorageHandler' " +
                            "with serdeproperties (\"reactor.dataset.name\"=\"my_table\");", null, null);
     HiveClientTestUtils.assertCmdFindPattern(hiveClient, "describe kv_table", "key.*string.*value.*string");
     HiveClientTestUtils.assertCmdFindPattern(hiveClient, "select key, value from kv_table",
-        "1.*first.*2.*two");
+                                             "1.*first.*2.*two");
     // todo fix select *
     //HiveClientTestUtils.assertCmdFindPattern(hiveClient, "select * from kv_table",
     //    "1.*first.*2.*two");
+  }
+
+  @Test
+  public void testHiveDatasetsJoin() throws Exception {
+    // Performing admin operations to create another dataset instance
+    datasetFramework.addInstance("keyValueTable", "my_table_2", DatasetInstanceProperties.EMPTY);
+    DatasetAdmin admin = datasetFramework.getAdmin("my_table_2", null);
+    admin.create();
+
+    Transaction tx1 = transactionManager.startShort(100);
+
+    // Accessing dataset instance to perform data operations
+    KeyValueTableDefinition.KeyValueTable table = datasetFramework.getDataset("my_table_2", null);
+    Assert.assertNotNull(table);
+    table.startTx(tx1);
+    table.put("1", "first");
+    table.put("2", "two");
+    table.put("3", "three");
+
+    Assert.assertTrue(table.commitTx());
+
+    transactionManager.canCommit(tx1, table.getTxChanges());
+    transactionManager.commit(tx1);
+
+    table.postTxCommit();
+
+    Transaction tx2 = transactionManager.startShort(100);
+    table.startTx(tx2);
+
+    Assert.assertEquals("first", table.get("1"));
+
+    // Create hive table for first key value table
+    hiveClient.sendCommand("drop table if exists kv_table", null, null);
+    hiveClient.sendCommand("create external table kv_table (key STRING, value STRING) " +
+                           "stored by 'com.continuuity.hive.datasets.DatasetStorageHandler' " +
+                           "with serdeproperties (\"reactor.dataset.name\"=\"my_table\");", null, null);
+
+    // Create hive table for second key value table
+    hiveClient.sendCommand("drop table if exists kv_table_2", null, null);
+    hiveClient.sendCommand("create external table kv_table_2 (key STRING, value STRING) " +
+                           "stored by 'com.continuuity.hive.datasets.DatasetStorageHandler' " +
+                           "with serdeproperties (\"reactor.dataset.name\"=\"my_table_2\");", null, null);
+
+    // Assert join operation
+    HiveClientTestUtils.assertCmdFindPattern(
+        hiveClient,
+        "select kv_table.value from kv_table join kv_table_2 on (kv_table.key=kv_table_2.key);",
+        "first.*two"
+    );
   }
 
   private static List<Module> createInMemoryModules(CConfiguration configuration, Configuration hConf) {
