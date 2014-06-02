@@ -45,9 +45,18 @@ public class DummyTwillRunnable extends AbstractTwillRunnable {
   @Override
   public void run() {
     LOG.info("Dummy Runnable Started");
-    metrics.count("twill.metrics", 100);
+    int iter = 0;
     try {
-      TimeUnit.SECONDS.sleep(5);
+      while (true) {
+        metrics.count("twill.metrics", 100);
+        iter++;
+        if (iter % 2 == 0) {
+          LOG.warn("Twill Runnable iteration count {}", iter);
+        } else {
+          LOG.info("Twill Runnable iteration count {} ", iter);
+        }
+        TimeUnit.SECONDS.sleep(2);
+      }
     } catch (InterruptedException e) {
       LOG.error("Twill Runnable interrupted from sleep");
     }
