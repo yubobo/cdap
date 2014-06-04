@@ -151,7 +151,7 @@ public final class ConcurrentStreamWriter implements Closeable {
       StreamUtils.ensureExists(streamAdmin, streamName);
 
       if (generationWatched.add(streamName)) {
-        cancellables.add(streamCoordinator.addListener(streamName, writerSupplierFactory));
+        cancellables.addAll(streamCoordinator.addListener(streamName, writerSupplierFactory));
       }
 
       eventQueue = new EventQueue(streamName, writerSupplierFactory.create(streamName));

@@ -6,6 +6,7 @@ package com.continuuity.data2.transaction.stream.leveldb;
 import com.continuuity.api.common.Bytes;
 import com.continuuity.common.utils.ImmutablePair;
 import com.continuuity.data.file.FileReader;
+import com.continuuity.data.stream.StreamCoordinator;
 import com.continuuity.data.stream.StreamEventOffset;
 import com.continuuity.data.stream.StreamFileOffset;
 import com.continuuity.data.table.Scanner;
@@ -45,9 +46,10 @@ public final class LevelDBStreamFileConsumer extends AbstractStreamFileConsumer 
    */
   public LevelDBStreamFileConsumer(StreamConfig streamConfig, ConsumerConfig consumerConfig,
                                    FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader,
+                                   StreamCoordinator streamCoordinator,
                                    StreamConsumerStateStore stateStore, StreamConsumerState beginConsumerState,
                                    LevelDBOcTableCore tableCore, Object dbLock) {
-    super(streamConfig, consumerConfig, reader, stateStore, beginConsumerState);
+    super(streamConfig, consumerConfig, reader, streamCoordinator, stateStore, beginConsumerState);
     this.tableCore = tableCore;
     this.dbLock = dbLock;
     this.rowMapForClaim = Maps.newTreeMap(Bytes.BYTES_COMPARATOR);

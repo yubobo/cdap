@@ -7,6 +7,7 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data.file.FileReader;
+import com.continuuity.data.stream.StreamCoordinator;
 import com.continuuity.data.stream.StreamEventOffset;
 import com.continuuity.data.stream.StreamFileOffset;
 import com.continuuity.data.stream.StreamFileType;
@@ -40,14 +41,17 @@ public final class LevelDBStreamFileConsumerFactory extends AbstractStreamFileCo
   private final CConfiguration cConf;
   private final LevelDBOcTableService tableService;
   private final ConcurrentMap<String, Object> dbLocks;
+  private final StreamCoordinator streamCoordinator;
 
   @Inject
   LevelDBStreamFileConsumerFactory(DataSetAccessor dataSetAccessor, StreamAdmin streamAdmin,
                                    StreamConsumerStateStoreFactory stateStoreFactory,
-                                   CConfiguration cConf, LevelDBOcTableService tableService,
+                                   CConfiguration cConf, StreamCoordinator streamCoordinator,
+                                   LevelDBOcTableService tableService,
                                    QueueClientFactory queueClientFactory, LevelDBStreamAdmin oldStreamAdmin) {
     super(dataSetAccessor, streamAdmin, stateStoreFactory, queueClientFactory, oldStreamAdmin);
     this.cConf = cConf;
+    this.streamCoordinator = streamCoordinator;
     this.tableService = tableService;
     this.dbLocks = Maps.newConcurrentMap();
   }
@@ -62,7 +66,7 @@ public final class LevelDBStreamFileConsumerFactory extends AbstractStreamFileCo
 
     LevelDBOcTableCore tableCore = new LevelDBOcTableCore(tableName, tableService);
     Object dbLock = getDBLock(tableName);
-    return new LevelDBStreamFileConsumer(streamConfig, consumerConfig, reader,
+    return new LevelDBStreamFileConsumer(streamConfig, consumerConfig, reader, streamCoordinator,
                                          stateStore, beginConsumerState, tableCore, dbLock);
   }
 

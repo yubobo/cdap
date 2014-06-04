@@ -100,6 +100,12 @@ public class HelloWorld implements Application {
         flowletMetrics.count("names.longnames", 1);
       }
       flowletMetrics.count("names.bytes", name.length);
+
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
   }
 

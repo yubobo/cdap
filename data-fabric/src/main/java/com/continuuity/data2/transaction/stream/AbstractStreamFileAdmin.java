@@ -204,6 +204,11 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
         tempLocation.delete();
       }
     }
+
+    if (originalConfig.getTTL() != config.getTTL()) {
+      long newTTL = config.getTTL();
+      streamCoordinator.changeTTL(config, newTTL);
+    }
   }
 
   @Override

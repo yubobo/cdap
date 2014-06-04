@@ -9,6 +9,13 @@ package com.continuuity.data.stream;
 public abstract class StreamPropertyListener {
 
   /**
+   * Invoked when stream TTL is changed.
+   */
+  public void ttlChanged(String streamName, long newTTL) {
+    // Default no-op
+  }
+
+  /**
    * Invoked when stream generation changed. Generation only increase monotonically, hence this method
    * is guaranteed to see only increasing generation across multiple calls.
    *

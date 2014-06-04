@@ -8,6 +8,7 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data.file.FileReader;
+import com.continuuity.data.stream.StreamCoordinator;
 import com.continuuity.data.stream.StreamEventOffset;
 import com.continuuity.data.stream.StreamFileOffset;
 import com.continuuity.data.stream.StreamFileType;
@@ -47,17 +48,20 @@ public final class HBaseStreamFileConsumerFactory extends AbstractStreamFileCons
   private final HBaseTableUtil tableUtil;
   private final CConfiguration cConf;
   private final Configuration hConf;
+  private final StreamCoordinator streamCoordinator;
   private HBaseAdmin admin;
 
   @Inject
   HBaseStreamFileConsumerFactory(DataSetAccessor dataSetAccessor, StreamAdmin streamAdmin,
                                  StreamConsumerStateStoreFactory stateStoreFactory,
                                  CConfiguration cConf, Configuration hConf, HBaseTableUtil tableUtil,
+                                 StreamCoordinator streamCoordinator,
                                  QueueClientFactory queueClientFactory, HBaseStreamAdmin oldStreamAdmin) {
     super(dataSetAccessor, streamAdmin, stateStoreFactory, queueClientFactory, oldStreamAdmin);
     this.hConf = hConf;
     this.cConf = cConf;
     this.tableUtil = tableUtil;
+    this.streamCoordinator = streamCoordinator;
   }
 
   @Override
@@ -81,7 +85,7 @@ public final class HBaseStreamFileConsumerFactory extends AbstractStreamFileCons
     HTable hTable = new HTable(hConf, hBaseTableName);
     hTable.setWriteBufferSize(Constants.Stream.HBASE_WRITE_BUFFER_SIZE);
     hTable.setAutoFlush(false);
-    return new HBaseStreamFileConsumer(streamConfig, consumerConfig, hTable, reader,
+    return new HBaseStreamFileConsumer(streamConfig, consumerConfig, hTable, reader, streamCoordinator,
                                        stateStore, beginConsumerState, HBaseQueueAdmin.ROW_KEY_DISTRIBUTOR);
   }
 

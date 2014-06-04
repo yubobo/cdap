@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.twill.common.Cancellable;
 
 import java.io.Closeable;
+import java.util.Collection;
 
 /**
  * This class responsible for process coordination needed between stream writers and consumers.
@@ -26,10 +27,21 @@ public interface StreamCoordinator extends Closeable {
   ListenableFuture<Integer> nextGeneration(StreamConfig streamConfig, int lowerBound);
 
   /**
+   * Changes the TTL of the given stream.
+   *
+   * @param streamConfig stream configuration
+   * @param newTTL The desired new TTL.
+   * @return A future that will be completed when the update of TTL is done. The future result will
+   *         carry the TTL updated by this method.
+   */
+  ListenableFuture<Long> changeTTL(StreamConfig streamConfig, long newTTL);
+
+  /**
    * Receives event for changes in stream properties.
    *
    * @param listener listener to get called when there is change in stream properties.
-   * @return A {@link Cancellable} to cancel the watch
+   * @return A {@link Collection of Cancellable} to cancel the watch
    */
-  Cancellable addListener(String streamName, StreamPropertyListener listener);
+  // TODO: consider return single Cancellable that cancels multiple Cancellables
+  Collection<Cancellable> addListener(String streamName, StreamPropertyListener listener);
 }
