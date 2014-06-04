@@ -71,8 +71,7 @@ public abstract class AbstractStreamFileConsumerFactory implements StreamConsume
   protected abstract StreamConsumer create(
     String tableName, StreamConfig streamConfig, ConsumerConfig consumerConfig,
     StreamConsumerStateStore stateStore, StreamConsumerState beginConsumerState,
-    FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader,
-    @Nullable ReadFilter extraFilter) throws IOException;
+    FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader) throws IOException;
 
   /**
    * Gathers stream file offsets.
@@ -96,8 +95,7 @@ public abstract class AbstractStreamFileConsumerFactory implements StreamConsume
     StreamConsumerState consumerState = stateStore.get(consumerConfig.getGroupId(), consumerConfig.getInstanceId());
 
     StreamConsumer newConsumer = create(tableName, streamConfig, consumerConfig,
-                                        stateStore, consumerState, createReader(streamConfig, consumerState),
-                                        new TTLReadFilter(streamConfig.getTTL()));
+                                        stateStore, consumerState, createReader(streamConfig, consumerState));
 
     try {
       // The old stream admin uses full URI of queue name as the name for checking existence

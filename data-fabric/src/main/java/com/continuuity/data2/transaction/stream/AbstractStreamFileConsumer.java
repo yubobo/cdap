@@ -9,9 +9,12 @@ import com.continuuity.common.queue.QueueName;
 import com.continuuity.data.file.FileReader;
 import com.continuuity.data.file.ReadFilter;
 import com.continuuity.data.file.ReadFilters;
+import com.continuuity.data.file.filter.TTLReadFilter;
 import com.continuuity.data.stream.ForwardingStreamEvent;
+import com.continuuity.data.stream.StreamCoordinator;
 import com.continuuity.data.stream.StreamEventOffset;
 import com.continuuity.data.stream.StreamFileOffset;
+import com.continuuity.data.stream.StreamPropertyListener;
 import com.continuuity.data.stream.StreamUtils;
 import com.continuuity.data2.queue.ConsumerConfig;
 import com.continuuity.data2.queue.DequeueResult;
@@ -22,6 +25,7 @@ import com.continuuity.data2.transaction.queue.QueueEntryRow;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Stopwatch;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -35,6 +39,7 @@ import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.sun.istack.Nullable;
+import org.apache.twill.common.Cancellable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,35 +145,45 @@ public abstract class AbstractStreamFileConsumer implements StreamConsumer {
 
   private final StreamConsumerState consumerState;
   private final List<StreamEventOffset> eventCache;
+  private final Collection<Cancellable> streamCoordinatorCancellables;
   private Transaction transaction;
   private List<PollStreamEvent> polledEvents;
   private long nextPersistStateTime;
   private boolean committed;
   private boolean closed;
   private StreamConsumerState lastPersistedState;
+  private long streamTTL;
 
   /**
    *
    * @param streamConfig Stream configuration.
    * @param consumerConfig Consumer configuration.
    * @param reader For reading stream events. This class is responsible for closing the reader.
+   * @param streamCoordinator For acquiring dynamic TTL changes.
    * @param consumerStateStore The state store for saving consumer state
    * @param beginConsumerState Consumer state to begin with.
-   * @param extraFilter Extra {@link ReadFilter} that is ANDed with default read filter and applied first.
    */
   protected AbstractStreamFileConsumer(StreamConfig streamConfig, ConsumerConfig consumerConfig,
                                        FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader,
+                                       StreamCoordinator streamCoordinator,
                                        StreamConsumerStateStore consumerStateStore,
-                                       StreamConsumerState beginConsumerState,
-                                       @Nullable ReadFilter extraFilter) {
+                                       StreamConsumerState beginConsumerState) {
 
     LOG.info("Create consumer {}, reader offsets: {}", consumerConfig, reader.getPosition());
     this.streamName = QueueName.fromStream(streamConfig.getName());
+    this.streamCoordinatorCancellables = streamCoordinator.addListener(streamConfig.getName(),
+                                                                       new StreamPropertyListener() {
+      @Override
+      public void ttlChanged(String streamName, long newTTL) {
+        updateTTL(newTTL);
+      }
+    });
     this.streamConfig = streamConfig;
+    this.streamTTL = streamConfig.getTTL();
     this.consumerConfig = consumerConfig;
     this.consumerStateStore = consumerStateStore;
     this.reader = reader;
-    this.readFilter = createReadFilter(consumerConfig, extraFilter);
+    this.readFilter = createReadFilter(consumerConfig);
 
     this.entryStates = Maps.newTreeMap(ROW_PREFIX_COMPARATOR);
     this.entryStatesScanCompleted = Sets.newTreeSet(ROW_PREFIX_COMPARATOR);
@@ -180,7 +195,9 @@ public abstract class AbstractStreamFileConsumer implements StreamConsumer {
   }
 
   protected void doClose() throws IOException {
-    // No-op.
+    for (Cancellable c : streamCoordinatorCancellables) {
+      c.cancel();
+    }
   }
 
   protected abstract boolean claimFifoEntry(byte[] row, byte[] value, byte[] oldValue) throws IOException;
@@ -370,14 +387,15 @@ public abstract class AbstractStreamFileConsumer implements StreamConsumer {
       .toString();
   }
 
-  private ReadFilter createReadFilter(ConsumerConfig consumerConfig, @Nullable ReadFilter extraFilter) {
+  private ReadFilter createReadFilter(ConsumerConfig consumerConfig) {
+    TTLReadFilter ttlReadFilter = new TTLReadFilter(new Supplier<Long>() {
+      @Override
+      public Long get() {
+        return getStreamTTL();
+      }
+    });
     ReadFilter baseFilter = createBaseReadFilter(consumerConfig);
-
-    if (extraFilter != null) {
-      return ReadFilters.and(extraFilter, baseFilter);
-    } else {
-      return baseFilter;
-    }
+    return ReadFilters.and(ttlReadFilter, baseFilter);
   }
 
   private ReadFilter createBaseReadFilter(final ConsumerConfig consumerConfig) {
@@ -525,6 +543,14 @@ public abstract class AbstractStreamFileConsumer implements StreamConsumer {
       scanner.close();
     }
     return rowStates;
+  }
+
+  private void updateTTL(long newTTL) {
+    this.streamTTL = newTTL;
+  }
+
+  private long getStreamTTL() {
+    return streamTTL;
   }
 
   /**

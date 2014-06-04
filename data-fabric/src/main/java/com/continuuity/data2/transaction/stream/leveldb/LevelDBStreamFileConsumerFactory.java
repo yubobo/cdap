@@ -7,7 +7,7 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data.file.FileReader;
-import com.continuuity.data.file.ReadFilter;
+import com.continuuity.data.stream.StreamCoordinator;
 import com.continuuity.data.stream.StreamEventOffset;
 import com.continuuity.data.stream.StreamFileOffset;
 import com.continuuity.data.stream.StreamFileType;
@@ -26,7 +26,6 @@ import com.continuuity.data2.transaction.stream.StreamConsumerStateStore;
 import com.continuuity.data2.transaction.stream.StreamConsumerStateStoreFactory;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.sun.istack.Nullable;
 import org.apache.twill.filesystem.Location;
 
 import java.io.IOException;
@@ -42,14 +41,17 @@ public final class LevelDBStreamFileConsumerFactory extends AbstractStreamFileCo
   private final CConfiguration cConf;
   private final LevelDBOcTableService tableService;
   private final ConcurrentMap<String, Object> dbLocks;
+  private final StreamCoordinator streamCoordinator;
 
   @Inject
   LevelDBStreamFileConsumerFactory(DataSetAccessor dataSetAccessor, StreamAdmin streamAdmin,
                                    StreamConsumerStateStoreFactory stateStoreFactory,
-                                   CConfiguration cConf, LevelDBOcTableService tableService,
+                                   CConfiguration cConf, StreamCoordinator streamCoordinator,
+                                   LevelDBOcTableService tableService,
                                    QueueClientFactory queueClientFactory, LevelDBStreamAdmin oldStreamAdmin) {
     super(dataSetAccessor, streamAdmin, stateStoreFactory, queueClientFactory, oldStreamAdmin);
     this.cConf = cConf;
+    this.streamCoordinator = streamCoordinator;
     this.tableService = tableService;
     this.dbLocks = Maps.newConcurrentMap();
   }
@@ -58,16 +60,15 @@ public final class LevelDBStreamFileConsumerFactory extends AbstractStreamFileCo
   @Override
   protected StreamConsumer create(String tableName, StreamConfig streamConfig, ConsumerConfig consumerConfig,
                                   StreamConsumerStateStore stateStore, StreamConsumerState beginConsumerState,
-                                  FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader,
-                                  @Nullable ReadFilter extraFilter) throws IOException {
+                                  FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader) throws IOException {
 
     tableService.ensureTableExists(tableName);
 
     LevelDBOcTableCore tableCore = new LevelDBOcTableCore(tableName, tableService);
     Object dbLock = getDBLock(tableName);
-    return new LevelDBStreamFileConsumer(streamConfig, consumerConfig, reader,
-                                         stateStore, beginConsumerState, extraFilter,
-                                         tableCore, dbLock);
+
+    return new LevelDBStreamFileConsumer(streamConfig, consumerConfig, reader, streamCoordinator,
+                                         stateStore, beginConsumerState, tableCore, dbLock);
   }
 
   @Override

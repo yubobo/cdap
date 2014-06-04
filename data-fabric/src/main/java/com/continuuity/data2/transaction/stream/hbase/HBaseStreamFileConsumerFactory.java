@@ -9,6 +9,7 @@ import com.continuuity.common.conf.Constants;
 import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data.file.FileReader;
 import com.continuuity.data.file.ReadFilter;
+import com.continuuity.data.stream.StreamCoordinator;
 import com.continuuity.data.stream.StreamEventOffset;
 import com.continuuity.data.stream.StreamFileOffset;
 import com.continuuity.data.stream.StreamFileType;
@@ -49,24 +50,26 @@ public final class HBaseStreamFileConsumerFactory extends AbstractStreamFileCons
   private final HBaseTableUtil tableUtil;
   private final CConfiguration cConf;
   private final Configuration hConf;
+  private final StreamCoordinator streamCoordinator;
   private HBaseAdmin admin;
 
   @Inject
   HBaseStreamFileConsumerFactory(DataSetAccessor dataSetAccessor, StreamAdmin streamAdmin,
                                  StreamConsumerStateStoreFactory stateStoreFactory,
                                  CConfiguration cConf, Configuration hConf, HBaseTableUtil tableUtil,
+                                 StreamCoordinator streamCoordinator,
                                  QueueClientFactory queueClientFactory, HBaseStreamAdmin oldStreamAdmin) {
     super(dataSetAccessor, streamAdmin, stateStoreFactory, queueClientFactory, oldStreamAdmin);
     this.hConf = hConf;
     this.cConf = cConf;
     this.tableUtil = tableUtil;
+    this.streamCoordinator = streamCoordinator;
   }
 
   @Override
   protected StreamConsumer create(String tableName, StreamConfig streamConfig, ConsumerConfig consumerConfig,
                                   StreamConsumerStateStore stateStore, StreamConsumerState beginConsumerState,
-                                  FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader,
-                                  @Nullable ReadFilter extraFilter) throws IOException {
+                                  FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader) throws IOException {
 
     String hBaseTableName = HBaseTableUtil.getHBaseTableName(tableName);
     HTableDescriptor htd = new HTableDescriptor(hBaseTableName);
@@ -84,9 +87,8 @@ public final class HBaseStreamFileConsumerFactory extends AbstractStreamFileCons
     HTable hTable = new HTable(hConf, hBaseTableName);
     hTable.setWriteBufferSize(Constants.Stream.HBASE_WRITE_BUFFER_SIZE);
     hTable.setAutoFlush(false);
-    return new HBaseStreamFileConsumer(streamConfig, consumerConfig, hTable, reader,
-                                       stateStore, beginConsumerState, extraFilter,
-                                       HBaseQueueAdmin.ROW_KEY_DISTRIBUTOR);
+    return new HBaseStreamFileConsumer(streamConfig, consumerConfig, hTable, reader, streamCoordinator,
+                                       stateStore, beginConsumerState, HBaseQueueAdmin.ROW_KEY_DISTRIBUTOR);
   }
 
   @Override

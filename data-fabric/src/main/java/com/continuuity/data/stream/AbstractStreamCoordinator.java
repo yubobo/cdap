@@ -9,12 +9,20 @@ import com.continuuity.common.conf.PropertyStore;
 import com.continuuity.common.conf.PropertyUpdater;
 import com.continuuity.common.io.Codec;
 import com.continuuity.common.io.Locations;
+import com.continuuity.data.stream.property.StreamGenerationChangeListener;
+import com.continuuity.data.stream.property.StreamGenerationProperty;
+import com.continuuity.data.stream.property.StreamGenerationPropertyCodec;
+import com.continuuity.data.stream.property.StreamTTLChangeListener;
+import com.continuuity.data.stream.property.StreamTTLProperty;
+import com.continuuity.data.stream.property.StreamTTLPropertyCodec;
 import com.continuuity.data2.transaction.stream.StreamConfig;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -25,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 
@@ -37,13 +46,21 @@ public abstract class AbstractStreamCoordinator implements StreamCoordinator {
 
   // Executor for performing update action asynchronously
   private final Executor updateExecutor;
-  private final Supplier<PropertyStore<StreamProperty>> propertyStore;
+  private final Supplier<PropertyStore<StreamGenerationProperty>> generationPropertyStore;
+  private final Supplier<PropertyStore<StreamTTLProperty>> ttlPropertyStore;
 
   protected AbstractStreamCoordinator() {
-    propertyStore = Suppliers.memoize(new Supplier<PropertyStore<StreamProperty>>() {
+    generationPropertyStore = Suppliers.memoize(new Supplier<PropertyStore<StreamGenerationProperty>>() {
       @Override
-      public PropertyStore<StreamProperty> get() {
-        return createPropertyStore(new StreamPropertyCodec());
+      public PropertyStore<StreamGenerationProperty> get() {
+        return createPropertyStore(new StreamGenerationPropertyCodec());
+      }
+    });
+
+    ttlPropertyStore = Suppliers.memoize(new Supplier<PropertyStore<StreamTTLProperty>>() {
+      @Override
+      public PropertyStore<StreamTTLProperty> get() {
+        return createPropertyStore(new StreamTTLPropertyCodec());
       }
     });
 
@@ -62,10 +79,11 @@ public abstract class AbstractStreamCoordinator implements StreamCoordinator {
 
   @Override
   public ListenableFuture<Integer> nextGeneration(final StreamConfig streamConfig, final int lowerBound) {
-    return Futures.transform(propertyStore.get().update(streamConfig.getName(), new PropertyUpdater<StreamProperty>() {
+    return Futures.transform(generationPropertyStore.get().update(streamConfig.getName(),
+                                                                  new PropertyUpdater<StreamGenerationProperty>() {
       @Override
-      public ListenableFuture<StreamProperty> apply(@Nullable final StreamProperty property) {
-        final SettableFuture<StreamProperty> resultFuture = SettableFuture.create();
+      public ListenableFuture<StreamGenerationProperty> apply(@Nullable final StreamGenerationProperty property) {
+        final SettableFuture<StreamGenerationProperty> resultFuture = SettableFuture.create();
         updateExecutor.execute(new Runnable() {
 
           @Override
@@ -73,9 +91,9 @@ public abstract class AbstractStreamCoordinator implements StreamCoordinator {
             try {
               int newGeneration = ((property == null) ? lowerBound : property.getGeneration()) + 1;
               // Create the generation directory
-              Locations.mkdirsIfNotExists(StreamUtils.createGenerationLocation(streamConfig.getLocation(),
-                                                                               newGeneration));
-              resultFuture.set(new StreamProperty(newGeneration));
+              Locations.mkdirsIfNotExists(
+                StreamUtils.createGenerationLocation(streamConfig.getLocation(), newGeneration));
+              resultFuture.set(new StreamGenerationProperty(newGeneration));
             } catch (IOException e) {
               resultFuture.setException(e);
             }
@@ -83,22 +101,48 @@ public abstract class AbstractStreamCoordinator implements StreamCoordinator {
         });
         return resultFuture;
       }
-    }), new Function<StreamProperty, Integer>() {
+    }), new Function<StreamGenerationProperty, Integer>() {
       @Override
-      public Integer apply(StreamProperty property) {
+      public Integer apply(StreamGenerationProperty property) {
         return property.getGeneration();
       }
     });
   }
 
   @Override
-  public Cancellable addListener(String streamName, StreamPropertyListener listener) {
-    return propertyStore.get().addChangeListener(streamName, new StreamPropertyChangeListener(listener));
+  public ListenableFuture<Long> changeTTL(final StreamConfig streamConfig, final long newTTL) {
+    return Futures.transform(ttlPropertyStore.get().update(streamConfig.getName(),
+                                                           new PropertyUpdater<StreamTTLProperty>() {
+      @Override
+      public ListenableFuture<StreamTTLProperty> apply(@Nullable final StreamTTLProperty property) {
+        final SettableFuture<StreamTTLProperty> resultFuture = SettableFuture.create();
+        updateExecutor.execute(new Runnable() {
+          @Override
+          public void run() {
+            resultFuture.set(new StreamTTLProperty(newTTL));
+          }
+        });
+        return resultFuture;
+      }
+    }), new Function<StreamTTLProperty, Long>() {
+      @Override
+      public Long apply(StreamTTLProperty property) {
+        return property.getTTL();
+      }
+    });
+  }
+
+  @Override
+  public Collection<Cancellable> addListener(String streamName, StreamPropertyListener listener) {
+    return ImmutableList.of(
+      generationPropertyStore.get().addChangeListener(streamName, new StreamGenerationChangeListener(listener)),
+      ttlPropertyStore.get().addChangeListener(streamName, new StreamTTLChangeListener(listener)));
   }
 
   @Override
   public void close() throws IOException {
-    propertyStore.get().close();
+    generationPropertyStore.get().close();
+    ttlPropertyStore.get().close();
   }
 
   /**
@@ -124,86 +168,4 @@ public abstract class AbstractStreamCoordinator implements StreamCoordinator {
     }
   }
 
-  /**
-   * Codec for {@link StreamProperty}.
-   */
-  private static final class StreamPropertyCodec implements Codec<StreamProperty> {
-
-    private static final Gson GSON = new Gson();
-
-    @Override
-    public byte[] encode(StreamProperty property) throws IOException {
-      return GSON.toJson(property).getBytes(Charsets.UTF_8);
-    }
-
-    @Override
-    public StreamProperty decode(byte[] data) throws IOException {
-      return GSON.fromJson(new String(data, Charsets.UTF_8), StreamProperty.class);
-    }
-  }
-
-  /**
-   * A {@link PropertyChangeListener} that convert onChange callback into {@link StreamPropertyListener}.
-   */
-  private static final class StreamPropertyChangeListener extends StreamPropertyListener
-                                                          implements PropertyChangeListener<StreamProperty> {
-
-    private final StreamPropertyListener listener;
-    // Callback from PropertyStore is
-    private StreamProperty currentProperty;
-
-    private StreamPropertyChangeListener(StreamPropertyListener listener) {
-      this.listener = listener;
-    }
-
-    @Override
-    public void onChange(String name, StreamProperty property) {
-      try {
-        if (property == null) {
-          // Property is deleted
-          if (currentProperty != null) {
-            // Fire all delete events
-            generationDeleted(name);
-          }
-          return;
-        }
-
-        if (currentProperty == null) {
-          // Fire all events
-          generationChanged(name, property.getGeneration());
-          return;
-        }
-
-        // Inspect individual stream property to determine what needs to be fired
-        if (currentProperty.getGeneration() < property.getGeneration()) {
-          generationChanged(name, property.getGeneration());
-        }
-      } finally {
-        currentProperty = property;
-      }
-    }
-
-    @Override
-    public void onError(String name, Throwable failureCause) {
-      LOG.error("Exception on PropertyChangeListener for stream {}", name, failureCause);
-    }
-
-    @Override
-    public void generationChanged(String streamName, int generation) {
-      try {
-        listener.generationChanged(streamName, generation);
-      } catch (Throwable t) {
-        LOG.error("Exception while calling StreamPropertyListener", t);
-      }
-    }
-
-    @Override
-    public void generationDeleted(String streamName) {
-      try {
-        listener.generationDeleted(streamName);
-      } catch (Throwable t) {
-        LOG.error("Exception while calling StreamPropertyListener", t);
-      }
-    }
-  }
 }

@@ -688,7 +688,7 @@ public final class FlowletProgramRunner implements ProgramRunner {
       };
 
       for (String stream : streams) {
-        cancellables.add(streamCoordinator.addListener(stream, propertyListener));
+        cancellables.addAll(streamCoordinator.addListener(stream, propertyListener));
       }
       notifyStarted();
     }
