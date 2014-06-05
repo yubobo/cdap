@@ -48,7 +48,7 @@ public class TestAuthenticationChannelHandler {
   private static AccessTokenIdentifierCodec accessTokenIdentifierCodec;
   private static AuthenticationChannelHandler authenticationHandler;
   private static URI baseURI;
-  private static Gson GSON;
+  private static final Gson GSON = new Gson();
 
   @BeforeClass
   public static void setup() {
@@ -67,7 +67,6 @@ public class TestAuthenticationChannelHandler {
     httpService.startAndWait();
     baseURI = URI.create(String.format("http://%s:%d", httpService.getBindAddress().getHostName(),
                                                        httpService.getBindAddress().getPort()));
-    GSON = new Gson();
   }
 
   private static Function getChannelModifier() {
@@ -143,10 +142,10 @@ public class TestAuthenticationChannelHandler {
   public static class TestHandler implements HttpHandler {
 
     public static final class ResponseKeys {
-      static String USER_NAME = "username";
-      static String GROUPS = "groups";
-      static String ISSUE_TIME = "issueTime";
-      static String EXPIRE_TIME = "expireTime";
+      static final String USER_NAME = "username";
+      static final String GROUPS = "groups";
+      static final String ISSUE_TIME = "issueTime";
+      static final String EXPIRE_TIME = "expireTime";
     }
 
     @Path("token")
