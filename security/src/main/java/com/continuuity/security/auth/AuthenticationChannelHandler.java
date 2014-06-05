@@ -31,6 +31,13 @@ public class AuthenticationChannelHandler extends SimpleChannelUpstreamHandler {
     this.accessTokenIdentifierCodec = accessTokenIdentifierCodec;
   }
 
+  /**
+   * Decode the AccessTokenIdentifier passed as a header and set it in a ThreadLocal.
+   * Returns a 401 if the identifier is malformed. 
+   * @param ctx
+   * @param e
+   * @throws Exception
+   */
   @Override
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
     Object message = e.getMessage();
