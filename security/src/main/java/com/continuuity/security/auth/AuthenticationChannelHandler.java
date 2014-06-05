@@ -54,7 +54,7 @@ public class AuthenticationChannelHandler extends SimpleChannelUpstreamHandler {
       SecurityRequestContext.set(accessTokenIdentifier);
       super.messageReceived(ctx, e);
     } catch (Exception ex) {
-      exceptionCaught(ctx, new DefaultExceptionEvent(ctx.getChannel(), ex.initCause(ex.getCause())));
+      exceptionCaught(ctx, new DefaultExceptionEvent(ctx.getChannel(), ex.getCause()));
     }
   }
 
