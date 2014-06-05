@@ -5,6 +5,7 @@ import com.continuuity.common.conf.Constants;
 import com.continuuity.common.guice.ConfigModule;
 import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.IOModule;
+import com.continuuity.common.io.Codec;
 import com.continuuity.http.HandlerContext;
 import com.continuuity.http.HttpHandler;
 import com.continuuity.http.HttpResponder;
@@ -45,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 public class TestAuthenticationChannelHandler {
   private static NettyHttpService httpService;
   private static CConfiguration configuration;
-  private static AccessTokenIdentifierCodec accessTokenIdentifierCodec;
+  private static Codec<AccessTokenIdentifier> accessTokenIdentifierCodec;
   private static AuthenticationChannelHandler authenticationHandler;
   private static URI baseURI;
   private static final Gson GSON = new Gson();

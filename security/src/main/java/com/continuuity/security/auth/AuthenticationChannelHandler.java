@@ -1,6 +1,7 @@
 package com.continuuity.security.auth;
 
 import com.continuuity.common.conf.Constants;
+import com.continuuity.common.io.Codec;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.jboss.netty.channel.ChannelFuture;
@@ -24,10 +25,10 @@ import org.jboss.netty.handler.codec.http.HttpVersion;
  */
 public class AuthenticationChannelHandler extends SimpleChannelUpstreamHandler {
   public static final String HANDLER_NAME = "authenticator";
-  private final AccessTokenIdentifierCodec accessTokenIdentifierCodec;
+  private final Codec<AccessTokenIdentifier> accessTokenIdentifierCodec;
 
   @Inject
-  public AuthenticationChannelHandler(AccessTokenIdentifierCodec accessTokenIdentifierCodec) {
+  public AuthenticationChannelHandler(Codec<AccessTokenIdentifier> accessTokenIdentifierCodec) {
     this.accessTokenIdentifierCodec = accessTokenIdentifierCodec;
   }
 
@@ -64,5 +65,6 @@ public class AuthenticationChannelHandler extends SimpleChannelUpstreamHandler {
     future.addListener(ChannelFutureListener.CLOSE);
     HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNAUTHORIZED);
     Channels.write(ctx, future, response);
+    Channels.close(ctx, future);
   }
 }
