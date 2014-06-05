@@ -50,7 +50,6 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
 
   private final TokenValidator tokenValidator;
   private final AccessTokenTransformer accessTokenTransformer;
-  private final DiscoveryServiceClient discoveryServiceClient;
   private final Iterable<Discoverable> discoverables;
   private final CConfiguration configuration;
   private final String realm;
@@ -63,7 +62,6 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     this.realm = realm;
     this.tokenValidator = tokenValidator;
     this.accessTokenTransformer = accessTokenTransformer;
-    this.discoveryServiceClient = discoveryServiceClient;
     this.discoverables = discoveryServiceClient.discover(Constants.Service.EXTERNAL_AUTHENTICATION);
     this.configuration = configuration;
   }
