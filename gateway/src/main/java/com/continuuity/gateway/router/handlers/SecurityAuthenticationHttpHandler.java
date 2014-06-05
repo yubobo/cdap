@@ -56,8 +56,6 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
   private final String realm;
   private final DateFormat dateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z");
 
-  public static final String VERIFIED_HEADER_BASE = "Reactor-verified ";
-
   public SecurityAuthenticationHttpHandler(String realm, TokenValidator tokenValidator,
                                            CConfiguration configuration,
                                            AccessTokenTransformer accessTokenTransformer,
@@ -140,7 +138,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
         accessTokenTransformer.transform(accessToken);
       logEntry.userName = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
       msg.setHeader(HttpHeaders.Names.AUTHORIZATION,
-                    VERIFIED_HEADER_BASE + accessTokenIdentifierPair.getAccessTokenIdentifierStr());
+                    Constants.Security.VERIFIED_HEADER_BASE + accessTokenIdentifierPair.getAccessTokenIdentifierStr());
       return true;
     }
   }

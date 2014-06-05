@@ -1,5 +1,6 @@
 package com.continuuity.security.auth;
 
+import com.continuuity.common.conf.Constants;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.jboss.netty.channel.ChannelFuture;
@@ -39,7 +40,7 @@ public class AuthenticationChannelHandler extends SimpleChannelUpstreamHandler {
     }
     HttpRequest request = (HttpRequest) message;
     String header = request.getHeader(HttpHeaders.Names.AUTHORIZATION);
-    header = header.replaceFirst("Reactor-verified", "");
+    header = header.replaceFirst(Constants.Security.VERIFIED_HEADER_BASE, "");
     byte[] encodedAccessTokenIdentifier = Base64.decodeBase64(header);
     try {
       AccessTokenIdentifier accessTokenIdentifier = accessTokenIdentifierCodec.decode(encodedAccessTokenIdentifier);

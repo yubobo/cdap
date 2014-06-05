@@ -5,7 +5,6 @@ import com.continuuity.common.conf.Constants;
 import com.continuuity.common.guice.ConfigModule;
 import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.IOModule;
-import com.continuuity.gateway.router.handlers.SecurityAuthenticationHttpHandler;
 import com.continuuity.http.HandlerContext;
 import com.continuuity.http.HttpHandler;
 import com.continuuity.http.HttpResponder;
@@ -96,8 +95,8 @@ public class TestAuthenticationChannelHandler {
                                                                             TestUserInfo.EXPIRY_TIME);
     byte[] encodedAccessTokenIdentifier = accessTokenIdentifierCodec.encode(accessTokenIdentifier);
     String base64EncodedIdentifier = Base64.encodeBase64String(encodedAccessTokenIdentifier).trim();
-    urlConn.setRequestProperty(HttpHeaders.Names.AUTHORIZATION, SecurityAuthenticationHttpHandler.VERIFIED_HEADER_BASE
-                                                                                             + base64EncodedIdentifier);
+    urlConn.setRequestProperty(HttpHeaders.Names.AUTHORIZATION,
+                               Constants.Security.VERIFIED_HEADER_BASE + base64EncodedIdentifier);
 
     urlConn.setRequestMethod(HttpMethod.GET.getName());
     urlConn.setRequestProperty(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
@@ -114,8 +113,7 @@ public class TestAuthenticationChannelHandler {
     URL url = baseURI.resolve("/test/token").toURL();
     HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
 
-    urlConn.setRequestProperty(HttpHeaders.Names.AUTHORIZATION, SecurityAuthenticationHttpHandler.VERIFIED_HEADER_BASE
-                                                                                                             + "xxxxx");
+    urlConn.setRequestProperty(HttpHeaders.Names.AUTHORIZATION, Constants.Security.VERIFIED_HEADER_BASE + "xxxxx");
 
     urlConn.setRequestMethod(HttpMethod.GET.getName());
     urlConn.setRequestProperty(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);

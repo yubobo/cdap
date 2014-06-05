@@ -534,6 +534,8 @@ public final class Constants {
     public static final String SSL_KEYSTORE_PASSWORD = "security.server.ssl.keystore.password";
     /** Realm file for Basic Authentication */
     public static final String BASIC_REALM_FILE = "security.authentication.basic.realmfile";
+    /** Header base for requests send downstream from Router*/
+    public static final String VERIFIED_HEADER_BASE = "Reactor-verified ";
   }
 
   /**
