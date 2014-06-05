@@ -10,8 +10,11 @@ import com.continuuity.http.HttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.http.NettyHttpService;
 import com.continuuity.security.guice.SecurityModules;
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteStreams;
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -21,7 +24,7 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.junit.Assert;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,6 +37,8 @@ import javax.annotation.Nullable;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Tests for {@code AuthenticationChannelHandler}.
  */
@@ -43,6 +48,7 @@ public class TestAuthenticationChannelHandler {
   private static AccessTokenIdentifierCodec accessTokenIdentifierCodec;
   private static AuthenticationChannelHandler authenticationHandler;
   private static URI baseURI;
+  private static Gson GSON;
 
   @BeforeClass
   public static void setup() {
@@ -61,6 +67,7 @@ public class TestAuthenticationChannelHandler {
     httpService.startAndWait();
     baseURI = URI.create(String.format("http://%s:%d", httpService.getBindAddress().getHostName(),
                                                        httpService.getBindAddress().getPort()));
+    GSON = new Gson();
   }
 
   private static Function getChannelModifier() {
@@ -101,7 +108,14 @@ public class TestAuthenticationChannelHandler {
     urlConn.setRequestMethod(HttpMethod.GET.getName());
     urlConn.setRequestProperty(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
 
-    Assert.assertEquals(200, urlConn.getResponseCode());
+    String content = new String(ByteStreams.toByteArray(urlConn.getInputStream()), Charsets.UTF_8);
+    JsonObject result = GSON.fromJson(content, JsonObject.class);
+
+    assertEquals(200, urlConn.getResponseCode());
+    assertEquals(result.get(TestHandler.ResponseKeys.USER_NAME).getAsString(), TestUserInfo.USERNAME);
+    assertEquals(result.get(TestHandler.ResponseKeys.GROUPS).getAsJsonArray(), GSON.toJsonTree(TestUserInfo.GROUPS));
+    assertEquals(result.get(TestHandler.ResponseKeys.ISSUE_TIME).getAsLong(), TestUserInfo.ISSUE_TIME);
+    assertEquals(result.get(TestHandler.ResponseKeys.EXPIRE_TIME).getAsLong(), TestUserInfo.EXPIRY_TIME);
   }
 
   /**
@@ -117,11 +131,23 @@ public class TestAuthenticationChannelHandler {
 
     urlConn.setRequestMethod(HttpMethod.GET.getName());
     urlConn.setRequestProperty(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
-    Assert.assertEquals(401, urlConn.getResponseCode());
+    assertEquals(401, urlConn.getResponseCode());
+  }
+
+  @AfterClass
+  public static void destroy() {
+    httpService.stopAndWait();
   }
 
   @Path("/test")
   public static class TestHandler implements HttpHandler {
+
+    public static final class ResponseKeys {
+      static String USER_NAME = "username";
+      static String GROUPS = "groups";
+      static String ISSUE_TIME = "issueTime";
+      static String EXPIRE_TIME = "expireTime";
+    }
 
     @Path("token")
     @GET
@@ -132,10 +158,11 @@ public class TestAuthenticationChannelHandler {
         responder.sendError(HttpResponseStatus.UNAUTHORIZED, "No AccessTokenIdentifier was found.");
       }
 
-      Assert.assertEquals(identifier.getUsername(), TestUserInfo.USERNAME);
-      Assert.assertEquals(identifier.getGroups(), TestUserInfo.GROUPS);
-      Assert.assertEquals(identifier.getIssueTimestamp(), TestUserInfo.ISSUE_TIME);
-      Assert.assertEquals(identifier.getExpireTimestamp(), TestUserInfo.EXPIRY_TIME);
+      object.add(ResponseKeys.USER_NAME, GSON.toJsonTree(identifier.getUsername()));
+      object.add(ResponseKeys.GROUPS, GSON.toJsonTree(identifier.getGroups()));
+      object.add(ResponseKeys.ISSUE_TIME, GSON.toJsonTree(identifier.getIssueTimestamp()));
+      object.add(ResponseKeys.EXPIRE_TIME, GSON.toJsonTree(identifier.getExpireTimestamp()));
+
       responder.sendJson(HttpResponseStatus.OK, object);
     }
 
