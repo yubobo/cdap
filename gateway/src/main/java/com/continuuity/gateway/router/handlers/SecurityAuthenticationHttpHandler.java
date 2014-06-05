@@ -50,12 +50,10 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
 
   private final TokenValidator tokenValidator;
   private final AccessTokenTransformer accessTokenTransformer;
-  private final DiscoveryServiceClient discoveryServiceClient;
   private final Iterable<Discoverable> discoverables;
   private final CConfiguration configuration;
   private final String realm;
   private final DateFormat dateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z");
-
 
   public SecurityAuthenticationHttpHandler(String realm, TokenValidator tokenValidator,
                                            CConfiguration configuration,
@@ -64,7 +62,6 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
     this.realm = realm;
     this.tokenValidator = tokenValidator;
     this.accessTokenTransformer = accessTokenTransformer;
-    this.discoveryServiceClient = discoveryServiceClient;
     this.discoverables = discoveryServiceClient.discover(Constants.Service.EXTERNAL_AUTHENTICATION);
     this.configuration = configuration;
   }
@@ -139,7 +136,7 @@ public class SecurityAuthenticationHttpHandler extends SimpleChannelHandler {
         accessTokenTransformer.transform(accessToken);
       logEntry.userName = accessTokenIdentifierPair.getAccessTokenIdentifierObj().getUsername();
       msg.setHeader(HttpHeaders.Names.AUTHORIZATION,
-                    "Reactor-verified " + accessTokenIdentifierPair.getAccessTokenIdentifierStr());
+                    Constants.Security.VERIFIED_HEADER_BASE + accessTokenIdentifierPair.getAccessTokenIdentifierStr());
       return true;
     }
   }
