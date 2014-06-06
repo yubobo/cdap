@@ -9,6 +9,7 @@ import com.continuuity.security.auth.AccessTokenIdentifier;
 import com.continuuity.security.auth.AccessTokenIdentifierCodec;
 import com.continuuity.security.auth.AccessTokenTransformer;
 import com.continuuity.security.auth.AccessTokenValidator;
+import com.continuuity.security.auth.AuthenticationChannelHandler;
 import com.continuuity.security.auth.KeyIdentifier;
 import com.continuuity.security.auth.KeyIdentifierCodec;
 import com.continuuity.security.auth.TokenManager;
@@ -16,6 +17,7 @@ import com.continuuity.security.auth.TokenValidator;
 import com.continuuity.security.server.AbstractAuthenticationHandler;
 import com.continuuity.security.server.ExternalAuthenticationServer;
 import com.continuuity.security.server.GrantAccessTokenHandler;
+import com.google.common.base.Function;
 import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -28,9 +30,11 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.eclipse.jetty.server.Handler;
+import org.jboss.netty.channel.ChannelPipeline;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  * Guice bindings for security related classes.  This extends {@code PrivateModule} in order to limit which classes
@@ -60,6 +64,9 @@ public abstract class SecurityModule extends PrivateModule {
                        .toProvider(AuthenticationHandlerMapProvider.class)
                        .in(Scopes.SINGLETON);
 
+    bind(Function.class).annotatedWith(Names.named("modify-pipeline"))
+                        .toProvider(SecurityChannelPipelineModifierProvider.class);
+
     bind(TokenValidator.class).to(AccessTokenValidator.class);
     bind(AccessTokenTransformer.class).in(Scopes.SINGLETON);
     expose(AccessTokenTransformer.class);
@@ -68,6 +75,34 @@ public abstract class SecurityModule extends PrivateModule {
     expose(ExternalAuthenticationServer.class);
     expose(new TypeLiteral<Codec<KeyIdentifier>>() { });
     expose(new TypeLiteral<Codec<AccessTokenIdentifier>>() { });
+  }
+
+  private static final class SecurityChannelPipelineModifierProvider implements Provider<Function> {
+    private final AuthenticationChannelHandler authenticationChannelHandler;
+    private final CConfiguration configuration;
+
+    @Inject
+    private SecurityChannelPipelineModifierProvider(CConfiguration configuration,
+                                                    AuthenticationChannelHandler authenticationChannelHandler) {
+      this.authenticationChannelHandler = authenticationChannelHandler;
+      this.configuration = configuration;
+    }
+
+    @Override
+    public Function get() {
+      if (configuration.getBoolean(Constants.Security.CFG_SECURITY_ENABLED)) {
+        return new Function<ChannelPipeline, ChannelPipeline>() {
+          @Nullable
+          @Override
+          public ChannelPipeline apply(@Nullable ChannelPipeline input) {
+            input.addAfter("decoder", AuthenticationChannelHandler.HANDLER_NAME, authenticationChannelHandler);
+            return input;
+          }
+        };
+      } else {
+        return null;
+      }
+    }
   }
 
   @Provides
