@@ -3,6 +3,7 @@ package com.continuuity.security.auth;
 
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.io.Codec;
+import com.continuuity.common.security.SecurityRequestContext;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.jboss.netty.channel.ChannelFuture;

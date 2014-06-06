@@ -6,6 +6,7 @@ import com.continuuity.common.guice.ConfigModule;
 import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.IOModule;
 import com.continuuity.common.io.Codec;
+import com.continuuity.common.security.SecurityRequestContext;
 import com.continuuity.http.HandlerContext;
 import com.continuuity.http.HttpHandler;
 import com.continuuity.http.HttpResponder;
@@ -153,7 +154,7 @@ public class TestAuthenticationChannelHandler {
     @GET
     public void testGet(HttpRequest request, HttpResponder responder) {
       JsonObject object = new JsonObject();
-      AccessTokenIdentifier identifier = SecurityRequestContext.get();
+      AccessTokenIdentifier identifier = (AccessTokenIdentifier) SecurityRequestContext.get();
       if (identifier == null) {
         responder.sendError(HttpResponseStatus.UNAUTHORIZED, "No AccessTokenIdentifier was found.");
       }
