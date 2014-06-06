@@ -8,7 +8,6 @@ import com.continuuity.common.logging.ServiceLoggingContext;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.http.HttpHandler;
 import com.continuuity.http.NettyHttpService;
-import com.continuuity.security.auth.AuthenticationChannelHandler;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
@@ -17,7 +16,6 @@ import com.google.inject.name.Named;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,22 +32,18 @@ public class MetricsQueryService extends AbstractIdleService {
   private final NettyHttpService httpService;
   private final DiscoveryService discoveryService;
   private Cancellable cancelDiscovery;
-  private final CConfiguration configuration;
-  private final AuthenticationChannelHandler authenticationChannelHandler;
 
   @Inject
   public MetricsQueryService(CConfiguration cConf, @Named(Constants.Service.METRICS) Set<HttpHandler> handlers,
                              DiscoveryService discoveryService,
                              @Nullable MetricsCollectionService metricsCollectionService,
-                             AuthenticationChannelHandler authenticationChannelHandler) {
+                             @Named("modify-pipeline") Function pipelineModifer) {
     // netty http server config
     String address = cConf.get(Constants.Metrics.ADDRESS);
     int backlogcnxs = cConf.getInt(Constants.Metrics.BACKLOG_CONNECTIONS, 20000);
     int execthreads = cConf.getInt(Constants.Metrics.EXEC_THREADS, 20);
     int bossthreads = cConf.getInt(Constants.Metrics.BOSS_THREADS, 1);
     int workerthreads = cConf.getInt(Constants.Metrics.WORKER_THREADS, 10);
-    this.configuration = cConf;
-    this.authenticationChannelHandler = authenticationChannelHandler;
 
     NettyHttpService.Builder builder = NettyHttpService.builder();
     builder.addHttpHandlers(handlers);
@@ -62,7 +56,7 @@ public class MetricsQueryService extends AbstractIdleService {
     builder.setExecThreadPoolSize(execthreads);
     builder.setBossThreadPoolSize(bossthreads);
     builder.setWorkerThreadPoolSize(workerthreads);
-    builder.modifyChannelPipeline(getChannelModifier());
+    builder.modifyChannelPipeline(pipelineModifer);
 
     this.httpService = builder.build();
     this.discoveryService = discoveryService;
@@ -73,21 +67,6 @@ public class MetricsQueryService extends AbstractIdleService {
                ", execthreads: " + execthreads +
                ", bossthreads: " + bossthreads +
                ", workerthreads: " + workerthreads);
-  }
-
-  private Function<ChannelPipeline, ChannelPipeline> getChannelModifier() {
-    if (configuration.getBoolean(Constants.Security.CFG_SECURITY_ENABLED)) {
-      return new Function<ChannelPipeline, ChannelPipeline>() {
-        @Nullable
-        @Override
-        public ChannelPipeline apply(@Nullable ChannelPipeline input) {
-          input.addAfter("decoder", AuthenticationChannelHandler.HANDLER_NAME, authenticationChannelHandler);
-          return input;
-        }
-      };
-    } else {
-      return null;
-    }
   }
 
   @Override
