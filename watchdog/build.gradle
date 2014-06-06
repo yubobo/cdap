@@ -12,6 +12,7 @@ dependencies {
 
     compile elastic([group: 'com.continuuity', name: 'common', version: "${version}", changing: true], "common")
     compile elastic([group: 'com.continuuity', name: 'data-fabric', version: "${version}", changing: true], "data-fabric")
+    compile elastic([group: 'com.continuuity', name: 'security', version: "${version}", changing: true], "security")
     testCompile files(this.project(':data-fabric').sourceSets.test.output)
 
     apiCompile libraries.slf4j_api

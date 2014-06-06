@@ -6,6 +6,8 @@ import com.continuuity.common.hooks.MetricsReporterHook;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.http.HttpHandler;
 import com.continuuity.http.NettyHttpService;
+import com.continuuity.security.auth.AuthenticationChannelHandler;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
@@ -13,6 +15,7 @@ import com.google.inject.name.Named;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,13 +34,18 @@ public class Gateway extends AbstractIdleService {
   private final NettyHttpService httpService;
   private final DiscoveryService discoveryService;
   private Cancellable cancelDiscovery;
+  private final CConfiguration configuration;
+  private final AuthenticationChannelHandler authenticationChannelHandler;
 
   @Inject
   public Gateway(CConfiguration cConf,
                  @Named(Constants.Gateway.ADDRESS) InetAddress hostname,
                  Set<HttpHandler> handlers, DiscoveryService discoveryService,
-                 @Nullable MetricsCollectionService metricsCollectionService) {
+                 @Nullable MetricsCollectionService metricsCollectionService,
+                 AuthenticationChannelHandler authenticationChannelHandler) {
 
+    this.configuration = cConf;
+    this.authenticationChannelHandler = authenticationChannelHandler;
     NettyHttpService.Builder builder = NettyHttpService.builder();
     builder.addHttpHandlers(handlers);
     builder.setHandlerHooks(ImmutableList.of(new MetricsReporterHook(metricsCollectionService,
@@ -54,9 +62,25 @@ public class Gateway extends AbstractIdleService {
                                                Constants.Gateway.DEFAULT_BOSS_THREADS));
     builder.setWorkerThreadPoolSize(cConf.getInt(Constants.Gateway.WORKER_THREADS,
                                                  Constants.Gateway.DEFAULT_WORKER_THREADS));
+    builder.modifyChannelPipeline(getChannelModifier());
 
     this.httpService = builder.build();
     this.discoveryService = discoveryService;
+  }
+
+  private Function<ChannelPipeline, ChannelPipeline> getChannelModifier() {
+    if (configuration.getBoolean(Constants.Security.CFG_SECURITY_ENABLED)) {
+      return new Function<ChannelPipeline, ChannelPipeline>() {
+        @Nullable
+        @Override
+        public ChannelPipeline apply(@Nullable ChannelPipeline input) {
+          input.addAfter("decoder", AuthenticationChannelHandler.HANDLER_NAME, authenticationChannelHandler);
+          return input;
+        }
+      };
+    } else {
+      return null;
+    }
   }
 
   @Override

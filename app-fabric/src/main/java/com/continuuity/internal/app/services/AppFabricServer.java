@@ -15,6 +15,8 @@ import com.continuuity.http.HttpHandler;
 import com.continuuity.http.NettyHttpService;
 import com.continuuity.internal.app.runtime.schedule.SchedulerService;
 import com.continuuity.logging.appender.LogAppenderInitializer;
+import com.continuuity.security.auth.AuthenticationChannelHandler;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
@@ -24,6 +26,7 @@ import org.apache.twill.common.ServiceListenerAdapter;
 import org.apache.twill.common.Threads;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +46,7 @@ public final class AppFabricServer extends AbstractIdleService {
   private final InetAddress hostname;
   private final SchedulerService schedulerService;
   private final ProgramRuntimeService programRuntimeService;
+  private final AuthenticationChannelHandler authenticationChannelHandler;
 
   private NettyHttpService httpService;
   private Set<HttpHandler> handlers;
@@ -59,7 +63,8 @@ public final class AppFabricServer extends AbstractIdleService {
                          @Named(Constants.AppFabric.SERVER_ADDRESS) InetAddress hostname,
                          @Named("appfabric.http.handler") Set<HttpHandler> handlers,
                          @Nullable MetricsCollectionService metricsCollectionService,
-                         ProgramRuntimeService programRuntimeService, LogAppenderInitializer logAppenderInitializer) {
+                         ProgramRuntimeService programRuntimeService, LogAppenderInitializer logAppenderInitializer,
+                         AuthenticationChannelHandler authenticationChannelHandler) {
     this.hostname = hostname;
     this.discoveryService = discoveryService;
     this.schedulerService = schedulerService;
@@ -68,6 +73,7 @@ public final class AppFabricServer extends AbstractIdleService {
     this.metricsCollectionService = metricsCollectionService;
     this.programRuntimeService = programRuntimeService;
     this.logAppenderInitializer = logAppenderInitializer;
+    this.authenticationChannelHandler = authenticationChannelHandler;
   }
 
   /**
@@ -96,6 +102,7 @@ public final class AppFabricServer extends AbstractIdleService {
                                                   Constants.Gateway.DEFAULT_BOSS_THREADS))
       .setWorkerThreadPoolSize(configuration.getInt(Constants.Gateway.WORKER_THREADS,
                                                     Constants.Gateway.DEFAULT_WORKER_THREADS))
+      .modifyChannelPipeline(getChannelModifier())
       .build();
 
     // Add a listener so that when the service started, register with service discovery.
@@ -142,6 +149,21 @@ public final class AppFabricServer extends AbstractIdleService {
     }, Threads.SAME_THREAD_EXECUTOR);
 
     httpService.startAndWait();
+  }
+
+  private Function<ChannelPipeline, ChannelPipeline> getChannelModifier() {
+    if (configuration.getBoolean(Constants.Security.CFG_SECURITY_ENABLED)) {
+      return new Function<ChannelPipeline, ChannelPipeline>() {
+        @Nullable
+        @Override
+        public ChannelPipeline apply(@Nullable ChannelPipeline input) {
+          input.addAfter("decoder", AuthenticationChannelHandler.HANDLER_NAME, authenticationChannelHandler);
+          return input;
+        }
+      };
+    } else {
+      return null;
+    }
   }
 
   @Override
