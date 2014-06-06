@@ -42,7 +42,10 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Closeables;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.inject.Inject;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
@@ -50,6 +53,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -89,7 +94,7 @@ public final class StreamHandler extends AuthenticatedHttpHandler {
                        StreamCoordinator streamCoordinator, StreamAdmin streamAdmin, StreamMetaStore streamMetaStore,
                        StreamConsumerFactory streamConsumerFactory, StreamFileWriterFactory writerFactory,
                        TransactionExecutorFactory executorFactory, MetricsCollectionService metricsCollectionService) {
-    super(authenticator, cConf);
+    super(authenticator);
     this.cConf = cConf;
     this.streamAdmin = streamAdmin;
     this.streamMetaStore = streamMetaStore;

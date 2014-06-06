@@ -3,7 +3,6 @@
  */
 package com.continuuity.metrics.query;
 
-import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.service.ServerException;
 import com.continuuity.common.utils.ImmutablePair;
@@ -38,14 +37,14 @@ public abstract class BaseMetricsHandler extends AuthenticatedHttpHandler {
 
 
   //TODO: Note: MetadataTable is introduced in the dependency as a temproary solution. REACTOR-12 jira has details
-  protected BaseMetricsHandler(Authenticator authenticator, MetaDataTable metaDataTable, CConfiguration cConf) {
-    super(authenticator, cConf);
+  protected BaseMetricsHandler(Authenticator authenticator, MetaDataTable metaDataTable) {
+    super(authenticator);
     this.metaDataTable = metaDataTable;
     getExistingServices();
   }
 
   protected MetricsRequest parseAndValidate(HttpRequest request, URI requestURI)
-    throws Exception {
+    throws MetricsPathException, ServerException {
     ImmutablePair<MetricsRequest, MetricsRequestContext> pair = MetricsRequestParser.parseRequestAndContext(requestURI);
     validatePathElements(request, pair.getSecond());
     return pair.getFirst();
@@ -60,7 +59,7 @@ public abstract class BaseMetricsHandler extends AuthenticatedHttpHandler {
    * @throws MetricsPathException
    */
   protected void validatePathElements(HttpRequest request, MetricsRequestContext metricsRequestContext)
-    throws Exception {
+    throws ServerException, MetricsPathException {
     String apiKey = request.getHeader(Constants.Gateway.CONTINUUITY_API_KEY);
     String accountId = getAuthenticatedAccountId(request);
     // check for existance of elements in the path

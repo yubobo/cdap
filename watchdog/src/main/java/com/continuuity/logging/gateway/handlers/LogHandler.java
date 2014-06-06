@@ -44,7 +44,7 @@ public class LogHandler extends AuthenticatedHttpHandler {
 
   @Inject
   public LogHandler(Authenticator authenticator, LogReader logReader, CConfiguration cConfig) {
-    super(authenticator, cConfig);
+    super(authenticator);
     this.logReader = logReader;
     this.logPattern = cConfig.get(LoggingConfiguration.LOG_PATTERN, LoggingConfiguration.DEFAULT_LOG_PATTERN);
   }

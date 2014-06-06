@@ -3,7 +3,6 @@
  */
 package com.continuuity.metrics.query;
 
-import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.metrics.MetricsScope;
 import com.continuuity.common.service.ServerException;
@@ -116,8 +115,8 @@ public final class MetricsDiscoveryHandler extends BaseMetricsHandler {
 
   @Inject
   public MetricsDiscoveryHandler(Authenticator authenticator, final MetricsTableFactory metricsTableFactory,
-                                 MetaDataTable metaDataTable, CConfiguration configuration) {
-    super(authenticator, metaDataTable, configuration);
+                                 MetaDataTable metaDataTable) {
+    super(authenticator, metaDataTable);
     this.aggregatesTables = Maps.newHashMap();
     for (MetricsScope scope : scopesToDiscover) {
       aggregatesTables.put(scope, metricsTableFactory.createAggregates(scope.name()));
@@ -196,8 +195,6 @@ public final class MetricsDiscoveryHandler extends BaseMetricsHandler {
     } catch (ServerException e) {
       responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Internal error while looking for metrics");
       return;
-    } catch (Exception e) {
-      e.printStackTrace();
     }
 
     // TODO(albert): add ability to pass in maxAge through query params

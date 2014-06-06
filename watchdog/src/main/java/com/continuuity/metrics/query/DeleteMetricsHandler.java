@@ -55,7 +55,7 @@ public class DeleteMetricsHandler extends BaseMetricsHandler {
   public DeleteMetricsHandler(Authenticator authenticator,
                               final MetricsTableFactory metricsTableFactory, CConfiguration cConf,
                               MetaDataTable metaDataTable) {
-    super(authenticator, metaDataTable, cConf);
+    super(authenticator, metaDataTable);
     this.metricsTableCaches = Maps.newHashMap();
     this.aggregatesTables = Maps.newHashMap();
     for (final MetricsScope scope : MetricsScope.values()) {
@@ -195,8 +195,6 @@ public class DeleteMetricsHandler extends BaseMetricsHandler {
       responder.sendError(HttpResponseStatus.NOT_FOUND, e.getMessage());
     } catch (ServerException e) {
       responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Error while deleting metrics");
-    } catch (Exception e) {
-      e.printStackTrace();
     }
   }
 
