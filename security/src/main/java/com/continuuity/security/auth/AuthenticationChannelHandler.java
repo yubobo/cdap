@@ -13,6 +13,7 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -48,6 +49,9 @@ public class AuthenticationChannelHandler extends SimpleChannelUpstreamHandler {
         throw new InvalidTokenException(TokenState.MISSING, "No AccessTokenIdentifier was found in request.");
       }
       SecurityRequestContext.set(currentAccessTokenIdentifier);
+      if (((HttpChunk) message).isLast()) {
+        currentAccessTokenIdentifier = null;
+      }
       super.messageReceived(ctx, e);
       return;
     }
