@@ -3,6 +3,7 @@
  */
 package com.continuuity.metrics.query;
 
+import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.service.ServerException;
 import com.continuuity.data2.OperationException;
@@ -47,8 +48,8 @@ public final class BatchMetricsHandler extends BaseMetricsHandler {
 
   @Inject
   public BatchMetricsHandler(Authenticator authenticator, final MetricsTableFactory metricsTableFactory,
-                             MetaDataTable metaDataTable) {
-    super(authenticator, metaDataTable);
+                             MetaDataTable metaDataTable, CConfiguration configuration) {
+    super(authenticator, metaDataTable, configuration);
     this.requestExecutor = new MetricsRequestExecutor(metricsTableFactory);
   }
 
@@ -100,6 +101,8 @@ public final class BatchMetricsHandler extends BaseMetricsHandler {
       responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Internal error while querying for metrics");
     } catch (ServerException e) {
       responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Internal error while querying for metrics");
+    } catch (Exception e) {
+      e.printStackTrace();
     } finally {
       reader.close();
     }

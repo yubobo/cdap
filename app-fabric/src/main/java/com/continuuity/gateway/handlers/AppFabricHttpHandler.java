@@ -291,7 +291,7 @@ public class AppFabricHttpHandler extends AuthenticatedHttpHandler {
                               DataSetInstantiatorFromMetaData datasetInstantiator,
                               DatasetServiceClient dsClient) {
 
-    super(authenticator);
+    super(authenticator, configuration);
     this.locationFactory = locationFactory;
     this.managerFactory = managerFactory;
     this.streamAdmin = streamAdmin;
@@ -576,7 +576,7 @@ public class AppFabricHttpHandler extends AuthenticatedHttpHandler {
   public void getRunnableRuntimeArgs(HttpRequest request, HttpResponder responder,
                                      @PathParam("app-id") final String appId,
                                      @PathParam("runnable-type") final String runnableType,
-                                     @PathParam("runnable-id") final String runnableId) {
+                                     @PathParam("runnable-id") final String runnableId) throws Exception {
     Type type = RUNNABLE_TYPE_MAP.get(runnableType);
     if (type == null || type == Type.WEBAPP) {
       responder.sendStatus(HttpResponseStatus.NOT_FOUND);
@@ -603,7 +603,7 @@ public class AppFabricHttpHandler extends AuthenticatedHttpHandler {
   public void saveRunnableRuntimeArgs(HttpRequest request, HttpResponder responder,
                                       @PathParam("app-id") final String appId,
                                       @PathParam("runnable-type") final String runnableType,
-                                      @PathParam("runnable-id") final String runnableId) {
+                                      @PathParam("runnable-id") final String runnableId) throws Exception {
     Type type = RUNNABLE_TYPE_MAP.get(runnableType);
     if (type == null || type == Type.WEBAPP) {
       responder.sendStatus(HttpResponseStatus.NOT_FOUND);
@@ -1300,7 +1300,7 @@ public class AppFabricHttpHandler extends AuthenticatedHttpHandler {
   }
 
   private BodyConsumer deployAppStream (final HttpRequest request,
-                                        final HttpResponder responder, final String appId) throws IOException {
+                                        final HttpResponder responder, final String appId) throws Exception {
     final String archiveName = request.getHeader(ARCHIVE_NAME_HEADER);
     final String accountId = getAuthenticatedAccountId(request);
     final Location uploadDir = locationFactory.create(archiveDir + "/" + accountId);
@@ -1635,7 +1635,7 @@ public class AppFabricHttpHandler extends AuthenticatedHttpHandler {
   @Path("/apps/{app-id}/flows/{flow-id}/queues")
   public void deleteFlowQueues(HttpRequest request, HttpResponder responder,
                                @PathParam("app-id") final String appId,
-                               @PathParam("flow-id") final String flowId) {
+                               @PathParam("flow-id") final String flowId) throws Exception {
     String accountId = getAuthenticatedAccountId(request);
     Id.Program programId = Id.Program.from(accountId, appId, flowId);
     try {

@@ -1,5 +1,6 @@
 package com.continuuity.data2.datafabric.dataset.service.executor;
 
+import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.exception.HandlerException;
 import com.continuuity.data2.datafabric.dataset.RemoteDatasetFramework;
@@ -39,8 +40,8 @@ public class DatasetAdminOpHTTPHandler extends AuthenticatedHttpHandler {
   private final RemoteDatasetFramework client;
 
   @Inject
-  public DatasetAdminOpHTTPHandler(Authenticator authenticator, RemoteDatasetFramework client) {
-    super(authenticator);
+  public DatasetAdminOpHTTPHandler(Authenticator authenticator, RemoteDatasetFramework client, CConfiguration configuration) {
+    super(authenticator, configuration);
     this.client = client;
   }
 

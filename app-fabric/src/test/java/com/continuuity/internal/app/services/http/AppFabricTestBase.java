@@ -5,15 +5,19 @@ import com.continuuity.common.conf.Constants;
 import com.continuuity.common.discovery.EndpointStrategy;
 import com.continuuity.common.discovery.RandomEndpointStrategy;
 import com.continuuity.common.discovery.TimeLimitEndpointStrategy;
+import com.continuuity.common.io.Codec;
 import com.continuuity.data2.datafabric.dataset.service.DatasetService;
 import com.continuuity.data2.transaction.TransactionSystemClient;
 import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.internal.app.services.AppFabricServer;
 import com.continuuity.metrics.query.MetricsQueryService;
+import com.continuuity.security.auth.AccessTokenIdentifier;
+import com.continuuity.security.auth.AccessTokenIdentifierCodec;
 import com.continuuity.test.internal.guice.AppFabricTestModule;
 import com.google.common.collect.ObjectArrays;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -28,8 +32,10 @@ import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -51,6 +57,7 @@ public abstract class AppFabricTestBase {
   private static MetricsQueryService metricsService;
   private static DatasetService dsService;
   private static TransactionSystemClient txClient;
+  private static Codec<AccessTokenIdentifier> accessTokenIdentifierCodec;
 
   @BeforeClass
   public static void beforeClass() throws Throwable {
@@ -80,6 +87,7 @@ public abstract class AppFabricTestBase {
     txClient = injector.getInstance(TransactionSystemClient.class);
     metricsService = injector.getInstance(MetricsQueryService.class);
     metricsService.startAndWait();
+    accessTokenIdentifierCodec = injector.getInstance(AccessTokenIdentifierCodec.class);
   }
 
   @AfterClass
@@ -120,24 +128,28 @@ public abstract class AppFabricTestBase {
 
       get.setHeader(AUTH_HEADER);
     }
+    get.setHeader(getReactorVerifiedHeader());
     return client.execute(get);
   }
 
   protected static HttpResponse execute(HttpUriRequest request) throws Exception {
     DefaultHttpClient client = new DefaultHttpClient();
     request.setHeader(AUTH_HEADER);
+    request.setHeader(getReactorVerifiedHeader());
     return client.execute(request);
   }
 
   protected static HttpPost getPost(String resource) throws Exception {
     HttpPost post = new HttpPost(AppFabricTestBase.getEndPoint(resource));
     post.setHeader(AUTH_HEADER);
+    post.setHeader(getReactorVerifiedHeader());
     return post;
   }
 
   protected static HttpPut getPut(String resource) throws Exception {
     HttpPut put = new HttpPut(AppFabricTestBase.getEndPoint(resource));
     put.setHeader(AUTH_HEADER);
+    put.setHeader(getReactorVerifiedHeader());
     return put;
   }
 
@@ -162,12 +174,14 @@ public abstract class AppFabricTestBase {
     } else {
       post.setHeader(AUTH_HEADER);
     }
+    post.setHeader(getReactorVerifiedHeader());
     return client.execute(post);
   }
 
   protected static HttpResponse doPost(HttpPost post) throws Exception {
     DefaultHttpClient client = new DefaultHttpClient();
     post.setHeader(AUTH_HEADER);
+    post.setHeader(getReactorVerifiedHeader());
     return client.execute(post);
   }
 
@@ -175,6 +189,7 @@ public abstract class AppFabricTestBase {
     DefaultHttpClient client = new DefaultHttpClient();
     HttpPut put = new HttpPut(AppFabricTestBase.getEndPoint(resource));
     put.setHeader(AUTH_HEADER);
+    put.setHeader(getReactorVerifiedHeader());
     return doPut(resource, null);
   }
 
@@ -185,6 +200,7 @@ public abstract class AppFabricTestBase {
       put.setEntity(new StringEntity(body));
     }
     put.setHeader(AUTH_HEADER);
+    put.setHeader(getReactorVerifiedHeader());
     return client.execute(put);
   }
 
@@ -192,7 +208,16 @@ public abstract class AppFabricTestBase {
     DefaultHttpClient client = new DefaultHttpClient();
     HttpDelete delete = new HttpDelete(AppFabricTestBase.getEndPoint(resource));
     delete.setHeader(AUTH_HEADER);
+    delete.setHeader(getReactorVerifiedHeader());
     return client.execute(delete);
+  }
+
+  private static BasicHeader getReactorVerifiedHeader() throws IOException {
+    long time = System.currentTimeMillis();
+    AccessTokenIdentifier accessTokenIdentifier = new AccessTokenIdentifier("test", Collections.<String>emptyList(), time, time + 10000000);
+    byte[] encodedAccessTokenIdentifier = accessTokenIdentifierCodec.encode(accessTokenIdentifier);
+    String encoded = Base64.encodeBase64String(encodedAccessTokenIdentifier).trim();
+    return new BasicHeader("Authorization", Constants.Security.VERIFIED_HEADER_BASE + encoded);
   }
 
 }

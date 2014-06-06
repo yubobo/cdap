@@ -3,6 +3,7 @@
  */
 package com.continuuity.metrics.query;
 
+import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.service.ServerException;
 import com.continuuity.data2.OperationException;
@@ -31,8 +32,8 @@ public class MetricsQueryHandler extends BaseMetricsHandler {
   @Inject
 
   public MetricsQueryHandler(Authenticator authenticator, final MetricsTableFactory metricsTableFactory,
-                             MetaDataTable metaDataTable) {
-    super(authenticator, metaDataTable);
+                             MetaDataTable metaDataTable, CConfiguration configuration) {
+    super(authenticator, metaDataTable, configuration);
     this.requestExecutor = new MetricsRequestExecutor(metricsTableFactory);
   }
 
@@ -105,6 +106,8 @@ public class MetricsQueryHandler extends BaseMetricsHandler {
       responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Internal error while querying metrics");
     } catch (ServerException e) {
       responder.sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Internal error while querying metrics");
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 }
