@@ -74,6 +74,7 @@ public abstract class SecurityModule extends PrivateModule {
     expose(TokenManager.class);
     expose(ExternalAuthenticationServer.class);
     expose(new TypeLiteral<Codec<KeyIdentifier>>() { });
+    expose(Function.class).annotatedWith(Names.named("modify-pipeline"));
     expose(new TypeLiteral<Codec<AccessTokenIdentifier>>() { });
   }
 
