@@ -1,16 +1,19 @@
 package com.continuuity.security.auth;
 
 import com.continuuity.common.security.AbstractAccessTokenIdentifier;
+import com.continuuity.internal.io.Schema;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a verified user identity.
  */
-public class AccessTokenIdentifier extends AbstractAccessTokenIdentifier {
+public class AccessTokenIdentifier implements AbstractAccessTokenIdentifier {
 
   private final String username;
   private final List<String> groups;
@@ -23,6 +26,33 @@ public class AccessTokenIdentifier extends AbstractAccessTokenIdentifier {
     this.groups = ImmutableList.copyOf(groups);
     this.issueTimestamp = issueTimestamp;
     this.expireTimestamp = expireTimestamp;
+  }
+
+  /**
+   * Schema of AccessTokenIdentifiers.
+   */
+  public static final class Schemas {
+    private static final int VERSION = 1;
+    private static final Map<Integer, Schema> schemas = Maps.newHashMap();
+    static {
+      schemas.put(1, Schema.recordOf("AccessTokenIdentifier",
+                                     Schema.Field.of("username", Schema.of(Schema.Type.STRING)),
+                                     Schema.Field.of("groups", Schema.arrayOf(Schema.of(Schema.Type.STRING))),
+                                     Schema.Field.of("issueTimestamp", Schema.of(Schema.Type.LONG)),
+                                     Schema.Field.of("expireTimestamp", Schema.of(Schema.Type.LONG))));
+    }
+
+    public static int getVersion() {
+      return VERSION;
+    }
+
+    public static Schema getSchemaVersion(int version) {
+      return schemas.get(version);
+    }
+
+    public static Schema getCurrentSchema() {
+      return schemas.get(VERSION);
+    }
   }
 
   /**
