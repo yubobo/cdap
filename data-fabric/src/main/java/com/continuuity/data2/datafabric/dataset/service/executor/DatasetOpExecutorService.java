@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
+import javax.annotation.Nullable;
 
 /**
  * Provides various REST endpoints to execute user code via {@link DatasetAdminOpHTTPHandler}.
@@ -37,7 +38,7 @@ public class DatasetOpExecutorService extends AbstractIdleService {
   public DatasetOpExecutorService(CConfiguration cConf, DiscoveryService discoveryService,
                                   MetricsCollectionService metricsCollectionService,
                                   @Named(Constants.Service.DATASET_EXECUTOR) Set<HttpHandler> handlers,
-                                  @Named("modify-pipeline") Function pipelineModifer) {
+                                  @Nullable @Named("modify-pipeline") Function pipelineModifer) {
 
     this.discoveryService = discoveryService;
     this.configuration = cConf;

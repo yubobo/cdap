@@ -38,7 +38,7 @@ public class Gateway extends AbstractIdleService {
                  @Named(Constants.Gateway.ADDRESS) InetAddress hostname,
                  Set<HttpHandler> handlers, DiscoveryService discoveryService,
                  @Nullable MetricsCollectionService metricsCollectionService,
-                 @Named("modify-pipeline") Function pipelineModifer) {
+                 @Nullable @Named("modify-pipeline") Function pipelineModifer) {
 
     NettyHttpService.Builder builder = NettyHttpService.builder();
     builder.addHttpHandlers(handlers);

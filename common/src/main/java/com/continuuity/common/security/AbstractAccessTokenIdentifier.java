@@ -9,12 +9,12 @@ import java.util.Map;
 /**
  * Inteface that AccessTokenIdentifiers implement.
  */
-public interface AccessTokenIdentifierInterface {
+public abstract class AbstractAccessTokenIdentifier {
 
   /**
    * Schema of AccessTokenIdentifiers.
    */
-  static final class Schemas {
+  public static final class Schemas {
     private static final int VERSION = 1;
     private static final Map<Integer, Schema> schemas = Maps.newHashMap();
     static {
@@ -38,12 +38,12 @@ public interface AccessTokenIdentifierInterface {
     }
   }
 
-  public String getUsername();
+  public abstract String getUsername();
 
-  public List<String> getGroups();
+  public abstract List<String> getGroups();
 
-  public long getIssueTimestamp();
+  public abstract long getIssueTimestamp();
 
-  public long getExpireTimestamp();
+  public abstract long getExpireTimestamp();
 
 }

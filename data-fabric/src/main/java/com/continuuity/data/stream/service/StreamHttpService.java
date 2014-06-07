@@ -41,7 +41,7 @@ public final class StreamHttpService extends AbstractIdleService {
                            StreamCoordinator streamCoordinator,
                            @Named(Constants.Service.STREAM_HANDLER) Set<HttpHandler> handlers,
                            @Nullable MetricsCollectionService metricsCollectionService,
-                           @Named("modify-pipeline") Function pipelineModifer) {
+                           @Nullable @Named("modify-pipeline") Function pipelineModifer) {
     this.discoveryService = discoveryService;
     this.streamCoordinator = streamCoordinator;
 

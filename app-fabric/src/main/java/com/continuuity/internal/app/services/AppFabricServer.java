@@ -62,7 +62,7 @@ public final class AppFabricServer extends AbstractIdleService {
                          @Named("appfabric.http.handler") Set<HttpHandler> handlers,
                          @Nullable MetricsCollectionService metricsCollectionService,
                          ProgramRuntimeService programRuntimeService, LogAppenderInitializer logAppenderInitializer,
-                         @Named("modify-pipeline") Function pipelineModifer) {
+                         @Nullable @Named("modify-pipeline") Function pipelineModifer) {
     this.hostname = hostname;
     this.discoveryService = discoveryService;
     this.schedulerService = schedulerService;

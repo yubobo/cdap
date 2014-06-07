@@ -4,22 +4,22 @@ package com.continuuity.common.security;
  * RequestContext that maintains a ThreadLocal with references to {@code AccessTokenIdentifier}.
  */
 public class SecurityRequestContext {
-  private static final ThreadLocal<AccessTokenIdentifierInterface> threadLocal =
-                                                          new InheritableThreadLocal<AccessTokenIdentifierInterface>();
+  private static final ThreadLocal<AbstractAccessTokenIdentifier> threadLocal =
+                                                          new InheritableThreadLocal<AbstractAccessTokenIdentifier>();
 
   /**
    * Get the {@code AccessTokenIdentifier} set on the current thread.
    * @return
    */
-  public static AccessTokenIdentifierInterface get() {
+  public static AbstractAccessTokenIdentifier get() {
     return threadLocal.get();
   }
 
   /**
    * Set the {@code AccessTokenIdentifier} on the current thread.
-   * @param accessTokenIdentifierInterface
+   * @param abstractAccessTokenIdentifier
    */
-  public static void set(AccessTokenIdentifierInterface accessTokenIdentifierInterface) {
-    threadLocal.set(accessTokenIdentifierInterface);
+  public static void set(AbstractAccessTokenIdentifier abstractAccessTokenIdentifier) {
+    threadLocal.set(abstractAccessTokenIdentifier);
   }
 }

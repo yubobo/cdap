@@ -37,7 +37,7 @@ public class MetricsQueryService extends AbstractIdleService {
   public MetricsQueryService(CConfiguration cConf, @Named(Constants.Service.METRICS) Set<HttpHandler> handlers,
                              DiscoveryService discoveryService,
                              @Nullable MetricsCollectionService metricsCollectionService,
-                             @Named("modify-pipeline") Function pipelineModifer) {
+                             @Nullable @Named("modify-pipeline") Function pipelineModifer) {
     // netty http server config
     String address = cConf.get(Constants.Metrics.ADDRESS);
     int backlogcnxs = cConf.getInt(Constants.Metrics.BACKLOG_CONNECTIONS, 20000);

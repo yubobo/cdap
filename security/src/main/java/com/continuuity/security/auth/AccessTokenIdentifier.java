@@ -1,6 +1,6 @@
 package com.continuuity.security.auth;
 
-import com.continuuity.common.security.AccessTokenIdentifierInterface;
+import com.continuuity.common.security.AbstractAccessTokenIdentifier;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Represents a verified user identity.
  */
-public class AccessTokenIdentifier implements AccessTokenIdentifierInterface {
+public class AccessTokenIdentifier extends AbstractAccessTokenIdentifier {
 
   private final String username;
   private final List<String> groups;
