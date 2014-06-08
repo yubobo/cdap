@@ -35,6 +35,7 @@ import com.continuuity.internal.data.dataset.DatasetInstanceProperties;
 import com.continuuity.internal.data.dataset.lib.table.Get;
 import com.continuuity.internal.data.dataset.lib.table.Put;
 import com.continuuity.internal.data.dataset.lib.table.Table;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
@@ -103,6 +104,7 @@ public class DatasetOpExecutorServiceTest {
       new DiscoveryRuntimeModule().getInMemoryModules(),
       new LocationRuntimeModule().getInMemoryModules(),
       new DataFabricModules().getInMemoryModules(),
+      new SecurityModules().getInMemoryModules(),
       Modules.override(new DataSetServiceModules().getInMemoryModule()).with(new AbstractModule() {
         @Override
         protected void configure() {
