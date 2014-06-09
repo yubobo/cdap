@@ -17,6 +17,7 @@ import com.continuuity.gateway.runtime.GatewayModule;
 import com.continuuity.internal.app.store.MDTBasedStoreFactory;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
@@ -148,6 +149,7 @@ public class GatewayTwillRunnable extends AbstractTwillRunnable {
       new ConfigModule(cConf, hConf),
       new IOModule(),
       new AuthModule(),
+      new SecurityModules().getDistributedModules(),
       new ZKClientModule(),
       new KafkaClientModule(),
       new GatewayModule().getDistributedModules(),

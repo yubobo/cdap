@@ -17,6 +17,7 @@ import com.continuuity.gateway.collector.NettyFlumeCollector;
 import com.continuuity.internal.app.store.MDTBasedStoreFactory;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.util.concurrent.Futures;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -69,6 +70,7 @@ public class Main extends DaemonMain {
     Injector injector = Guice.createInjector(
       new ConfigModule(cConf, hConf),
       new AuthModule(),
+      new SecurityModules().getDistributedModules(),
       new IOModule(),
       new ZKClientModule(),
       new KafkaClientModule(),
