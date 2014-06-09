@@ -4,7 +4,7 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.io.Codec;
 import com.continuuity.security.auth.FileBasedKeyManager;
 import com.continuuity.security.auth.KeyIdentifier;
-import com.continuuity.security.auth.KeyManager;
+import com.continuuity.common.security.KeyManager;
 import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Provider;

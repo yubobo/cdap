@@ -1,12 +1,12 @@
 package com.continuuity.gateway.router;
 
-import com.continuuity.security.auth.TokenState;
-import com.continuuity.security.auth.TokenValidator;
+import com.continuuity.common.security.TokenState;
+import com.continuuity.common.security.TokenValidator;
 import com.google.common.util.concurrent.AbstractService;
 
 /**
- * Simple {@link com.continuuity.security.auth.TokenValidator} implementation for test cases, which always
- * returns {@link com.continuuity.security.auth.TokenState#VALID} for all tokens.
+ * Simple {@link com.continuuity.common.security.TokenValidator} implementation for test cases, which always
+ * returns {@link com.continuuity.common.security.TokenState#VALID} for all tokens.
  */
 public class SuccessTokenValidator extends AbstractService implements TokenValidator {
   @Override

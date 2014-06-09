@@ -1,4 +1,4 @@
-package com.continuuity.security.auth;
+package com.continuuity.common.security;
 
 /**
  * Exception thrown if an asserted message digest does not match the recomputed value, using the same secret key.

@@ -1,4 +1,4 @@
-package com.continuuity.security.auth;
+package com.continuuity.common.security;
 
 /**
  * Different states attained after validating the token

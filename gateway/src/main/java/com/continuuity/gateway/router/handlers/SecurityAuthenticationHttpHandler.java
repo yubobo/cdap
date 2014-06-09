@@ -2,9 +2,9 @@ package com.continuuity.gateway.router.handlers;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
-import com.continuuity.security.auth.AccessTokenTransformer;
-import com.continuuity.security.auth.TokenState;
-import com.continuuity.security.auth.TokenValidator;
+import com.continuuity.common.security.AccessTokenTransformer;
+import com.continuuity.common.security.TokenState;
+import com.continuuity.common.security.TokenValidator;
 import com.google.common.base.Charsets;
 import com.google.common.base.Stopwatch;
 import com.google.gson.JsonArray;

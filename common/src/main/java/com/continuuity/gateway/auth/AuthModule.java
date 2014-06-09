@@ -2,6 +2,8 @@ package com.continuuity.gateway.auth;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
+import com.continuuity.common.io.Codec;
+import com.continuuity.common.security.AccessTokenIdentifier;
 import com.continuuity.passport.http.client.PassportClient;
 import com.google.common.base.Preconditions;
 import com.google.inject.AbstractModule;
@@ -22,10 +24,11 @@ public class AuthModule extends AbstractModule {
   @Provides
   @Singleton
   public final Authenticator providesAuthenticator(CConfiguration cConf,
-                                                          @Nullable Provider<PassportClient> passportClientProvider) {
+                                                          @Nullable Provider<PassportClient> passportClientProvider,
+                                                          Codec<AccessTokenIdentifier> accessTokenIdentifierCodec) {
     Authenticator authenticator;
     if (cConf.getBoolean(Constants.Security.CFG_SECURITY_ENABLED)) {
-      return new ReactorAuthenticator();
+      return new ReactorAuthenticator(accessTokenIdentifierCodec);
     } else if (requireAuthentication(cConf)) {
       PassportClient passportClient;
       passportClient = passportClientProvider == null ? getPassportClient(cConf) : passportClientProvider.get();

@@ -9,7 +9,7 @@ import com.continuuity.gateway.auth.NoAuthenticator;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.http.NettyHttpService;
-import com.continuuity.security.auth.AccessTokenTransformer;
+import com.continuuity.common.security.AccessTokenTransformer;
 import com.continuuity.security.guice.SecurityModules;
 
 import com.google.common.base.Supplier;

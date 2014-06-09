@@ -121,6 +121,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -2300,7 +2301,9 @@ public class AppFabricHttpHandler extends AuthenticatedHttpHandler {
       }
 
       for (ApplicationSpecification appSpec : specList) {
-        result.add(makeAppRecord(appSpec));
+        Map map = new HashMap(makeAppRecord(appSpec));
+        map.put("username", accountId);
+        result.add(map);
       }
 
       String json;

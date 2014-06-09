@@ -1,4 +1,4 @@
-package com.continuuity.security.auth;
+package com.continuuity.common.security;
 
 import com.continuuity.common.io.Codec;
 import com.google.common.util.concurrent.AbstractIdleService;

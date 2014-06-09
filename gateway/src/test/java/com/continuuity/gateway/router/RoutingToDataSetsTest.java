@@ -8,7 +8,7 @@ import com.continuuity.common.utils.Networks;
 import com.continuuity.gateway.auth.NoAuthenticator;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
-import com.continuuity.security.auth.AccessTokenTransformer;
+import com.continuuity.common.security.AccessTokenTransformer;
 import com.continuuity.security.guice.SecurityModules;
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;

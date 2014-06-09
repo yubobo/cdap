@@ -1,6 +1,11 @@
-package com.continuuity.security.auth;
+package com.continuuity.common.security;
 
 import com.continuuity.common.io.Codec;
+import com.continuuity.common.security.AccessToken;
+import com.continuuity.common.security.AccessTokenIdentifier;
+import com.continuuity.common.security.InvalidDigestException;
+import com.continuuity.common.security.InvalidTokenException;
+import com.continuuity.common.security.TokenState;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
@@ -9,7 +14,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 
 /**
- * Provides a simple interface to generate and validate {@link AccessToken}s.
+ * Provides a simple interface to generate and validate {@link com.continuuity.common.security.AccessToken}s.
  */
 public class TokenManager extends AbstractIdleService {
 
@@ -53,7 +58,7 @@ public class TokenManager extends AbstractIdleService {
    * the expected value. To validate the token digest, we recompute the digest value, based on the asserted identity
    * and our own view of the secret keys.
    * @param token The token instance to validate.
-   * @throws InvalidTokenException If the provided token instance is expired or the digest does not match the
+   * @throws com.continuuity.common.security.InvalidTokenException If the provided token instance is expired or the digest does not match the
    * recomputed value.
    */
   public void validateSecret(AccessToken token) throws InvalidTokenException {

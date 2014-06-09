@@ -1,4 +1,4 @@
-package com.continuuity.security.auth;
+package com.continuuity.common.security;
 
 import com.continuuity.api.common.Bytes;
 import com.continuuity.internal.io.Schema;

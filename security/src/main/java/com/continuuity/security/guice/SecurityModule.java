@@ -3,16 +3,16 @@ package com.continuuity.security.guice;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.io.Codec;
-import com.continuuity.security.auth.AccessToken;
-import com.continuuity.security.auth.AccessTokenCodec;
-import com.continuuity.security.auth.AccessTokenIdentifier;
-import com.continuuity.security.auth.AccessTokenIdentifierCodec;
-import com.continuuity.security.auth.AccessTokenTransformer;
-import com.continuuity.security.auth.AccessTokenValidator;
+import com.continuuity.common.security.AccessToken;
+import com.continuuity.common.security.AccessTokenCodec;
+import com.continuuity.common.security.AccessTokenIdentifier;
+import com.continuuity.common.security.AccessTokenIdentifierCodec;
+import com.continuuity.common.security.AccessTokenTransformer;
+import com.continuuity.common.security.AccessTokenValidator;
 import com.continuuity.security.auth.KeyIdentifier;
 import com.continuuity.security.auth.KeyIdentifierCodec;
-import com.continuuity.security.auth.TokenManager;
-import com.continuuity.security.auth.TokenValidator;
+import com.continuuity.common.security.TokenManager;
+import com.continuuity.common.security.TokenValidator;
 import com.continuuity.security.server.AbstractAuthenticationHandler;
 import com.continuuity.security.server.ExternalAuthenticationServer;
 import com.continuuity.security.server.GrantAccessTokenHandler;
@@ -67,6 +67,7 @@ public abstract class SecurityModule extends PrivateModule {
     expose(TokenManager.class);
     expose(ExternalAuthenticationServer.class);
     expose(new TypeLiteral<Codec<KeyIdentifier>>() { });
+    expose(new TypeLiteral<Codec<AccessTokenIdentifier>>() { });
   }
 
   @Provides

@@ -2,6 +2,10 @@ package com.continuuity.security.auth;
 
 import com.continuuity.api.common.Bytes;
 import com.continuuity.common.io.Codec;
+import com.continuuity.common.security.AccessToken;
+import com.continuuity.common.security.AccessTokenIdentifier;
+import com.continuuity.common.security.InvalidTokenException;
+import com.continuuity.common.security.TokenManager;
 import com.continuuity.common.utils.ImmutablePair;
 import com.google.common.collect.Lists;
 import org.junit.Test;
@@ -15,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * Tests related to {@link TokenManager} implementations.
+ * Tests related to {@link com.continuuity.common.security.TokenManager} implementations.
  */
 public abstract class TestTokenManager {
   protected static final Logger LOG = LoggerFactory.getLogger(TestTokenManager.class);

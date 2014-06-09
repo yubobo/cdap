@@ -1,4 +1,4 @@
-package com.continuuity.security.auth;
+package com.continuuity.common.security;
 
 /**
  * Represents a message signed by a secret key.

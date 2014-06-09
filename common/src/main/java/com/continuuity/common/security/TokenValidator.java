@@ -1,4 +1,4 @@
-package com.continuuity.security.auth;
+package com.continuuity.common.security;
 
 import com.google.common.util.concurrent.Service;
 
@@ -7,7 +7,7 @@ import com.google.common.util.concurrent.Service;
  */
 public interface TokenValidator extends Service {
   /**
-   * Validates the access token and returns the {@link com.continuuity.security.auth.TokenState}
+   * Validates the access token and returns the {@link com.continuuity.common.security.TokenState}
    * describing the cause to be in this state
    *
    * @param token The token to be validated.

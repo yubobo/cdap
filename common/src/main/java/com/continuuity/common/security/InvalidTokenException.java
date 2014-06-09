@@ -1,4 +1,4 @@
-package com.continuuity.security.auth;
+package com.continuuity.common.security;
 
 /**
  * This exception indicates a failure to validate an issued {@link AccessToken}, for example due to token expiration
