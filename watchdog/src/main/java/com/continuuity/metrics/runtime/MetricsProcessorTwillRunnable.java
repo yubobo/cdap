@@ -26,6 +26,7 @@ import com.continuuity.metrics.process.KafkaConsumerMetaTable;
 import com.continuuity.metrics.process.KafkaMetricsProcessorServiceFactory;
 import com.continuuity.metrics.process.MessageCallbackFactory;
 import com.continuuity.metrics.process.MetricsMessageCallbackFactory;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.Guice;
@@ -102,7 +103,8 @@ public final class MetricsProcessorTwillRunnable extends AbstractReactorTwillRun
       new LoggingModules().getDistributedModules(),
       new LocationRuntimeModule().getDistributedModules(),
       new DataFabricModules().getDistributedModules(),
-      new KafkaMetricsProcessorModule()
+      new KafkaMetricsProcessorModule(),
+      new SecurityModules().getDistributedModules()
      );
   }
 

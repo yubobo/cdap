@@ -17,6 +17,7 @@ import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.logging.LoggingConfiguration;
 import com.continuuity.logging.save.LogSaver;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.continuuity.watchdog.election.MultiLeaderElection;
 import com.continuuity.watchdog.election.PartitionChangeHandler;
 import com.google.common.base.Throwables;
@@ -175,7 +176,8 @@ public final class LogSaverTwillRunnable extends AbstractTwillRunnable {
       new MetricsClientRuntimeModule().getDistributedModules(),
       new DiscoveryRuntimeModule().getDistributedModules(),
       new LocationRuntimeModule().getDistributedModules(),
-      new DataFabricModules().getDistributedModules()
+      new DataFabricModules().getDistributedModules(),
+      new SecurityModules().getDistributedModules()
     );
   }
 }

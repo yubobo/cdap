@@ -30,6 +30,7 @@ import com.continuuity.internal.app.runtime.SimpleProgramOptions;
 import com.continuuity.logging.appender.LogAppenderInitializer;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -294,6 +295,7 @@ public abstract class AbstractProgramTwillRunnable<T extends ProgramRunner> impl
       new ZKClientModule(),
       new KafkaClientModule(),
       new AuthModule(),
+      new SecurityModules().getDistributedModules(),
       new MetricsClientRuntimeModule().getDistributedModules(),
       new LocationRuntimeModule().getDistributedModules(),
       new LoggingModules().getDistributedModules(),

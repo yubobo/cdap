@@ -19,6 +19,7 @@ import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.continuuity.metrics.guice.MetricsHandlerModule;
 import com.continuuity.metrics.query.MetricsQueryService;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.Guice;
@@ -96,6 +97,7 @@ public class MetricsTwillRunnable extends AbstractReactorTwillRunnable {
       new DiscoveryRuntimeModule().getDistributedModules(),
       new LoggingModules().getDistributedModules(),
       new AuthModule(),
+      new SecurityModules().getDistributedModules(),
       new MetricsHandlerModule(),
       new MetricsClientRuntimeModule().getDistributedModules()
     );
