@@ -28,6 +28,9 @@ public class StandardUnionObjectInspector implements UnionObjectInspector {
     return ois;
   }
 
+  /**
+   * TODO : Javadoc comment
+   */
   public static class StandardUnion implements UnionObject {
     protected byte tag;
     protected Object object;

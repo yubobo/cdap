@@ -22,11 +22,10 @@ import com.continuuity.data.security.HBaseTokenUtils;
 import com.continuuity.data2.datafabric.dataset.service.DatasetService;
 import com.continuuity.data2.util.hbase.HBaseTableUtilFactory;
 import com.continuuity.gateway.auth.AuthModule;
-import com.continuuity.hive.guice.HiveRuntimeModule;
-import com.continuuity.hive.server.HiveServer;
 import com.continuuity.internal.app.services.AppFabricServer;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.io.Files;
@@ -131,7 +130,8 @@ public class ReactorServiceMain extends DaemonMain {
       new ProgramRunnerRuntimeModule().getDistributedModules(),
       new DataSetServiceModules().getDistributedModule(),
       new DataFabricModules().getDistributedModules(),
-      new MetricsClientRuntimeModule().getDistributedModules()
+      new MetricsClientRuntimeModule().getDistributedModules(),
+      new SecurityModules().getDistributedModules()
       // TODO reintegrate once hive issues in distributed mode are fixed
       // new HiveRuntimeModule().getDistributedModules()
     );

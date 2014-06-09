@@ -1,8 +1,8 @@
 package com.continuuity.security.guice;
 
 import com.continuuity.common.conf.CConfiguration;
-import com.continuuity.security.auth.InMemoryKeyManager;
 import com.continuuity.common.security.KeyManager;
+import com.continuuity.security.auth.InMemoryKeyManager;
 import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Provider;

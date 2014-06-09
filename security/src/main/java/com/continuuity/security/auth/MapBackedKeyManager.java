@@ -6,7 +6,8 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 
 /**
- * Abstract base class for {@link com.continuuity.common.security.KeyManager} implementations that store all secret keys in an in-memory Map.
+ * Abstract base class for {@link com.continuuity.common.security.KeyManager} implementations that store all secret
+ * keys in an in-memory Map.
  */
 public abstract class MapBackedKeyManager extends AbstractKeyManager {
   protected final Map<Integer, KeyIdentifier> allKeys = Maps.newConcurrentMap();

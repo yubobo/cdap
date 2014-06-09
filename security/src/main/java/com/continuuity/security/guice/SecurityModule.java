@@ -9,10 +9,10 @@ import com.continuuity.common.security.AccessTokenIdentifier;
 import com.continuuity.common.security.AccessTokenIdentifierCodec;
 import com.continuuity.common.security.AccessTokenTransformer;
 import com.continuuity.common.security.AccessTokenValidator;
-import com.continuuity.security.auth.KeyIdentifier;
-import com.continuuity.security.auth.KeyIdentifierCodec;
 import com.continuuity.common.security.TokenManager;
 import com.continuuity.common.security.TokenValidator;
+import com.continuuity.security.auth.KeyIdentifier;
+import com.continuuity.security.auth.KeyIdentifierCodec;
 import com.continuuity.security.server.AbstractAuthenticationHandler;
 import com.continuuity.security.server.ExternalAuthenticationServer;
 import com.continuuity.security.server.GrantAccessTokenHandler;
@@ -67,7 +67,8 @@ public abstract class SecurityModule extends PrivateModule {
     expose(TokenManager.class);
     expose(ExternalAuthenticationServer.class);
     expose(new TypeLiteral<Codec<KeyIdentifier>>() { });
-    expose(new TypeLiteral<Codec<AccessTokenIdentifier>>() { });
+    expose(new TypeLiteral<Codec<AccessTokenIdentifier>>() {
+    });
   }
 
   @Provides

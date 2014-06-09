@@ -15,6 +15,7 @@ import com.continuuity.data.runtime.DataSetServiceModules;
 import com.continuuity.data2.datafabric.dataset.service.executor.DatasetOpExecutorService;
 import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -60,7 +61,8 @@ public class DatasetOpExecutorServerTwillRunnable extends AbstractReactorTwillRu
       new LocationRuntimeModule().getDistributedModules(),
       new DataFabricModules().getDistributedModules(),
       new DataSetServiceModules().getDistributedModule(),
-      new AuthModule());
+      new AuthModule(),
+      new SecurityModules().getDistributedModules());
   }
 
   @Override

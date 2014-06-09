@@ -19,7 +19,8 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * {@link com.continuuity.common.security.KeyManager} implementation that distributes shared secret keys via ZooKeeper to all instances, so that all
+ * {@link com.continuuity.common.security.KeyManager} implementation that distributes shared secret keys via ZooKeeper
+ * to all instances, so that all
  * distributed instances maintain the same local cache of keys.  Instances of this class will perform leader election,
  * so that one instance functions as the "active" leader at a time.  The leader is responsible for periodically
  * generating a new secret key (with the frequency based on the configured value for

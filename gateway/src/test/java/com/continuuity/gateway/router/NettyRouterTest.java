@@ -4,14 +4,13 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.guice.DiscoveryRuntimeModule;
 import com.continuuity.common.guice.IOModule;
+import com.continuuity.common.security.AccessTokenTransformer;
 import com.continuuity.common.utils.Networks;
 import com.continuuity.gateway.auth.NoAuthenticator;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.http.NettyHttpService;
-import com.continuuity.common.security.AccessTokenTransformer;
 import com.continuuity.security.guice.SecurityModules;
-
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMultimap;

@@ -2,10 +2,10 @@ package com.continuuity.gateway.router;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
-import com.continuuity.gateway.router.handlers.HttpRequestHandler;
-import com.continuuity.gateway.router.handlers.SecurityAuthenticationHttpHandler;
 import com.continuuity.common.security.AccessTokenTransformer;
 import com.continuuity.common.security.TokenValidator;
+import com.continuuity.gateway.router.handlers.HttpRequestHandler;
+import com.continuuity.gateway.router.handlers.SecurityAuthenticationHttpHandler;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;

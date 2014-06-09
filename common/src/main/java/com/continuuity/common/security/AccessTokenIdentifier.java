@@ -14,6 +14,9 @@ import java.util.Map;
  */
 public class AccessTokenIdentifier {
 
+  /**
+   * Schema of AcessTokenIdentifiers.
+   */
   public static final class Schemas {
     private static final int VERSION = 1;
     private static final Map<Integer, Schema> schemas = Maps.newHashMap();
