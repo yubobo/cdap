@@ -19,11 +19,11 @@ import com.continuuity.internal.data.dataset.module.DatasetDefinitionRegistry;
 import com.continuuity.logging.appender.LogAppender;
 import com.continuuity.logging.appender.kafka.KafkaLogAppender;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.google.inject.name.Names;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.twill.zookeeper.ZKClientService;
@@ -51,6 +51,7 @@ public class DistributedMapReduceContextBuilder extends AbstractMapReduceContext
       new LocationRuntimeModule().getDistributedModules(),
       new IOModule(),
       new AuthModule(),
+      new SecurityModules().getDistributedModules(),
       new ZKClientModule(),
       new DiscoveryRuntimeModule().getDistributedModules(),
       new MetricsClientRuntimeModule().getMapReduceModules(taskContext),
