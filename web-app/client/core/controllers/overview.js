@@ -66,6 +66,10 @@ define([], function () {
 							objects[index].set('counts.Procedure', items.length);
 						});
 
+            self.HTTP.rest('apps', id, 'user', {cache: true}, function (items) {
+              objects[index].set('counts.User', items["username"]);
+            });
+
 					})(objects[i].id, i);
 
 				}

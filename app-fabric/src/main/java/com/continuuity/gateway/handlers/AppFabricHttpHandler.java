@@ -2689,6 +2689,55 @@ public class AppFabricHttpHandler extends AuthenticatedHttpHandler {
     }
   }
 
+  @GET
+  @Path("/apps/{app-id}/user")
+  public void getAppUser(HttpRequest request, HttpResponder responder,
+                                 @PathParam("app-id") final String appId) {
+    if (appId != null && appId.isEmpty()) {
+      responder.sendString(HttpResponseStatus.BAD_REQUEST, "app-id is empty");
+      return;
+    }
+
+    try {
+      String accountId = getAuthenticatedAccountId(request);
+      Id.Account accId = Id.Account.from(accountId);
+      List<Map<String, String>> result = Lists.newArrayList();
+      List<ApplicationSpecification> specList;
+      if (appId == null) {
+        specList = new ArrayList<ApplicationSpecification>(store.getAllApplications(accId));
+      } else {
+        ApplicationSpecification appSpec = store.getApplication(new Id.Application(accId, appId));
+        if (appSpec == null) {
+          responder.sendStatus(HttpResponseStatus.NOT_FOUND);
+          return;
+        }
+        specList = Collections.singletonList(store.getApplication(new Id.Application(accId, appId)));
+      }
+
+      for (ApplicationSpecification appSpec : specList) {
+        Map map = new HashMap();
+        map.put("username", accountId);
+        result.add(map);
+      }
+
+      String json;
+      if (appId == null) {
+        json = GSON.toJson(result);
+      } else {
+        json = GSON.toJson(result.get(0));
+      }
+
+      responder.sendByteArray(HttpResponseStatus.OK, json.getBytes(Charsets.UTF_8),
+                              ImmutableMultimap.of(HttpHeaders.Names.CONTENT_TYPE, "application/json"));
+    } catch (SecurityException e) {
+      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
+    } catch (Throwable e) {
+      LOG.error("Got exception : ", e);
+      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
+
+  }
+
   @POST
   @Path("/tables/{table-id}/rows/{row-id}/increment")
   public void incrementTableRow(HttpRequest request, final HttpResponder responder,
