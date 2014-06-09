@@ -24,7 +24,9 @@ public class AuthModule extends AbstractModule {
   public final Authenticator providesAuthenticator(CConfiguration cConf,
                                                           @Nullable Provider<PassportClient> passportClientProvider) {
     Authenticator authenticator;
-    if (requireAuthentication(cConf)) {
+    if (cConf.getBoolean(Constants.Security.CFG_SECURITY_ENABLED)) {
+      return new ReactorAuthenticator();
+    } else if (requireAuthentication(cConf)) {
       PassportClient passportClient;
       passportClient = passportClientProvider == null ? getPassportClient(cConf) : passportClientProvider.get();
       Preconditions.checkNotNull(passportClient, "Passport client cannot be null when authentication required");
