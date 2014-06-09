@@ -22,6 +22,7 @@ import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.logging.appender.LogAppenderInitializer;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.security.guice.SecurityModules;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
@@ -105,7 +106,8 @@ public class TransactionServiceTwillRunnable extends AbstractReactorTwillRunnabl
       new LocationRuntimeModule().getDistributedModules(),
       new DiscoveryRuntimeModule().getDistributedModules(),
       new MetricsClientRuntimeModule().getDistributedModules(),
-      new LoggingModules().getDistributedModules()
+      new LoggingModules().getDistributedModules(),
+      new SecurityModules().getDistributedModules()
     );
   }
 
