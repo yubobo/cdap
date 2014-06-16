@@ -6,6 +6,8 @@ import com.continuuity.common.utils.UsageException;
 import com.continuuity.gateway.util.Util;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -15,7 +17,9 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -31,6 +35,7 @@ public class MetaDataClient {
     Logger.getRootLogger().setLevel(Level.OFF);
   }
 
+  private static final Gson GSON = new Gson();
   /**
    * for debugging. should only be set to true in unit tests.
    * when true, program will print the stack trace after the usage.
@@ -43,6 +48,7 @@ public class MetaDataClient {
   String hostname = null;        // the hostname of the gateway
   int port = -1;                 // the port of the gateway
   String apikey = null;          // the api key for authentication.
+  String accessToken = null;     // the access token for connecting to secure reactor
 
   String command = null;         // the command to run
 
@@ -79,6 +85,7 @@ public class MetaDataClient {
     out.println("  --host <name>           To specify the hostname to send to");
     out.println("  --port <number>         To specify the port to use");
     out.println("  --apikey <apikey>       To specify an API key for authentication");
+    out.println("  --token <token>         To specify the access token for a secure connection");
     out.println("  --verbose               To see more verbose output");
     out.println("  --help                  To print this message");
     if (error) {
@@ -129,6 +136,11 @@ public class MetaDataClient {
         } catch (NumberFormatException e) {
           usage(true);
         }
+      } else if ("--token".equals(arg)) {
+        if (++pos >= args.length) {
+          usage(true);
+        }
+        accessToken = args[pos].trim().replace("\n", "");
       } else if ("--apikey".equals(arg)) {
         if (++pos >= args.length) {
           usage(true);
@@ -215,7 +227,8 @@ public class MetaDataClient {
 
     boolean useSsl = !forceNoSSL && (apikey != null);
     // TODO
-    String baseUrl = "MetaDataClient should be re-implemented towards new gateway";
+    String baseUrl = "http://127.0.0.1:10000";
+//    String baseUrl = "MetaDataClient should be re-implemented towards new gateway";
     // = Util.findBaseUrl(config, MetaDataRestAccessor.class, null, hostname, port, useSsl);
     if (baseUrl == null) {
       System.err.println("Can't figure out the URL to send to. " +
@@ -257,6 +270,9 @@ public class MetaDataClient {
     if (apikey != null) {
       get.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
     }
+    if (accessToken != null) {
+      get.setHeader("Authorization", "Bearer " + accessToken);
+    }
     try {
       response = client.execute(get);
       client.getConnectionManager().shutdown();
@@ -293,7 +309,27 @@ public class MetaDataClient {
    * @return whether the response indicates success
    */
   boolean checkHttpStatus(HttpResponse response) {
-    if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+      PrintStream out = (verbose ? System.out : System.err);
+      out.println("Unauthorized");
+      if (accessToken == null) {
+        out.println("No access token provided");
+      } else {
+        Reader reader = null;
+        try {
+          reader = new InputStreamReader(response.getEntity().getContent());
+          String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
+          if (responseError != null && !responseError.isEmpty()) {
+            out.println(responseError);
+          }
+          reader.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+          out.println("Unknown unauthorized error");
+        }
+      }
+      return false;
+    } else if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
       if (verbose) {
         System.out.println(response.getStatusLine());
       } else {
@@ -320,15 +356,31 @@ public class MetaDataClient {
   }
 
   /**
+   * Error Description from HTTPResponse
+   */
+  private class ErrorMessage {
+    @SerializedName("error_description")
+    private String errorDescription;
+
+    public String getErrorDescription() {
+      return errorDescription;
+    }
+  }
+
+  /**
    * This is the main method. It delegates to getValue() in order to make
    * it possible to test the return value.
    */
   public static void main(String[] args) {
+    String [] testArgs = {"list", "--host", "localhost", "--type", "Table", "--verbose",
+      "--token", "AgphZG1pbgIKYWRtaW4A2LOig9NR2KPV1dNR1KeY7QVA4w2Jppr7OLUu90Rt4rw14fPYybaA0zfmr2SfMIAZ6L8="};
+
     // create a config and load the gateway properties
     CConfiguration config = CConfiguration.create();
     // create a data client and run it with the given arguments
     MetaDataClient instance = new MetaDataClient();
     String value = instance.execute(args, config);
+//    String value = instance.execute(args, config);
     // exit with error in case fails
     if (value == null) {
       System.exit(1);

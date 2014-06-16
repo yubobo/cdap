@@ -15,6 +15,12 @@ import com.continuuity.common.utils.UsageException;
 import com.continuuity.gateway.util.Util;
 import com.continuuity.internal.app.verification.StreamVerification;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.annotations.SerializedName;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -25,9 +31,12 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Level;
 
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,6 +67,7 @@ public class StreamClient {
    */
   public static boolean debug = false;
 
+  static final Gson GSON = new Gson();
 
   String command = null;         // the command to run
   boolean verbose = false;       // for debug output
@@ -72,6 +82,7 @@ public class StreamClient {
   String bodyFile = null;        // the file containing the body in binary form
   String destination = null;     // the destination stream (stream id)
   String consumer = null;        // consumer group id to fetch from the stream
+  String accessToken = null;     // the access token for secure connections
   boolean all = false;           // whether to view all events in the stream
   Integer last = null;           // to view the N last events in the stream
   Integer first = null;          // to view the N first events in the stream
@@ -125,6 +136,7 @@ public class StreamClient {
     out.println("  --first <number>        To view the first N events in the stream. Default ");
     out.println("                          for view is --first 10.");
     out.println("  --last <number>         To view the last N events in the stream.");
+    out.println("  --token <token>  To specify the access token for a secure connection");
     out.println("  --verbose               To see more verbose output");
     out.println("  --help                  To print this message");
     if (error) {
@@ -166,6 +178,11 @@ public class StreamClient {
           usage(true);
         }
         baseUrl = args[pos];
+      } else if ("--token".equals(arg)) {
+        if (++pos >= args.length) {
+          usage(true);
+        }
+        accessToken = args[pos].trim().replace("\n", "");
       } else if ("--host".equals(arg)) {
         if (++pos >= args.length) {
           usage(true);
@@ -244,7 +261,7 @@ public class StreamClient {
         } catch (NumberFormatException e) {
           usage(true);
         }
-      } else if ("--help".equals(arg)) {
+      }  else if ("--help".equals(arg)) {
         usage(false);
         help = true;
         return;
@@ -423,11 +440,13 @@ public class StreamClient {
       HttpPost post = new HttpPost(requestUrl);
       for (String header : headers.keySet()) {
         post.setHeader(destination + "." + header, headers.get(header));
-
       }
       post.setEntity(new ByteArrayEntity(binaryBody));
       if (apikey != null) {
         post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+      }
+      if (accessToken != null) {
+        post.setHeader("Authorization", "Bearer " + accessToken);
       }
       // post is now fully constructed, ready to send
 
@@ -494,6 +513,9 @@ public class StreamClient {
         if (apikey != null) {
           post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
         }
+        if (accessToken != null) {
+          post.setHeader("Authorization", "Bearer " + accessToken);
+        }
         HttpResponse response;
         try {
           response = client.execute(post);
@@ -535,6 +557,9 @@ public class StreamClient {
       if (apikey != null) {
         put.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
       }
+      if (accessToken != null) {
+        put.setHeader("Authorization", "Bearer " + accessToken);
+      }
       // put is now fully constructed, ready to send
 
       // prepare for HTTP
@@ -559,6 +584,9 @@ public class StreamClient {
       HttpPost post = new HttpPost(requestUrl + "/truncate");
       if (apikey != null) {
         post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+      }
+      if (accessToken != null) {
+        post.setHeader("Authorization", "Bearer " + accessToken);
       }
       HttpResponse response;
       try {
@@ -589,6 +617,9 @@ public class StreamClient {
     HttpPost post = new HttpPost(requestUrl + "/consumer-id");
     if (apikey != null) {
       post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+    }
+    if (accessToken != null) {
+      post.setHeader("Authorization", "Bearer " + accessToken);
     }
     HttpResponse response;
     try {
@@ -624,6 +655,9 @@ public class StreamClient {
     HttpGet get = new HttpGet(requestUrl + "/info");
     if (apikey != null) {
       get.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+    }
+    if (accessToken != null) {
+      get.setHeader("Authorization", "Bearer " + accessToken);
     }
     HttpResponse response;
     try {
@@ -690,6 +724,9 @@ public class StreamClient {
     post.addHeader(Constants.Stream.Headers.CONSUMER_ID, consumer);
     if (apikey != null) {
       post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+    }
+    if (accessToken != null) {
+      post.setHeader("Authorization", "Bearer " + accessToken);
     }
     HttpResponse response;
     try {
@@ -794,6 +831,27 @@ public class StreamClient {
    * @return whether the response is as expected
    */
   boolean checkHttpStatus(HttpResponse response, List<Integer> expected) {
+    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+      PrintStream out = (verbose ? System.out : System.err);
+      out.println("Unauthorized");
+      if (accessToken == null) {
+        out.println("No access token provided");
+      } else {
+        Reader reader = null;
+        try {
+          reader = new InputStreamReader(response.getEntity().getContent());
+          String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
+          if (responseError != null && !responseError.isEmpty()) {
+            out.println(responseError);
+          }
+          reader.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+          out.println("Unknown unauthorized error");
+        }
+      }
+      return false;
+    }
     if (!expected.contains(response.getStatusLine().getStatusCode())) {
       if (verbose) {
         System.out.println(response.getStatusLine());
@@ -826,10 +884,14 @@ public class StreamClient {
    * it possible to test the return value.
    */
   public static void main(String[] args) {
+    String [] testArgs = {"view", "--stream", "wordStream", "--body", "Hello", "--host", "localhost", "--verbose",
+      "--token", "AgphZG1pbgIKYWRtaW4A/NuP/9JR/MvC0dNRgtfHxgZA8z0dWKq8Xt2TxOYARE1lver97Sg13G1cYIChili7oTA="};
+
     // create a config and load the gateway properties
     CConfiguration config = CConfiguration.create();
     // create an event client and run it with the given arguments
     StreamClient instance = new StreamClient();
+//    String value = instance.execute(args, config);
     String value = instance.execute(args, config);
     // exit with error in case fails
     if (value == null) {
@@ -842,5 +904,17 @@ public class StreamClient {
     StreamVerification verifier = new StreamVerification();
     VerifyResult result = verifier.verify(null, spec); // safe to pass in null for this verifier
     return (result.getStatus() == VerifyResult.Status.SUCCESS);
+  }
+
+  /**
+   * Error Description from HTTPResponse
+   */
+  private class ErrorMessage {
+    @SerializedName("error_description")
+    private String errorDescription;
+
+    public String getErrorDescription() {
+      return errorDescription;
+    }
   }
 }

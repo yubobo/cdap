@@ -7,6 +7,8 @@ import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.data2.transaction.persist.SnapshotCodecV2;
 import com.continuuity.data2.transaction.persist.TransactionSnapshot;
 
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -19,7 +21,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -36,6 +40,7 @@ import java.util.Set;
  */
 public class TransactionManagerDebuggerMain {
 
+  private static final Gson GSON = new Gson();
   private static final SimpleDateFormat formatter
       = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z");
   private static final String TOOL_NAME = "tx-debugger";
@@ -47,6 +52,7 @@ public class TransactionManagerDebuggerMain {
   private static final String IDS_OPTION = "ids";
   private static final String TRANSACTION_OPTION = "transaction";
   private static final String HELP_OPTION = "help";
+  private static final String TOKEN_OPTION = "token";
 
   private enum DebuggerMode {
     VIEW,
@@ -68,6 +74,7 @@ public class TransactionManagerDebuggerMain {
   }
 
   private DebuggerMode mode;          // Mode the tool is used with
+  private String accessToken;         // the access token for secure connections
   private String hostname;            // hostname to take a snapshot from
   private String existingFilename;    // filename where a snapshot has been persisted
   private Long txId;                  // transaction ID option
@@ -96,6 +103,7 @@ public class TransactionManagerDebuggerMain {
     options.addOption(null, PORT_OPTION, true, "To specify the port to use. The default value is --port " +
                                                Constants.Gateway.DEFAULT_PORT);
     options.addOption(null, HELP_OPTION, false, "To print this message");
+    options.addOption(null, TOKEN_OPTION, true, "To specify the access token for secure connections");
   }
 
   /**
@@ -119,6 +127,7 @@ public class TransactionManagerDebuggerMain {
       persistingFilename = line.hasOption(SAVE_OPTION) ? line.getOptionValue(SAVE_OPTION) : null;
       showTxids = line.hasOption(IDS_OPTION) ? true : false;
       txId = line.hasOption(TRANSACTION_OPTION) ? Long.valueOf(line.getOptionValue(TRANSACTION_OPTION)) : null;
+      accessToken = line.hasOption(TOKEN_OPTION) ? line.getOptionValue(TOKEN_OPTION) : null;
       portNumber = line.hasOption(PORT_OPTION) ? Integer.valueOf(line.getOptionValue(PORT_OPTION)) :
                    conf.getInt(Constants.Gateway.PORT, Constants.Gateway.DEFAULT_PORT);
       
@@ -217,9 +226,12 @@ public class TransactionManagerDebuggerMain {
       url = new URL("http://" + hostname + ":" + portNumber + "/v2/transactions/" + txId + "/invalidate");
       connection = (HttpURLConnection) url.openConnection();
       connection.setRequestMethod("POST");
+      if (accessToken != null) {
+        connection.setRequestProperty("Authorization", "Bearer " + accessToken);
+      }
 
       System.out.println("About to invalidate transaction " +
-                         txId + " on Reactor running at " + hostname);
+                           txId + " on Reactor running at " + hostname);
       int responseCode = connection.getResponseCode();
       if (responseCode == 200) {
         System.out.println("Transaction successfully invalidated.");
@@ -227,6 +239,8 @@ public class TransactionManagerDebuggerMain {
         System.out.println("Could not invalidate transaction: " + txId + " is not a valid tx id");
       } else if (responseCode == 409) {
         System.out.println("Could not invalidate transaction " + txId + ": transaction is not in progress.");
+      } else if (responseCode == 401) {
+        readUnauthorizedError(connection);
       } else {
         System.out.println("Could not invalidate transaction. Error code: " + responseCode);
       }
@@ -246,11 +260,16 @@ public class TransactionManagerDebuggerMain {
       url = new URL("http://" + hostname + ":" + portNumber + "/v2/transactions/state");
       connection = (HttpURLConnection) url.openConnection();
       connection.setRequestMethod("POST");
+      if (accessToken != null) {
+        connection.setRequestProperty("Authorization", "Bearer " + accessToken);
+      }
 
       System.out.println("About to reset the transaction manager state for the Reactor running at " + hostname);
       int responseCode = connection.getResponseCode();
       if (responseCode == 200) {
         System.out.println("Transaction manager state reset successfully.");
+      } else if (responseCode == 401) {
+        readUnauthorizedError(connection);
       } else {
         System.out.println("Could not invalidate transaction. Error code: " + responseCode);
       }
@@ -262,6 +281,7 @@ public class TransactionManagerDebuggerMain {
       }
     }
   }
+
   /**
    * Look for a transaction ID in a snapshot of the transaction manager, and give all the information possible.
    * @param snapshot snapshot of the transaction manager
@@ -332,6 +352,9 @@ public class TransactionManagerDebuggerMain {
     try {
       url = new URL("http://" + hostname + ":" + portNumber + "/v2/transactions/state");
       connection = (HttpURLConnection) url.openConnection();
+      if (accessToken != null) {
+        connection.setRequestProperty("Authorization", "Bearer " + accessToken);
+      }
 
       System.out.println("About to take a snapshot of the transaction manager at " +
                          url.toURI() + ", timestamp is " + System.currentTimeMillis() + " ms");
@@ -364,6 +387,8 @@ public class TransactionManagerDebuggerMain {
           System.out.println("Persist option not activated - Snapshot won't be persisted on your disk.");
         }
         return snapshot;
+      } else if (responseCode == 401) {
+        readUnauthorizedError(connection);
       } else {
         System.out.println("Snapshot could not be taken. Error code: " + responseCode);
       }
@@ -581,7 +606,45 @@ public class TransactionManagerDebuggerMain {
     return parseArgsAndExecMode(subArgs.toArray(new String[0]), conf);
   }
 
+  /**
+   * Prints the error response from the connection
+   * @param connection the connection to read the response from
+   */
+  private void readUnauthorizedError(HttpURLConnection connection) {
+    System.out.println("Unauthorized");
+    if (accessToken == null) {
+      System.out.println("No access token provided");
+      return;
+    }
+    Reader reader = null;
+    try {
+      reader = new InputStreamReader(connection.getErrorStream());
+      String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
+      if (responseError != null && !responseError.isEmpty()) {
+        System.out.println(responseError);
+      }
+      reader.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+      System.out.println("Unknown unauthorized error");
+    }
+  }
+
+  /**
+   * Error Description from HTTPResponse
+   */
+  private class ErrorMessage {
+    @SerializedName("error_description")
+    private String errorDescription;
+
+    public String getErrorDescription() {
+      return errorDescription;
+    }
+  }
+
   public static void main(String[] args) {
+    String [] testArgs = {"view", "--host", "localhost",
+      "--token", "AgphZG1pbgIKYWRtaW4A2LOig9NR2KPV1dNR1KeY7QVA4w2Jppr7OLUu90Rt4rw14fPYybaA0zfmr2SfMIAZ6L8="};
     // create a config and load the gateway properties
     CConfiguration config = CConfiguration.create();
     TransactionManagerDebuggerMain instance = new TransactionManagerDebuggerMain();
@@ -590,4 +653,6 @@ public class TransactionManagerDebuggerMain {
       System.exit(1);
     }
   }
+
+
 }

@@ -8,6 +8,10 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.annotations.SerializedName;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -21,6 +25,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -43,7 +48,9 @@ public class DataSetClient {
     Logger.getRootLogger().setLevel(Level.OFF);
   }
 
-  /**
+  private static final Gson GSON = new Gson();
+
+   /**
    * for debugging. should only be set to true in unit tests.
    * when true, program will print the stack trace after the usage.
    */
@@ -57,6 +64,7 @@ public class DataSetClient {
   String hostname = null;        // the hostname of the gateway
   int port = -1;                 // the port of the gateway
   String apikey = null;          // the api key for authentication.
+  String accessToken = null;     // the access token for secure connections
 
   String row = null;             // the row to read/write/delete/increment
   LinkedList<String> columns = Lists.newLinkedList(); // the columns to read/delete/write/increment
@@ -116,6 +124,7 @@ public class DataSetClient {
     out.println("  --host <name>           To specify the hostname to send to");
     out.println("  --port <number>         To specify the port to use");
     out.println("  --apikey <apikey>       To specify an API key for authentication");
+    out.println("  --token <token>         To specify the access token for a secure connection");
     out.println("  --json                  To see the raw JSON output");
     out.println("  --pretty                To see pretty printed output");
     out.println("  --verbose               To see more verbose output");
@@ -174,6 +183,11 @@ public class DataSetClient {
           usage(true);
         }
         apikey = args[pos];
+      } else if ("--token".equals(arg)) {
+        if (++pos >= args.length) {
+          usage(true);
+        }
+        accessToken = args[pos].trim().replace("\n", "");
       } else if ("--table".equals(arg)) {
         if (++pos >= args.length) {
           usage(true);
@@ -358,6 +372,9 @@ public class DataSetClient {
         if (apikey != null) {
           put.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
         }
+        if (accessToken != null) {
+          put.setHeader("Authorization", "Bearer " + accessToken);
+        }
         response = client.execute(put);
         client.getConnectionManager().shutdown();
       } catch (IOException e) {
@@ -375,6 +392,9 @@ public class DataSetClient {
         HttpPost post = new HttpPost(baseUrl + "datasets/" + table + "/truncate");
         if (apikey != null) {
           post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+        }
+        if (accessToken != null) {
+          post.setHeader("Authorization", "Bearer " + accessToken);
         }
         response = client.execute(post);
         client.getConnectionManager().shutdown();
@@ -424,6 +444,9 @@ public class DataSetClient {
         if (apikey != null) {
           get.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
         }
+        if (accessToken != null) {
+          get.setHeader("Authorization", "Bearer " + accessToken);
+        }
         response = client.execute(get);
         if (!checkHttpStatus(response)) {
           return null;
@@ -455,6 +478,9 @@ public class DataSetClient {
         if (apikey != null) {
           put.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
         }
+        if (accessToken != null) {
+          put.setHeader("Authorization", "Bearer " + accessToken);
+        }
         response = client.execute(put);
         client.getConnectionManager().shutdown();
       } catch (IOException e) {
@@ -481,6 +507,9 @@ public class DataSetClient {
         post.setEntity(new ByteArrayEntity(requestBody));
         if (apikey != null) {
           post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+        }
+        if (accessToken != null) {
+          post.setHeader("Authorization", "Bearer " + accessToken);
         }
         response = client.execute(post);
         if (!checkHttpStatus(response)) {
@@ -509,6 +538,9 @@ public class DataSetClient {
         HttpDelete delete = new HttpDelete(requestUrl);
         if (apikey != null) {
           delete.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+        }
+        if (accessToken != null) {
+          delete.setHeader("Authorization", "Bearer " + accessToken);
         }
         response = client.execute(delete);
         client.getConnectionManager().shutdown();
@@ -560,7 +592,27 @@ public class DataSetClient {
    */
   boolean checkHttpStatus(HttpResponse response) {
     try {
-      if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+      if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+        PrintStream out = verbose ? System.out : System.err;
+        out.println("Unauthorized");
+        if (accessToken == null) {
+          out.println("No access token provided");
+        } else {
+          Reader reader = null;
+          try {
+            reader = new InputStreamReader(response.getEntity().getContent());
+            String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
+            if (responseError != null && !responseError.isEmpty()) {
+              out.println(responseError);
+            }
+            reader.close();
+          } catch (IOException e) {
+            e.printStackTrace();
+            out.println("Unknown unauthorized error");
+          }
+        }
+        return false;
+      } else if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
         // get the error message from the body of the response
         String reason = response.getEntity() == null || response.getEntity().getContent() == null ? null :
           IOUtils.toString(response.getEntity().getContent());
@@ -634,10 +686,24 @@ public class DataSetClient {
   }
 
   /**
+   * Error Description from HTTPResponse
+   */
+  private class ErrorMessage {
+    @SerializedName("error_description")
+    private String errorDescription;
+
+    public String getErrorDescription() {
+      return errorDescription;
+    }
+  }
+
+  /**
    * This is the main method. It delegates to getValue() in order to make
    * it possible to test the return value.
    */
   public static void main(String[] args) {
+    String [] testArgs = {"read", "--table", "wordStats", "--row", "totals", "--host", "localhost", "--verbose",
+      "--token", "AgphZG1pbgIKYWRtaW4A2LOig9NR2KPV1dNR1KeY7QVA4w2Jppr7OLUu90Rt4rw14fPYybaA0zfmr2SfMIAZ6L8="};
     // create a config and load the gateway properties
     CConfiguration config = CConfiguration.create();
     // create a data client and run it with the given arguments
