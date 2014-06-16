@@ -877,12 +877,17 @@
     -->
     <property>
         <name>security.authentication.handlerClassName</name>
-        <value>com.continuuity.security.server.BasicAuthenticationHandler</value>
+        <value></value>
+    </property>
+  
+    <property>
+        <name>security.authentication.loginmodule.className</name>
+        <value></value>
     </property>
 
     <property>
       <name>security.authentication.basic.realmfile</name>
-      <value>/Users/Shu/Documents/Continuuity_TEST/reactor/security/src/main/resources/realm.properties</value>
+      <value></value>
     </property>
 
     <property>
@@ -903,7 +908,7 @@
     -->
     <property>
         <name>security.enabled</name>
-        <value>true</value>
+        <value>false</value>
         <description>If this is set to true, security layer will be up and active in reactor</description>
     </property>
 
