@@ -54,11 +54,11 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
 
   @POST
   @Path("v2/datasets/queries")
-  public void sendQuery(HttpRequest request, HttpResponder responder) {
+  public void query(HttpRequest request, HttpResponder responder) {
     try {
       Map<String, String> args = decodeArguments(request);
       String query = args.get("query");
-      LOG.info("Received query: {}", query);
+      LOG.debug("Received query: {}", query);
       Handle handle = exploreService.execute(query);
       JsonObject json = new JsonObject();
       json.addProperty("id", handle.getId());
@@ -71,8 +71,8 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
 
   @DELETE
   @Path("v2/datasets/queries/{id}")
-  public void closeOperation(@SuppressWarnings("UnusedParameters") HttpRequest request, HttpResponder responder,
-                             @PathParam("id") final String id) {
+  public void closeQuery(@SuppressWarnings("UnusedParameters") HttpRequest request, HttpResponder responder,
+                         @PathParam("id") final String id) {
     try {
       Handle handle = Handle.fromId(id);
       exploreService.close(handle);
@@ -87,8 +87,8 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
 
   @POST
   @Path("v2/datasets/queries/{id}/cancel")
-  public void cancelOperation(@SuppressWarnings("UnusedParameters") HttpRequest request, HttpResponder responder,
-                              @PathParam("id") final String id) {
+  public void cancelQuery(@SuppressWarnings("UnusedParameters") HttpRequest request, HttpResponder responder,
+                          @PathParam("id") final String id) {
     try {
       Handle handle = Handle.fromId(id);
       exploreService.cancel(handle);
@@ -121,8 +121,8 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
 
   @GET
   @Path("v2/datasets/queries/{id}/schema")
-  public void getOperationResultsSchema(@SuppressWarnings("UnusedParameters") HttpRequest request,
-                                        HttpResponder responder, @PathParam("id") final String id) {
+  public void getQueryResultsSchema(@SuppressWarnings("UnusedParameters") HttpRequest request,
+                                    HttpResponder responder, @PathParam("id") final String id) {
     try {
       Handle handle = Handle.fromId(id);
       List<ColumnDesc> schema = exploreService.getResultSchema(handle);
