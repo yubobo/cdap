@@ -275,18 +275,20 @@ public class MetaDataClient {
     }
     try {
       response = client.execute(get);
-      client.getConnectionManager().shutdown();
+      if (!checkHttpStatus(response)) {
+        return null;
+      }
+      if (printResponse(response) == null) {
+        return null;
+      }
+      return "OK.";
     } catch (IOException e) {
       System.err.println("Error sending HTTP request: " + e.getMessage());
       return null;
+    } finally {
+      client.getConnectionManager().shutdown();
     }
-    if (!checkHttpStatus(response)) {
-      return null;
-    }
-    if (printResponse(response) == null) {
-      return null;
-    }
-    return "OK.";
+
   }
 
   public String printResponse(HttpResponse response) {
@@ -329,7 +331,8 @@ public class MetaDataClient {
         }
       }
       return false;
-    } else if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+    }
+    if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
       if (verbose) {
         System.out.println(response.getStatusLine());
       } else {

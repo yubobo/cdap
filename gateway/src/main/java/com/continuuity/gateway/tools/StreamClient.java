@@ -136,7 +136,7 @@ public class StreamClient {
     out.println("  --first <number>        To view the first N events in the stream. Default ");
     out.println("                          for view is --first 10.");
     out.println("  --last <number>         To view the last N events in the stream.");
-    out.println("  --token <token>  To specify the access token for a secure connection");
+    out.println("  --token <token>         To specify the access token for a secure connection");
     out.println("  --verbose               To see more verbose output");
     out.println("  --help                  To print this message");
     if (error) {
@@ -456,15 +456,16 @@ public class StreamClient {
 
       try {
         response = client.execute(post);
-        client.getConnectionManager().shutdown();
+        if (!checkHttpStatus(response)) {
+          return null;
+        }
+        return "OK.";
       } catch (IOException e) {
         System.err.println("Error sending HTTP request: " + e.getMessage());
         return null;
+      } finally {
+        client.getConnectionManager().shutdown();
       }
-      if (!checkHttpStatus(response)) {
-        return null;
-      }
-      return "OK.";
     } else if ("group".equals(command)) {
       String id = getConsumerId(requestUrl);
       if (id != null) {
@@ -519,21 +520,22 @@ public class StreamClient {
         HttpResponse response;
         try {
           response = client.execute(post);
-          client.getConnectionManager().shutdown();
+          if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
+            return null;
+          }
+          // read the binary value from the HTTP response
+          byte[] binaryValue = Util.readHttpResponse(response);
+          if (binaryValue == null) {
+            System.err.println("Unexpected response without body.");
+            return null;
+          }
+          consumer = Bytes.toString(binaryValue);
         } catch (IOException e) {
           System.err.println("Error sending HTTP request: " + e.getMessage());
           return null;
+        } finally {
+          client.getConnectionManager().shutdown();
         }
-        if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
-          return null;
-        }
-        // read the binary value from the HTTP response
-        byte[] binaryValue = Util.readHttpResponse(response);
-        if (binaryValue == null) {
-          System.err.println("Unexpected response without body.");
-          return null;
-        }
-        consumer = Bytes.toString(binaryValue);
       }
       Collector<StreamEvent> collector =
         all ? new AllCollector<StreamEvent>(StreamEvent.class) :
@@ -568,15 +570,16 @@ public class StreamClient {
 
       try {
         response = client.execute(put);
-        client.getConnectionManager().shutdown();
+        if (!checkHttpStatus(response)) {
+          return null;
+        }
+        return "OK.";
       } catch (IOException e) {
         System.err.println("Error sending HTTP request: " + e.getMessage());
         return null;
+      } finally {
+        client.getConnectionManager().shutdown();
       }
-      if (!checkHttpStatus(response)) {
-        return null;
-      }
-      return "OK.";
 
     } else if ("truncate".equals(command)) {
       // prepare for HTTP
@@ -591,16 +594,17 @@ public class StreamClient {
       HttpResponse response;
       try {
         response = client.execute(post);
-        client.getConnectionManager().shutdown();
+        if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
+          return null;
+        }
+        return "OK.";
       } catch (IOException e) {
         System.err.println("Error sending HTTP request: " + e.getMessage());
         return null;
-      }
-      if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
-        return null;
+      } finally {
+        client.getConnectionManager().shutdown();
       }
 
-      return "OK.";
     }
     return null;
   }
@@ -624,22 +628,23 @@ public class StreamClient {
     HttpResponse response;
     try {
       response = client.execute(post);
-      client.getConnectionManager().shutdown();
+      if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
+        return null;
+      }
+      // read the binary value from the HTTP response
+      byte[] binaryValue = Util.readHttpResponse(response);
+      if (binaryValue == null) {
+        System.err.println("Unexpected response without body.");
+        return null;
+      }
+      return Bytes.toString(binaryValue);
     } catch (IOException e) {
       System.err.println("Error sending HTTP request: " + e.getMessage());
       return null;
-    }
-    if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
-      return null;
+    } finally {
+      client.getConnectionManager().shutdown();
     }
 
-    // read the binary value from the HTTP response
-    byte[] binaryValue = Util.readHttpResponse(response);
-    if (binaryValue == null) {
-      System.err.println("Unexpected response without body.");
-      return null;
-    }
-    return Bytes.toString(binaryValue);
   }
 
   /**
@@ -662,23 +667,25 @@ public class StreamClient {
     HttpResponse response;
     try {
       response = client.execute(get);
-      client.getConnectionManager().shutdown();
+      // this call does not respond with 200 OK, but with 201 Created
+      if (!checkHttpStatus(response)) {
+        return null;
+      }
+
+      // read the binary value from the HTTP response
+      byte[] binaryValue = Util.readHttpResponse(response);
+      if (binaryValue == null) {
+        System.err.println("Unexpected response without body.");
+        return null;
+      }
+      return new String(binaryValue);
     } catch (IOException e) {
       System.err.println("Error sending HTTP request: " + e.getMessage());
       return null;
-    }
-    // this call does not respond with 200 OK, but with 201 Created
-    if (!checkHttpStatus(response)) {
-      return null;
+    } finally {
+      client.getConnectionManager().shutdown();
     }
 
-    // read the binary value from the HTTP response
-    byte[] binaryValue = Util.readHttpResponse(response);
-    if (binaryValue == null) {
-      System.err.println("Unexpected response without body.");
-      return null;
-    }
-    return new String(binaryValue);
   }
 
   /**
@@ -731,37 +738,38 @@ public class StreamClient {
     HttpResponse response;
     try {
       response = client.execute(post);
-      client.getConnectionManager().shutdown();
+      // we expect either OK for an event, or NO_CONTENT for end of stream
+      if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
+        return null;
+      }
+      // check that the response is OK
+      if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+        throw new Exception("HTTP request unsuccessful: " + response.getStatusLine());
+      }
+      // read the binary value from the HTTP response
+      byte[] binaryValue = Util.readHttpResponse(response);
+      if (binaryValue == null) {
+        throw new Exception("Unexpected response without body.");
+      }
+
+      // collect all the headers
+      Map<String, String> headers = new TreeMap<String, String>();
+      for (org.apache.http.Header header : response.getAllHeaders()) {
+        String name = header.getName();
+        // ignore common HTTP headers. All the headers of the actual
+        // event are transmitted with the stream name as a prefix
+        if (name.startsWith(destination)) {
+          String actualName = name.substring(destination.length() + 1);
+          headers.put(actualName, header.getValue());
+        }
+      }
+      return new DefaultStreamEvent(headers, ByteBuffer.wrap(binaryValue));
     } catch (IOException e) {
       throw new Exception("Error sending HTTP request.", e);
-    }
-    // we expect either OK for an event, or NO_CONTENT for end of stream
-    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
-      return null;
-    }
-    // check that the response is OK
-    if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-      throw new Exception(
-        "HTTP request unsuccessful: " + response.getStatusLine());
-    }
-    // read the binary value from the HTTP response
-    byte[] binaryValue = Util.readHttpResponse(response);
-    if (binaryValue == null) {
-      throw new Exception("Unexpected response without body.");
+    } finally {
+      client.getConnectionManager().shutdown();
     }
 
-    // collect all the headers
-    Map<String, String> headers = new TreeMap<String, String>();
-    for (org.apache.http.Header header : response.getAllHeaders()) {
-      String name = header.getName();
-      // ignore common HTTP headers. All the headers of the actual
-      // event are transmitted with the stream name as a prefix
-      if (name.startsWith(destination)) {
-        String actualName = name.substring(destination.length() + 1);
-        headers.put(actualName, header.getValue());
-      }
-    }
-    return new DefaultStreamEvent(headers, ByteBuffer.wrap(binaryValue));
   }
 
   /**
@@ -844,9 +852,7 @@ public class StreamClient {
           if (responseError != null && !responseError.isEmpty()) {
             out.println(responseError);
           }
-          reader.close();
         } catch (IOException e) {
-          e.printStackTrace();
           out.println("Unknown unauthorized error");
         }
       }
@@ -884,7 +890,7 @@ public class StreamClient {
    * it possible to test the return value.
    */
   public static void main(String[] args) {
-    String [] testArgs = {"view", "--stream", "wordStream", "--body", "Hello", "--host", "localhost", "--verbose",
+    String [] testArgs = {"view", "--stream", "wordStream", "--host", "localhost", "--verbose",
       "--token", "AgphZG1pbgIKYWRtaW4A/NuP/9JR/MvC0dNRgtfHxgZA8z0dWKq8Xt2TxOYARE1lver97Sg13G1cYIChili7oTA="};
 
     // create a config and load the gateway properties

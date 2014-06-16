@@ -376,15 +376,16 @@ public class DataSetClient {
           put.setHeader("Authorization", "Bearer " + accessToken);
         }
         response = client.execute(put);
-        client.getConnectionManager().shutdown();
+        if (!checkHttpStatus(response)) {
+          return null;
+        }
+        return "OK.";
       } catch (IOException e) {
         System.err.println("Error sending HTTP request: " + e.getMessage());
         return null;
+      } finally {
+        client.getConnectionManager().shutdown();
       }
-      if (!checkHttpStatus(response)) {
-        return null;
-      }
-      return "OK.";
     }
     if ("clear".equals(command)) {
       // url is already complete, submit as a put
@@ -397,15 +398,16 @@ public class DataSetClient {
           post.setHeader("Authorization", "Bearer " + accessToken);
         }
         response = client.execute(post);
-        client.getConnectionManager().shutdown();
+        if (!checkHttpStatus(response)) {
+          return null;
+        }
+        return "OK.";
       } catch (IOException e) {
         System.err.println("Error sending HTTP request: " + e.getMessage());
         return null;
+      } finally {
+        client.getConnectionManager().shutdown();
       }
-      if (!checkHttpStatus(response)) {
-        return null;
-      }
-      return "OK.";
     }
     // all operations other than create require row
     requestUrl += "/rows/" + row;
@@ -482,15 +484,16 @@ public class DataSetClient {
           put.setHeader("Authorization", "Bearer " + accessToken);
         }
         response = client.execute(put);
-        client.getConnectionManager().shutdown();
+        if (!checkHttpStatus(response)) {
+          return null;
+        }
+        return "OK.";
       } catch (IOException e) {
         System.err.println("Error sending HTTP request: " + e.getMessage());
         return null;
+      } finally {
+        client.getConnectionManager().shutdown();
       }
-      if (!checkHttpStatus(response)) {
-        return null;
-      }
-      return "OK.";
     }
 
     if ("increment".equals(command)) {
@@ -543,15 +546,17 @@ public class DataSetClient {
           delete.setHeader("Authorization", "Bearer " + accessToken);
         }
         response = client.execute(delete);
-        client.getConnectionManager().shutdown();
+        if (!checkHttpStatus(response)) {
+          return null;
+        }
+        return "OK.";
       } catch (IOException e) {
         System.err.println("Error sending HTTP request: " + e.getMessage());
         return null;
+      } finally {
+        client.getConnectionManager().shutdown();
       }
-      if (!checkHttpStatus(response)) {
-        return null;
-      }
-      return "OK.";
+
     }
 
     return null;

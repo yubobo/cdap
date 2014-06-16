@@ -41,7 +41,7 @@ if [ -d "$conf" ]; then
   CLASSPATH=$CLASSPATH:"$conf"/
 fi
 
-auth_file="$bin/token.txt"
+auth_file="$bin/access_token"
 args=()
 while [ $# -gt 0 ]
 do

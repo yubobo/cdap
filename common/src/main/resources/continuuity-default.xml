@@ -879,7 +879,7 @@
         <name>security.authentication.handlerClassName</name>
         <value></value>
     </property>
-  
+
     <property>
         <name>security.authentication.loginmodule.className</name>
         <value></value>
