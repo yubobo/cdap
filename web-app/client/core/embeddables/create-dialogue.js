@@ -3,7 +3,7 @@
  */
 
 define([
-	'core/lib/text!core/partials/upload.html'
+	'third_party/text!core/partials/upload.html'
 	], function (App) {
 
 		Em.TEMPLATES['create-application'] = Em.Handlebars.compile(App);

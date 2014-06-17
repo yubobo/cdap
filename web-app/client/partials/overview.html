@@ -1,0 +1,41 @@
+<div id="title">
+  <ul class="nav nav-pills pull-right" style="margin: 2px 14px;">
+    <li><a href="/overview">Reactor</a></li>
+    <li><a href="/resources">Resources</a></li>
+  </ul>
+  <h1>Overview</h1>
+</div>
+
+<div id="panels">
+  <div class="quarter" id="quarter1">
+    <div class="panel">
+      <div class="quarter-title">Collect</div>
+      <div class="quarter-value"><strong><span class="value-number">{{value.collect}}</span></strong><span class="value-measure"> EPS</span></div>
+    </div>
+  </div>
+  <div class="quarter" id="quarter2">
+    <div class="panel">
+      <div class="quarter-title">Process</div>
+      <div class="quarter-value"><strong><span class="value-number">{{value.process}}</span></strong><span class="value-measure">%</span></div>
+    </div>
+  </div>
+  <div class="quarter" id="quarter3">
+    <div class="panel">
+      <div class="quarter-title">Store</div>
+      <div class="quarter-value"><strong><span class="value-number">{{value.store.label}}</span></strong> <span class="value-measure">{{value.store.unit}}/s</span></div>
+    </div>
+  </div>
+  <div class="quarter" id="quarter4">
+    <div class="panel" style="margin-right: 0;">
+      <div class="quarter-title">Query</div>
+      <div class="quarter-value"><strong><span class="value-number">{{value.query}}</span></strong><span class="value-measure"> QPS</span></div>
+    </div>
+  </div>
+
+  <div class="panel" style="clear: both;">
+    <div class="panel-head">
+      <input type="file" id="app-upload-input"/>
+      <div class="panel-title">Applications</div>
+    </div>
+  </div>
+</div>

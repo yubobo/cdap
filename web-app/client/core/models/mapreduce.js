@@ -2,7 +2,7 @@
  * Mapreduce Model
  */
 
-define(['core/lib/date', 'core/models/program'],
+define(['third_party/date', 'core/models/program'],
   function (Datejs, Program) {
 
   var METRICS_PATHS = {
