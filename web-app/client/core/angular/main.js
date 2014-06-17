@@ -27,19 +27,27 @@ requirejs.config({
 require([
   'angular',
   './controllers/overview',
+  './controllers/resources',
   'angular-route',
   'jQuery',
   'bootstrap'],
-  function (angular, OverviewCtrl) {
+  function (angular, OverviewCtrl, ResourcesCtrl) {
 
     // Declare app level module which depends on filters, and services
 
     angular.module('ReactorWebapp', ['ngRoute'])
     .config(['$routeProvider', function ($routeProvider) {
+      
       $routeProvider.when('/overview', {
         templateUrl: '/partials/overview.html', controller: OverviewCtrl
       });
+      
+      $routeProvider.when('/resources', {
+        templateUrl: '/partials/resources.html', controller: ResourcesCtrl
+      });
+      
       $routeProvider.otherwise({redirectTo: '/overview'});
+    
     }]);
 
     angular.bootstrap(document, ['ReactorWebapp']);
