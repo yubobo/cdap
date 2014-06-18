@@ -55,7 +55,6 @@ for %%a in (%*) do (
   )
 )
 
-echo "%auth_file%"
 if "%tokenFileProvided%" == "true" (
   %JAVACMD% -classpath %CLASSPATH% com.continuuity.data2.transaction.TransactionManagerDebuggerMain %*
 )

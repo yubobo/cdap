@@ -16,10 +16,6 @@ import com.continuuity.gateway.util.Util;
 import com.continuuity.internal.app.verification.StreamVerification;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -271,7 +267,7 @@ public class StreamClient {
         } catch (NumberFormatException e) {
           usage(true);
         }
-      }  else if ("--help".equals(arg)) {
+      } else if ("--help".equals(arg)) {
         usage(false);
         help = true;
         return;

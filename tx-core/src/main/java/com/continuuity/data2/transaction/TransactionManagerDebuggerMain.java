@@ -265,7 +265,7 @@ public class TransactionManagerDebuggerMain {
       }
 
       System.out.println("About to invalidate transaction " +
-                           txId + " on Reactor running at " + hostname);
+                          txId + " on Reactor running at " + hostname);
       int responseCode = connection.getResponseCode();
       if (responseCode == 200) {
         System.out.println("Transaction successfully invalidated.");
@@ -683,6 +683,4 @@ public class TransactionManagerDebuggerMain {
       System.exit(1);
     }
   }
-
-
 }
