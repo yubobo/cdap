@@ -26,6 +26,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -65,6 +67,7 @@ public class DataSetClient {
   int port = -1;                 // the port of the gateway
   String apikey = null;          // the api key for authentication.
   String accessToken = null;     // the access token for secure connections
+  String tokenFile = null;       // path to file which contains an access token
 
   String row = null;             // the row to read/write/delete/increment
   LinkedList<String> columns = Lists.newLinkedList(); // the columns to read/delete/write/increment
@@ -125,6 +128,8 @@ public class DataSetClient {
     out.println("  --port <number>         To specify the port to use");
     out.println("  --apikey <apikey>       To specify an API key for authentication");
     out.println("  --token <token>         To specify the access token for a secure connection");
+    out.println("  --token-file <path>     Alternative to --token, to specify a file that");
+    out.println("                          contains the access token for a secure connection");
     out.println("  --json                  To see the raw JSON output");
     out.println("  --pretty                To see pretty printed output");
     out.println("  --verbose               To see more verbose output");
@@ -146,6 +151,23 @@ public class DataSetClient {
     usage(true);
   }
 
+  /**
+   * Reads the access token from the tokenFile path
+   */
+  void readTokenFile() {
+    if (tokenFile != null) {
+      PrintStream out = verbose ? System.out : System.err;
+      try {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(tokenFile));
+        String line = bufferedReader.readLine();
+        accessToken = line;
+      } catch (FileNotFoundException e) {
+        out.println("Could not find access token file: " + tokenFile + "\nNo access token will be used");
+      } catch (IOException e) {
+        out.println("Could not read access token file: " + tokenFile + "\nNo access token will be used");
+      }
+    }
+  }
 
   /**
    * Parse the command line arguments.
@@ -188,6 +210,11 @@ public class DataSetClient {
           usage(true);
         }
         accessToken = args[pos].trim().replace("\n", "");
+      } else if ("--token-file".equals(arg)) {
+        if (++pos >= args.length) {
+          usage(true);
+        }
+        tokenFile = args[pos];
       } else if ("--table".equals(arg)) {
         if (++pos >= args.length) {
           usage(true);
@@ -276,6 +303,11 @@ public class DataSetClient {
       usage("Unsupported command '" + command + "'.");
     }
 
+    // use accessToken if both are given
+    if (tokenFile != null && accessToken != null) {
+      tokenFile = null;
+    }
+
     if (table == null && !"clear".equals(command)) {
       usage("--table is required for table operations.");
     }
@@ -336,6 +368,10 @@ public class DataSetClient {
     validateArguments(args);
     if (help) {
       return "";
+    }
+
+    if (tokenFile != null) {
+      readTokenFile();
     }
 
     boolean useSsl = !forceNoSSL && (apikey != null);
@@ -597,27 +633,26 @@ public class DataSetClient {
    */
   boolean checkHttpStatus(HttpResponse response) {
     try {
-      if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-        PrintStream out = verbose ? System.out : System.err;
-        out.println("Unauthorized");
-        if (accessToken == null) {
-          out.println("No access token provided");
-        } else {
-          Reader reader = null;
-          try {
-            reader = new InputStreamReader(response.getEntity().getContent());
-            String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
-            if (responseError != null && !responseError.isEmpty()) {
-              out.println(responseError);
+      if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+          PrintStream out = verbose ? System.out : System.err;
+          out.println(response.getStatusLine());
+          if (accessToken == null) {
+            out.println("No access token provided");
+          } else {
+            Reader reader = null;
+            try {
+              reader = new InputStreamReader(response.getEntity().getContent());
+              String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
+              if (responseError != null && !responseError.isEmpty()) {
+                out.println(responseError);
+              }
+            } catch (Exception e) {
+              out.println("Unknown unauthorized error");
             }
-            reader.close();
-          } catch (IOException e) {
-            e.printStackTrace();
-            out.println("Unknown unauthorized error");
           }
+          return false;
         }
-        return false;
-      } else if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
         // get the error message from the body of the response
         String reason = response.getEntity() == null || response.getEntity().getContent() == null ? null :
           IOUtils.toString(response.getEntity().getContent());
@@ -707,8 +742,6 @@ public class DataSetClient {
    * it possible to test the return value.
    */
   public static void main(String[] args) {
-    String [] testArgs = {"read", "--table", "wordStats", "--row", "totals", "--host", "localhost", "--verbose",
-      "--token", "AgphZG1pbgIKYWRtaW4A2LOig9NR2KPV1dNR1KeY7QVA4w2Jppr7OLUu90Rt4rw14fPYybaA0zfmr2SfMIAZ6L8="};
     // create a config and load the gateway properties
     CConfiguration config = CConfiguration.create();
     // create a data client and run it with the given arguments

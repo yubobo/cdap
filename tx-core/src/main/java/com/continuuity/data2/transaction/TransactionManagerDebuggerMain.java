@@ -16,10 +16,13 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -53,6 +56,7 @@ public class TransactionManagerDebuggerMain {
   private static final String TRANSACTION_OPTION = "transaction";
   private static final String HELP_OPTION = "help";
   private static final String TOKEN_OPTION = "token";
+  private static final String TOKEN_FILE_OPTION = "token-file";
 
   private enum DebuggerMode {
     VIEW,
@@ -75,6 +79,7 @@ public class TransactionManagerDebuggerMain {
 
   private DebuggerMode mode;          // Mode the tool is used with
   private String accessToken;         // the access token for secure connections
+  private String tokenFile = null;    // path to file which contains an access token
   private String hostname;            // hostname to take a snapshot from
   private String existingFilename;    // filename where a snapshot has been persisted
   private Long txId;                  // transaction ID option
@@ -104,6 +109,8 @@ public class TransactionManagerDebuggerMain {
                                                Constants.Gateway.DEFAULT_PORT);
     options.addOption(null, HELP_OPTION, false, "To print this message");
     options.addOption(null, TOKEN_OPTION, true, "To specify the access token for secure connections");
+    options.addOption(null, TOKEN_FILE_OPTION, true, "Alternative to --token, to specify a file that contains " +
+                                                      "the access token for a secure connection");
   }
 
   /**
@@ -125,12 +132,22 @@ public class TransactionManagerDebuggerMain {
       hostname = line.getOptionValue(HOST_OPTION);
       existingFilename = line.getOptionValue(FILENAME_OPTION);
       persistingFilename = line.hasOption(SAVE_OPTION) ? line.getOptionValue(SAVE_OPTION) : null;
-      showTxids = line.hasOption(IDS_OPTION) ? true : false;
+      showTxids = line.hasOption(IDS_OPTION);
       txId = line.hasOption(TRANSACTION_OPTION) ? Long.valueOf(line.getOptionValue(TRANSACTION_OPTION)) : null;
       accessToken = line.hasOption(TOKEN_OPTION) ? line.getOptionValue(TOKEN_OPTION) : null;
+      tokenFile = line.hasOption(TOKEN_FILE_OPTION) ? line.getOptionValue(TOKEN_FILE_OPTION) : null;
       portNumber = line.hasOption(PORT_OPTION) ? Integer.valueOf(line.getOptionValue(PORT_OPTION)) :
                    conf.getInt(Constants.Gateway.PORT, Constants.Gateway.DEFAULT_PORT);
-      
+
+      // if both tokenfile and accessToken are given, just use the access token
+      if (tokenFile != null) {
+        if (accessToken != null) {
+          tokenFile = null;
+        } else {
+          readTokenFile();
+        }
+      }
+
       switch (this.mode) {
         case VIEW:
           if (!line.hasOption(HOST_OPTION) && !line.hasOption(FILENAME_OPTION)) {
@@ -195,6 +212,23 @@ public class TransactionManagerDebuggerMain {
     formatter.printOptions(pw, 100, options, 0, 10);
     pw.flush();
     pw.close();
+  }
+
+  /**
+   * Reads the access token from the tokenFile path
+   */
+  void readTokenFile() {
+    if (tokenFile != null) {
+      try {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(tokenFile));
+        String line = bufferedReader.readLine();
+        accessToken = line;
+      } catch (FileNotFoundException e) {
+        System.out.println("Could not find access token file: " + tokenFile + "\nNo access token will be used");
+      } catch (IOException e) {
+        System.out.println("Could not read access token file: " + tokenFile + "\nNo access token will be used");
+      }
+    }
   }
 
   private void executeViewMode() {
@@ -611,7 +645,7 @@ public class TransactionManagerDebuggerMain {
    * @param connection the connection to read the response from
    */
   private void readUnauthorizedError(HttpURLConnection connection) {
-    System.out.println("Unauthorized");
+    System.out.println("401 Unauthorized");
     if (accessToken == null) {
       System.out.println("No access token provided");
       return;
@@ -623,9 +657,7 @@ public class TransactionManagerDebuggerMain {
       if (responseError != null && !responseError.isEmpty()) {
         System.out.println(responseError);
       }
-      reader.close();
-    } catch (IOException e) {
-      e.printStackTrace();
+    } catch (Exception e) {
       System.out.println("Unknown unauthorized error");
     }
   }
@@ -643,8 +675,6 @@ public class TransactionManagerDebuggerMain {
   }
 
   public static void main(String[] args) {
-    String [] testArgs = {"view", "--host", "localhost",
-      "--token", "AgphZG1pbgIKYWRtaW4A2LOig9NR2KPV1dNR1KeY7QVA4w2Jppr7OLUu90Rt4rw14fPYybaA0zfmr2SfMIAZ6L8="};
     // create a config and load the gateway properties
     CConfiguration config = CConfiguration.create();
     TransactionManagerDebuggerMain instance = new TransactionManagerDebuggerMain();

@@ -32,7 +32,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Level;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -80,6 +82,7 @@ public class StreamClient {
   String apikey = null;          // the api key for authentication.
   String body = null;            // the body of the event as a String
   String bodyFile = null;        // the file containing the body in binary form
+  String tokenFile = null;       // the file containing the access token only
   String destination = null;     // the destination stream (stream id)
   String consumer = null;        // consumer group id to fetch from the stream
   String accessToken = null;     // the access token for secure connections
@@ -137,6 +140,8 @@ public class StreamClient {
     out.println("                          for view is --first 10.");
     out.println("  --last <number>         To view the last N events in the stream.");
     out.println("  --token <token>         To specify the access token for a secure connection");
+    out.println("  --token-file <path>     Alternative to --token, to specify a file that");
+    out.println("                          contains the access token for a secure connection");
     out.println("  --verbose               To see more verbose output");
     out.println("  --help                  To print this message");
     if (error) {
@@ -183,6 +188,11 @@ public class StreamClient {
           usage(true);
         }
         accessToken = args[pos].trim().replace("\n", "");
+      } else if ("--token-file".equals(arg)) {
+        if (++pos >= args.length) {
+          usage(true);
+        }
+        tokenFile = args[pos];
       } else if ("--host".equals(arg)) {
         if (++pos >= args.length) {
           usage(true);
@@ -298,6 +308,10 @@ public class StreamClient {
     if (hostname != null && baseUrl != null) {
       usage("Only one of --host or --base may be specified.");
     }
+    // if token and token file are given, use token
+    if (tokenFile != null && accessToken != null) {
+      tokenFile = null;
+    }
     if (port > 0 && hostname == null) {
       usage("A hostname must be provided when a port is specified.");
     }
@@ -329,6 +343,24 @@ public class StreamClient {
     if ("create".equals(command)) {
       if (!isId(destination)) {
         usage("id is not a printable ascii character string");
+      }
+    }
+  }
+
+  /**
+   * Reads the access token from the tokenFile path
+   */
+  void readTokenFile() {
+    if (tokenFile != null) {
+      PrintStream out = verbose ? System.out : System.err;
+      try {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(tokenFile));
+        String line = bufferedReader.readLine();
+        accessToken = line;
+      } catch (FileNotFoundException e) {
+        out.println("Could not find access token file: " + tokenFile + "\nNo access token will be used");
+      } catch (IOException e) {
+        out.println("Could not read access token file: " + tokenFile + "\nNo access token will be used");
       }
     }
   }
@@ -408,6 +440,10 @@ public class StreamClient {
     validateArguments(args);
     if (help) {
       return "";
+    }
+    // read the access token from file if it exists
+    if (tokenFile != null) {
+      readTokenFile();
     }
 
     // determine the base url for the GET request
@@ -839,26 +875,26 @@ public class StreamClient {
    * @return whether the response is as expected
    */
   boolean checkHttpStatus(HttpResponse response, List<Integer> expected) {
-    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-      PrintStream out = (verbose ? System.out : System.err);
-      out.println("Unauthorized");
-      if (accessToken == null) {
-        out.println("No access token provided");
-      } else {
-        Reader reader = null;
-        try {
-          reader = new InputStreamReader(response.getEntity().getContent());
-          String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
-          if (responseError != null && !responseError.isEmpty()) {
-            out.println(responseError);
-          }
-        } catch (IOException e) {
-          out.println("Unknown unauthorized error");
-        }
-      }
-      return false;
-    }
     if (!expected.contains(response.getStatusLine().getStatusCode())) {
+      if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+        PrintStream out = (verbose ? System.out : System.err);
+        out.println(response.getStatusLine());
+        if (accessToken == null) {
+          out.println("No access token provided");
+        } else {
+          Reader reader = null;
+          try {
+            reader = new InputStreamReader(response.getEntity().getContent());
+            String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
+            if (responseError != null && !responseError.isEmpty()) {
+              out.println(responseError);
+            }
+          } catch (Exception e) {
+            out.println("Unknown unauthorized error");
+          }
+        }
+        return false;
+      }
       if (verbose) {
         System.out.println(response.getStatusLine());
       } else {
@@ -890,14 +926,10 @@ public class StreamClient {
    * it possible to test the return value.
    */
   public static void main(String[] args) {
-    String [] testArgs = {"view", "--stream", "wordStream", "--host", "localhost", "--verbose",
-      "--token", "AgphZG1pbgIKYWRtaW4A/NuP/9JR/MvC0dNRgtfHxgZA8z0dWKq8Xt2TxOYARE1lver97Sg13G1cYIChili7oTA="};
-
     // create a config and load the gateway properties
     CConfiguration config = CConfiguration.create();
     // create an event client and run it with the given arguments
     StreamClient instance = new StreamClient();
-//    String value = instance.execute(args, config);
     String value = instance.execute(args, config);
     // exit with error in case fails
     if (value == null) {

@@ -42,19 +42,17 @@ if [ -d "$conf" ]; then
 fi
 
 auth_file="$bin/access_token"
-args=()
-while [ $# -gt 0 ]
+# add token file arg with default token file if one is not provided
+containsTokenFileArg=0
+for var in "$@"
 do
-  case "$1" in
-    --auth-file) shift; auth_file="$1"; shift;;
-    *) args+=("$1"); shift;
-  esac
+  if [ "$var" == "--token-file" ]; then
+    containsTokenFileArg=1
+  fi
 done
 
-if [ -f $auth_file ]; then
-  args+=("--token")
-  token=$(cat $auth_file)
-  args+=("$token")
+if [ $containsTokenFileArg -eq 0 ]; then
+  set -- "$@" "--token-file" "$auth_file"
 fi
 
-java -cp ${CLASSPATH} -Dscript=$script com.continuuity.gateway.tools.StreamClient "${args[@]}"
+java -cp ${CLASSPATH} -Dscript=$script com.continuuity.gateway.tools.StreamClient "$@"
