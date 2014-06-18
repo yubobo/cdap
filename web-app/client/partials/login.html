@@ -1,0 +1,29 @@
+<div id="title">
+  <h1>Login&nbsp;<span>Accounts</span></h1>
+</div>
+<div id="panels">
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title"></div>Log into Reactor</div>
+    <div class="panel-body">
+      <div class="warning">{{warning}}</div>
+        <form method="POST" action="/login" id="login-form">
+        <table>
+          <tr>
+            <td>Username</td>
+            <td>{{input type="text" value=username class="username" name="username" }}</td>
+          </tr>
+          <tr>
+            <td>Password</td>
+            <td>{{input type="password" value=password class="password" name="password" }}</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>
+            <button type="button" class="btn btn-blank btn-default" id="login-submit-btn">Login</button>
+            </td>
+          </tr>
+        </table>
+        </form>
+    </div>
+  </div>
+</div>

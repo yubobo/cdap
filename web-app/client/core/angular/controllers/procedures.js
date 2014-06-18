@@ -7,10 +7,10 @@ define(function () {
   var Ctrl = ['$rootScope', '$scope', '$http', '$routeParams', '$interval',
     function($rootScope, $scope, $http, $routeParams, $interval) {
 
-    $scope.message = "resources";
+    $scope.message = "procedures";
 
     var ival = $interval(function() {
-      $.get('/resources');
+      $.get('/procedures');
     }, 1000);
 
     $scope.$on("$destroy", function(){

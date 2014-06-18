@@ -1,0 +1,24 @@
+<table class="table">
+<thead>
+  <th style="padding-left: 14px;">Streams</th>
+  <th style="width: 100px;text-align: center;">Storage</th>
+  <th style="width: 100px;padding: 3px 0px 0px;text-align: center;">Events</th>
+  <th style="width: 262px;">Arrival Rate (EPS)</th>
+</thead>
+<tbody>
+    <tr>
+      <td class="app-list-name">
+      <a {{bindAttr href="href"}}>{{name}}</a><br /><span class="app-list-status">Stream</span>
+      </td>
+      <td class="app-list-count">{{storageLabel}}<span>{{storageUnits}}</span></td>
+      <td class="app-list-count">{{eventsLabel}}{{eventsUnits}}</td>
+      <td style="max-width:262px;">{{view C.Embed.Chart entityIdBinding=id entityType="Stream" mode="singular" metrics="/reactor/streams/{id}/collect.events"}}</td>
+    </tr>
+</tbody>
+</table>
+<div class="object-list-empty">
+  <div class="object-list-empty-content">
+    <div>No Streams.</div>
+      <span>Please create one in code or on the commandline.</span>
+  </div>
+</div>

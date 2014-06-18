@@ -1,0 +1,53 @@
+<div id="title">
+  <div style="float: right;margin-top: 2px;">
+    <button class="btn btn-blank pause force-margin-right-20" {{action togglePause}}>{{pausedLabel}}</button>
+  </div>
+  <h1>Metrics <span>Explorer</span></h1>
+</div>
+<div id="panels">
+  <div class="panel" id="analyze-selected">
+    <div class="clearfix">
+
+      <div class="analyze-selected">
+        <ul>
+
+          <li class="analyze-selected-metric">
+            <div class="analyze-selected-metric-remove" {{action removeFromChart metric}}>&times;</div>
+            <div class="analyze-selected-metric-color" style="background: {{unbound metric.color}}"></div>
+            <div class="analyze-selected-metric-element"><a href="{{unbound metric.href}}">{{metric.element}}</a></div>
+            <div class="analyze-selected-metric-name">{{metric.metric}}</div>
+          </li>
+
+          <li class="analyze-selected-metric-add" {{action showConfigure}}>
+            <div class="analyze-selected-metric-color">+</div>
+            <div class="analyze-selected-metric-element">Add</div>
+          </li>
+
+        </ul>
+
+        <div id="analyze-configurator">
+          <input type="hidden" id="elementSelector" />
+          <input type="hidden" id="metricSelector" disabled="disabled" />
+          <button {{bindAttr disabled="configuring.noSelection"}} class="analyze-blue-btn" {{action addToChart}}>Add</button>
+          <button class="analyze-gray-btn" {{action hideConfigure}}>Cancel</button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="panel analyze-chart">
+    <div class="panel-body">
+        <div id="y_axis"></div>
+        <div class="object-list-empty" style="height:500px;padding-top:220px;">
+          <div class="object-list-empty-content">
+            <div>No metrics selected.</div>
+            <span>Please add a metric on the right.</span>
+          </div>
+        </div>
+    </div>
+  </div>
+
+</div>
