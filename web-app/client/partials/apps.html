@@ -1,4 +1,4 @@
-<table class="table">
+<table class="table" ng-if="apps.length">
   <thead>
   <th>&nbsp;</th>
     <th style="text-align: center;width:64px;">Collect</th>
@@ -8,11 +8,11 @@
   <th style="width: 262px;">Busyness</th>
   </thead>
   <tbody>
-    <tr>
+    <tr ng-repeat="app in apps">
       <td class="app-list-name">
-      <a {{bindAttr href="href"}}>{{name}}</a>
+      <a>{{app.name}}</a>
       <br />
-      <span class="app-list-status">{{description}}</span>
+      <span class="app-list-status">{{app.description}}</span>
 
       </td>
       <td class="app-list-count">{{counts.Stream}}</strong></td>
@@ -23,7 +23,7 @@
     </tr>
   </tbody>
 </table>
-<div class="object-list-empty">
+<div class="object-list-empty" ng-show="!apps.length">
   <div class="object-list-empty-content">
     <div>No Applications.</div>
     <span>Load an Application by clicking the button above.</span>

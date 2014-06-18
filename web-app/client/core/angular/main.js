@@ -24,6 +24,9 @@ requirejs.config({
   }
 });
 
+/**
+ * Load dependencies using Requirejs module loader.
+ */
 require([
   'angular',
   './controllers/overview',
@@ -45,18 +48,41 @@ require([
   './controllers/analyze',
   './controllers/services',
   './controllers/service',
+  './models/app',
+  './datafactory',
+  './helpers',
   'angular-route',
   'jQuery',
   'bootstrap'],
-  function (angular, OverviewCtrl, ResourcesCtrl, AppsCtrl, FlowsCtrl, DatasetsCtrl,
-    ProceduresCtrl, StreamsCtrl, AppCtrl, FlowCtrl, StreamCtrl, ProcedureCtrl, DatasetCtrl,
-    LoadingCtrl, LoginCtrl, PageNotFoundCtrl, ConnectionErrorCtrl, AnalyzeCtrl, ServicesCtrl,
-    ServiceCtrl) {
+  function (
+    angular,
+    OverviewCtrl, 
+    ResourcesCtrl, 
+    AppsCtrl, 
+    FlowsCtrl, 
+    DatasetsCtrl,
+    ProceduresCtrl, 
+    StreamsCtrl, 
+    AppCtrl, 
+    FlowCtrl, 
+    StreamCtrl, 
+    ProcedureCtrl, 
+    DatasetCtrl,
+    LoadingCtrl, 
+    LoginCtrl, 
+    PageNotFoundCtrl, 
+    ConnectionErrorCtrl, 
+    AnalyzeCtrl, 
+    ServicesCtrl,
+    ServiceCtrl,
+    AppModel,
+    DataFactory,
+    Helpers) {
 
-    // Declare app level module which depends on filters, and services
+    // Instantiate module and declare routes.
 
-    angular.module('ReactorWebapp', ['ngRoute'])
-    .config(['$routeProvider', function ($routeProvider) {
+    var reactorWebapp = angular.module('ReactorWebapp', ['ngRoute']);
+    reactorWebapp.config(['$routeProvider', function ($routeProvider) {
       
       $routeProvider.when('/overview', {
         templateUrl: '/partials/overview.html', controller: OverviewCtrl
@@ -71,7 +97,7 @@ require([
       });
 
       $routeProvider.when('/streams', {
-        templateUrl: '/partials/apps.html', controller: StreamsCtrl
+        templateUrl: '/partials/streams.html', controller: StreamsCtrl
       });
 
       $routeProvider.when('/flows', {
@@ -142,6 +168,42 @@ require([
     
     }]);
 
+    reactorWebapp.value('App', AppModel);
+    
+    // Backend connections and all ajax calls are made in the data factory.
+    reactorWebapp.factory('dataFactory', DataFactory);
+    reactorWebapp.factory('helpers', Helpers);
+
+    // Declares any constants in the application here. 
+    // Constants are defined in capital letters.
+    reactorWebapp.constant('REACTOR_ENDPOINT', '/rest')
+    .constant('METRICS_TIMER', 3000);
+    
+    // Assing controllers a name so that they can be used in templates eg:
+    // <div ng-include="<template location>" ng-controller="OverviewCtrl"></div>
+
+    reactorWebapp.controller('OverviewCtrl', OverviewCtrl)
+    .controller('ResourcesCtrl', ResourcesCtrl)
+    .controller('AppsCtrl', AppsCtrl)
+    .controller('FlowsCtrl', FlowsCtrl)
+    .controller('DatasetsCtrl', DatasetsCtrl)
+    .controller('ProceduresCtrl', ProceduresCtrl)
+    .controller('StreamsCtrl', StreamsCtrl)
+    .controller('AppCtrl', AppCtrl)
+    .controller('FlowCtrl', FlowCtrl)
+    .controller('StreamCtrl', StreamCtrl)
+    .controller('ProcedureCtrl', ProcedureCtrl)
+    .controller('DatasetCtrl', DatasetCtrl)
+    .controller('LoadingCtrl', LoadingCtrl)
+    .controller('LoginCtrl', LoginCtrl)
+    .controller('PageNotFoundCtrl', PageNotFoundCtrl)
+    .controller('ConnectionErrorCtrl', ConnectionErrorCtrl)
+    .controller('AnalyzeCtrl', AnalyzeCtrl)
+    .controller('ServicesCtrl', ServicesCtrl)
+    .controller('ServiceCtrl', ServiceCtrl);
+
+
+    // Manually bootstrap the application since we are bootstrapping with requirejs.    
     angular.bootstrap(document, ['ReactorWebapp']);
 
 });
