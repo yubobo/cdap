@@ -29,6 +29,8 @@ requirejs.config({
  */
 require([
   'angular',
+  
+  // Controller locations.
   './controllers/overview',
   './controllers/resources',
   './controllers/apps',
@@ -48,14 +50,27 @@ require([
   './controllers/analyze',
   './controllers/services',
   './controllers/service',
+  
+  // Model locations.
   './models/app',
+  './models/flow',
+  './models/flowlet',
+  './models/dataset',
+  './models/procedure',
+  './models/service',
+  './models/stream',
+  
+  // Helper library locations.
   './datafactory',
   './helpers',
+  
   'angular-route',
   'jQuery',
   'bootstrap'],
   function (
     angular,
+
+    // Controllers.
     OverviewCtrl, 
     ResourcesCtrl, 
     AppsCtrl, 
@@ -75,12 +90,21 @@ require([
     AnalyzeCtrl, 
     ServicesCtrl,
     ServiceCtrl,
+    
+    // Models.
     AppModel,
+    FlowModel,
+    FlowletModel,
+    DatasetModel,
+    ProcedureModel,
+    ServiceModel,
+    StreamModel,
+    
+    // Helper libraries.
     DataFactory,
     Helpers) {
 
     // Instantiate module and declare routes.
-
     var reactorWebapp = angular.module('ReactorWebapp', ['ngRoute']);
     reactorWebapp.config(['$routeProvider', function ($routeProvider) {
       
@@ -168,20 +192,26 @@ require([
     
     }]);
 
+    // Declare models and other values here. These values can change in the future.
     reactorWebapp.value('App', AppModel);
+    reactorWebapp.value('Flow', FlowModel);
+    reactorWebapp.value('Stream', StreamModel);
+    reactorWebapp.value('Dataset', DatasetModel);
+    reactorWebapp.value('Procedure', ProcedureModel);
+    reactorWebapp.value('Flowlet', FlowletModel);
+    reactorWebapp.value('Service', ServiceModel);
     
     // Backend connections and all ajax calls are made in the data factory.
     reactorWebapp.factory('dataFactory', DataFactory);
     reactorWebapp.factory('helpers', Helpers);
 
-    // Declares any constants in the application here. 
+    // Declares any constants in the application here. These values SHOULD NOT change.
     // Constants are defined in capital letters.
     reactorWebapp.constant('REACTOR_ENDPOINT', '/rest')
     .constant('METRICS_TIMER', 3000);
     
     // Assing controllers a name so that they can be used in templates eg:
     // <div ng-include="<template location>" ng-controller="OverviewCtrl"></div>
-
     reactorWebapp.controller('OverviewCtrl', OverviewCtrl)
     .controller('ResourcesCtrl', ResourcesCtrl)
     .controller('AppsCtrl', AppsCtrl)
