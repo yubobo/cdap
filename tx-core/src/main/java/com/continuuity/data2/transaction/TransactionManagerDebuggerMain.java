@@ -140,7 +140,8 @@ public class TransactionManagerDebuggerMain {
       showTxids = line.hasOption(IDS_OPTION);
       txId = line.hasOption(TRANSACTION_OPTION) ? Long.valueOf(line.getOptionValue(TRANSACTION_OPTION)) : null;
       accessToken = line.hasOption(TOKEN_OPTION) ? line.getOptionValue(TOKEN_OPTION) : null;
-      tokenFile = line.hasOption(TOKEN_FILE_OPTION) ? line.getOptionValue(TOKEN_FILE_OPTION) : null;
+      tokenFile = line.hasOption(TOKEN_FILE_OPTION) ? line.getOptionValue(TOKEN_FILE_OPTION).replaceAll("(\r|\n)", "")
+        : null;
       portNumber = line.hasOption(PORT_OPTION) ? Integer.valueOf(line.getOptionValue(PORT_OPTION)) :
                    conf.getInt(Constants.Gateway.PORT, Constants.Gateway.DEFAULT_PORT);
 

@@ -206,7 +206,7 @@ public class DataSetClient {
         if (++pos >= args.length) {
           usage(true);
         }
-        accessToken = args[pos].trim().replace("\n", "");
+        accessToken = args[pos].trim().replaceAll("(\r|\n)", "");
       } else if ("--token-file".equals(arg)) {
         if (++pos >= args.length) {
           usage(true);
