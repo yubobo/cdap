@@ -14,7 +14,7 @@ define(function () {
     }, 1000);
 
     $scope.$on("$destroy", function(){
-      if (intervals) {
+      if (typeof intervals !== 'undefined') {
         helpers.cancelAllIntervals($interval, intervals);  
       }
     });

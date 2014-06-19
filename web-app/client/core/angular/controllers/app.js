@@ -23,6 +23,14 @@ define(function () {
         $scope.app.flows = flows;
       });
 
+      dataFactory.getMapreducesByApp($scope.app.id, function (mapreduces) {
+        $scope.app.mapreduces = mapreduces;
+      });
+
+      dataFactory.getWorkflowsByApp($scope.app.id, function (workflows) {
+        $scope.app.workflows = workflows;
+      });
+
       dataFactory.getDatasetsByApp($scope.app.id, function (datasets) {
         $scope.app.datasets = datasets;
       });
@@ -39,7 +47,7 @@ define(function () {
      * Gets triggered on every route change, cancel all activated intervals.
      */    
     $scope.$on("$destroy", function () {
-      if (intervals) {
+      if (typeof intervals !== 'undefined') {
         helpers.cancelAllIntervals($interval, intervals);  
       }
     });

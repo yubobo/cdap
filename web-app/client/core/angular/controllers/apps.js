@@ -53,7 +53,7 @@ define(function () {
      * Gets triggered on every route change, cancel all activated intervals.
      */
     $scope.$on("$destroy", function() {
-      if (intervals) {
+      if (typeof intervals !== 'undefined') {
         helpers.cancelAllIntervals($interval, intervals);
       }
     });
