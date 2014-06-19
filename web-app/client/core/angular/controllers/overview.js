@@ -9,6 +9,10 @@ define(function () {
 
     $scope.message = "overview";
 
+    $scope.value = {
+      collect: 100
+    }
+
   }];
 
   return Ctrl;

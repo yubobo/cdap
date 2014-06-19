@@ -31,6 +31,7 @@ require([
   'angular',
 
   // Controller locations.
+  './controllers/base',
   './controllers/overview',
   './controllers/resources',
   './controllers/apps',
@@ -63,6 +64,7 @@ require([
   './models/workflow',
 
   // Helper library locations.
+  './metrics-service',
   './datafactory',
   './helpers',
 
@@ -79,6 +81,7 @@ require([
     angular,
 
     // Controllers.
+    BaseCtrl,
     OverviewCtrl,
     ResourcesCtrl,
     AppsCtrl,
@@ -111,6 +114,7 @@ require([
     WorkflowModel,
 
     // Helper libraries.
+    MetricsService,
     DataFactory,
     Helpers) {
 
@@ -216,6 +220,7 @@ require([
     reactorWebapp.value('Workflow', WorkflowModel);
 
     // Backend connections and all ajax calls are made in the data factory.
+    reactorWebapp.factory('metricsService', MetricsService);
     reactorWebapp.factory('dataFactory', DataFactory);
     reactorWebapp.factory('helpers', Helpers);
 
@@ -226,7 +231,8 @@ require([
 
     // Assing controllers a name so that they can be used in templates eg:
     // <div ng-include="<template location>" ng-controller="OverviewCtrl"></div>
-    reactorWebapp.controller('OverviewCtrl', OverviewCtrl)
+    reactorWebapp.controller('BaseCtrl', BaseCtrl)
+    .controller('OverviewCtrl', OverviewCtrl)
     .controller('ResourcesCtrl', ResourcesCtrl)
     .controller('AppsCtrl', AppsCtrl)
     .controller('FlowsCtrl', FlowsCtrl)
