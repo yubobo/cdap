@@ -10,20 +10,20 @@
   <tbody>
     <tr ng-repeat="app in apps">
       <td class="app-list-name">
-      <a>{{app.name}}</a>
+      <a ng-href="/#/apps/{{app.name}}">{{app.name}}</a>
       <br />
       <span class="app-list-status">{{app.description}}</span>
 
       </td>
-      <td class="app-list-count">{{counts.Stream}}</strong></td>
-      <td class="app-list-count">{{counts.Flow}}</strong></td>
-      <td class="app-list-count">{{counts.Dataset}}</strong></td>
-      <td class="app-list-count">{{counts.Procedure}}</strong></td>
+      <td class="app-list-count">{{app.streams.length}}</strong></td>
+      <td class="app-list-count">{{app.flows.length}}</strong></td>
+      <td class="app-list-count">{{app.datasets.length}}</strong></td>
+      <td class="app-list-count">{{app.procedures.length}}</strong></td>
       <td style="max-width:264px;"></td>
     </tr>
   </tbody>
 </table>
-<div class="object-list-empty" ng-show="!apps.length">
+<div class="object-list-empty" ng-if="!apps.length">
   <div class="object-list-empty-content">
     <div>No Applications.</div>
     <span>Load an Application by clicking the button above.</span>

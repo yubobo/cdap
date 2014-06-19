@@ -59,10 +59,18 @@ require([
   './models/procedure',
   './models/service',
   './models/stream',
+  './models/mapreduce',
+  './models/workflow',
   
   // Helper library locations.
   './datafactory',
   './helpers',
+
+  // Directives.
+  './directives',
+
+  // Filters.
+  './filters',
   
   'angular-route',
   'jQuery',
@@ -99,93 +107,101 @@ require([
     ProcedureModel,
     ServiceModel,
     StreamModel,
+    MapreduceModel,
+    WorkflowModel,
     
     // Helper libraries.
     DataFactory,
     Helpers) {
 
-    // Instantiate module and declare routes.
-    var reactorWebapp = angular.module('ReactorWebapp', ['ngRoute']);
+    // Instantiate Reactor webapp module.
+    var reactorWebapp = angular.module('ReactorWebapp', [
+      'ReactorWebapp.filters',
+      'ReactorWebapp.directives',
+      'ngRoute'
+    ]);
+
+    // Configure routes.
     reactorWebapp.config(['$routeProvider', function ($routeProvider) {
       
       $routeProvider.when('/overview', {
-        templateUrl: '/partials/overview.html', controller: OverviewCtrl
+        templateUrl: '/templates/overview.html', controller: OverviewCtrl
       });
       
       $routeProvider.when('/resources', {
-        templateUrl: '/partials/resources.html', controller: ResourcesCtrl
+        templateUrl: '/templates/resources.html', controller: ResourcesCtrl
       });
       
       $routeProvider.when('/apps', {
-        templateUrl: '/partials/apps.html', controller: AppsCtrl
+        templateUrl: '/templates/apps.html', controller: AppsCtrl
       });
 
       $routeProvider.when('/streams', {
-        templateUrl: '/partials/streams.html', controller: StreamsCtrl
+        templateUrl: '/templates/streams.html', controller: StreamsCtrl
       });
 
       $routeProvider.when('/flows', {
-        templateUrl: '/partials/flows.html', controller: FlowsCtrl
+        templateUrl: '/templates/flows.html', controller: FlowsCtrl
       });
 
       $routeProvider.when('/datasets', {
-        templateUrl: '/partials/datasets.html', controller: DatasetsCtrl
+        templateUrl: '/templates/datasets.html', controller: DatasetsCtrl
       });
 
       $routeProvider.when('/procedures', {
-        templateUrl: '/partials/procedures.html', controller: ProceduresCtrl
+        templateUrl: '/templates/procedures.html', controller: ProceduresCtrl
       });
 
       $routeProvider.when('/procedures', {
-        templateUrl: '/partials/procedures.html', controller: ProceduresCtrl
+        templateUrl: '/templates/procedures.html', controller: ProceduresCtrl
       });
 
       $routeProvider.when('/services', {
-        templateUrl: '/partials/services.html', controller: ServicesCtrl
+        templateUrl: '/templates/services.html', controller: ServicesCtrl
       });
 
       $routeProvider.when('/apps/:appId', {
-        templateUrl: '/partials/app.html', controller: AppCtrl
+        templateUrl: '/templates/app.html', controller: AppCtrl
       });
 
       $routeProvider.when('/flows/:flowId', {
-        templateUrl: '/partials/flow.html', controller: FlowCtrl
+        templateUrl: '/templates/flow.html', controller: FlowCtrl
       });
 
       $routeProvider.when('/streams/:streamId', {
-        templateUrl: '/partials/stream.html', controller: StreamCtrl
+        templateUrl: '/templates/stream.html', controller: StreamCtrl
       });
 
       $routeProvider.when('/datasets/:datasetId', {
-        templateUrl: '/partials/procedure.html', controller: DatasetCtrl
+        templateUrl: '/templates/procedure.html', controller: DatasetCtrl
       });
 
       $routeProvider.when('/procedures/:procedureId', {
-        templateUrl: '/partials/procedure.html', controller: ProcedureCtrl
+        templateUrl: '/templates/procedure.html', controller: ProcedureCtrl
       });
 
       $routeProvider.when('/services/:serviceId', {
-        templateUrl: '/partials/service.html', controller: ServiceCtrl
+        templateUrl: '/templates/service.html', controller: ServiceCtrl
       });
 
       $routeProvider.when('/loading', {
-        templateUrl: '/partials/loading.html', controller: LoadingCtrl
+        templateUrl: '/templates/loading.html', controller: LoadingCtrl
       });
 
       $routeProvider.when('/login', {
-        templateUrl: '/partials/login.html', controller: LoginCtrl
+        templateUrl: '/templates/login.html', controller: LoginCtrl
       });
 
       $routeProvider.when('/pagenotfound', {
-        templateUrl: '/partials/pagenotfound.html', controller: PageNotFoundCtrl
+        templateUrl: '/templates/pagenotfound.html', controller: PageNotFoundCtrl
       });
 
       $routeProvider.when('/connectionerror', {
-        templateUrl: '/partials/connectionerror.html', controller: ConnectionErrorCtrl
+        templateUrl: '/templates/connectionerror.html', controller: ConnectionErrorCtrl
       });
 
       $routeProvider.when('/analyze', {
-        templateUrl: '/partials/analyze.html', controller: AnalyzeCtrl
+        templateUrl: '/templates/analyze.html', controller: AnalyzeCtrl
       });
 
       $routeProvider.otherwise({redirectTo: '/overview'});
@@ -200,6 +216,8 @@ require([
     reactorWebapp.value('Procedure', ProcedureModel);
     reactorWebapp.value('Flowlet', FlowletModel);
     reactorWebapp.value('Service', ServiceModel);
+    reactorWebapp.value('Mapreduce', MapreduceModel);
+    reactorWebapp.value('Workflow', WorkflowModel);
     
     // Backend connections and all ajax calls are made in the data factory.
     reactorWebapp.factory('dataFactory', DataFactory);

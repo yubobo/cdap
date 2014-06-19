@@ -4,20 +4,45 @@ define(function () {
 
   /* Items */
 
-  var Ctrl = ['$rootScope', '$scope', '$http', '$routeParams', '$interval',
-    function($rootScope, $scope, $http, $routeParams, $interval) {
+  var Ctrl = ['$scope', '$http', '$interval', '$routeParams', 'dataFactory', 'helpers',
+    function ($scope, $http, $interval, $routeParams, dataFactory, helpers) {
 
-    $scope.message = "apps";
+    /**
+     * @type {App}
+     */
+    $scope.app = {};
 
-    var ival = $interval(function() {
-      $.get('/apps');
-    }, 1000);
+    dataFactory.getApp($routeParams.appId, function (app) {
+      $scope.app = app;
 
-    $scope.$on("$destroy", function(){
-        clearInterval(ival);
+      dataFactory.getStreamsByApp($scope.app.id, function (streams) {
+        $scope.app.streams = streams;
+      });
+
+      dataFactory.getFlowsByApp($scope.app.id, function (flows) {
+        $scope.app.flows = flows;
+      });
+
+      dataFactory.getDatasetsByApp($scope.app.id, function (datasets) {
+        $scope.app.datasets = datasets;
+      });
+
+      dataFactory.getProceduresByApp($scope.app.id, function (procedures) {
+        $scope.app.procedures = procedures;
+      });
+
     });
+    
+      
 
-
+    /**
+     * Gets triggered on every route change, cancel all activated intervals.
+     */    
+    $scope.$on("$destroy", function () {
+      if (intervals) {
+        helpers.cancelAllIntervals($interval, intervals);  
+      }
+    });
   }];
 
   return Ctrl;

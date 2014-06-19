@@ -1,0 +1,102 @@
+<div id="title">
+  <h1><span>Application</span> {{app.name}}</h1>
+</div>
+
+<div id="info">
+  <div class="info-box" style="float: right; border: 0;padding: 0px 14px 0px 0px;">
+    <div class="app-level-buttons">
+        <button class="btn btn-blue force-margin-right-20" {{action "promotePrompt"}}><img class="inbtn-img" src="/assets/img/v2/push_icon.png" />Push</button>
+      <button class="btn btn-blank" {{action "delete" on="click"}}><img class="inbtn-img" src="/assets/img/v2/delete_icon.png" />Delete</button>
+    </div>
+  </div>
+  <div class="info-box sparkline-box app-processed"></div>
+  <div class="info-box sparkline-box app-busyness"></div>
+  <div class="info-box app-storage" style="text-align: center;">
+    <div class="sparkline-box-title">Storage</div>
+    <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;">{{model.storageLabel}}<span>{{model.storageUnits}}</span></div>
+  </div>
+</div>
+
+<div id="panels">
+  <div class="panel" id="collect-panel">
+    <div class="panel-head"><div class="panel-title">Collect</div></div>
+      <table class="table" ng-if="app.streams.length">
+        <thead ng-include src="'/templates/partials/streams-table-header.html'" include-replace></thead>
+        <tbody>
+            <tr ng-repeat="stream in app.streams" ng-include="'/templates/partials/streams-list.html'">
+            </tr>
+        </tbody>
+      </table>
+      <div ng-if="!app.streams.length">
+        <div ng-include src="'/templates/partials/no-stream.html'" include-replace></div>
+      </div>
+  </div>
+  <div class="panel" id="process-panel">
+
+    <div class="panel-head">
+        <div class="btn-group pull-right start-stop-btns" style="margin-top:2px;text-align:center;">
+          <button {{action startAll "Flow" on="click"}} class="btn start"><img src="/assets/img/v2/play_icon.png" /></button>
+          <img style="display: none;margin-top: 3px;" src="/assets/img/start-all-load-white.gif" />
+          <button {{action stopAll "Flow" on="click"}} class="btn stop"><img src="/assets/img/v2/stop_active_icon.png" /></button>
+        </div>
+      <div class="panel-title">Process</div>
+    </div>
+    <table class="table" ng-if="app.flows.length">
+      <thead ng-include src="'/templates/partials/flows-table-header.html'" include-replace></thead>
+      <tbody>
+          <tr ng-repeat="flow in app.flows" ng-include="'/templates/partials/flows-list.html'">
+          </tr>
+      </tbody>
+    </table>
+    <div ng-if="!app.flows.length">
+      <div ng-include src="'/templates/partials/no-flows.html'" include-replace></div>
+    </div>
+    <table class="table" ng-if="app.mapreduces.length">
+      <thead ng-include src="'/templates/partials/mapreduces-table-header.html'" include-replace></thead>
+      <tbody>
+          <tr ng-repeat="mapreduce in app.mapreduces" ng-include="'/templates/partials/mapreduces-list.html'">
+          </tr>
+      </tbody>
+    </table>
+    <table class="table" ng-if="app.workflows.length">
+      <thead ng-include src="'/templates/partials/workflows-table-header.html'" include-replace></thead>
+      <tbody>
+          <tr ng-repeat="workflow in app.workflows" ng-include="'/templates/partials/workflows-list.html'">
+          </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel" id="store-panel">
+    <div class="panel-head"><div class="panel-title">Store</div></div>
+    <table class="table" ng-if="app.datasets.length">
+      <thead ng-include src="'/templates/partials/datasets-table-header.html'" include-replace></thead>
+      <tbody>
+          <tr ng-repeat="dataset in app.datasets" ng-include="'/templates/partials/datasets-list.html'">
+          </tr>
+      </tbody>
+    </table>
+    <div ng-if="!app.datasets.length">
+      <div ng-include src="'/templates/partials/no-datasets.html'" include-replace></div>
+    </div>
+  </div>
+  <div class="panel" id ="query-panel">
+    <div class="panel-head">
+        <div class="btn-group pull-right start-stop-btns" style="margin-top:2px;text-align:center;">
+          <button {{action startAll "Procedure" on="click"}} class="btn start"><img src="/assets/img/v2/play_icon.png" /></button>
+          <img style="display: none;margin-top: 3px;" src="/assets/img/start-all-load-white.gif" />
+          <button {{action stopAll "Procedure" on="click"}} class="btn stop"><img src="/assets/img/v2/stop_active_icon.png" /></button>
+        </div>
+      <div class="panel-title">Query</div>
+    </div>
+    <table class="table" ng-if="app.procedures.length">
+      <thead ng-include src="'/templates/partials/procedures-table-header.html'" include-replace></thead>
+      <tbody>
+          <tr ng-repeat="procedure in app.procedures" ng-include="'/templates/partials/procedures-list.html'">
+          </tr>
+      </tbody>
+    </table>
+    <div ng-if="!app.procedures.length">
+      <div ng-include src="'/templates/partials/no-procedures.html'" include-replace></div>
+    </div>
+  </div>
+</div>

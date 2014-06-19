@@ -1,5 +1,17 @@
-define([], function() {
+/*global define */
 
-  return;
+'use strict';
+
+define(['angular'], function(angular) {
+
+/* Filters */
+
+  angular.module('ReactorWebapp.filters', [])
+    .filter('interpolate', ['version', function(version) {
+      return function(text) {
+        return String(text).replace(/\%VERSION\%/mg, version);
+      }
+    }
+  ]);
 
 });
