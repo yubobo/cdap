@@ -14,7 +14,10 @@ import com.continuuity.common.stream.DefaultStreamEvent;
 import com.continuuity.common.utils.UsageException;
 import com.continuuity.gateway.util.Util;
 import com.continuuity.internal.app.verification.StreamVerification;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import org.apache.http.HttpResponse;
@@ -34,6 +37,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -54,6 +60,8 @@ import java.util.TreeMap;
  */
 public class StreamClient {
 
+  private static final Gson GSON = new Gson();
+
   static {
     // this turns off all logging but we don't need that for a cmdline tool
     org.apache.log4j.Logger.getRootLogger().setLevel(Level.OFF);
@@ -65,7 +73,6 @@ public class StreamClient {
    */
   public static boolean debug = false;
 
-  static final Gson GSON = new Gson();
 
   String command = null;         // the command to run
   boolean verbose = false;       // for debug output
@@ -85,6 +92,7 @@ public class StreamClient {
   boolean all = false;           // whether to view all events in the stream
   Integer last = null;           // to view the N last events in the stream
   Integer first = null;          // to view the N first events in the stream
+  Long ttl = null;               // Stream TTL
   Map<String, String> headers = Maps.newHashMap(); // to accumulate all headers
 
   boolean forceNoSSL = false;
@@ -115,6 +123,7 @@ public class StreamClient {
     out.println("  " + name + " view --stream <id> [ <option> ... ]");
     out.println("  " + name + " info --stream <id> [ <option> ... ]");
     out.println("  " + name + " truncate --stream <id>");
+    out.println("  " + name + " config --stream <id> [ <option> ... ]");
     out.println("Options:");
     out.println("  --base <url>            To specify the base URL to use");
     out.println("  --host <name>           To specify the hostname to send to");
@@ -135,6 +144,7 @@ public class StreamClient {
     out.println("  --first <number>        To view the first N events in the stream. Default ");
     out.println("                          for view is --first 10.");
     out.println("  --last <number>         To view the last N events in the stream.");
+    out.println("  --ttl <number>          To set the TTL for the stream in seconds.");
     out.println("  --token <token>         To specify the access token for a secure connection");
     out.println("  --token-file <path>     Alternative to --token, to specify a file that");
     out.println("                          contains the access token for a secure connection");
@@ -267,6 +277,15 @@ public class StreamClient {
         } catch (NumberFormatException e) {
           usage(true);
         }
+      } else if ("--ttl".equals(arg)) {
+        if (++pos >= args.length) {
+          usage(true);
+        }
+        try {
+          ttl = Long.valueOf(args[pos]);
+        } catch (NumberFormatException e) {
+          usage(true);
+        }
       } else if ("--help".equals(arg)) {
         usage(false);
         help = true;
@@ -280,7 +299,7 @@ public class StreamClient {
   }
 
   static List<String> supportedCommands =
-    Arrays.asList("create", "send", "group", "fetch", "view", "info", "truncate");
+    Arrays.asList("create", "send", "group", "fetch", "view", "info", "truncate", "config");
 
   void validateArguments(String[] args) {
     // first parse command arguments
@@ -339,6 +358,11 @@ public class StreamClient {
     if ("create".equals(command)) {
       if (!isId(destination)) {
         usage("id is not a printable ascii character string");
+      }
+    }
+    if ("config".equals(command)) {
+      if (ttl == null || ttl < 0L) {
+        usage("--ttl must be specified as a non-negative value");
       }
     }
   }
@@ -488,16 +512,15 @@ public class StreamClient {
 
       try {
         response = client.execute(post);
-        if (!checkHttpStatus(response)) {
-          return null;
-        }
-        return "OK.";
+        client.getConnectionManager().shutdown();
       } catch (IOException e) {
         System.err.println("Error sending HTTP request: " + e.getMessage());
         return null;
-      } finally {
-        client.getConnectionManager().shutdown();
       }
+      if (!checkHttpStatus(response)) {
+        return null;
+      }
+      return "OK.";
     } else if ("group".equals(command)) {
       String id = getConsumerId(requestUrl);
       if (id != null) {
@@ -637,6 +660,33 @@ public class StreamClient {
         client.getConnectionManager().shutdown();
       }
 
+    } else if ("config".equals(command)) {
+      try {
+        URL url = new URL(requestUrl + "/config");
+        try {
+          HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
+          try {
+            urlConn.setDoOutput(true);
+            urlConn.setRequestMethod("PUT");
+            if (apikey != null) {
+              urlConn.setRequestProperty(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+            }
+            JsonObject streamConfig = new JsonObject();
+            streamConfig.addProperty("ttl", ttl);
+            urlConn.getOutputStream().write(GSON.toJson(streamConfig).getBytes(Charsets.UTF_8));
+            return (urlConn.getResponseCode() == HttpURLConnection.HTTP_OK) ? "OK." : null;
+          } finally {
+            urlConn.disconnect();
+          }
+        } catch (IOException e) {
+          System.err.println("Error sending HTTP request: " + e.getMessage());
+          return null;
+        }
+      } catch (MalformedURLException e) {
+        // Shouldn't happen
+        System.err.println("Error sending HTTP request to " + requestUrl + "/config");
+        return null;
+      }
     }
     return null;
   }
