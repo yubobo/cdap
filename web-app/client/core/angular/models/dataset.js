@@ -8,12 +8,13 @@ define(function () {
       this.classname = '';
       this.id = '';
       this.name = '';
+      this.specification = '';
 
       if (data && Object.prototype.toString.call(data) === '[object Object]') {
         for (var index in data) {
           this[index] = data[index];
         }
-      }  
+      }
     }
 
   });
