@@ -2,20 +2,22 @@
 
 define(function () {
 
-  /* Items */
 
-  var Ctrl = ['$rootScope', '$scope', '$http', '$routeParams', '$interval',
-    function($rootScope, $scope, $http, $routeParams, $interval) {
+  var Ctrl = ['$scope', '$interval', 'dataFactory',
+    function($scope, $interval, dataFactory) {
 
-    $scope.message = "datasets";
+    /**
+     * List of Dataset objects.
+     */
+    $scope.datasets = [];
 
-    var ival = $interval(function() {
-      $.get('/datasets');
-    }, 1000);
+    dataFactory.getDatasets(function (datasets) {
+      $scope.datasets = datasets;
+    });
 
     $scope.$on("$destroy", function(){
       if (typeof intervals !== 'undefined') {
-        helpers.cancelAllIntervals($interval, intervals);  
+        helpers.cancelAllIntervals($interval, intervals);
       }
     });
 

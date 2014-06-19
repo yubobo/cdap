@@ -16,7 +16,7 @@ define(function () {
     'Procedure',
     'Mapreduce',
     'Workflow',
-    
+
     function (
       $http,
       $interval,
@@ -31,7 +31,7 @@ define(function () {
       Workflow) {
 
     return {
-      
+
       /**
        * Gets all reactor apps. Depends on the App model.
        * @param  {Function} callback that consumes list of App objects.
@@ -42,7 +42,9 @@ define(function () {
           data.map(function (entry) {
             entries.push(new App(entry));
           });
-          callback(entries);
+          if (typeof callback === 'function') {
+            callback(entries);
+          }
         });
       },
 
@@ -117,6 +119,17 @@ define(function () {
       },
 
       /**
+       * Gets a dataset by id. Depends on the Dataset model.
+       * @param  {Function} callback that consumes a Dataset object.
+       */
+      getDatasetById: function (datasetId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/datasets/' + datasetId).success(function (data) {
+          var dataset = new Dataset(data);
+          callback(dataset);
+        });
+      },
+
+      /**
        * Gets all reactor procedures. Depends on the Procedure model.
        * @param  {Function} callback that consumes list of Procedure objects.
        */
@@ -143,7 +156,7 @@ define(function () {
 
       /**
        * Gets streams for an app.
-       * @param  {Function} callback that consumes list of Stream objects. 
+       * @param  {Function} callback that consumes list of Stream objects.
        */
       getStreamsByApp: function (appId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/streams').success(function (data) {
@@ -157,7 +170,7 @@ define(function () {
 
       /**
        * Gets flows for an app.
-       * @param  {Function} callback that consumes list of Flow objects. 
+       * @param  {Function} callback that consumes list of Flow objects.
        */
       getFlowsByApp: function (appId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/flows').success(function (data) {
@@ -171,7 +184,7 @@ define(function () {
 
       /**
        * Gets map reduce jobs for an app.
-       * @param  {Function} callback that consumes list of Mapreduce objects. 
+       * @param  {Function} callback that consumes list of Mapreduce objects.
        */
       getMapreducesByApp: function (appId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/mapreduce').success(function (data) {
@@ -185,7 +198,7 @@ define(function () {
 
       /**
        * Gets workflows for an app.
-       * @param  {Function} callback that consumes list of Mapreduce objects. 
+       * @param  {Function} callback that consumes list of Mapreduce objects.
        */
       getWorkflowsByApp: function (appId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/workflows').success(function (data) {
@@ -199,7 +212,7 @@ define(function () {
 
       /**
        * Gets datasets for an app.
-       * @param  {Function} callback that consumes list of Dataset objects. 
+       * @param  {Function} callback that consumes list of Dataset objects.
        */
       getDatasetsByApp: function (appId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/datasets').success(function (data) {
@@ -213,7 +226,7 @@ define(function () {
 
       /**
        * Gets procedures for an app.
-       * @param  {Function} callback that consumes list of Procedure objects. 
+       * @param  {Function} callback that consumes list of Procedure objects.
        */
       getProceduresByApp: function (appId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/procedures').success(function (data) {

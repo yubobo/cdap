@@ -29,7 +29,7 @@ requirejs.config({
  */
 require([
   'angular',
-  
+
   // Controller locations.
   './controllers/base',
   './controllers/overview',
@@ -51,7 +51,7 @@ require([
   './controllers/analyze',
   './controllers/services',
   './controllers/service',
-  
+
   // Model locations.
   './models/app',
   './models/flow',
@@ -62,7 +62,7 @@ require([
   './models/stream',
   './models/mapreduce',
   './models/workflow',
-  
+
   // Helper library locations.
   './metrics-service',
   './datafactory',
@@ -73,7 +73,7 @@ require([
 
   // Filters.
   './filters',
-  
+
   'angular-route',
   'jQuery',
   'bootstrap'],
@@ -82,26 +82,26 @@ require([
 
     // Controllers.
     BaseCtrl,
-    OverviewCtrl, 
-    ResourcesCtrl, 
-    AppsCtrl, 
-    FlowsCtrl, 
+    OverviewCtrl,
+    ResourcesCtrl,
+    AppsCtrl,
+    FlowsCtrl,
     DatasetsCtrl,
-    ProceduresCtrl, 
-    StreamsCtrl, 
-    AppCtrl, 
-    FlowCtrl, 
-    StreamCtrl, 
-    ProcedureCtrl, 
+    ProceduresCtrl,
+    StreamsCtrl,
+    AppCtrl,
+    FlowCtrl,
+    StreamCtrl,
+    ProcedureCtrl,
     DatasetCtrl,
-    LoadingCtrl, 
-    LoginCtrl, 
-    PageNotFoundCtrl, 
-    ConnectionErrorCtrl, 
-    AnalyzeCtrl, 
+    LoadingCtrl,
+    LoginCtrl,
+    PageNotFoundCtrl,
+    ConnectionErrorCtrl,
+    AnalyzeCtrl,
     ServicesCtrl,
     ServiceCtrl,
-    
+
     // Models.
     AppModel,
     FlowModel,
@@ -112,7 +112,7 @@ require([
     StreamModel,
     MapreduceModel,
     WorkflowModel,
-    
+
     // Helper libraries.
     MetricsService,
     DataFactory,
@@ -127,15 +127,15 @@ require([
 
     // Configure routes.
     reactorWebapp.config(['$routeProvider', function ($routeProvider) {
-      
+
       $routeProvider.when('/overview', {
         templateUrl: '/templates/overview.html', controller: OverviewCtrl
       });
-      
+
       $routeProvider.when('/resources', {
         templateUrl: '/templates/resources.html', controller: ResourcesCtrl
       });
-      
+
       $routeProvider.when('/apps', {
         templateUrl: '/templates/apps.html', controller: AppsCtrl
       });
@@ -205,7 +205,7 @@ require([
       });
 
       $routeProvider.otherwise({redirectTo: '/overview'});
-    
+
     }]);
 
     // Declare models and other values here. These values can change in the future.
@@ -218,7 +218,7 @@ require([
     reactorWebapp.value('Service', ServiceModel);
     reactorWebapp.value('Mapreduce', MapreduceModel);
     reactorWebapp.value('Workflow', WorkflowModel);
-    
+
     // Backend connections and all ajax calls are made in the data factory.
     reactorWebapp.factory('metricsService', MetricsService);
     reactorWebapp.factory('dataFactory', DataFactory);
@@ -228,7 +228,6 @@ require([
     // Constants are defined in capital letters.
     reactorWebapp.constant('REACTOR_ENDPOINT', '/rest')
     .constant('POLLING_INTERVAL', 3000);
-    
     // Assing controllers a name so that they can be used in templates eg:
     // <div ng-include="<template location>" ng-controller="OverviewCtrl"></div>
     reactorWebapp.controller('BaseCtrl', BaseCtrl)
@@ -253,7 +252,7 @@ require([
     .controller('ServiceCtrl', ServiceCtrl);
 
 
-    // Manually bootstrap the application since we are bootstrapping with requirejs.    
+    // Manually bootstrap the application since we are bootstrapping with requirejs.
     angular.bootstrap(document, ['ReactorWebapp']);
 
 });
