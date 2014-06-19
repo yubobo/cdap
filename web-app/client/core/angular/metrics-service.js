@@ -7,14 +7,14 @@ define(function () {
     '$interval',
     '$q',
     'REACTOR_ENDPOINT',
-    'METRICS_TIMER',
+    'POLLING_INTERVAL',
     
     function (
       $http,
       $interval,
       $q,
       REACTOR_ENDPOINT,
-      METRICS_TIMER) {
+      POLLING_INTERVAL) {
 
     return {
 
@@ -25,20 +25,18 @@ define(function () {
         var self = this;
 
         self.interval = $interval(function () {
-          self.fetchMetrics();
-        }, METRICS_TIMER);
+          self.fetchMetricsFromServer();
+        }, POLLING_INTERVAL);
       },
 
-      trackMetric: function (metricEndpoint)  {
+      trackMetric: function (metricEndpoint) {
         var self = this;
-        if (metricEndpoint in self.metricsQueue) {
-          self.metricsQueue.push(metricName);
-        } else {
-          self.metricsQueue = metricName;
+        if (self.metricsQueue.indexOf(metricEndpoint) === -1) {
+          self.metricsQueue.push(metricEndpoint);
         }
       },
 
-      fetchMetrics: function () {
+      fetchMetricsFromServer: function () {
         var self = this;
         if (self.metricsQueue.length) {
           $http({
@@ -46,9 +44,23 @@ define(function () {
             url: '/metrics',
             data: self.metricsQueue,
           }).success(function (data, status, headers, config) {
-            console.log("success", arguments);
+            self.processResponse(data, status);
           }).error(function (data, status, headers, config) {
             console.log("error", arguments);
+          });
+        }
+      },
+
+      getMetricByEndpoint: function (endpoint) {
+        var self = this;
+        return self.metricsResults[endpoint];
+      },
+
+      processResponse: function (data, status) {
+        var self = this;
+        if (status === 200 && data.error === null) {
+          data.result.forEach(function (metricResponse) {
+            self.metricsResults[metricResponse.path] = metricResponse.result;
           });
         }
       },
