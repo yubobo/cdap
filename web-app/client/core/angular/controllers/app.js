@@ -4,8 +4,8 @@ define(function () {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$http', '$interval', '$routeParams', 'dataFactory', 'helpers',
-    function ($scope, $http, $interval, $routeParams, dataFactory, helpers) {
+  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'helpers',
+    function ($scope, $interval, $routeParams, dataFactory, helpers) {
 
     /**
      * @type {App}

@@ -32,7 +32,7 @@ define(function () {
 
           dataFactory.getMapreducesByApp($scope.apps[i].id, function (mapreduces) {
             $scope.apps[i].mapreduces = mapreduces;
-          });
+         });
 
           dataFactory.getWorkflowsByApp($scope.apps[i].id, function (workflows) {
             $scope.apps[i].workflows = workflows;
