@@ -378,7 +378,7 @@ public class StreamClient {
     if (tokenFile != null) {
       PrintStream out = verbose ? System.out : System.err;
       try {
-        accessToken = Files.toString(new File(tokenFile), Charsets.UTF_8);
+        accessToken = Files.toString(new File(tokenFile), Charsets.UTF_8).replaceAll("(\r|\n)", "");
       } catch (FileNotFoundException e) {
         out.println("Could not find access token file: " + tokenFile + "\nNo access token will be used");
       } catch (IOException e) {
@@ -630,7 +630,11 @@ public class StreamClient {
             JsonObject streamConfig = new JsonObject();
             streamConfig.addProperty("ttl", ttl);
             urlConn.getOutputStream().write(GSON.toJson(streamConfig).getBytes(Charsets.UTF_8));
-            return (urlConn.getResponseCode() == HttpURLConnection.HTTP_OK) ? "OK." : null;
+            if (!checkHttpStatus(urlConn.getResponseCode(), urlConn.getHeaderField(0),
+                                 urlConn.getErrorStream(), Collections.singletonList(HttpStatus.SC_OK))) {
+              return null;
+            }
+            return "OK.";
           } finally {
             urlConn.disconnect();
           }
@@ -827,22 +831,30 @@ public class StreamClient {
    * @return whether the response is as expected
    */
   boolean checkHttpStatus(HttpResponse response, List<Integer> expected) {
-    if (!expected.contains(response.getStatusLine().getStatusCode())) {
+    try {
+      return checkHttpStatus(response.getStatusLine().getStatusCode(), response.getStatusLine().toString(),
+                             response.getEntity().getContent(), expected);
+    } catch (IOException e) {
+      System.err.println("Could not get error stream");
+    }
+    // in case the first part fails we just need to return if we expect the status code or not
+    return expected.contains(response.getStatusLine().getStatusCode());
+  }
+
+  boolean checkHttpStatus(int statusCode, String statusLine, InputStream errorStream, List<Integer> expected) {
+    if (!expected.contains(statusCode)) {
       PrintStream out = verbose ? System.out : System.err;
-      if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-        try {
-          readUnauthorizedError(response.getEntity().getContent());
-        } catch (IOException e) {
-          out.println("Unknown unauthorized error");
-        }
+      if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
+        readUnauthorizedError(errorStream);
         return false;
       }
       // other errors
-      out.println(response.getStatusLine());
+      out.println(statusLine);
       return false;
     }
+    // other errors
     if (verbose) {
-      System.out.println(response.getStatusLine());
+      System.out.println(statusLine);
     }
     return true;
   }
