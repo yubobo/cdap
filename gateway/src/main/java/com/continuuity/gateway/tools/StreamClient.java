@@ -16,6 +16,7 @@ import com.continuuity.gateway.util.Util;
 import com.continuuity.internal.app.verification.StreamVerification;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
@@ -25,15 +26,19 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Level;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
@@ -373,14 +378,51 @@ public class StreamClient {
     if (tokenFile != null) {
       PrintStream out = verbose ? System.out : System.err;
       try {
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(tokenFile));
-        String line = bufferedReader.readLine();
-        accessToken = line;
+        accessToken = Files.toString(new File(tokenFile), Charsets.UTF_8);
       } catch (FileNotFoundException e) {
         out.println("Could not find access token file: " + tokenFile + "\nNo access token will be used");
       } catch (IOException e) {
         out.println("Could not read access token file: " + tokenFile + "\nNo access token will be used");
       }
+    }
+  }
+
+  /**
+   * Sends http requests with apikey and access token headers
+   * and checks the status of the request afterwards.
+   * @param requestBase The request to send. This method adds the apikey and access token headers
+   *                    if they are valid.
+   * @param expectedCodes The list of expected status codes from the request. If set to null,
+   *                      this method checks that the status code is OK.
+   * @return The HttpResponse if the request was successfully sent and the request status code
+   * is one of expectedCodes or OK if expectedCodes is null. Otherwise, returns null.
+   */
+  HttpResponse sendHttpRequest(HttpRequestBase requestBase, List<Integer> expectedCodes) {
+    if (apikey != null) {
+      requestBase.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+    }
+    if (accessToken != null) {
+      requestBase.setHeader("Authorization", "Bearer " + accessToken);
+    }
+    HttpClient client = new DefaultHttpClient();
+    try {
+      HttpResponse response = client.execute(requestBase);
+      // if expectedCodes is null, just check that we have OK status code
+      if (expectedCodes == null) {
+        if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
+          return null;
+        }
+      } else {
+        if (!checkHttpStatus(response, expectedCodes)) {
+          return null;
+        }
+      }
+      return response;
+    } catch (IOException e) {
+      System.err.println("Error sending HTTP request: " + e.getMessage());
+      return null;
+    } finally {
+      client.getConnectionManager().shutdown();
     }
   }
 
@@ -497,29 +539,7 @@ public class StreamClient {
         post.setHeader(destination + "." + header, headers.get(header));
       }
       post.setEntity(new ByteArrayEntity(binaryBody));
-      if (apikey != null) {
-        post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
-      }
-      if (accessToken != null) {
-        post.setHeader("Authorization", "Bearer " + accessToken);
-      }
-      // post is now fully constructed, ready to send
-
-      // prepare for HTTP
-      HttpClient client = new DefaultHttpClient();
-      HttpResponse response;
-
-      try {
-        response = client.execute(post);
-        client.getConnectionManager().shutdown();
-      } catch (IOException e) {
-        System.err.println("Error sending HTTP request: " + e.getMessage());
-        return null;
-      }
-      if (!checkHttpStatus(response)) {
-        return null;
-      }
-      return "OK.";
+      return (sendHttpRequest(post, null) != null) ? "OK." : null;
     } else if ("group".equals(command)) {
       String id = getConsumerId(requestUrl);
       if (id != null) {
@@ -544,12 +564,10 @@ public class StreamClient {
         System.err.println(e.getMessage());
         return null;
       }
-
       if (event == null) {
         System.out.println("no event");
         return "";
       }
-
       // print all the headers
       for (String name : event.getHeaders().keySet()) {
         // unless --verbose was given, we suppress continuuity headers
@@ -562,34 +580,18 @@ public class StreamClient {
       return writeBody(Bytes.toBytes(event.getBody()));
     } else if ("view".equals(command)) {
       if (consumer == null) {
-        // prepare for HTTP
-        HttpClient client = new DefaultHttpClient();
         HttpPost post = new HttpPost(requestUrl + "/consumer-id");
-        if (apikey != null) {
-          post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
-        }
-        if (accessToken != null) {
-          post.setHeader("Authorization", "Bearer " + accessToken);
-        }
-        HttpResponse response;
-        try {
-          response = client.execute(post);
-          if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
-            return null;
-          }
-          // read the binary value from the HTTP response
-          byte[] binaryValue = Util.readHttpResponse(response);
-          if (binaryValue == null) {
-            System.err.println("Unexpected response without body.");
-            return null;
-          }
-          consumer = Bytes.toString(binaryValue);
-        } catch (IOException e) {
-          System.err.println("Error sending HTTP request: " + e.getMessage());
+        HttpResponse response = sendHttpRequest(post, null);
+        if (response == null) {
           return null;
-        } finally {
-          client.getConnectionManager().shutdown();
         }
+        // read the binary value from the HTTP response
+        byte[] binaryValue = Util.readHttpResponse(response);
+        if (binaryValue == null) {
+          System.err.println("Unexpected response without body.");
+          return null;
+        }
+        consumer = Bytes.toString(binaryValue);
       }
       Collector<StreamEvent> collector =
         all ? new AllCollector<StreamEvent>(StreamEvent.class) :
@@ -606,59 +608,11 @@ public class StreamClient {
       }
 
     } else if ("create".equals(command)) {
-
-      // create an HttpPut
       HttpPut put = new HttpPut(requestUrl);
-
-      if (apikey != null) {
-        put.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
-      }
-      if (accessToken != null) {
-        put.setHeader("Authorization", "Bearer " + accessToken);
-      }
-      // put is now fully constructed, ready to send
-
-      // prepare for HTTP
-      HttpClient client = new DefaultHttpClient();
-      HttpResponse response;
-
-      try {
-        response = client.execute(put);
-        if (!checkHttpStatus(response)) {
-          return null;
-        }
-        return "OK.";
-      } catch (IOException e) {
-        System.err.println("Error sending HTTP request: " + e.getMessage());
-        return null;
-      } finally {
-        client.getConnectionManager().shutdown();
-      }
-
+      return (sendHttpRequest(put, null) != null) ? "OK." : null;
     } else if ("truncate".equals(command)) {
-      // prepare for HTTP
-      HttpClient client = new DefaultHttpClient();
       HttpPost post = new HttpPost(requestUrl + "/truncate");
-      if (apikey != null) {
-        post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
-      }
-      if (accessToken != null) {
-        post.setHeader("Authorization", "Bearer " + accessToken);
-      }
-      HttpResponse response;
-      try {
-        response = client.execute(post);
-        if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
-          return null;
-        }
-        return "OK.";
-      } catch (IOException e) {
-        System.err.println("Error sending HTTP request: " + e.getMessage());
-        return null;
-      } finally {
-        client.getConnectionManager().shutdown();
-      }
-
+      return (sendHttpRequest(post, null) != null) ? "OK." : null;
     } else if ("config".equals(command)) {
       try {
         URL url = new URL(requestUrl + "/config");
@@ -669,6 +623,9 @@ public class StreamClient {
             urlConn.setRequestMethod("PUT");
             if (apikey != null) {
               urlConn.setRequestProperty(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+            }
+            if (accessToken != null) {
+              urlConn.setRequestProperty("Authorization", "Bearer " + accessToken);
             }
             JsonObject streamConfig = new JsonObject();
             streamConfig.addProperty("ttl", ttl);
@@ -697,35 +654,18 @@ public class StreamClient {
    * @return the consumer group id returned by the gateway
    */
   String getConsumerId(String requestUrl) {
-    // prepare for HTTP
-    HttpClient client = new DefaultHttpClient();
     HttpPost post = new HttpPost(requestUrl + "/consumer-id");
-    if (apikey != null) {
-      post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
-    }
-    if (accessToken != null) {
-      post.setHeader("Authorization", "Bearer " + accessToken);
-    }
-    HttpResponse response;
-    try {
-      response = client.execute(post);
-      if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
-        return null;
-      }
-      // read the binary value from the HTTP response
-      byte[] binaryValue = Util.readHttpResponse(response);
-      if (binaryValue == null) {
-        System.err.println("Unexpected response without body.");
-        return null;
-      }
-      return Bytes.toString(binaryValue);
-    } catch (IOException e) {
-      System.err.println("Error sending HTTP request: " + e.getMessage());
+    HttpResponse response = sendHttpRequest(post, null);
+    if (response == null) {
       return null;
-    } finally {
-      client.getConnectionManager().shutdown();
     }
-
+    // read the binary value from the HTTP response
+    byte[] binaryValue = Util.readHttpResponse(response);
+    if (binaryValue == null) {
+      System.err.println("Unexpected response without body.");
+      return null;
+    }
+    return Bytes.toString(binaryValue);
   }
 
   /**
@@ -737,36 +677,18 @@ public class StreamClient {
    */
   String getQueueInfo(String requestUrl) {
     // prepare for HTTP
-    HttpClient client = new DefaultHttpClient();
     HttpGet get = new HttpGet(requestUrl + "/info");
-    if (apikey != null) {
-      get.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
-    }
-    if (accessToken != null) {
-      get.setHeader("Authorization", "Bearer " + accessToken);
-    }
-    HttpResponse response;
-    try {
-      response = client.execute(get);
-      // this call does not respond with 200 OK, but with 201 Created
-      if (!checkHttpStatus(response)) {
-        return null;
-      }
-
-      // read the binary value from the HTTP response
-      byte[] binaryValue = Util.readHttpResponse(response);
-      if (binaryValue == null) {
-        System.err.println("Unexpected response without body.");
-        return null;
-      }
-      return new String(binaryValue);
-    } catch (IOException e) {
-      System.err.println("Error sending HTTP request: " + e.getMessage());
+    HttpResponse response = sendHttpRequest(get, null);
+    if (response == null) {
       return null;
-    } finally {
-      client.getConnectionManager().shutdown();
     }
-
+    // read the binary value from the HTTP response
+    byte[] binaryValue = Util.readHttpResponse(response);
+    if (binaryValue == null) {
+      System.err.println("Unexpected response without body.");
+      return null;
+    }
+    return new String(binaryValue);
   }
 
   /**
@@ -810,47 +732,32 @@ public class StreamClient {
     HttpClient client = new DefaultHttpClient();
     HttpPost post = new HttpPost(uri + "/dequeue");
     post.addHeader(Constants.Stream.Headers.CONSUMER_ID, consumer);
-    if (apikey != null) {
-      post.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
+    Integer[] expectedCodes = { HttpStatus.SC_OK, HttpStatus.SC_NO_CONTENT };
+    HttpResponse response = sendHttpRequest(post, Arrays.asList(expectedCodes));
+    if (response == null) {
+      return null;
     }
-    if (accessToken != null) {
-      post.setHeader("Authorization", "Bearer " + accessToken);
+    // we expect either OK for an event, or NO_CONTENT for end of stream
+    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
+      return null;
     }
-    HttpResponse response;
-    try {
-      response = client.execute(post);
-      // we expect either OK for an event, or NO_CONTENT for end of stream
-      if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
-        return null;
-      }
-      // check that the response is OK
-      if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-        throw new Exception("HTTP request unsuccessful: " + response.getStatusLine());
-      }
-      // read the binary value from the HTTP response
-      byte[] binaryValue = Util.readHttpResponse(response);
-      if (binaryValue == null) {
-        throw new Exception("Unexpected response without body.");
-      }
-
-      // collect all the headers
-      Map<String, String> headers = new TreeMap<String, String>();
-      for (org.apache.http.Header header : response.getAllHeaders()) {
-        String name = header.getName();
-        // ignore common HTTP headers. All the headers of the actual
-        // event are transmitted with the stream name as a prefix
-        if (name.startsWith(destination)) {
-          String actualName = name.substring(destination.length() + 1);
-          headers.put(actualName, header.getValue());
-        }
-      }
-      return new DefaultStreamEvent(headers, ByteBuffer.wrap(binaryValue));
-    } catch (IOException e) {
-      throw new Exception("Error sending HTTP request.", e);
-    } finally {
-      client.getConnectionManager().shutdown();
+    // read the binary value from the HTTP response
+    byte[] binaryValue = Util.readHttpResponse(response);
+    if (binaryValue == null) {
+      throw new Exception("Unexpected response without body.");
     }
-
+    // collect all the headers
+    Map<String, String> headers = new TreeMap<String, String>();
+    for (org.apache.http.Header header : response.getAllHeaders()) {
+      String name = header.getName();
+      // ignore common HTTP headers. All the headers of the actual
+      // event are transmitted with the stream name as a prefix
+      if (name.startsWith(destination)) {
+        String actualName = name.substring(destination.length() + 1);
+        headers.put(actualName, header.getValue());
+      }
+    }
+    return new DefaultStreamEvent(headers, ByteBuffer.wrap(binaryValue));
   }
 
   /**
@@ -921,36 +828,45 @@ public class StreamClient {
    */
   boolean checkHttpStatus(HttpResponse response, List<Integer> expected) {
     if (!expected.contains(response.getStatusLine().getStatusCode())) {
+      PrintStream out = verbose ? System.out : System.err;
       if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-        PrintStream out = (verbose ? System.out : System.err);
-        out.println(response.getStatusLine());
-        if (accessToken == null) {
-          out.println("No access token provided");
-        } else {
-          Reader reader = null;
-          try {
-            reader = new InputStreamReader(response.getEntity().getContent());
-            String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
-            if (responseError != null && !responseError.isEmpty()) {
-              out.println(responseError);
-            }
-          } catch (Exception e) {
-            out.println("Unknown unauthorized error");
-          }
+        try {
+          readUnauthorizedError(response.getEntity().getContent());
+        } catch (IOException e) {
+          out.println("Unknown unauthorized error");
         }
         return false;
       }
-      if (verbose) {
-        System.out.println(response.getStatusLine());
-      } else {
-        System.err.println(response.getStatusLine().getReasonPhrase());
-      }
+      // other errors
+      out.println(response.getStatusLine());
       return false;
     }
     if (verbose) {
       System.out.println(response.getStatusLine());
     }
     return true;
+  }
+
+  /**
+   * Prints the error response from the connection
+   * @param errorStream the stream to read the response from
+   */
+  void readUnauthorizedError(InputStream errorStream) {
+    PrintStream out = verbose ? System.out : System.err;
+    out.println(HttpStatus.SC_UNAUTHORIZED + " Unauthorized");
+    if (accessToken == null) {
+      out.println("No access token provided");
+      return;
+    }
+    try {
+      Reader reader = new InputStreamReader(errorStream);
+      String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
+      if (responseError != null && !responseError.isEmpty()) {
+        out.println(responseError);
+      }
+    } catch (Exception e) {
+      out.println("Unknown unauthorized error");
+    }
   }
 
   public String execute(String[] args, CConfiguration config) {
