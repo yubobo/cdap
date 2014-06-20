@@ -69,7 +69,7 @@ require([
   './helpers',
 
   // Directives.
-  './directives',
+  './directives/sparkline',
 
   // Filters.
   './filters',
@@ -116,12 +116,14 @@ require([
     // Helper libraries.
     MetricsService,
     DataFactory,
-    Helpers) {
+    Helpers,
+
+    // Directives
+    Sparkline) {
 
     // Instantiate Reactor webapp module.
     var reactorWebapp = angular.module('ReactorWebapp', [
       'ReactorWebapp.filters',
-      'ReactorWebapp.directives',
       'ngRoute'
     ]);
 
@@ -208,6 +210,7 @@ require([
 
     }]);
 
+
     // Declare models and other values here. These values can change in the future.
     reactorWebapp.value('App', AppModel);
     reactorWebapp.value('Flow', FlowModel);
@@ -219,15 +222,19 @@ require([
     reactorWebapp.value('Mapreduce', MapreduceModel);
     reactorWebapp.value('Workflow', WorkflowModel);
 
+
     // Backend connections and all ajax calls are made in the data factory.
     reactorWebapp.factory('metricsService', MetricsService);
     reactorWebapp.factory('dataFactory', DataFactory);
     reactorWebapp.factory('helpers', Helpers);
 
+
     // Declares any constants in the application here. These values SHOULD NOT change.
     // Constants are defined in capital letters.
     reactorWebapp.constant('REACTOR_ENDPOINT', '/rest')
     .constant('POLLING_INTERVAL', 3000);
+
+
     // Assing controllers a name so that they can be used in templates eg:
     // <div ng-include="<template location>" ng-controller="OverviewCtrl"></div>
     reactorWebapp.controller('BaseCtrl', BaseCtrl)
@@ -250,6 +257,9 @@ require([
     .controller('AnalyzeCtrl', AnalyzeCtrl)
     .controller('ServicesCtrl', ServicesCtrl)
     .controller('ServiceCtrl', ServiceCtrl);
+
+    // Directives.
+    reactorWebapp.directive('sparkline', Sparkline);
 
 
     // Manually bootstrap the application since we are bootstrapping with requirejs.

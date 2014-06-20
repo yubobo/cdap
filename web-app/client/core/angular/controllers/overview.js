@@ -54,13 +54,17 @@ define(function () {
 
     var ival = $interval(function () {
       metrics.forEach(function (metric) {
-        $scope[metric.name] = metricsService.getMetricByEndpoint(metrics.endpoint);
+        $scope[metric.name] = metricsService.getMetricByEndpoint(metric.endpoint);
       });
     }, POLLING_INTERVAL);
     intervals.push(ival);
 
 
-    
+    $scope.getMetricDisplayValue = function (val) {
+      if (Object.prototype.toString.call(val) === '[object Array]' && val.length) {
+        return helpers.getLastValue(val);
+      }
+    };
 
     /**
      * Gets triggered on every route change, cancel all activated intervals.
