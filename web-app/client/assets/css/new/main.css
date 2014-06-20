@@ -3318,3 +3318,9 @@ div.tooltip {
 .btn-group.start-stop-btns .btn.stop:hover {
 	background: white;
 }
+
+path {
+	stroke: steelblue;
+	stroke-width: 2;
+	fill: none;
+}
