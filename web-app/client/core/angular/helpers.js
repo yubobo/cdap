@@ -8,6 +8,7 @@ define(function () {
 
     var warningContainer = $('#warning');
     var warningSpan = $('#warning .warning-text');
+    
     return {
       
       cancelAllIntervals: function (intervalService, intervals) {
@@ -20,6 +21,10 @@ define(function () {
         warningContainer.hide();
         warningSpan.html(message);
         warningContainer.show();
+      },
+
+      getLastValue: function (metricData) {
+        return metricData[metricData.length - 1].value;
       }
     }
 
