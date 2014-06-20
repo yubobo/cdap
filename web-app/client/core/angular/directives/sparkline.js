@@ -11,6 +11,11 @@ define(function() {
       restrict: 'AE',
       template: '<div class="sparkline-list-container">',
       link: function(scope, elm, attrs) {
+        scope.$watch('collect', function (newVal, oldVal) {
+          if (angular.isArray(newVal.data) && newVal.data.length) {
+            console.log(newVal);
+          }
+        });
         var percent = null;
         var shade = null;
         var data = [];
