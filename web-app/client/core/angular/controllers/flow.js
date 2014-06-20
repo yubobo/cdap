@@ -4,10 +4,13 @@ define(function () {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', 'dataFactory',
-    function($scope, $interval, dataFactory) {
+  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory',
+    function($scope, $interval, $routeParams, dataFactory) {
 
-    $scope.message = "apps";
+    var flowId = $routeParams.flowId;
+    dataFactory.getFlowById(flowId, function (flow) {
+      $scope.flow = flow;
+    });
 
     $scope.$on("$destroy", function(){
       if (typeof intervals !== 'undefined') {

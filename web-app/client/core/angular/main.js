@@ -164,19 +164,19 @@ require([
         templateUrl: '/templates/app.html', controller: AppCtrl
       });
 
-      $routeProvider.when('/flows/:flowId', {
+      $routeProvider.when('/apps/:appId/flows/:flowId', {
         templateUrl: '/templates/flow.html', controller: FlowCtrl
       });
 
-      $routeProvider.when('/streams/:streamId', {
+      $routeProvider.when('/apps/:appId/streams/:streamId', {
         templateUrl: '/templates/stream.html', controller: StreamCtrl
       });
 
-      $routeProvider.when('/datasets/:datasetId', {
+      $routeProvider.when('/apps/:appId/datasets/:datasetId', {
         templateUrl: '/templates/dataset.html', controller: DatasetCtrl
       });
 
-      $routeProvider.when('/procedures/:procedureId', {
+      $routeProvider.when('/apps/:appId/procedures/:procedureId', {
         templateUrl: '/templates/procedure.html', controller: ProcedureCtrl
       });
 

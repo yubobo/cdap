@@ -4,18 +4,18 @@ define(function () {
 
   /* Items */
 
-  var Ctrl = ['$rootScope', '$scope', '$http', '$routeParams', '$interval',
-    function($rootScope, $scope, $http, $routeParams, $interval) {
+  var Ctrl = ['$scope', '$interval', 'dataFactory',
+    function($scope, $interval, dataFactory) {
 
-    $scope.message = "apps";
+    $scope.streams = [];
 
-    var ival = $interval(function() {
-      $.get('/apps');
-    }, 1000);
+    dataFactory.getStreams (function (streams) {
+      $scope.streams = streams;
+    });
 
     $scope.$on("$destroy", function(){
       if (typeof intervals !== 'undefined') {
-        helpers.cancelAllIntervals($interval, intervals);  
+        helpers.cancelAllIntervals($interval, intervals);
       }
     });
 

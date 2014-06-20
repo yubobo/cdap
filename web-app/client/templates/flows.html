@@ -6,52 +6,25 @@
 <div id="panels">
   <div class="panel">
     <table class="table" ng-if="flows.length">
-      <thead>
-        <th style="padding-left: 14px;">Flows</th>
-        <th style="width: 262px;">Proces sing Rate (EPS)</th>
-        <th style="width: 262px;">Busyness</th>
-      </thead>
+      <thead ng-include src="'/templates/partials/flows-table-header.html'" include-replace></thead>
       <tbody>
-        <tr>
-          <td class="app-list-name">
-          <a {{bindAttr href="href"}}>{{name}}</a><br /><span class="app-list-status app-status">{{currentState}}</span>
-          </td>
-          <td style="max-width:262px;"></td>
-          <td style="max-width:262px;"></td>
-        </tr>
+        <tr ng-repeat="flow in flows" ng-include="'/templates/partials/flows-list.html'"></tr>
       </tbody>
     </table>
-    <div class="object-list-empty">
-      <div class="object-list-empty-content">
-        <div>No Flows.</div>
-        <span>Add Flows by uploading an Application JAR.</span>
-      </div>
+    <div ng-if="!flows.length">
+      <div ng-include src="'/templates/partials/no-flows.html'" include-replace></div>
     </div>
     <table class="table">
-      <thead>
-        <th style="padding-left: 14px;">Mapreduce</th>
-        <th style="width: 262px;">Mapping Status</th>
-        <th style="width: 262px;">Reducing Status</th>
-      </thead>
+      <thead ng-include src="'/templates/partials/mapreduces-table-header.html'" include-replace></thead>
       <tbody>
-        <tr>
-          <td class="app-list-name">
-          <a {{bindAttr href="href"}}>{{name}}</a><br /><span class="app-list-status app-status">{{currentState}}</span>
-          </td>
-          <td style="max-width:262px;"></td>
-          <td style="max-width:262px;"></td>
+        <tr ng-repeat="mapreduce in mapreduces" ng-include="'/templates/partials/mapreduce-list.html'">
         </tr>
       </tbody>
     </table>
     <table class="table">
-      <thead>
-        <th style="padding-left: 14px;">Workflows</th>
-      </thead>
+      <thead ng-include src="'/templates/partials/workflows-table-header.html'" include-replace></thead>
       <tbody>
-        <tr>
-          <td class="app-list-name">
-          <a {{bindAttr href="href"}}>{{name}}</a><br /><span class="app-list-status app-status">{{currentState}}</span>
-          </td>
+        <tr ng-repeat="workflow in workflows" ng-include="'/templates/partials/workflows-list.html'">
         </tr>
       </tbody>
     </table>

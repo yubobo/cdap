@@ -1,25 +1,19 @@
 <div id="title">
+  <div ng-include="'/core/partials/timeselector.html'"></div>
   <h1><span>Data</span> Store</h1>
 </div>
 
 <div id="panels">
   <div class="panel">
     <table class="table" ng-if="datasets.length">
-      <thead>
-      <th style="padding-left: 14px;">DataSets</th>
-      <th style="width: 100px;text-align: center;">Storage</th>
-      <th style="width: 262px;">Write Rate (Bytes)</th>
-      </thead>
+      <thead ng-include src="'/templates/partials/datasets-table-header.html'" include-replace></thead>
       <tbody>
         <tr ng-repeat="dataset in datasets" ng-include="'/templates/partials/datasets-list.html'">
         </tr>
       </tbody>
     </table>
-    <div class="object-list-empty" ng-if="!datasets.length">
-      <div class="object-list-empty-content">
-        <div>No DataSets.</div>
-          <span>Please create one in code or on the commandline.</span>
-        </div>
+    <div ng-if="!datasets.length">
+      <div ng-include src="'/templates/partials/no-datasets.html'" include-replace></div>
     </div>
   </div>
 </div>

@@ -4,11 +4,13 @@ define(function () {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', 'dataFactory',
-    function($scope, $interval, dataFactory) {
+  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory',
+    function($scope, $interval, $routeParams, dataFactory) {
 
-    dataFactory.getDatasetById(function (datasets) {
-      $scope.datasets = datasets;
+    var datasetId = $routeParams.datasetId;
+    dataFactory.getDatasetById(datasetId, function (dataset) {
+
+      $scope.dataset = dataset;
     });
 
     $scope.$on("$destroy", function(){

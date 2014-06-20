@@ -144,6 +144,17 @@ define(function () {
       },
 
       /**
+       * Gets a procedure by id. Depends on the Procedure model.
+       * @param  {Function} callback that consumes a Procedure object.
+       */
+      getProcedureByAppNameAndId: function (appId, procedureId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/procedures/' + procedureId).success(function (data) {
+          var procedure = new Procedure(data);
+          callback(procedure);
+        });
+      },
+
+      /**
        * Gets all reactor procedures. Depends on the Procedure model.
        * @param  {Function} callback that consumes list of Procedure objects.
        */
@@ -169,6 +180,17 @@ define(function () {
       },
 
       /**
+       * Gets a stream by id. Depends on the Stream model.
+       * @param  {Function} callback that consumes a Stream object.
+       */
+      getStreamById: function (streamId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/streams/' + streamId).success(function (data) {
+          var stream = new Stream(data);
+          callback(stream);
+        });
+      },
+
+      /**
        * Gets flows for an app.
        * @param  {Function} callback that consumes list of Flow objects.
        */
@@ -179,6 +201,17 @@ define(function () {
             entries.push(new Flow(entry));
           });
           callback(entries);
+        });
+      },
+
+      /**
+       * Gets a flow by id. Depends on the Flow model.
+       * @param  {Function} callback that consumes a Flow object.
+       */
+      getFlowById: function (flowId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/flows/' + flowId + ':' + flowId).success(function (data) {
+          var flow = new Flow(data);
+          callback(flow);
         });
       },
 

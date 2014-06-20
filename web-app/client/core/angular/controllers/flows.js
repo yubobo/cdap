@@ -7,8 +7,11 @@ define(function () {
   var Ctrl = ['$scope', '$interval', 'dataFactory',
     function($scope, $interval, dataFactory) {
 
+    $scope.flows = [];
+
     dataFactory.getFlows(function (flows) {
       $scope.flows = flows;
+
     });
 
     $scope.$on("$destroy", function(){
