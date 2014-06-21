@@ -305,12 +305,6 @@
       <description>Number of YARN container instances for the stream handler</description>
     </property>
 
-    <property>
-      <name>stream.file.cleanup.period</name>
-      <value>300000</value>
-      <description>How often to run stream file cleanup process in milliseconds</description>
-    </property>
-
     <!--
         Data Fabric configuration
     -->
@@ -553,12 +547,6 @@
         <name>dataset.service.bind.address</name>
         <value>127.0.0.1</value>
         <description>DataSet service hostname</description>
-    </property>
-
-    <property>
-        <name>dataset.executor.max.instances</name>
-        <value>${reactor.service.max.instances}</value>
-        <description>Maximum Number of DataSet Executor Instances</description>
     </property>
 
     <property>
@@ -892,7 +880,7 @@
     -->
     <property>
         <name>security.authentication.handlerClassName</name>
-        <value>com.continuuity.security.server.BasicAuthenticationHandler</value>
+        <value></value>
     </property>
 
     <property>
@@ -902,7 +890,7 @@
 
     <property>
       <name>security.authentication.basic.realmfile</name>
-      <value>/Users/Shu/Documents/Continuuity_TEST/reactor/security/src/main/resources/realm.properties</value>
+      <value></value>
     </property>
 
     <property>
@@ -923,7 +911,7 @@
     -->
     <property>
         <name>security.enabled</name>
-        <value>true</value>
+        <value>false</value>
         <description>If this is set to true, security layer will be up and active in reactor</description>
     </property>
 

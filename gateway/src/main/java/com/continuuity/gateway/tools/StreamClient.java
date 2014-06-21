@@ -327,10 +327,6 @@ public class StreamClient {
     if (hostname != null && baseUrl != null) {
       usage("Only one of --host or --base may be specified.");
     }
-    // if token and token file are given, use token
-    if (tokenFile != null && accessToken != null) {
-      tokenFile = null;
-    }
     if (port > 0 && hostname == null) {
       usage("A hostname must be provided when a port is specified.");
     }
@@ -374,11 +370,11 @@ public class StreamClient {
   /**
    * Reads the access token from the tokenFile path
    */
-  void readTokenFile() {
+  String readTokenFile() {
     if (tokenFile != null) {
       PrintStream out = verbose ? System.out : System.err;
       try {
-        accessToken = Files.toString(new File(tokenFile), Charsets.UTF_8).replaceAll("(\r|\n)", "");
+        return Files.toString(new File(tokenFile), Charsets.UTF_8).replaceAll("(\r|\n)", "");
       } catch (FileNotFoundException e) {
         out.println("Could not find access token file: " + tokenFile + "\nNo access token will be used");
       } catch (IOException e) {
@@ -503,8 +499,8 @@ public class StreamClient {
       return "";
     }
     // read the access token from file if it exists
-    if (tokenFile != null) {
-      readTokenFile();
+    if (accessToken == null && tokenFile != null) {
+      accessToken = readTokenFile();
     }
 
     // determine the base url for the GET request

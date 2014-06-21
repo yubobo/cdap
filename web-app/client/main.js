@@ -163,13 +163,11 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
 		 */
 		activate: function() {
 			var routeHandler = this;
-      if (C.Env.security_enabled) {
-        C.setupAuth(routeHandler, function(){
-          C.checkReactorReadiness(routeHandler);
-        })
-      } else {
-        C.checkReactorReadiness(routeHandler);
-      }
+      C.checkReactorReadiness(routeHandler, function() {
+        if (C.Env.security_enabled) {
+          C.setupAuth(routeHandler);
+        }
+      });
 		},
 
 		/*
@@ -214,13 +212,11 @@ define (['core/application', 'helpers/localstorage-adapter'], function (Applicat
        */
       activate: function() {
         var routeHandler = this;
-        if (C.Env.security_enabled) {
-          C.setupAuth(routeHandler, function(){
-            C.checkReactorReadiness(routeHandler);
-          })
-        } else {
-          C.checkReactorReadiness(routeHandler);
-        }
+        C.checkReactorReadiness(routeHandler, function() {
+          if (C.Env.security_enabled) {
+            C.setupAuth(routeHandler);
+          }
+        });
       },
       /*
        * Override to load the Controller once the Route has been activated.

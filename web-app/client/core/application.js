@@ -147,23 +147,21 @@ function(Components, Embeddables, HTTP, Util) {
 		/**
 		 * Sets up authentication on the global Ember application.
 		 */
-		setupAuth: function (routeHandler, callback) {
-      /**
-       * Recieves response of type {token: <token>}
-       */
-      HTTP.create().get('getsession', function (resp) {
-        if ('token' in resp) {
-          C.Env.set('auth_token', resp.token);
-        } else {
-          C.Env.set('auth_token', '');
-        }
-        if (routeHandler !== undefined && !C.Env.get('auth_token') && 'routeName' in routeHandler) {
-          routeHandler.transitionTo('Login');
-        } else if (callback && typeof callback === 'function') {
-				  callback();
+		setupAuth: function (routeHandler) {
+			/**
+			 * Recieves response of type {token: <token>}
+			 */
+			HTTP.create().get('getsession', function (resp) {
+				if ('token' in resp) {
+					C.Env.set('auth_token', resp.token);
+				} else {
+					C.Env.set('auth_token', '');
 				}
-      });
-    },
+				if (routeHandler !== undefined && !C.Env.get('auth_token') && 'routeName' in routeHandler) {
+					routeHandler.transitionTo('Login');
+				}
+			});
+		},
 
     /**
      * Determines readiness of Reactor by polling all services and checking status.
