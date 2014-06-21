@@ -139,7 +139,7 @@ public class TransactionManagerDebuggerMain {
       persistingFilename = line.hasOption(SAVE_OPTION) ? line.getOptionValue(SAVE_OPTION) : null;
       showTxids = line.hasOption(IDS_OPTION);
       txId = line.hasOption(TRANSACTION_OPTION) ? Long.valueOf(line.getOptionValue(TRANSACTION_OPTION)) : null;
-      accessToken = line.hasOption(TOKEN_OPTION) ? line.getOptionValue(TOKEN_OPTION) : null;
+      accessToken = line.hasOption(TOKEN_OPTION) ? line.getOptionValue(TOKEN_OPTION).replaceAll("(\r|\n)", "") : null;
       tokenFile = line.hasOption(TOKEN_FILE_OPTION) ? line.getOptionValue(TOKEN_FILE_OPTION).replaceAll("(\r|\n)", "")
         : null;
       portNumber = line.hasOption(PORT_OPTION) ? Integer.valueOf(line.getOptionValue(PORT_OPTION)) :

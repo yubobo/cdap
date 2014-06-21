@@ -16,32 +16,24 @@ import com.continuuity.gateway.util.Util;
 import com.continuuity.internal.app.verification.StreamVerification;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.ParseException;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Level;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.Reader;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -62,9 +54,20 @@ import java.util.TreeMap;
  * <li>The body can be specified on command line or as a binary file.</li>
  * </ul>
  */
-public class StreamClient {
+public class StreamClient extends ClientToolBase {
 
   private static final Gson GSON = new Gson();
+  private static final String HEX_OPTION = "hex";
+  private static final String STREAM_OPTION = "stream";
+  private static final String BODY_OPTION = "body";
+  private static final String BODY_FILE_OPTION = "body-file";
+  private static final String URL_OPTION = "url";
+  private static final String GROUP_OPTION = "group";
+  private static final String ALL_OPTION = "all";
+  private static final String FIRST_OPTION = "first";
+  private static final String LAST_OPTION = "last";
+  private static final String TTL_OPTION = "ttl";
+  private static final String NAME = "stream-client";
 
   static {
     // this turns off all logging but we don't need that for a cmdline tool
@@ -77,22 +80,13 @@ public class StreamClient {
    */
   public static boolean debug = false;
 
-
   String command = null;         // the command to run
-  boolean verbose = false;       // for debug output
-  boolean help = false;          // whether --help was there
   boolean hex = false;           // whether body is in hex noatation
   boolean urlenc = false;        // whether body is in url encoding
-  String baseUrl = null;         // the base url for HTTP requests
-  String hostname = null;        // the hostname of the gateway
-  int port = -1;               // the port of the gateway
-  String apikey = null;          // the api key for authentication.
   String body = null;            // the body of the event as a String
   String bodyFile = null;        // the file containing the body in binary form
-  String tokenFile = null;       // the file containing the access token only
   String destination = null;     // the destination stream (stream id)
   String consumer = null;        // consumer group id to fetch from the stream
-  String accessToken = null;     // the access token for secure connections
   boolean all = false;           // whether to view all events in the stream
   Integer last = null;           // to view the N last events in the stream
   Integer first = null;          // to view the N first events in the stream
@@ -101,206 +95,251 @@ public class StreamClient {
 
   boolean forceNoSSL = false;
 
+  public StreamClient() throws Exception {
+    super("stream-client");
+  }
+
+  public StreamClient(String toolName) throws Exception {
+    super(toolName);
+  }
+
   public StreamClient disallowSSL() {
     this.forceNoSSL = true;
     return this;
   }
 
-  /**
-   * Print the usage statement and return null (or empty string if this is not
-   * an error case). See getValue() for an explanation of the return type.
-   *
-   * @param error indicates whether this was invoked as the result of an error
-   * @throws UsageException in case of error
-   */
-  void usage(boolean error) {
-    PrintStream out = (error ? System.err : System.out);
-    String name = "stream-client";
-    if (System.getProperty("script") != null) {
-      name = System.getProperty("script").replaceAll("[./]", "");
-    }
+  @Override
+  public void buildOptions() {
+    // build the default options
+    super.buildOptions();
+    options.addOption(null, STREAM_OPTION, true, "To specify the destination event stream of the" +
+                      "form <flow> or <flow>/<stream>.");
+    options.addOption(null, BODY_OPTION, true, "To specify the body of the event as a string");
+    options.addOption(null, BODY_FILE_OPTION, true, "Alternative to --body, to specify a file that" +
+                      "contains the binary body of the event");
+    options.addOption(null, HEX_OPTION, false, "To specify hexadecimal encoding for --body");
+    options.addOption(null, URL_OPTION, false, "To specify url encoding for --body");
+    options.addOption(null, GROUP_OPTION, true, "To specify a consumer group id for the stream, as " +
+                      "obtained by " + NAME + " group command");
+    options.addOption(null, ALL_OPTION, false, "To view the entire stream");
+    options.addOption(null, FIRST_OPTION, true, "To view the first N events in the stream. " +
+                      "for view is --first 10");
+    options.addOption(null, LAST_OPTION, true, "To view the last N events in the stream");
+    options.addOption(null, TTL_OPTION, true, "To set the TTL for the stream in seconds");
+  }
+
+  @Override
+  public void printUsage(boolean error) {
+    PrintWriter out = error ? new PrintWriter(System.err) : new PrintWriter(System.out);
     out.println("Usage: ");
-    out.println("  " + name + " create --stream <id>");
-    out.println("  " + name + " send --stream <id> --body <value> [ <option> ... ]");
-    out.println("  " + name + " group --stream <id> [ <option> ... ]");
-    out.println("  " + name + " fetch --stream <id> --group <id> [ <option> ... ]");
-    out.println("  " + name + " view --stream <id> [ <option> ... ]");
-    out.println("  " + name + " info --stream <id> [ <option> ... ]");
-    out.println("  " + name + " truncate --stream <id>");
-    out.println("  " + name + " config --stream <id> [ <option> ... ]");
-    out.println("Options:");
-    out.println("  --base <url>            To specify the base URL to use");
-    out.println("  --host <name>           To specify the hostname to send to");
-    out.println("  --port <number>         To specify the port to use");
-    out.println("  --apikey <apikey>       To specify an API key for authentication");
-    out.println("  --stream <id>           To specify the destination event stream of the");
-    out.println("                          form <flow> or <flow>/<stream>.");
-    out.println("  --header <name> <value> To specify a header for the event to send. Can");
-    out.println("                          be used multiple times");
-    out.println("  --body <value>          To specify the body of the event as a string");
-    out.println("  --body-file <path>      Alternative to --body, to specify a file that");
-    out.println("                          contains the binary body of the event");
-    out.println("  --hex                   To specify hexadecimal encoding for --body");
-    out.println("  --url                   To specify url encoding for --body");
-    out.println("  --group <id>            To specify a consumer group id for the stream, as ");
-    out.println("                          obtained by " + name + " group command ");
-    out.println("  --all                   To view the entire stream.");
-    out.println("  --first <number>        To view the first N events in the stream. Default ");
-    out.println("                          for view is --first 10.");
-    out.println("  --last <number>         To view the last N events in the stream.");
-    out.println("  --ttl <number>          To set the TTL for the stream in seconds.");
-    out.println("  --token <token>         To specify the access token for a secure connection");
-    out.println("  --token-file <path>     Alternative to --token, to specify a file that");
-    out.println("                          contains the access token for a secure connection");
-    out.println("  --verbose               To see more verbose output");
-    out.println("  --help                  To print this message");
-    if (error) {
-      throw new UsageException();
-    }
+    out.println("\t" + getToolName() + " create --stream <id>");
+    out.println("\t" + getToolName() + " send --stream <id> --body <value> [ <option> ... ]");
+    out.println("\t" + getToolName() + " group --stream <id> [ <option> ... ]");
+    out.println("\t" + getToolName() + " fetch --stream <id> --group <id> [ <option> ... ]");
+    out.println("\t" + getToolName() + " view --stream <id> [ <option> ... ]");
+    out.println("\t" + getToolName() + " info --stream <id> [ <option> ... ]");
+    out.println("\t" + getToolName() + " truncate --stream <id>");
+    out.println("\t" + getToolName() + " config --stream <id> [ <option> ... ]");
+    super.printUsage(error);
   }
 
-  /**
-   * Print an error message followed by the usage statement.
-   *
-   * @param errorMessage the error message
-   */
-  void usage(String errorMessage) {
-    if (errorMessage != null) {
-      System.err.println("Error: " + errorMessage);
-    }
-    usage(true);
-  }
+//  /**
+//   * Print the usage statement and return null (or empty string if this is not
+//   * an error case). See getValue() for an explanation of the return type.
+//   *
+//   * @param error indicates whether this was invoked as the result of an error
+//   * @throws UsageException in case of error
+//   */
+//  void usage(boolean error) {
+//    PrintStream out = (error ? System.err : System.out);
+//    String name = "stream-client";
+//    if (System.getProperty("script") != null) {
+//      name = System.getProperty("script").replaceAll("[./]", "");
+//    }
+//    out.println("Usage: ");
+//    out.println("  " + name + " create --stream <id>");
+//    out.println("  " + name + " send --stream <id> --body <value> [ <option> ... ]");
+//    out.println("  " + name + " group --stream <id> [ <option> ... ]");
+//    out.println("  " + name + " fetch --stream <id> --group <id> [ <option> ... ]");
+//    out.println("  " + name + " view --stream <id> [ <option> ... ]");
+//    out.println("  " + name + " info --stream <id> [ <option> ... ]");
+//    out.println("  " + name + " truncate --stream <id>");
+//    out.println("  " + name + " config --stream <id> [ <option> ... ]");
+//    out.println("Options:");
+//    out.println("  --stream <id>           To specify the destination event stream of the");
+//    out.println("                          form <flow> or <flow>/<stream>.");
+//    out.println("  --header <name> <value> To specify a header for the event to send. Can");
+//    out.println("                          be used multiple times");
+//    out.println("  --body <value>          To specify the body of the event as a string");
+//    out.println("  --body-file <path>      Alternative to --body, to specify a file that");
+//    out.println("                          contains the binary body of the event");
+//    out.println("  --hex                   To specify hexadecimal encoding for --body");
+//    out.println("  --url                   To specify url encoding for --body");
+//    out.println("  --group <id>            To specify a consumer group id for the stream, as ");
+//    out.println("                          obtained by " + name + " group command ");
+//    out.println("  --all                   To view the entire stream.");
+//    out.println("  --first <number>        To view the first N events in the stream. Default ");
+//    out.println("                          for view is --first 10.");
+//    out.println("  --last <number>         To view the last N events in the stream.");
+//    out.println("  --ttl <number>          To set the TTL for the stream in seconds.");
+//    if (error) {
+//      throw new UsageException();
+//    }
+//  }
+//
+//  /**
+//   * Print an error message followed by the usage statement.
+//   *
+//   * @param errorMessage the error message
+//   */
+//  void usage(String errorMessage) {
+//    if (errorMessage != null) {
+//      System.err.println("Error: " + errorMessage);
+//    }
+//    usage(true);
+//  }
 
-  /**
-   * Parse the command line arguments.
-   */
-  void parseArguments(String[] args) {
-    if (args.length == 0) {
-      usage(true);
-    }
-    if ("--help".equals(args[0])) {
-      usage(false);
-      help = true;
-      return;
-    } else {
+  public boolean parseArguments(String[] args) {
+    // parse generic args first
+    CommandLineParser parser = new GnuParser();
+    // Check all the options of the command line
+    try {
       command = args[0];
-    }
-    // go through all the arguments
-    for (int pos = 1; pos < args.length; pos++) {
-      String arg = args[pos];
-      if ("--base".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
+      // check for header arguments
+      for (int pos = 1; pos < args.length; ++pos) {
+        if ("--header".equals(args[pos])) {
+          if (pos + 2 >= args.length) {
+            printUsage(true);
+          }
+          headers.put(args[++pos], args[++pos]);
         }
-        baseUrl = args[pos];
-      } else if ("--token".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        accessToken = args[pos].trim().replaceAll("(\r|\n)", "");
-      } else if ("--token-file".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        tokenFile = args[pos];
-      } else if ("--host".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        hostname = args[pos];
-      } else if ("--port".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        try {
-          port = Integer.valueOf(args[pos]);
-        } catch (NumberFormatException e) {
-          usage(true);
-        }
-      } else if ("--connector".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-      } else if ("--apikey".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        apikey = args[pos];
-      } else if ("--stream".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        destination = args[pos];
-      } else if ("--header".equals(arg)) {
-        if (pos + 2 >= args.length) {
-          usage(true);
-        }
-        headers.put(args[++pos], args[++pos]);
-      } else if ("--body".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        body = args[pos];
-      } else if ("--body-file".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        bodyFile = args[pos];
-      } else if ("--hex".equals(arg)) {
-        hex = true;
-      } else if ("--url".equals(arg)) {
-        urlenc = true;
-      } else if ("--all".equals(arg)) {
-        all = true;
-      } else if ("--first".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        try {
-          first = Integer.valueOf(args[pos]);
-        } catch (NumberFormatException e) {
-          usage(true);
-        }
-      } else if ("--last".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        try {
-          last = Integer.valueOf(args[pos]);
-        } catch (NumberFormatException e) {
-          usage(true);
-        }
-      } else if ("--group".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        try {
-          consumer = args[pos];
-          // validate that it is a number
-          Long.valueOf(consumer);
-        } catch (NumberFormatException e) {
-          usage(true);
-        }
-      } else if ("--ttl".equals(arg)) {
-        if (++pos >= args.length) {
-          usage(true);
-        }
-        try {
-          ttl = Long.valueOf(args[pos]);
-        } catch (NumberFormatException e) {
-          usage(true);
-        }
-      } else if ("--help".equals(arg)) {
-        usage(false);
-        help = true;
-        return;
-      } else if ("--verbose".equals(arg)) {
-        verbose = true;
-      } else {  // unkown argument
-        usage(true);
       }
+      CommandLine line = parser.parse(options, args);
+      parseBasicArgs(line);
+      // returns false if help was passed
+      if (help) {
+        return false;
+      }
+      destination = line.hasOption(STREAM_OPTION) ? line.getOptionValue(STREAM_OPTION) : null;
+      body = line.hasOption(BODY_OPTION) ? line.getOptionValue(BODY_OPTION) : null;
+      bodyFile = line.hasOption(BODY_FILE_OPTION) ? line.getOptionValue(BODY_FILE_OPTION) : null;
+      hex = line.hasOption(HEX_OPTION);
+      urlenc = line.hasOption(URL_OPTION);
+      all = line.hasOption(ALL_OPTION);
+      consumer = line.hasOption(GROUP_OPTION) ? line.getOptionValue(GROUP_OPTION) : null;
+      // validate consumer is a numerical value
+      try {
+        Long.valueOf(consumer);
+      } catch (NumberFormatException e) {
+        usage("--" + GROUP_OPTION + " must have a long integer argument");
+      }
+      first = parseNumericArg(line, FIRST_OPTION).intValue();
+      last = parseNumericArg(line, LAST_OPTION).intValue();
+      ttl = parseNumericArg(line, TTL_OPTION);
+      // TODO Check for extra params
+      // expect at least 1 extra arg because of pos arg, the command to run
+      if (line.getArgs().length > 1) {
+        System.err.println("Found extra args");
+        printUsage(true);
+      }
+    } catch (ParseException e) {
+      printUsage(true);
+    } catch (IndexOutOfBoundsException e) {
+      printUsage(true);
     }
+    return true;
   }
+
+//  /**
+//   * Parse the command line arguments.
+//   */
+//  void parseArguments(String[] args) {
+//    if (args.length == 0) {
+//      usage(true);
+//    }
+//    if ("--help".equals(args[0])) {
+//      usage(false);
+//      return;
+//    } else {
+//      command = args[0];
+//    }
+//    // go through all the arguments
+//    for (int pos = 1; pos < args.length; pos++) {
+//      String arg = args[pos];
+//      if ("--stream".equals(arg)) {
+//        if (++pos >= args.length) {
+//          usage(true);
+//        }
+//        destination = args[pos];
+//      } else if ("--header".equals(arg)) {
+//        if (pos + 2 >= args.length) {
+//          usage(true);
+//        }
+//        headers.put(args[++pos], args[++pos]);
+//      } else if ("--body".equals(arg)) {
+//        if (++pos >= args.length) {
+//          usage(true);
+//        }
+//        body = args[pos];
+//      } else if ("--body-file".equals(arg)) {
+//        if (++pos >= args.length) {
+//          usage(true);
+//        }
+//        bodyFile = args[pos];
+//      } else if ("--hex".equals(arg)) {
+//        hex = true;
+//      } else if ("--url".equals(arg)) {
+//        urlenc = true;
+//      } else if ("--all".equals(arg)) {
+//        all = true;
+//      } else if ("--first".equals(arg)) {
+//        if (++pos >= args.length) {
+//          usage(true);
+//        }
+//        try {
+//          first = Integer.valueOf(args[pos]);
+//        } catch (NumberFormatException e) {
+//          usage(true);
+//        }
+//      } else if ("--last".equals(arg)) {
+//        if (++pos >= args.length) {
+//          usage(true);
+//        }
+//        try {
+//          last = Integer.valueOf(args[pos]);
+//        } catch (NumberFormatException e) {
+//          usage(true);
+//        }
+//      } else if ("--group".equals(arg)) {
+//        if (++pos >= args.length) {
+//          usage(true);
+//        }
+//        try {
+//          consumer = args[pos];
+//          // validate that it is a number
+//          Long.valueOf(consumer);
+//        } catch (NumberFormatException e) {
+//          usage(true);
+//        }
+//      } else if ("--ttl".equals(arg)) {
+//        if (++pos >= args.length) {
+//          usage(true);
+//        }
+//        try {
+//          ttl = Long.valueOf(args[pos]);
+//        } catch (NumberFormatException e) {
+//          usage(true);
+//        }
+//      } else if ("--help".equals(arg)) {
+//        usage(false);
+//        return;
+//      } else if ("--verbose".equals(arg)) {
+//        verbose = true;
+//      } else {  // unkown argument
+//        usage(true);
+//      }
+//    }
+//  }
 
   static List<String> supportedCommands =
     Arrays.asList("create", "send", "group", "fetch", "view", "info", "truncate", "config");
@@ -323,10 +362,6 @@ public class StreamClient {
     if (destination == null) {
       usage("A destination stream must be specified.");
     }
-    // verify that only one hint is given for the URL
-    if (hostname != null && baseUrl != null) {
-      usage("Only one of --host or --base may be specified.");
-    }
     if (port > 0 && hostname == null) {
       usage("A hostname must be provided when a port is specified.");
     }
@@ -335,8 +370,7 @@ public class StreamClient {
       usage("Only one of --hex or --url may be specified");
     }
     if (bodyFile != null && (hex || urlenc)) {
-      usage("Options --hex and --url are incompatible with --body-file " +
-              "(binary input)");
+      usage("Options --hex and --url are incompatible with --body-file (binary input)");
     }
     // make sure that fetch command has a consumer id
     if ("fetch".equals(command) && consumer == null) {
@@ -364,61 +398,6 @@ public class StreamClient {
       if (ttl == null || ttl < 0L) {
         usage("--ttl must be specified as a non-negative value");
       }
-    }
-  }
-
-  /**
-   * Reads the access token from the tokenFile path
-   */
-  String readTokenFile() {
-    if (tokenFile != null) {
-      PrintStream out = verbose ? System.out : System.err;
-      try {
-        return Files.toString(new File(tokenFile), Charsets.UTF_8).replaceAll("(\r|\n)", "");
-      } catch (FileNotFoundException e) {
-        out.println("Could not find access token file: " + tokenFile + "\nNo access token will be used");
-      } catch (IOException e) {
-        out.println("Could not read access token file: " + tokenFile + "\nNo access token will be used");
-      }
-    }
-  }
-
-  /**
-   * Sends http requests with apikey and access token headers
-   * and checks the status of the request afterwards.
-   * @param requestBase The request to send. This method adds the apikey and access token headers
-   *                    if they are valid.
-   * @param expectedCodes The list of expected status codes from the request. If set to null,
-   *                      this method checks that the status code is OK.
-   * @return The HttpResponse if the request was successfully sent and the request status code
-   * is one of expectedCodes or OK if expectedCodes is null. Otherwise, returns null.
-   */
-  HttpResponse sendHttpRequest(HttpRequestBase requestBase, List<Integer> expectedCodes) {
-    if (apikey != null) {
-      requestBase.setHeader(Constants.Gateway.CONTINUUITY_API_KEY, apikey);
-    }
-    if (accessToken != null) {
-      requestBase.setHeader("Authorization", "Bearer " + accessToken);
-    }
-    HttpClient client = new DefaultHttpClient();
-    try {
-      HttpResponse response = client.execute(requestBase);
-      // if expectedCodes is null, just check that we have OK status code
-      if (expectedCodes == null) {
-        if (!checkHttpStatus(response, HttpStatus.SC_OK)) {
-          return null;
-        }
-      } else {
-        if (!checkHttpStatus(response, expectedCodes)) {
-          return null;
-        }
-      }
-      return response;
-    } catch (IOException e) {
-      System.err.println("Error sending HTTP request: " + e.getMessage());
-      return null;
-    } finally {
-      client.getConnectionManager().shutdown();
     }
   }
 
@@ -503,13 +482,10 @@ public class StreamClient {
       accessToken = readTokenFile();
     }
 
-    // determine the base url for the GET request
+    // determine the base url for the HTTP requests
+    String baseUrl = GatewayUrlGenerator.getBaseUrl(config, hostname, port, !forceNoSSL && apikey != null);
     if (baseUrl == null) {
-      baseUrl = GatewayUrlGenerator.getBaseUrl(config, hostname, port, !forceNoSSL && apikey != null);
-    }
-    if (baseUrl == null) {
-      System.err.println("Can't figure out the URL to send to. " +
-                           "Please use --base or --connector to specify.");
+      System.err.println("Can't figure out the URL to send to. Please use --host to specify");
       return null;
     } else {
       if (verbose) {
@@ -729,7 +705,6 @@ public class StreamClient {
    */
   StreamEvent fetchOne(String uri, String consumer) throws Exception {
     // prepare for HTTP
-    HttpClient client = new DefaultHttpClient();
     HttpPost post = new HttpPost(uri + "/dequeue");
     post.addHeader(Constants.Stream.Headers.CONSUMER_ID, consumer);
     Integer[] expectedCodes = { HttpStatus.SC_OK, HttpStatus.SC_NO_CONTENT };
@@ -792,91 +767,6 @@ public class StreamClient {
     return events.length + " events.";
   }
 
-  /**
-   * Check whether the Http return code is 200 OK. If not, print the error
-   * message and return false. Otherwise, if verbose is on, print the response
-   * status line.
-   *
-   * @param response the HTTP response
-   * @return whether the response is OK
-   */
-  boolean checkHttpStatus(HttpResponse response) {
-    return checkHttpStatus(response, HttpStatus.SC_OK);
-  }
-
-  /**
-   * Check whether the Http return code is as expected. If not, print the error
-   * message and return false. Otherwise, if verbose is on, print the response
-   * status line.
-   *
-   * @param response the HTTP response
-   * @param expected the expected HTTP status code
-   * @return whether the response is as expected
-   */
-  boolean checkHttpStatus(HttpResponse response, int expected) {
-    return checkHttpStatus(response, Collections.singletonList(expected));
-  }
-
-  /**
-   * Check whether the Http return code is as expected. If not, print the
-   * status message and return false. Otherwise, if verbose is on, print the
-   * response status line.
-   *
-   * @param response the HTTP response
-   * @param expected the list of expected HTTP status codes
-   * @return whether the response is as expected
-   */
-  boolean checkHttpStatus(HttpResponse response, List<Integer> expected) {
-    try {
-      return checkHttpStatus(response.getStatusLine().getStatusCode(), response.getStatusLine().toString(),
-                             response.getEntity().getContent(), expected);
-    } catch (IOException e) {
-      System.err.println("Could not get error stream");
-    }
-    // in case the first part fails we just need to return if we expect the status code or not
-    return expected.contains(response.getStatusLine().getStatusCode());
-  }
-
-  boolean checkHttpStatus(int statusCode, String statusLine, InputStream errorStream, List<Integer> expected) {
-    if (!expected.contains(statusCode)) {
-      PrintStream out = verbose ? System.out : System.err;
-      if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
-        readUnauthorizedError(errorStream);
-        return false;
-      }
-      // other errors
-      out.println(statusLine);
-      return false;
-    }
-    // other errors
-    if (verbose) {
-      System.out.println(statusLine);
-    }
-    return true;
-  }
-
-  /**
-   * Prints the error response from the connection
-   * @param errorStream the stream to read the response from
-   */
-  void readUnauthorizedError(InputStream errorStream) {
-    PrintStream out = verbose ? System.out : System.err;
-    out.println(HttpStatus.SC_UNAUTHORIZED + " Unauthorized");
-    if (accessToken == null) {
-      out.println("No access token provided");
-      return;
-    }
-    try {
-      Reader reader = new InputStreamReader(errorStream);
-      String responseError = GSON.fromJson(reader, ErrorMessage.class).getErrorDescription();
-      if (responseError != null && !responseError.isEmpty()) {
-        out.println(responseError);
-      }
-    } catch (Exception e) {
-      out.println("Unknown unauthorized error");
-    }
-  }
-
   public String execute(String[] args, CConfiguration config) {
     try {
       return execute0(args, config);
@@ -898,7 +788,17 @@ public class StreamClient {
     // create a config and load the gateway properties
     CConfiguration config = CConfiguration.create();
     // create an event client and run it with the given arguments
-    StreamClient instance = new StreamClient();
+    String name = "stream-client";
+    if (System.getProperty("script") != null) {
+      name = System.getProperty("script").replaceAll("[./]", "");
+    }
+    StreamClient instance = null;
+    try {
+      instance = new StreamClient(name);
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
     String value = instance.execute(args, config);
     // exit with error in case fails
     if (value == null) {

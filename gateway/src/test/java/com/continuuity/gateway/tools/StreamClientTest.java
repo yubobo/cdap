@@ -139,7 +139,13 @@ public class StreamClientTest extends GatewayTestBase {
       "send", "--body", "body2", "--header", "hname", "hvalue"}));
 
     // Use the same client to dequeue so that it reuses the same consumer id to verify dynamic TTL works.
-    StreamClient streamClient = new StreamClient().disallowSSL();
+    StreamClient streamClient = null;
+    try {
+      streamClient = new StreamClient().disallowSSL();
+    } catch (Exception e) {
+      // should never get here
+      e.printStackTrace();
+    }
 
     Assert.assertEquals("1 events.", command(streamId, new String[] {
       "view", "--first", "1"}, streamClient));
@@ -154,7 +160,13 @@ public class StreamClientTest extends GatewayTestBase {
   }
 
   private String command(String streamId, String[] args) {
-    return command(streamId, args, new StreamClient().disallowSSL());
+    try {
+      return command(streamId, args, new StreamClient().disallowSSL());
+    } catch (Exception e) {
+      // should never get here
+      e.printStackTrace();
+      return null;
+    }
   }
 
   private String command(String streamId, String[] args, StreamClient client) {
