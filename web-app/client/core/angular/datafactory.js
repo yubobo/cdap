@@ -76,6 +76,16 @@ define(function () {
         });
       },
 
+      getFlowsByDataset: function (datasetId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/datasets/' + datasetId + '/flows').success(function (data) {
+          var entries = [];
+          data.map(function (entry) {
+            entries.push(new Flow(entry));
+          });
+          callback(entries);
+        });
+      },
+
       /**
        * Gets all reactor workflows. Depends on the Workflow model.
        * @param  {Function} callback that consumes list of Workflow objects.
@@ -136,8 +146,8 @@ define(function () {
        * Gets a dataset by app name and id. Depends on the Dataset model.
        * @param  {Function} callback that consumes a Dataset object.
        */
-      getDatasetByAppNameAndId: function (appId, datasetId, callback) {
-        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/datasets/' + datasetId).success(function (data) {
+      getDatasetById: function (datasetId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/datasets/' + datasetId).success(function (data) {
           var dataset = new Dataset(data);
           callback(dataset);
         });

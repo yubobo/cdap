@@ -1,5 +1,5 @@
 <div id="title">
-  <h1>{{dataset.name}}</h1>
+  <h1><span>Dataset</span> {{dataset.name}}</h1>
 </div>
 <div id="info">
   <div class="info-box sparkline-box write-rate"></div>
@@ -13,7 +13,47 @@
 
 </div>
 <div id="panels">
-
-<div class="panel">
-  <div class="panel-head"><div class="panel-title">Attached Flows</div></div>
+    <div class="panel">
+        <div class="panel-head"><div class="panel-title">Attached Flows</div></div>
+        <table class="table" ng-if="flows.length">
+            <thead>
+                <th style="padding-left: 14px;">Flows</th>
+                <th style="width: 262px;">Processing Rate (EPS)</th>
+                <th style="width: 262px;">Busyness</th>
+            </thead>
+            <tbody>
+            <tr ng-repeat="flow in flows" ng-include="'/templates/partials/flows-list.html'">
+            </tr>
+            </tbody>
+        </table>
+        <div ng-if="!app.flows.length">
+          <div ng-include src="'/templates/partials/no-flows.html'" include-replace></div>
+        </div>
+    </div>
 </div>
+
+
+
+    <!--<div id="title">
+      {{view C.Embed.TimeSelector}}
+      <h1><span>Dataset</span> {{model.name}}</h1>
+    </div>
+    <div id="info">
+      <div class="info-box sparkline-box write-rate">{{view C.Embed.Chart title="Write Rate (Bytes)" metrics="/reactor/datasets/{id}/dataset.store.bytes" unit="bytes"}}</div>
+      <div class="info-box sparkline-box write-rate">{{view C.Embed.Chart title="Write Rate (Ops)" metrics="/reactor/datasets/{id}/dataset.store.writes" unit="OPS/S"}}</div>
+      <div class="info-box sparkline-box read-rate">{{view C.Embed.Chart title="Read Rate (Ops)" metrics="/reactor/datasets/{id}/dataset.store.reads" unit="OPS/S"}}</div>
+
+      <div class="info-box app-storage" style="text-align: center;">
+        <div class="sparkline-box-title">Stored</div>
+        <div class="sparkline-box-value" style="padding-left: 0;padding-top:16px;width: 100px;">{{model.storageLabel}}<br /><span>{{model.storageUnits}}</span></div>
+      </div>
+
+    </div>
+    <div id="panels">
+
+      <div class="panel">
+      <div class="panel-head"><div class="panel-title">Attached Flows</div></div>
+
+        {{partial "flows-list"}}
+
+      </div>-->
