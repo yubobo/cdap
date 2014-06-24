@@ -6,7 +6,11 @@
 <div id="panels">
   <div class="panel">
     <table class="table" ng-if="flows.length">
-      <thead ng-include src="'/templates/partials/flows-table-header.html'" include-replace></thead>
+      <thead>
+        <th style="padding-left: 14px;">Flows</th>
+        <th style="width: 262px;">Processing Rate (EPS)</th>
+        <th style="width: 262px;">Busyness</th>
+      </thead>
       <tbody>
         <tr ng-repeat="flow in flows" ng-include="'/templates/partials/flows-list.html'"></tr>
       </tbody>
@@ -15,14 +19,20 @@
       <div ng-include src="'/templates/partials/no-flows.html'" include-replace></div>
     </div>
     <table class="table">
-      <thead ng-include src="'/templates/partials/mapreduces-table-header.html'" include-replace></thead>
+      <thead>
+        <th style="padding-left: 14px;">Mapreduce</th>
+        <th style="width: 262px;">Mapping Status</th>
+        <th style="width: 262px;">Reducing Status</th>
+      </thead>
       <tbody>
         <tr ng-repeat="mapreduce in mapreduces" ng-include="'/templates/partials/mapreduce-list.html'">
         </tr>
       </tbody>
     </table>
     <table class="table">
-      <thead ng-include src="'/templates/partials/workflows-table-header.html'" include-replace></thead>
+      <thead>
+        <th style="padding-left: 14px;">Workflows</th>
+      </thead>
       <tbody>
         <tr ng-repeat="workflow in workflows" ng-include="'/templates/partials/workflows-list.html'">
         </tr>

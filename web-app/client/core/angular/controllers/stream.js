@@ -7,8 +7,9 @@ define(function () {
   var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory',
     function($scope, $interval, $routeParams, dataFactory) {
 
+    var appId = $routeParams.appId;
     var streamId = $routeParams.streamId;
-    dataFactory.getStreamById(streamId, function (stream) {
+    dataFactory.getStreamByAppNameAndId(appId, streamId, function (stream) {
       $scope.stream = stream;
     });
 

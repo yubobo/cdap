@@ -6,7 +6,11 @@
 <div id="panels">
   <div class="panel">
     <table class="table" ng-if="procedures.length">
-      <thead ng-include src="'/templates/partials/procedures-table-header.html'" include-replace></thead>
+      <thead>
+        <th style="padding-left: 14px;">Procedures</th>
+        <th style="width: 262px; text-align: center">Request Rate</th>
+        <th style="width: 262px; text-align: center">Error Rate</th>
+      </thead>
     <tbody>
         <tr ng-repeat="procedure in procedures" ng-include="'/templates/partials/procedures-list.html'"></tr>
     </tbody>

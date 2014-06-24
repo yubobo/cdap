@@ -6,7 +6,12 @@
 <div id="panels">
   <div class="panel">
     <table class="table" ng-if="streams.length">
-    <thead ng-include src="'/templates/partials/streams-table-header.html'" include-replace></thead>
+    <thead>
+      <th style="padding-left: 14px;">Streams</th>
+      <th style="width: 100px;text-align: center;">Storage</th>
+      <th style="width: 100px;text-align: center;">Events</th>
+      <th style="width: 262px;">Arrival Rate (EPS)</th>
+    </thead>
     <tbody>
         <tr ng-repeat="stream in streams" ng-include="'/templates/partials/streams-list.html'">
         </tr>

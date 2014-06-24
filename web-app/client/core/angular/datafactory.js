@@ -119,11 +119,25 @@ define(function () {
       },
 
       /**
-       * Gets a dataset by id. Depends on the Dataset model.
+       * Gets datasets for an app.
+       * @param  {Function} callback that consumes list of Dataset objects.
+       */
+      getDatasetsByApp: function (appId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/datasets').success(function (data) {
+          var entries = [];
+          data.map(function (entry) {
+            entries.push(new Dataset(entry));
+          });
+          callback(entries);
+        });
+      },
+
+      /**
+       * Gets a dataset by app name and id. Depends on the Dataset model.
        * @param  {Function} callback that consumes a Dataset object.
        */
-      getDatasetById: function (datasetId, callback) {
-        $http.get(REACTOR_ENDPOINT + '/datasets/' + datasetId).success(function (data) {
+      getDatasetByAppNameAndId: function (appId, datasetId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/datasets/' + datasetId).success(function (data) {
           var dataset = new Dataset(data);
           callback(dataset);
         });
@@ -144,7 +158,7 @@ define(function () {
       },
 
       /**
-       * Gets a procedure by id. Depends on the Procedure model.
+       * Gets a procedure by app name and id. Depends on the Procedure model.
        * @param  {Function} callback that consumes a Procedure object.
        */
       getProcedureByAppNameAndId: function (appId, procedureId, callback) {
@@ -180,11 +194,11 @@ define(function () {
       },
 
       /**
-       * Gets a stream by id. Depends on the Stream model.
+       * Gets a stream by app name and id. Depends on the Stream model.
        * @param  {Function} callback that consumes a Stream object.
        */
-      getStreamById: function (streamId, callback) {
-        $http.get(REACTOR_ENDPOINT + '/streams/' + streamId).success(function (data) {
+      getStreamByAppNameAndId: function (appId, streamId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/streams/' + streamId).success(function (data) {
           var stream = new Stream(data);
           callback(stream);
         });
@@ -205,11 +219,11 @@ define(function () {
       },
 
       /**
-       * Gets a flow by id. Depends on the Flow model.
+       * Gets a flow by app name and id. Depends on the Flow model.
        * @param  {Function} callback that consumes a Flow object.
        */
-      getFlowById: function (flowId, callback) {
-        $http.get(REACTOR_ENDPOINT + '/flows/' + flowId + ':' + flowId).success(function (data) {
+      getFlowByAppNameAndId: function (appId, flowId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/flows/' + flowId).success(function (data) {
           var flow = new Flow(data);
           callback(flow);
         });
@@ -230,6 +244,17 @@ define(function () {
       },
 
       /**
+       * Gets a mapreduce by app name and id. Depends on the Mapreduce model.
+       * @param  {Function} callback that consumes a Mapreduce object.
+       */
+      getMapreduceByAppNameAndId: function (appId, mapreduceId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/mapreduce/' + mapreduceId).success(function (data) {
+          var mapreduce = new Mapreduce(data);
+          callback(mapreduce);
+        });
+      },
+
+      /**
        * Gets workflows for an app.
        * @param  {Function} callback that consumes list of Mapreduce objects.
        */
@@ -244,16 +269,13 @@ define(function () {
       },
 
       /**
-       * Gets datasets for an app.
-       * @param  {Function} callback that consumes list of Dataset objects.
+       * Gets a mapreduce by app name and id. Depends on the Mapreduce model.
+       * @param  {Function} callback that consumes a Mapreduce object.
        */
-      getDatasetsByApp: function (appId, callback) {
-        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/datasets').success(function (data) {
-          var entries = [];
-          data.map(function (entry) {
-            entries.push(new Dataset(entry));
-          });
-          callback(entries);
+      getWorkflowByAppNameAndId: function (appId, workflowId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/workflows/' + workflowId).success(function (data) {
+          var workflow = new Workflow(data);
+          callback(workflow);
         });
       },
 
