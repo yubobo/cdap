@@ -112,16 +112,16 @@ public class ObjectStoreDataset<T> extends AbstractDataset implements ObjectStor
   }
 
   // TODO: it should implement RecordScannable, but due to classloading issues it doesn't
-//  @Override
-  public RecordScanner<KeyValue<byte[], T>> createSplitRecordScanner(Split split) {
-    return Scannables.splitRecordScanner(createSplitReader(split), new ObjectRecordMaker());
-  }
-
-  // TODO: it should implement RecordScannable, but due to classloading issues it doesn't
-//  @Override
-  public Type getRecordType() {
-    return typeRep.toType();
-  }
+////  @Override
+//  public RecordScanner<KeyValue<byte[], T>> createSplitRecordScanner(Split split) {
+//    return Scannables.splitRecordScanner(createSplitReader(split), new ObjectRecordMaker());
+//  }
+//
+//  // TODO: it should implement RecordScannable, but due to classloading issues it doesn't
+////  @Override
+//  public Type getRecordType() {
+//    return typeRep.toType();
+//  }
 
   @Override
   public List<Split> getSplits() {
