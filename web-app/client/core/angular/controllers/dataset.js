@@ -7,11 +7,16 @@ define(function () {
   var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory',
     function($scope, $interval, $routeParams, dataFactory) {
 
-    var appId = $routeParams.appId;
     var datasetId = $routeParams.datasetId;
-    dataFactory.getDatasetByAppNameAndId(appId, datasetId, function (dataset) {
+
+    dataFactory.getDatasetById(datasetId, function (dataset) {
       $scope.dataset = dataset;
     });
+
+    dataFactory.getFlowsByDataset(datasetId, function(flow) {
+      $scope.flow = flow;
+    });
+
 
     $scope.$on("$destroy", function(){
       if (typeof intervals !== 'undefined') {

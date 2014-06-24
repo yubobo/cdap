@@ -30,27 +30,34 @@
         <div class="flow-state"><strong><!--{{model.currentState}}--></strong></div>
       </div>
 
-      <div class="info-box sparkline-box app-processed"><!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.events.processed" title="Processing Rate"}}--></div>
-      <div class="info-box sparkline-box app-busyness"><!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.busyness" title="Busyness" unit="percent"}}--></div>
+      <div class="info-box sparkline-box app-processed">
+        <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;">{{model.storageLabel}}<span>{{model.storageUnits}}</span></div>
+        <div class="sparkline-box-title">Processing Rate</div>
+        <div class="sparkline-box-container"></div>
+        <!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.events.processed" title="Processing Rate"}}--></div>
+      <div class="info-box sparkline-box app-busyness">
+        <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;">{{model.storageLabel}}<span>{{model.storageUnits}}</span></div>
+        <div class="sparkline-box-title">Busyness</div>
+        <div class="sparkline-box-container"></div>
+        <!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.busyness" title="Busyness" unit="percent"}}--></div>
 
     </div>
 
     <div id="panels">
-      <div id="informer"></div>
-      <div class="panel">
+        <div id="informer"></div>
+        <div class="panel">
         <div id="flowviz-container">
-
-          <div class="btn-group" style="float: left;">
-            <button class="btn btn-blank dropdown-toggle" data-toggle="dropdown" style="padding-left:14px;float: right;">
-              <!--{{flowletLabelName}}--> <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu">
-              <li><a {{action "setFlowletLabel" "rate"}}>Flowlet Rate</a></li>
-              <li><a {{action "setFlowletLabel" "pending"}}>Flowlet Pending</a></li>
-              <li><a {{action "setFlowletLabel" "aggregate"}}>Flowlet Processed</a></li>
-            </ul>
-          </div>
-
+            <div class="btn-group" style="float: left;">
+                <button class="btn btn-blank dropdown-toggle" data-toggle="dropdown" style="padding-left:14px;float: right;"><!--{{flowletLabelName}}--> <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a {{action "setFlowletLabel" "rate"}}>Flowlet Rate</a></li>
+                    <li><a {{action "setFlowletLabel" "pending"}}>Flowlet Pending</a></li>
+                    <li><a {{action "setFlowletLabel" "aggregate"}}>Flowlet Processed</a></li>
+                </ul>
+            </div>
+            <div id="flowfiz" class="clearfix" style="width: 678px;">
+            </div>
           <!--{{view C.Embed.Visualizer viewName="visualizer"}}-->
         </div>
       </div>
