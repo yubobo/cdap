@@ -4,7 +4,7 @@ define(function () {
 
   var Model = Class.create({
     initialize: function (data) {
-      this.type = '';
+      this.type = 'Stream';
       this.id = '';
       this.name = '';
 
@@ -12,7 +12,7 @@ define(function () {
         for (var index in data) {
           this[index] = data[index];
         }
-      }  
+      }
     }
 
   });

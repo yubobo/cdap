@@ -12,7 +12,7 @@
           <button class="btn btn-blank" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span><!--{{model.defaultAction}}--></span></button>
           <button class="btn btn-blank btn-icon" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
         </div>
-        <div class="flow-state"><strong><!--{{model.currentState}}--></strong></div>
+        <div class="flow-state"><strong>{{procedure.status}}</strong></div>
       </div>
 
       <div class="info-box sparkline-box"><!--{{view C.Embed.Chart title="Successful" metrics="/reactor/apps/{parent}/procedures/{id}/query.requests"}}--></div>
