@@ -36,6 +36,14 @@ define(function () {
         }
       },
 
+      untrackMetric: function (metricEndpoint) {
+        var self = this;
+        var arrPos = self.metricsQueue.indexOf(metricEndpoint);
+        if (arrPos !== -1) {
+          self.metricsQueue.splice(arrPos, 1);
+        }
+      },
+
       fetchMetricsFromServer: function () {
         var self = this;
         if (self.metricsQueue.length) {
@@ -53,7 +61,9 @@ define(function () {
 
       getMetricByEndpoint: function (endpoint) {
         var self = this;
-        return self.metricsResults[endpoint];
+        if (endpoint in self.metricsResults) {
+          return self.metricsResults[endpoint];  
+        }        
       },
 
       processResponse: function (data, status) {

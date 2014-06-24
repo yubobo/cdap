@@ -70,6 +70,9 @@ define(function () {
      * Gets triggered on every route change, cancel all activated intervals.
      */
     $scope.$on("$destroy", function() {
+      for (var i = 0, len = metrics.length; i < len; i++) {
+        metricsService.untrackMetric(metrics[i].endpoint);
+      }
       if (typeof intervals !== 'undefined') {
         helpers.cancelAllIntervals($interval, intervals);
       }

@@ -65,6 +65,7 @@ require([
 
   // Helper library locations.
   './metrics-service',
+  './status-service',
   './datafactory',
   './helpers',
 
@@ -115,6 +116,7 @@ require([
 
     // Helper libraries.
     MetricsService,
+    StatusService,
     DataFactory,
     Helpers,
 
@@ -225,6 +227,7 @@ require([
 
     // Backend connections and all ajax calls are made in the data factory.
     reactorWebapp.factory('metricsService', MetricsService);
+    reactorWebapp.factory('statusService', StatusService);
     reactorWebapp.factory('dataFactory', DataFactory);
     reactorWebapp.factory('helpers', Helpers);
 
