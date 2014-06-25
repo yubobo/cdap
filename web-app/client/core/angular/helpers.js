@@ -8,9 +8,9 @@ define(function () {
 
     var warningContainer = $('#warning');
     var warningSpan = $('#warning .warning-text');
-    
+
     return {
-      
+
       cancelAllIntervals: function (intervalService, intervals) {
         for (var i = 0; i < intervals.length; i++) {
           intervalService.cancel(intervals[i]);
@@ -27,24 +27,36 @@ define(function () {
         return metricData[metricData.length - 1].value;
       },
 
-      getEndpoint: function (entity) {
+      getEndpoint: function (entity, optionalAppName) {
 
         switch(entity.type.toLowerCase()) {
 
           case 'flow':
-            return '/apps/' + entity.app + '/flows/' + entity.id + '/status';
+            if (optionalAppName) {
+              return '/apps/' + optionalAppName + '/flows/' + entity.name + '/status';
+            }
+            return '/apps/' + entity.app + '/flows/' + entity.name + '/status';
             break;
 
           case 'mapreduce':
-            return '/apps/' + entity.app + '/mapreduce/' + entity.id + '/status';
+            if (optionalAppName) {
+              return '/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/status';
+            }
+            return '/apps/' + entity.app + '/mapreduce/' + entity.name + '/status';
             break;
 
           case 'workflow':
-            return '/apps/' + entity.app + '/workflows/' + entity.id + '/status';
+            if (optionalAppName) {
+              return '/apps/' + optionalAppName + '/workflows/' + entity.name + '/status';
+            }
+            return '/apps/' + entity.app + '/workflows/' + entity.name + '/status';
             break;
-          
+
           case 'procedure':
-            return '/apps/' + entity.app + '/procedures/' + entity.id + '/status';                         
+            if (optionalAppName) {
+              return '/apps/' + optionalAppName + '/procedures/' + entity.name + '/status';
+            }
+            return '/apps/' + entity.app + '/procedures/' + entity.name + '/status';
             break;
 
           default:

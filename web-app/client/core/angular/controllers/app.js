@@ -28,7 +28,7 @@ define(function () {
         $scope.app.flows = flows;
         $scope.app.flows.forEach(function (flow) {
           flow.endpoint = helpers.getEndpoint(flow);
-          statusService.trackStatus(flow.endpoint);
+          statusService.trackStatus(flow.endpoint); // stores as obj in statsrv
           statusEndpoints.push(flow.endpoint);
         });
 
@@ -36,7 +36,7 @@ define(function () {
           $scope.app.flows.forEach(function (flow) {
             var status = statusService.getStatusByEndpoint(flow.endpoint);
             flow.status = status;
-          });          
+          });
         }, POLLING_INTERVAL));
 
       });
@@ -53,7 +53,7 @@ define(function () {
           $scope.app.mapreduces.forEach(function (mapreduce) {
             var status = statusService.getStatusByEndpoint(mapreduce.endpoint);
             mapreduce.status = status;
-          });          
+          });
         }, POLLING_INTERVAL));
       });
 
@@ -89,17 +89,17 @@ define(function () {
           $scope.app.procedures.forEach(function (procedure) {
             var status = statusService.getStatusByEndpoint(procedure.endpoint);
             procedure.status = status;
-          });          
+          });
         }, POLLING_INTERVAL));
       });
 
     });
-    
-      
+
+
 
     /**
      * Gets triggered on every route change, cancel all activated intervals.
-     */    
+     */
     $scope.$on("$destroy", function () {
 
       for (var i = 0, len = statusEndpoints.length; i < len; i++) {
@@ -107,7 +107,7 @@ define(function () {
       }
 
       if (typeof intervals !== 'undefined') {
-        helpers.cancelAllIntervals($interval, intervals);  
+        helpers.cancelAllIntervals($interval, intervals);
       }
     });
   }];

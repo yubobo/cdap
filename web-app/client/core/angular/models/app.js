@@ -4,7 +4,6 @@ define(function () {
 
   var Model = Class.create({
     initialize: function (data) {
-      this.type = '';
       this.id = '';
       this.name = '';
       this.description = '';
@@ -12,12 +11,13 @@ define(function () {
       this.flows  = [];
       this.datasets = [];
       this.procedures = [];
+      this.type = 'App';
 
       if (data && Object.prototype.toString.call(data) === '[object Object]') {
         for (var index in data) {
           this[index] = data[index];
         }
-      }  
+      }
     }
 
   });

@@ -3,7 +3,7 @@
 define(function () {
 
   var Model = function (data) {
-    this.type = '';
+    this.type = 'Service';
     this.id = '';
     this.name = '';
     this.description = '';
@@ -17,7 +17,7 @@ define(function () {
         this[index] = data[index];
       }
     }
-    
+
   };
 
   return Model;

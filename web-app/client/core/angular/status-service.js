@@ -8,7 +8,7 @@ define(function () {
     '$q',
     'REACTOR_ENDPOINT',
     'POLLING_INTERVAL',
-    
+
     function (
       $http,
       $interval,
@@ -56,13 +56,13 @@ define(function () {
             console.log("error", arguments);
           });
         });
-          
+
       },
 
       getStatusByEndpoint: function (endpoint) {
         var self = this;
         if (endpoint in self.statusResults) {
-          return self.statusResults[endpoint];  
+          return self.statusResults[endpoint];
         }
       },
 
@@ -76,9 +76,10 @@ define(function () {
       destroy: function () {
         $interval.cancel(this.interval);
       }
-      
-    };
 
+    };
+// src itself that goes and fetches stat of all endpoints
+// page grabbing whsterver src containing the endpoints
 
   }];
 
