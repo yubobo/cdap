@@ -9,14 +9,31 @@
     <div id="info">
       <div class="info-box" style="float: right; border: 0;">
         <div id="action-buttons" class="btn-group pull-right">
-          <button class="btn btn-blank" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span><!--{{model.defaultAction}}--></span></button>
+          <button class="btn btn-blank" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}>
+            <span class="btn-start"><!-- this is a commented-out attribute for the preceding span -> {{bindAttr class="model.actionIcon"}}--></span>
+            <span>Start
+              <!--{{model.defaultAction}}-->
+            </span>
+          </button>
+
           <button class="btn btn-blank btn-icon" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
+
         </div>
         <div class="flow-state"><strong>{{procedure.status}}</strong></div>
       </div>
 
-      <div class="info-box sparkline-box"><!--{{view C.Embed.Chart title="Successful" metrics="/reactor/apps/{parent}/procedures/{id}/query.requests"}}--></div>
-      <div class="info-box sparkline-box"><!--{{view C.Embed.Chart title="Failed" metrics="/reactor/apps/{parent}/procedures/{id}/query.failures"}}--></div>
+      <div class="info-box sparkline-box">
+        <!--{{view C.Embed.Chart title="Successful" metrics="/reactor/apps/{parent}/procedures/{id}/query.requests"}}-->
+        <div class="sparkline-box-value" style="display: block;">0<br><span>EPS</span></div>
+        <div class="sparkline-box-title">Successful</div>
+        <div class="sparkline-box-container"></div>
+      </div>
+      <div class="info-box sparkline-box">
+        <!--{{view C.Embed.Chart title="Failed" metrics="/reactor/apps/{parent}/procedures/{id}/query.failures"}}-->
+        <div class="sparkline-box-value" style="display: block;">0<br><span>EPS</span></div>
+        <div class="sparkline-box-title">Failed</div>
+        <div class="sparkline-box-container"></div>
+      </div>
     </div>
     <div id="panels">
 
@@ -24,7 +41,7 @@
       <div class="panel-head">
 
         <!--{{#if model.running}}-->
-          <div class="btn-group pull-right">
+          <div class="btn-group pull-right" ng-if="procedure.running">
             <button class="btn btn-blank" {{action "addOneInstance" on="click"}}>+</button>
             <button class="btn btn-blank" {{action "removeOneInstance" on="click"}}>-</button>
 
@@ -54,6 +71,7 @@
             </td>
             <td>
                 <textarea id="flow-injector-input"></textarea>
+                <br />
               <!--{{view C.Embed.Injector valueBinding="controllers.Procedure.requestParams"}}--><br />
               <!--{{#if model.running}}-->
                 <div ng-if="procedure.running">
