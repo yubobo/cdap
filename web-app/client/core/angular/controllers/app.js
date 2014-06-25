@@ -69,7 +69,7 @@ define(function () {
           $scope.app.workflows.forEach(function (workflow) {
             var status = statusService.getStatusByEndpoint(workflow.endpoint);
             workflow.status = status;
-          });          
+          });
         }, POLLING_INTERVAL));
       });
 
