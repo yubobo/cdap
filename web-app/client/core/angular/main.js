@@ -225,7 +225,7 @@ require([
     reactorWebapp.value('Workflow', WorkflowModel);
 
 
-    // Backend connections and all ajax calls are made in the data factory.
+    // Backend connections and all ajax calls are made in the factory handlers.
     reactorWebapp.factory('metricsService', MetricsService);
     reactorWebapp.factory('statusService', StatusService);
     reactorWebapp.factory('dataFactory', DataFactory);
