@@ -3,11 +3,10 @@
 <configuration>
      <!--Supressing some chatty loggers -->
     <logger name="org.apache.hadoop" level="ERROR"/>
-    <logger name="org.apache.hive" level="WARN"/>
+    <logger name="org.apache.hive" level="INFO"/>
     <logger name="org.mortbay.log" level="INFO"/>
 
     <logger name="com.continuuity.explore" level="DEBUG"/>
-    <logger name="com.continuuity.hive" level="DEBUG"/>
 
     <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

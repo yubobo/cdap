@@ -34,6 +34,8 @@ import com.continuuity.data2.transaction.snapshot.SnapshotCodec;
 import com.continuuity.data2.transaction.snapshot.SnapshotCodecProvider;
 import com.continuuity.gateway.handlers.dataset.DataSetInstantiatorFromMetaData;
 import com.continuuity.internal.app.services.http.AppFabricTestBase;
+import com.continuuity.test.SlowTests;
+import com.continuuity.test.XSlowTests;
 import com.continuuity.test.internal.DefaultId;
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
@@ -55,6 +57,7 @@ import org.apache.twill.internal.utils.Dependencies;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -161,24 +164,31 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
         );
       }
 
-      HttpResponse response = doGet("/v2/apps/" + appId + "/" + runnableType + "/" +
-                                                           runnableId + "/history");
-      Assert.assertEquals(200, response.getStatusLine().getStatusCode());
-      String s = EntityUtils.toString(response.getEntity());
-      List<Map<String, String>> o = GSON.fromJson(s, new TypeToken<List<Map<String, String>>>() {
-      }.getType());
+      String url = String.format("/v2/apps/%s/%s/%s/history", appId, runnableType, runnableId);
+      historyStatusWithRetry(url, 2);
 
-      // We started and stopped twice, so we should have 2 entries.
-      // At least twice because it may have been done in other tests too.
-      Assert.assertTrue(o.size() >= 2);
-
-      // For each one, we have 4 fields.
-      for (Map<String, String> m : o) {
-        Assert.assertEquals(4, m.size());
-      }
-    } finally {
+      } finally {
       Assert.assertEquals(200, doDelete("/v2/apps/" + appId).getStatusLine().getStatusCode());
     }
+  }
+
+  private void historyStatusWithRetry(String url, int size) throws Exception {
+    int trials = 0;
+    while (trials++ < 5) {
+      HttpResponse response = doGet(url);
+      List<Map<String, String>> result = GSON.fromJson(EntityUtils.toString(response.getEntity()),
+                                                       new TypeToken<List<Map<String, String>>>() { }.getType());
+
+      if (result.size() >= size) {
+        // For each one, we have 4 fields.
+        for (Map<String, String> m : result) {
+          Assert.assertEquals(4, m.size());
+        }
+        break;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    Assert.assertTrue(trials < 5);
   }
 
   private void testRuntimeArgs(Class<?> app, String appId, String runnableType, String runnableId)
@@ -235,6 +245,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
   /**
    * Tests history of a flow.
    */
+  @Category(SlowTests.class)
   @Test
   public void testFlowHistory() throws Exception {
     testHistory(WordCountApp.class, "WordCountApp", "flows", "WordCountFlow", false, 0);
@@ -251,6 +262,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
   /**
    * Tests history of a mapreduce.
    */
+  @Category(XSlowTests.class)
   @Test
   public void testMapreduceHistory() throws Exception {
     testHistory(DummyAppWithTrackingTable.class, "dummy", "mapreduce", "dummy-batch", false, 0);
@@ -259,6 +271,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
   /**
    * Tests history of a workflow.
    */
+  @Category(XSlowTests.class)
   @Test
   public void testWorkflowHistory() throws Exception {
     testHistory(SleepingWorkflowApp.class, "SleepWorkflowApp", "workflows", "SleepWorkflow", true, 2);
@@ -313,6 +326,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
   }
 
 
+  @Category(XSlowTests.class)
   @Test
   public void testStartStop() throws Exception {
     //deploy, check the status and start a flow. Also check the status
@@ -322,7 +336,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
     Assert.assertEquals("RUNNING", getRunnableStatus("flows", "WordCountApp", "WordCountFlow"));
 
     //web-app, start, stop and status check.
-    Assert.assertEquals(200, 
+    Assert.assertEquals(200,
       doPost("/v2/apps/WordCountApp/webapp/start", null).getStatusLine().getStatusCode());
 
     Assert.assertEquals("RUNNING", getWebappStatus("WordCountApp"));
@@ -656,6 +670,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
     Assert.assertEquals(200, doDelete("/v2/apps/WordCountApp").getStatusLine().getStatusCode());
   }
 
+  @Category(XSlowTests.class)
   @Test
   public void testStatus() throws Exception {
 
@@ -834,7 +849,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
     response = doPost("/v2/transactions/" + tx2.getWritePointer() + "/invalidate");
     Assert.assertEquals(409, response.getStatusLine().getStatusCode());
 
-    Assert.assertEquals(400, 
+    Assert.assertEquals(400,
       doPost("/v2/transactions/foobar/invalidate").getStatusLine().getStatusCode());
   }
 
@@ -926,6 +941,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
   /**
    * Test for schedule handlers.
    */
+  @Category(XSlowTests.class)
   @Test
   public void testScheduleEndPoints() throws Exception {
     // Steps for the test:
