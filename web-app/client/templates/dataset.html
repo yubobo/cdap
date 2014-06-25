@@ -2,13 +2,33 @@
   <h1><span>Dataset</span> {{dataset.name}}</h1>
 </div>
 <div id="info">
-  <div class="info-box sparkline-box write-rate"></div>
-  <div class="info-box sparkline-box write-rate"></div>
-  <div class="info-box sparkline-box read-rate"></div>
+  <div class="info-box sparkline-box write-rate">
+    <div class="sparkline-box-value" style="display: block;">0<br />
+      <span>Bps</span>
+    </div>
+    <div class="sparkline-box-title">Write Rate (Bytes)</div>
+    <div class="sparkline-box-container"></div>
+  </div>
+  <div class="info-box sparkline-box write-rate">
+    <div class="sparkline-box-value" style="display: block;">0<br />
+      <span>OPS/S</span>
+    </div>
+    <div class="sparkline-box-title">Write Rate (Ops)</div>
+    <div class="sparkline-box-container"></div>
+  </div>
+  <div class="info-box sparkline-box read-rate">
+    <div class="sparkline-box-value" style="display: block;">0<br />
+      <span>OPS/S</span>
+    </div>
+    <div class="sparkline-box-title">Read Rate (Ops)</div>
+    <div class="sparkline-box-container"></div>
+  </div>
 
   <div class="info-box app-storage" style="text-align: center;">
     <div class="sparkline-box-title">Stored</div>
-    <div class="sparkline-box-value" style="padding-left: 0;padding-top:16px;width: 100px;"><br /><span></span></div>
+    <div class="sparkline-box-value" style="padding-left: 0;padding-top:16px;width: 100px;">0<br />
+      <span>B</span>
+    </div>
   </div>
 
 </div>
