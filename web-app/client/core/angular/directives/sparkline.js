@@ -5,20 +5,21 @@
 define(function() {
 
   var Directive = ['$interval', function($interval) {
-  
+
     // needs its own data manager to just push data to while the chart updates by the second.
     // Data manager should remove duplicated, add times based on a timestamp value format.
     // call to update data should be all that is necessary with new data.
-    // 
+    //
     var AnimatedSparkline = Class.create({
 
       initialize: function (elm, data, width, height, interpolation, animate, updateDelay, transitionDelay, percent, shade) {
           var self = this;
+          this.elm = elm;
+
 
           var parent = $(self.elm).parent();
           this.width = parent.outerWidth() || 300;
           this.height = parent.outerHeight() || 100;
-          this.elm = elm;
           this.data = data || [];
           this.interpolation = interpolation || "basis";
           this.animate = animate || true;
@@ -55,20 +56,20 @@ define(function() {
           // create a line object that represents the SVN line we're creating
           this.line = d3.svg.line().interpolate("monotone")
             // assign the X function to plot our line as we wish
-            .x(function(d,i) { 
+            .x(function(d,i) {
               // verbose logging to show what's actually being done
               //console.log('Plotting X value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
               // return the X coordinate where we want to plot this datapoint
-              return self.x(i); 
+              return self.x(i);
             })
-            .y(function(d) { 
+            .y(function(d) {
               // verbose logging to show what's actually being done
               //console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
               // return the Y coordinate where we want to plot this datapoint
-              return self.y(d); 
+              return self.y(d);
             })
             .interpolate(this.interpolation);
-        
+
           // display the line by appending an svg:path element with the data line we created above
           this.g = this.graph.append("svg:g");
           this.g.append("svg:path").attr('class', 'sparkline-data').attr("d", this.line(this.data));
@@ -120,24 +121,24 @@ define(function() {
         // create a line object that represents the SVN line we're creating
         this.line = d3.svg.line().interpolate("monotone")
           // assign the X function to plot our line as we wish
-          .x(function(d,i) { 
+          .x(function(d,i) {
             // verbose logging to show what's actually being done
             //console.log('Plotting X value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
             // return the X coordinate where we want to plot this datapoint
-            return self.x(i); 
+            return self.x(i);
           })
-          .y(function(d) { 
+          .y(function(d) {
             // verbose logging to show what's actually being done
             //console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
             // return the Y coordinate where we want to plot this datapoint
-            return self.y(d); 
+            return self.y(d);
           })
           .interpolate(this.interpolation);
-      
+
         // display the line by appending an svg:path element with the data line we created above
         this.g = this.graph.append("svg:g");
         this.g.append("svg:path").attr('class', 'sparkline-data').attr("d", this.line(this.data));
-        
+
       },
 
       redrawWithAnimation: function () {
@@ -167,26 +168,26 @@ define(function() {
         //   // create a line object that represents the SVN line we're creating
         //   this.line = d3.svg.line().interpolate("monotone")
         //     // assign the X function to plot our line as we wish
-        //     .x(function(d,i) { 
+        //     .x(function(d,i) {
         //       // verbose logging to show what's actually being done
         //       //console.log('Plotting X value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
         //       // return the X coordinate where we want to plot this datapoint
-        //       return self.x(i); 
+        //       return self.x(i);
         //     })
-        //     .y(function(d) { 
+        //     .y(function(d) {
         //       // verbose logging to show what's actually being done
         //       //console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
         //       // return the Y coordinate where we want to plot this datapoint
-        //       return self.y(d); 
+        //       return self.y(d);
         //     })
         //     .interpolate(this.interpolation);
-        
+
         //   // display the line by appending an svg:path element with the data line we created above
         //   this.g = this.graph.append("svg:g");
         //   this.g.append("svg:path").attr('class', 'sparkline-data').attr("d", this.line(this.data));
         //   // or it can be done like this
         //   //graph.selectAll("path").data([data]).enter().append("svg:path").attr("d", line);
-        
+
         // update with animation
         this.graph.selectAll("path.sparkline-data")
           .data([this.data]) // set the new data
@@ -196,8 +197,8 @@ define(function() {
           .ease("linear")
           .duration(3000) // for this demo we want a continual slide so set this to the same as the setInterval amount below
           .attr("transform", "translate(" + this.x(-3) + ")"); // animate a slide to the left back to x(0) pixels to reveal the new value
-          
-          /* thanks to 'barrym' for examples of transform: https://gist.github.com/1137131 */        
+
+          /* thanks to 'barrym' for examples of transform: https://gist.github.com/1137131 */
       },
 
       updateData: function (newData) {
@@ -217,7 +218,7 @@ define(function() {
     });
 
     return {
-      
+
       restrict: 'AE',
       scope: {
         data: "="
@@ -233,7 +234,7 @@ define(function() {
         );
         var animatedSparkline = new AnimatedSparkline(
           elm[0], data, 190, 38, "basis", true, 1000, 1000, false, false);
-        
+
         scope.$watch('data', function (newVal, oldVal) {
           if (newVal && angular.isArray(newVal) && newVal.length) {
             animatedSparkline.updateData(newVal);
@@ -246,7 +247,7 @@ define(function() {
         });
       }
     }
-  
+
   }];
 
   return Directive;

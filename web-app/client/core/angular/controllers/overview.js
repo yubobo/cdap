@@ -45,8 +45,8 @@ define(function () {
      * @type {Number}
      */
     $scope.query = [];
-    
-    
+
+
     // Set up tracking for all metrics that need to be updated realtime.
     metrics.forEach(function (metric) {
       metricsService.trackMetric(metric.endpoint);
@@ -59,7 +59,7 @@ define(function () {
     }, POLLING_INTERVAL);
     intervals.push(ival);
 
-
+    //Custom to this controller and template.
     $scope.getMetricDisplayValue = function (val) {
       if (Object.prototype.toString.call(val) === '[object Array]' && val.length) {
         return helpers.getLastValue(val);

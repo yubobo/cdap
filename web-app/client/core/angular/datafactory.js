@@ -86,6 +86,17 @@ define(function () {
         });
       },
 
+
+      getFlowsByStream: function (streamId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/streams/' + streamId + '/flows').success(function (data) {
+          var entries = [];
+          data.map(function (entry) {
+            entries.push(new Flow(entry));
+          });
+          callback(entries);
+        });
+      },
+
       /**
        * Gets all reactor workflows. Depends on the Workflow model.
        * @param  {Function} callback that consumes list of Workflow objects.

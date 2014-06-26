@@ -24,22 +24,32 @@
             </li>
           </ul>
 
-          <button class="btn btn-blank start-stop" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span><!--{{model.defaultAction}}--></span></button>
+          <button class="btn btn-blank start-stop" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}>
+            <span class="btn-start"><!-- this is a commented-out attribute for the preceding span -> {{bindAttr class="model.actionIcon"}}-->
+            </span>
+            <span>Start<!--{{model.defaultAction}}--></span>
+          </button>
           <button class="btn btn-blank btn-icon" style="border-right:0;" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
         </div>
-        <div class="flow-state"><strong><!--{{model.currentState}}--></strong></div>
+        <div class="flow-state"><strong>{{flow.status}}</strong></div>
       </div>
 
       <div class="info-box sparkline-box app-processed">
         <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;">{{model.storageLabel}}<span>{{model.storageUnits}}</span></div>
         <div class="sparkline-box-title">Processing Rate</div>
-        <div class="sparkline-box-container"></div>
-        <!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.events.processed" title="Processing Rate"}}--></div>
+        <div class="sparkline-box-container">
+          <sparkline data="processingRate"></sparkline>
+        </div>
+        <!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.events.processed" title="Processing Rate"}}-->
+      </div>
       <div class="info-box sparkline-box app-busyness">
         <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;">{{model.storageLabel}}<span>{{model.storageUnits}}</span></div>
         <div class="sparkline-box-title">Busyness</div>
-        <div class="sparkline-box-container"></div>
-        <!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.busyness" title="Busyness" unit="percent"}}--></div>
+        <div class="sparkline-box-container">
+          <sparkline data="busyness"></sparkline>
+        </div>
+
+      </div>
 
     </div>
 

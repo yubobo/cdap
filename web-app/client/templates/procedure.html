@@ -23,16 +23,20 @@
       </div>
 
       <div class="info-box sparkline-box">
-        <!--{{view C.Embed.Chart title="Successful" metrics="/reactor/apps/{parent}/procedures/{id}/query.requests"}}-->
+
         <div class="sparkline-box-value" style="display: block;">0<br><span>EPS</span></div>
         <div class="sparkline-box-title">Successful</div>
-        <div class="sparkline-box-container"></div>
+        <div class="sparkline-box-container">
+          <sparkline data="successfulEps"></sparkline>
+        </div>
       </div>
       <div class="info-box sparkline-box">
         <!--{{view C.Embed.Chart title="Failed" metrics="/reactor/apps/{parent}/procedures/{id}/query.failures"}}-->
         <div class="sparkline-box-value" style="display: block;">0<br><span>EPS</span></div>
         <div class="sparkline-box-title">Failed</div>
-        <div class="sparkline-box-container"></div>
+        <div class="sparkline-box-container">
+          <sparkline data="failedEps"></sparkline>
+        </div>
       </div>
     </div>
     <div id="panels">
