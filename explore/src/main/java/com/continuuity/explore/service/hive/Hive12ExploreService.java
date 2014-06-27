@@ -9,6 +9,7 @@ import com.continuuity.explore.service.HandleNotFoundException;
 import com.continuuity.explore.service.Result;
 import com.continuuity.explore.service.Status;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -50,6 +51,10 @@ public class Hive12ExploreService extends BaseHiveExploreService {
   protected Status fetchStatus(Handle handle) throws ExploreException, HandleNotFoundException {
     try {
       OperationHandle operationHandle = getOperationHandle(handle);
+      if (operationHandle == null) {
+        return new Status(Status.OpStatus.RUNNING, false);
+      }
+
       // In Hive 12, CLIService.getOperationStatus returns OperationState.
       // In Hive 13, CLIService.getOperationStatus returns OperationStatus.
       // Since we use Hive 13 for dev, we need the following workaround to get Hive 12 working.
@@ -75,6 +80,10 @@ public class Hive12ExploreService extends BaseHiveExploreService {
     try {
       LOG.trace("Getting results for handle {}", handle);
       OperationHandle operationHandle = getOperationHandle(handle);
+      if (operationHandle == null) {
+        return Lists.newArrayList();
+      }
+
       if (operationHandle.hasResultSet()) {
         // Rowset is an interface in Hive 13, but a class in Hive 12, so we use reflection
         // so that the compiler does not make assumption on the return type of fetchResults

@@ -13,18 +13,19 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.apache.hadoop.util.VersionInfo;
 import org.apache.twill.internal.utils.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Utility class for the explore service.
@@ -36,13 +37,19 @@ public class ExploreServiceUtils {
    */
   public enum HiveSupport {
     // todo populate this with whatever hive version CDH4.3 runs with - REACTOR-229
-    HIVE_12(Hive12ExploreService.class),
-    HIVE_13(Hive13ExploreService.class);
+    HIVE_CDH4(Pattern.compile("cdh4\\."), Hive12ExploreService.class),
+    HIVE_13(Pattern.compile("."), Hive13ExploreService.class);
 
-    private Class hiveExploreServiceClass;
+    private final Pattern hadoopVersionPattern;
+    private final Class hiveExploreServiceClass;
 
-    private HiveSupport(Class hiveExploreServiceClass) {
+    private HiveSupport(Pattern hadoopVersionPattern, Class hiveExploreServiceClass) {
+      this.hadoopVersionPattern = hadoopVersionPattern;
       this.hiveExploreServiceClass = hiveExploreServiceClass;
+    }
+
+    public Pattern getHadoopVersionPattern() {
+      return hadoopVersionPattern;
     }
 
     public Class getHiveExploreServiceClass() {
@@ -133,20 +140,30 @@ public class ExploreServiceUtils {
 
       // In Hive 12, CLIService.getOperationStatus returns OperationState.
       // In Hive 13, CLIService.getOperationStatus returns OperationStatus.
-      Class cliServiceClass = usingCL.loadClass("org.apache.hive.service.cli.CLIService");
-      Class operationHandleCl = usingCL.loadClass("org.apache.hive.service.cli.OperationHandle");
-      Method getStatusMethod = cliServiceClass.getDeclaredMethod("getOperationStatus", operationHandleCl);
+//      Class cliServiceClass = usingCL.loadClass("org.apache.hive.service.cli.CLIService");
+//      Class operationHandleCl = usingCL.loadClass("org.apache.hive.service.cli.OperationHandle");
+//      Method getStatusMethod = cliServiceClass.getDeclaredMethod("getOperationStatus", operationHandleCl);
 
       // Rowset is an interface in Hive 13, but a class in Hive 12
-      Class rowSetClass = usingCL.loadClass("org.apache.hive.service.cli.RowSet");
+//      Class rowSetClass = usingCL.loadClass("org.apache.hive.service.cli.RowSet");
 
-      if (rowSetClass.isInterface()
-        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationStatus")) {
-        return HiveSupport.HIVE_13;
-      } else if (!rowSetClass.isInterface()
-        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationState")) {
-        return HiveSupport.HIVE_12;
+      String hadoopVersion = VersionInfo.getVersion();
+      for (HiveSupport hiveSupport : HiveSupport.values()) {
+        if (hiveSupport.getHadoopVersionPattern().matcher(hadoopVersion).matches()) {
+          return hiveSupport;
+        }
       }
+
+      // What about distributions that don't have hive installed by default, but still have hive installed?
+      // Like our loom distributions?
+
+//      if (rowSetClass.isInterface()
+//        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationStatus")) {
+//        return HiveSupport.HIVE_13;
+//      } else if (!rowSetClass.isInterface()
+//        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationState")) {
+//        return HiveSupport.HIVE_12;
+//      }
       throw new RuntimeException("Hive distribution not supported. Set the configuration reactor.explore.enabled " +
                                  "to false to start up Reactor without Explore.");
     } catch (RuntimeException e) {
@@ -225,6 +242,16 @@ public class ExploreServiceUtils {
                                                  bootstrapClassPaths, usingCL));
     orderedDependencies.addAll(traceDependencies("org.apache.hadoop.mapred.YarnClientProtocolProvider",
                                                  bootstrapClassPaths, usingCL));
+
+    // Needed for - at least - CDH 4.4 integration
+    orderedDependencies.addAll(traceDependencies("org.apache.hive.builtins.BuiltinUtils",
+                                                 bootstrapClassPaths, usingCL));
+
+    // Needed for - at least - CDH 5 integration
+    orderedDependencies.addAll(
+      traceDependencies("org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair.FairScheduler",
+                        bootstrapClassPaths, usingCL));
+
     exploreDependencies = orderedDependencies;
     return orderedDependencies;
   }

@@ -40,6 +40,10 @@ public class Hive13ExploreService extends BaseHiveExploreService {
   protected Status fetchStatus(Handle handle) throws ExploreException, HandleNotFoundException {
     try {
       OperationHandle operationHandle = getOperationHandle(handle);
+      if (operationHandle == null) {
+        return new Status(Status.OpStatus.RUNNING, false);
+      }
+
       OperationStatus operationStatus = getCliService().getOperationStatus(operationHandle);
       Status status = new Status(Status.OpStatus.valueOf(operationStatus.getState().toString()),
                                  operationHandle.hasResultSet());
@@ -55,6 +59,10 @@ public class Hive13ExploreService extends BaseHiveExploreService {
     try {
       LOG.trace("Getting results for handle {}", handle);
       OperationHandle operationHandle = getOperationHandle(handle);
+      if (operationHandle == null) {
+        return Lists.newArrayList();
+      }
+
       if (operationHandle.hasResultSet()) {
         RowSet rowSet = getCliService().fetchResults(operationHandle, FetchOrientation.FETCH_NEXT, size);
         ImmutableList.Builder<Result> rowsBuilder = ImmutableList.builder();
