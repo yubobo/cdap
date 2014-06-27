@@ -450,6 +450,10 @@ public final class Constants {
     public static final String INACTIVE_OPERATION_TIMEOUT_SECS = "explore.inactive.operation.timeout.secs";
     public static final String CLEANUP_JOB_SCHEDULE_SECS = "explore.cleanup.job.schedule.secs";
 
+    // Number of simultaneous queries Explore can run
+    public static final String CFG_NB_QUERY_EXECUTORS = "explore.service.queries.executors";
+    public static final int DEFAULT_NB_QUERY_EXECUTORS = 100;
+
     /**
      * Explore JDBC constants.
      */

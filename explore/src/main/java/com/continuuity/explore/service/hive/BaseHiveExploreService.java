@@ -101,8 +101,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
     cleanupJobSchedule = cConf.getLong(Constants.Explore.CLEANUP_JOB_SCHEDULE_SECS);
 
-    // TODO create a constant for that 100
-    executingQueriesPool = Executors.newFixedThreadPool(100);
+    executingQueriesPool = Executors.newFixedThreadPool(cConf.getInt(Constants.Explore.CFG_NB_QUERY_EXECUTORS,
+                                                                     Constants.Explore.DEFAULT_NB_QUERY_EXECUTORS));
 
     LOG.info("Active handle timeout = {} secs", cConf.getLong(Constants.Explore.ACTIVE_OPERATION_TIMEOUT_SECS));
     LOG.info("Inactive handle timeout = {} secs", cConf.getLong(Constants.Explore.INACTIVE_OPERATION_TIMEOUT_SECS));
@@ -149,6 +149,9 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     }
     activeHandleCache.invalidateAll();
     // Make sure the cache entries get expired.
+    // todo this call can still run before the runnables called by invalidateAll - and those runnables rely on the cache
+    // (if need is to cancel) - is there a way to clean the cache after everything is invalidated?
+    // TODO poorna?
     runCacheCleanup();
 
     // Wait for all cleanup jobs to complete
@@ -160,9 +163,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public Handle execute(final String statement) throws ExploreException {
-    Map<String, String> sessionConf = null;
     try {
-      sessionConf = startSession();
+      Map<String, String> sessionConf = startSession();
       // TODO: allow changing of hive user and password - REACTOR-271
       final SessionHandle sessionHandle = cliService.openSession("hive", "", sessionConf);
       Future<OperationHandle> futureHandle = executingQueriesPool.submit(new Callable<OperationHandle>() {
@@ -311,9 +313,11 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     try {
       LOG.trace("Closing operation {}", handle);
 
-      OperationHandle operationHandle = getOperationHandle(handle);
-      // TODO think about what it means to close without a operationHandle
+      // Call this instead of getOperationHandle(handle) because we don't want to poke the cache -
+      // the cache might have already been cleaned up by now.
+      OperationHandle operationHandle = opInfo.getOperationHandle();
       if (operationHandle == null) {
+        // TODO think about what it means to close without a operationHandle
         return;
       }
 
@@ -358,19 +362,26 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
    * @param handle explore handle.
    * @return OperationHandle.
    * @throws ExploreException
+   * @throws HandleNotFoundException
    */
   protected Future<OperationHandle> getFutureOperationHandle(Handle handle)
     throws ExploreException, HandleNotFoundException {
     return getOperationInfo(handle).getFutureOperationHandle();
   }
 
+  /**
+   * Returns {@link OperationHandle} associated with Explore {@link Handle}. It pokes the right
+   * {@link Future<OperationHandle>} and returns null if the future object is not ready yet.
+   * @param handle explore handle.
+   * @return OperationHandle.
+   * @throws ExploreException
+   * @throws HandleNotFoundException
+   */
   protected OperationHandle getOperationHandle(Handle handle)
     throws ExploreException, HandleNotFoundException {
     try {
-      return getFutureOperationHandle(handle).get(20, TimeUnit.MILLISECONDS);
-    } catch (TimeoutException e) {
-      // Future object is still in progress
-      return null;
+      Future<OperationHandle> futureHandle = getFutureOperationHandle(handle);
+      return futureHandle.isDone() ? futureHandle.get() : null;
     } catch (HandleNotFoundException e) {
       throw e;
     } catch (Exception e) {
@@ -457,6 +468,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   }
 
   private void runCacheCleanup() {
+    // TODO why is it run that many times?? Launch the tests to be convinced
     LOG.trace("Running cache cleanup");
     activeHandleCache.cleanUp();
     inactiveHandleCache.cleanUp();
@@ -474,7 +486,6 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   */
   static class OperationInfo {
     private final SessionHandle sessionHandle;
-    // private final OperationHandle operationHandle;
     private final Future<OperationHandle> futureOperationHandle;
     private final Map<String, String> sessionConf;
 
@@ -491,10 +502,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
     public OperationHandle getOperationHandle() throws ExploreException {
       try {
-        return futureOperationHandle.get(20, TimeUnit.MILLISECONDS);
-      } catch (TimeoutException e) {
-        // Future object is still in progress
-        return null;
+        return futureOperationHandle.isDone() ? futureOperationHandle.get() : null;
       } catch (Exception e) {
         throw new ExploreException(e);
       }

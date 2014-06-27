@@ -159,6 +159,8 @@ public class ExploreServiceUtils {
       // TODO What about distributions that don't have hive installed by default, but still have hive installed?
       // Like our loom distributions?
 
+      // TODO still make those checks
+
 //      if (rowSetClass.isInterface()
 //        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationStatus")) {
 //        return HiveSupport.HIVE_13;

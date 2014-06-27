@@ -46,13 +46,15 @@ public class ActiveOperationRemovalHandler implements RemovalListener<Handle, Op
     @Override
     public void run() {
       try {
-        // TODO this used to be fetchStatus(operationHandle), is that a problem?
-        Future<OperationHandle> futureOperationInfo = opInfo.getFutureOperationHandle();
+        // Call this instead of exploreService.getOperationHandle(handle) because we
+        // don't want to poke the cache - it might have already been cleaned up by now.
+        OperationHandle operationHandle = opInfo.getOperationHandle();
         Status status;
-        if (!futureOperationInfo.isDone()) {
+        if (operationHandle == null) {
+          // Query is still running
           status = new Status(Status.OpStatus.RUNNING, false);
         } else {
-          status = exploreService.fetchStatus(futureOperationInfo.get(100, TimeUnit.MILLISECONDS));
+          status = exploreService.fetchStatus(operationHandle);
         }
 
         // If operation is still not complete, cancel it.
