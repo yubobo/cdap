@@ -7,7 +7,11 @@
   <div class="quarter" id="quarter1">
     <div class="panel">
       <div class="quarter-title">Collect</div>
-      <div class="quarter-value"><strong><span class="value-number">{{getMetricDisplayValue(collect.data)}}</span></strong><span class="value-measure"> EPS</span></div>
+      <div class="quarter-value">
+        <strong>
+          <delay-counter data="collect.data"></delay-counter>
+        </strong>
+      </div>
       <div class="dash-chart">
         <sparkline data="collect.data" dash="true"></sparkline>
       </div>
@@ -16,7 +20,9 @@
   <div class="quarter" id="quarter2">
     <div class="panel">
       <div class="quarter-title">Process</div>
-      <div class="quarter-value"><strong><span class="value-number">{{getMetricDisplayValue(process.data)}}</span></strong><span class="value-measure">%</span></div>
+      <div class="quarter-value"><strong>
+        <delay-counter data="process.data" percent="true"></delay-counter>
+      </strong></div>
       <div class="dash-chart">
         <sparkline data="process.data" dash="true"></sparkline>
       </div>
@@ -25,7 +31,11 @@
   <div class="quarter" id="quarter3">
     <div class="panel">
       <div class="quarter-title">Store</div>
-      <div class="quarter-value"><strong><span class="value-number">{{getMetricDisplayValue(store.data)}}</span></strong> <span class="value-measure">{{value.store.unit}}/s</span></div>
+      <div class="quarter-value">
+        <strong>
+          <delay-counter data="store.data"></delay-counter>
+        </strong>
+      </div>
       <div class="dash-chart">
         <sparkline data="store.data" dash="true"></sparkline>
       </div>
@@ -34,7 +44,11 @@
   <div class="quarter" id="quarter4">
     <div class="panel" style="margin-right: 0;">
       <div class="quarter-title">Query</div>
-      <div class="quarter-value"><strong><span class="value-number">{{getMetricDisplayValue(query.data)}}</span></strong><span class="value-measure"> QPS</span></div>
+      <div class="quarter-value">
+        <strong>
+          <delay-counter data="query.data"></delay-counter>
+        </strong>  
+      </div>
       <div class="dash-chart">
         <sparkline data="query.data" dash="true"></sparkline>
       </div>

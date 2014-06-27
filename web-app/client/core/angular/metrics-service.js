@@ -20,6 +20,7 @@ define(function () {
 
       metricsQueue: [],
       metricsResults: {},
+      pendingRequest: false,
 
       initialize: function () {
         var self = this;
@@ -46,17 +47,24 @@ define(function () {
 
       fetchMetricsFromServer: function () {
         var self = this;
-        if (self.metricsQueue.length) {
+        if (self.metricsQueue.length && !self.pendingRequest) {
+          self.pendingRequest = true;
           $http({
             method: 'POST',
             url: '/metrics',
             data: self.metricsQueue,
           }).success(function (data, status, headers, config) {
+            self.registerRequestComplete();
             self.processResponse(data, status);
           }).error(function (data, status, headers, config) {
+            self.registerRequestComplete();
             console.log("error", arguments);
           });
         }
+      },
+
+      registerRequestComplete: function () {
+        this.pendingRequest = false;
       },
 
       getMetricByEndpoint: function (endpoint) {
