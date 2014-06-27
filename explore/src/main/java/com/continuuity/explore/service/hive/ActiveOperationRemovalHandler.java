@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.continuuity.explore.service.hive.BaseHiveExploreService.OperationInfo;
 
@@ -46,7 +47,13 @@ public class ActiveOperationRemovalHandler implements RemovalListener<Handle, Op
     public void run() {
       try {
         // TODO this used to be fetchStatus(operationHandle), is that a problem?
-        Status status = exploreService.getStatus(handle);
+        Future<OperationHandle> futureOperationInfo = opInfo.getFutureOperationHandle();
+        Status status;
+        if (!futureOperationInfo.isDone()) {
+          status = new Status(Status.OpStatus.RUNNING, false);
+        } else {
+          status = exploreService.fetchStatus(futureOperationInfo.get(100, TimeUnit.MILLISECONDS));
+        }
 
         // If operation is still not complete, cancel it.
         if (status.getStatus() != Status.OpStatus.FINISHED && status.getStatus() != Status.OpStatus.CLOSED &&

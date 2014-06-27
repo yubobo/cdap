@@ -193,12 +193,12 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     }
 
     try {
-      // Fetch status from Hive
       OperationHandle operationHandle = getOperationHandle(handle);
       if (operationHandle == null) {
         return new Status(Status.OpStatus.RUNNING, false);
       }
 
+      // Fetch status from Hive
       Status status = fetchStatus(operationHandle);
       LOG.trace("Status of handle {} is {}", handle, status);
 
