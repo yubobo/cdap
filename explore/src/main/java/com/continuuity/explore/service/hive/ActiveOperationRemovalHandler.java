@@ -1,5 +1,6 @@
 package com.continuuity.explore.service.hive;
 
+import com.continuuity.explore.service.ExploreException;
 import com.continuuity.explore.service.Handle;
 import com.continuuity.explore.service.Status;
 import com.google.common.cache.RemovalListener;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.continuuity.explore.service.hive.BaseHiveExploreService.OperationInfo;
 
@@ -48,13 +50,20 @@ public class ActiveOperationRemovalHandler implements RemovalListener<Handle, Op
       try {
         // Call this instead of exploreService.getOperationHandle(handle) because we
         // don't want to poke the cache - it might have already been cleaned up by now.
-        OperationHandle operationHandle = opInfo.getOperationHandle();
+        Future<OperationHandle> future = opInfo.getFutureOperationHandle();
+        if (future.isCancelled()) {
+          return;
+        }
         Status status;
-        if (operationHandle == null) {
-          // Query is still running
-          status = new Status(Status.OpStatus.RUNNING, false);
-        } else {
+        try {
+          OperationHandle operationHandle =
+            future.get(BaseHiveExploreService.FUTURE_GET_TIMEOUT, TimeUnit.MILLISECONDS);
           status = exploreService.fetchStatus(operationHandle);
+        } catch (TimeoutException e) {
+          // Execution is still running
+          status = new Status(Status.OpStatus.RUNNING, false);
+        } catch (Exception e) {
+          throw new ExploreException(e);
         }
 
         // If operation is still not complete, cancel it.

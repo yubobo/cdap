@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -53,6 +54,7 @@ import java.util.concurrent.TimeoutException;
  */
 public abstract class BaseHiveExploreService extends AbstractIdleService implements ExploreService {
   private static final Logger LOG = LoggerFactory.getLogger(BaseHiveExploreService.class);
+  static final int FUTURE_GET_TIMEOUT = 10;
 
   private final CConfiguration cConf;
   private final Configuration hConf;
@@ -168,6 +170,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
       // TODO: allow changing of hive user and password - REACTOR-271
       final SessionHandle sessionHandle = cliService.openSession("hive", "", sessionConf);
       Future<OperationHandle> futureHandle = executingQueriesPool.submit(new Callable<OperationHandle>() {
+        // TODO find out how to handle cancel
         @Override
         public OperationHandle call() throws Exception {
           OperationHandle operationHandle =
@@ -195,9 +198,18 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     }
 
     try {
-      OperationHandle operationHandle = getOperationHandle(handle);
-      if (operationHandle == null) {
+      Future<OperationHandle> future = getFutureOperationHandle(handle);
+      if (future.isCancelled()) {
+        return new Status(Status.OpStatus.CANCELED, false);
+      }
+      OperationHandle operationHandle;
+      try {
+        operationHandle = future.get(FUTURE_GET_TIMEOUT, TimeUnit.MILLISECONDS);
+      } catch (TimeoutException e) {
+        // Execution is still running
         return new Status(Status.OpStatus.RUNNING, false);
+      } catch (Exception e) {
+        throw new ExploreException(e);
       }
 
       // Fetch status from Hive
@@ -227,9 +239,18 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     try {
       // Fetch results from Hive
       LOG.trace("Getting results for handle {}", handle);
-      OperationHandle operationHandle = getOperationHandle(handle);
-      if (operationHandle == null) {
+      Future<OperationHandle> future = getFutureOperationHandle(handle);
+      if (future.isCancelled()) {
         return Lists.newArrayList();
+      }
+      OperationHandle operationHandle;
+      try {
+        operationHandle = future.get(FUTURE_GET_TIMEOUT, TimeUnit.MILLISECONDS);
+      } catch (TimeoutException e) {
+        // Execution is still running
+        return Lists.newArrayList();
+      } catch (Exception e) {
+        throw new ExploreException(e);
       }
 
       List<Result> results = fetchNextResults(operationHandle, size);
@@ -257,13 +278,26 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
       // Fetch schema from hive
       LOG.trace("Getting schema for handle {}", handle);
-      ImmutableList.Builder<ColumnDesc> listBuilder = ImmutableList.builder();
-      OperationHandle operationHandle = getOperationHandle(handle);
+      Future<OperationHandle> future = getFutureOperationHandle(handle);
+      if (future.isCancelled()) {
+        return Lists.newArrayList();
+      }
+      OperationHandle operationHandle;
+      try {
+        operationHandle = future.get(FUTURE_GET_TIMEOUT, TimeUnit.MILLISECONDS);
+      } catch (TimeoutException e) {
+        // Execution is still running
+        return Lists.newArrayList();
+      } catch (Exception e) {
+        throw new ExploreException(e);
+      }
+
       if (operationHandle == null) {
         // We can't access the schema of the results before execution is complete
         return Lists.newArrayList();
       }
 
+      ImmutableList.Builder<ColumnDesc> listBuilder = ImmutableList.builder();
       if (operationHandle.hasResultSet()) {
         TableSchema tableSchema = cliService.getResultSetMetadata(operationHandle);
         for (ColumnDescriptor colDesc : tableSchema.getColumnDescriptors()) {
@@ -279,29 +313,31 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public void cancel(Handle handle) throws ExploreException, HandleNotFoundException {
-    try {
-      InactiveOperationInfo inactiveOperationInfo = inactiveHandleCache.getIfPresent(handle);
-      if (inactiveOperationInfo != null) {
-        // Operation has been made inactive, so no point in cancelling it.
-        LOG.trace("Not running cancel for inactive handle {}", handle);
-        return;
-      }
-
-      LOG.trace("Cancelling operation {}", handle);
-      OperationHandle operationHandle = getOperationHandle(handle);
-      // TODO think about what it means to cancel without a operationHandle
-      if (operationHandle == null) {
-        // Cancel the executor by interrupting the thread / preventing it to start
-        getFutureOperationHandle(handle).cancel(true);
-      } else {
-        cliService.cancelOperation(operationHandle);
-      }
-
-      // Since operation is cancelled, we can aggressively time it out.
-      timeoutAggresively(handle, ImmutableList.<ColumnDesc>of(), new Status(Status.OpStatus.CANCELED, false));
-    } catch (HiveSQLException e) {
-      throw getSqlException(e);
+    InactiveOperationInfo inactiveOperationInfo = inactiveHandleCache.getIfPresent(handle);
+    if (inactiveOperationInfo != null) {
+      // Operation has been made inactive, so no point in cancelling it.
+      LOG.trace("Not running cancel for inactive handle {}", handle);
+      return;
     }
+
+    LOG.trace("Cancelling operation {}", handle);
+    Future<OperationHandle> future = getFutureOperationHandle(handle);
+    try {
+      future.get(10, TimeUnit.MILLISECONDS);
+      // Coming here means the operation has been executed - too late to cancel
+      // This is why there is no need to call cliService.cancelOperation
+    } catch (TimeoutException e) {
+      // TODO think about what it means to cancel without a operationHandle
+      // Cancel the executor by interrupting the thread / preventing it to start
+
+      // TODO this does not stop the MR job launched in yarn
+      future.cancel(true);
+    } catch (Exception e) {
+      throw new ExploreException(e);
+    }
+
+    // Since operation is cancelled, we can aggressively time it out.
+    timeoutAggresively(handle, ImmutableList.<ColumnDesc>of(), new Status(Status.OpStatus.CANCELED, false));
   }
 
   @Override
@@ -313,13 +349,24 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     try {
       LOG.trace("Closing operation {}", handle);
 
-      // Call this instead of getOperationHandle(handle) because we don't want to poke the cache -
-      // the cache might have already been cleaned up by now.
-      OperationHandle operationHandle = opInfo.getOperationHandle();
-      if (operationHandle == null) {
-        // TODO think about what it means to close without a operationHandle
+      // Call this instead of getFutureOperationHandle(handle) because we don't want
+      // to poke the cache - the cache might have already been cleaned up by now.
+      Future<OperationHandle> future = opInfo.getFutureOperationHandle();
+      if (future.isCancelled()) {
         return;
       }
+      OperationHandle operationHandle;
+      try {
+        operationHandle = future.get(FUTURE_GET_TIMEOUT, TimeUnit.MILLISECONDS);
+      } catch (TimeoutException e) {
+        // Execution is still running
+        return;
+      } catch (Exception e) {
+        throw new ExploreException(e);
+      }
+
+      // TODO closing without a operationHandle (cancelled or no results yet)
+      // means we don't call cliService. Is that okay?
 
       cliService.closeOperation(operationHandle);
     } catch (HiveSQLException e) {
@@ -367,26 +414,6 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   protected Future<OperationHandle> getFutureOperationHandle(Handle handle)
     throws ExploreException, HandleNotFoundException {
     return getOperationInfo(handle).getFutureOperationHandle();
-  }
-
-  /**
-   * Returns {@link OperationHandle} associated with Explore {@link Handle}. It pokes the right
-   * {@link Future<OperationHandle>} and returns null if the future object is not ready yet.
-   * @param handle explore handle.
-   * @return OperationHandle.
-   * @throws ExploreException
-   * @throws HandleNotFoundException
-   */
-  protected OperationHandle getOperationHandle(Handle handle)
-    throws ExploreException, HandleNotFoundException {
-    try {
-      Future<OperationHandle> futureHandle = getFutureOperationHandle(handle);
-      return futureHandle.isDone() ? futureHandle.get() : null;
-    } catch (HandleNotFoundException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new ExploreException(e);
-    }
   }
 
   /**
@@ -498,14 +525,6 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
     public SessionHandle getSessionHandle() {
       return sessionHandle;
-    }
-
-    public OperationHandle getOperationHandle() throws ExploreException {
-      try {
-        return futureOperationHandle.isDone() ? futureOperationHandle.get() : null;
-      } catch (Exception e) {
-        throw new ExploreException(e);
-      }
     }
 
     public Future<OperationHandle> getFutureOperationHandle() {

@@ -6,6 +6,7 @@ import com.continuuity.data2.util.hbase.HBaseTableUtilFactory;
 import com.continuuity.explore.guice.ExploreRuntimeModule;
 import com.continuuity.explore.service.hive.Hive12ExploreService;
 import com.continuuity.explore.service.hive.Hive13ExploreService;
+import com.continuuity.explore.service.hive.HiveCDH5ExploreService;
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -38,8 +40,9 @@ public class ExploreServiceUtils {
   public enum HiveSupport {
     // todo populate this with whatever hive version CDH4.3 runs with - REACTOR-229
     HIVE_CDH4(Pattern.compile("^.*cdh4\\..*$"), Hive12ExploreService.class),
-    HIVE_12(Pattern.compile("^.*2\\.2\\.0.*$"), Hive12ExploreService.class),
-    HIVE_13(Pattern.compile("^.*$"), Hive13ExploreService.class);
+    HIVE_CDH5(Pattern.compile("^.*cdh5\\..*$"), HiveCDH5ExploreService.class),
+    HIVE_12(null, Hive12ExploreService.class),
+    HIVE_13(null, Hive13ExploreService.class);
 
     private final Pattern hadoopVersionPattern;
     private final Class hiveExploreServiceClass;
@@ -139,35 +142,32 @@ public class ExploreServiceUtils {
         usingCL = ExploreServiceUtils.class.getClassLoader();
       }
 
-      // In Hive 12, CLIService.getOperationStatus returns OperationState.
-      // In Hive 13, CLIService.getOperationStatus returns OperationStatus.
-//      Class cliServiceClass = usingCL.loadClass("org.apache.hive.service.cli.CLIService");
-//      Class operationHandleCl = usingCL.loadClass("org.apache.hive.service.cli.OperationHandle");
-//      Method getStatusMethod = cliServiceClass.getDeclaredMethod("getOperationStatus", operationHandleCl);
-
-      // Rowset is an interface in Hive 13, but a class in Hive 12
-//      Class rowSetClass = usingCL.loadClass("org.apache.hive.service.cli.RowSet");
-
+      // First try to figure which hive support is relevant based on Hadoop distribution name
       String hadoopVersion = VersionInfo.getVersion();
       LOG.info("Hadoop version is: {}", hadoopVersion);
       for (HiveSupport hiveSupport : HiveSupport.values()) {
-        if (hiveSupport.getHadoopVersionPattern().matcher(hadoopVersion).matches()) {
+        if (hiveSupport.getHadoopVersionPattern() != null &&
+            hiveSupport.getHadoopVersionPattern().matcher(hadoopVersion).matches()) {
           return hiveSupport;
         }
       }
 
-      // TODO What about distributions that don't have hive installed by default, but still have hive installed?
-      // Like our loom distributions?
+      // In Hive 12, CLIService.getOperationStatus returns OperationState.
+      // In Hive 13, CLIService.getOperationStatus returns OperationStatus.
+      Class cliServiceClass = usingCL.loadClass("org.apache.hive.service.cli.CLIService");
+      Class operationHandleCl = usingCL.loadClass("org.apache.hive.service.cli.OperationHandle");
+      Method getStatusMethod = cliServiceClass.getDeclaredMethod("getOperationStatus", operationHandleCl);
 
-      // TODO still make those checks
+      // Rowset is an interface in Hive 13, but a class in Hive 12
+      Class rowSetClass = usingCL.loadClass("org.apache.hive.service.cli.RowSet");
 
-//      if (rowSetClass.isInterface()
-//        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationStatus")) {
-//        return HiveSupport.HIVE_13;
-//      } else if (!rowSetClass.isInterface()
-//        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationState")) {
-//        return HiveSupport.HIVE_12;
-//      }
+      if (rowSetClass.isInterface()
+        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationStatus")) {
+        return HiveSupport.HIVE_13;
+      } else if (!rowSetClass.isInterface()
+        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationState")) {
+        return HiveSupport.HIVE_12;
+      }
       throw new RuntimeException("Hive distribution not supported. Set the configuration reactor.explore.enabled " +
                                  "to false to start up Reactor without Explore.");
     } catch (RuntimeException e) {
