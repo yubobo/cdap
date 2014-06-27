@@ -289,10 +289,11 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
       OperationHandle operationHandle = getOperationHandle(handle);
       // TODO think about what it means to cancel without a operationHandle
       if (operationHandle == null) {
-        return;
+        // Cancel the executor by interrupting the thread / preventing it to start
+        getFutureOperationHandle(handle).cancel(true);
+      } else {
+        cliService.cancelOperation(operationHandle);
       }
-
-      cliService.cancelOperation(operationHandle);
 
       // Since operation is cancelled, we can aggressively time it out.
       timeoutAggresively(handle, ImmutableList.<ColumnDesc>of(), new Status(Status.OpStatus.CANCELED, false));
@@ -370,6 +371,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     } catch (TimeoutException e) {
       // Future object is still in progress
       return null;
+    } catch (HandleNotFoundException e) {
+      throw e;
     } catch (Exception e) {
       throw new ExploreException(e);
     }
@@ -484,6 +487,17 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
     public SessionHandle getSessionHandle() {
       return sessionHandle;
+    }
+
+    public OperationHandle getOperationHandle() throws ExploreException {
+      try {
+        return futureOperationHandle.get(20, TimeUnit.MILLISECONDS);
+      } catch (TimeoutException e) {
+        // Future object is still in progress
+        return null;
+      } catch (Exception e) {
+        throw new ExploreException(e);
+      }
     }
 
     public Future<OperationHandle> getFutureOperationHandle() {

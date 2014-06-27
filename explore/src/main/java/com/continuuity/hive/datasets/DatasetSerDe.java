@@ -3,7 +3,7 @@ package com.continuuity.hive.datasets;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.hive.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.serde2.AbstractSerDe;
+import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
@@ -19,7 +19,8 @@ import java.util.Properties;
 /**
  * SerDe to serialize Dataset Objects.
  */
-public class DatasetSerDe extends AbstractSerDe {
+@SuppressWarnings("deprecation")
+public class DatasetSerDe implements SerDe {
   private static final Logger LOG = LoggerFactory.getLogger(DatasetSerDe.class);
 
   private Type recordType;

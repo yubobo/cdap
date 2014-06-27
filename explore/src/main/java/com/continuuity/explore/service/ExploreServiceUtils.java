@@ -37,8 +37,9 @@ public class ExploreServiceUtils {
    */
   public enum HiveSupport {
     // todo populate this with whatever hive version CDH4.3 runs with - REACTOR-229
-    HIVE_CDH4(Pattern.compile("cdh4\\."), Hive12ExploreService.class),
-    HIVE_13(Pattern.compile("."), Hive13ExploreService.class);
+    HIVE_CDH4(Pattern.compile("^.*cdh4\\..*$"), Hive12ExploreService.class),
+    HIVE_12(Pattern.compile("^.*2\\.2\\.0.*$"), Hive12ExploreService.class),
+    HIVE_13(Pattern.compile("^.*$"), Hive13ExploreService.class);
 
     private final Pattern hadoopVersionPattern;
     private final Class hiveExploreServiceClass;
@@ -148,13 +149,14 @@ public class ExploreServiceUtils {
 //      Class rowSetClass = usingCL.loadClass("org.apache.hive.service.cli.RowSet");
 
       String hadoopVersion = VersionInfo.getVersion();
+      LOG.info("Hadoop version is: {}", hadoopVersion);
       for (HiveSupport hiveSupport : HiveSupport.values()) {
         if (hiveSupport.getHadoopVersionPattern().matcher(hadoopVersion).matches()) {
           return hiveSupport;
         }
       }
 
-      // What about distributions that don't have hive installed by default, but still have hive installed?
+      // TODO What about distributions that don't have hive installed by default, but still have hive installed?
       // Like our loom distributions?
 
 //      if (rowSetClass.isInterface()

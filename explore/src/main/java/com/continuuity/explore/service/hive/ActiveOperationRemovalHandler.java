@@ -4,10 +4,12 @@ import com.continuuity.explore.service.Handle;
 import com.continuuity.explore.service.Status;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import org.apache.hive.service.cli.OperationHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import static com.continuuity.explore.service.hive.BaseHiveExploreService.OperationInfo;
 
@@ -43,7 +45,8 @@ public class ActiveOperationRemovalHandler implements RemovalListener<Handle, Op
     @Override
     public void run() {
       try {
-        Status status = exploreService.fetchStatus(opInfo.getOperationHandle());
+        // TODO this used to be fetchStatus(operationHandle), is that a problem?
+        Status status = exploreService.getStatus(handle);
 
         // If operation is still not complete, cancel it.
         if (status.getStatus() != Status.OpStatus.FINISHED && status.getStatus() != Status.OpStatus.CLOSED &&

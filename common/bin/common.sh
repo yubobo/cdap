@@ -165,7 +165,7 @@ set_hive_classpath() {
     # hive-common for joins operations to work
     HIVE_EXEC=`ls $HIVE_HOME/lib/hive-exec-*`
     OTHER_HIVE_JARS=`ls $HIVE_HOME/lib/*.jar | tr '\n' ':'`
-    HIVE_CLASSPATH=$HIVE_EXEC:$OTHER_HIVE_JARS:$HBASE_CP
+    HIVE_CLASSPATH=$HIVE_EXEC:$OTHER_HIVE_JARS
 
     export HIVE_CLASSPATH
   fi
