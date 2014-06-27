@@ -18,12 +18,16 @@ import java.util.Collection;
  */
 public abstract class AbstractDataset implements Dataset, MeteredDataset, TransactionAware {
   private final String instanceName;
-  private final Collection<Dataset> underlying;
+  private final Collection<? extends Dataset> underlying;
   private final TransactionAware txAwares;
 
-  public AbstractDataset(String instanceName, Dataset embedded, Dataset... otherEmbedded) {
+  public AbstractDataset(String instanceName, Dataset... embedded) {
+    this(instanceName, Lists.newArrayList(embedded));
+  }
+
+  public AbstractDataset(String instanceName, Collection<? extends Dataset> embedded) {
     this.instanceName = instanceName;
-    this.underlying = Lists.asList(embedded, otherEmbedded);
+    this.underlying = embedded;
     ImmutableList.Builder<TransactionAware> builder = ImmutableList.builder();
     for (Dataset dataset : underlying) {
       if (dataset instanceof TransactionAware) {

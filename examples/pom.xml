@@ -34,6 +34,7 @@
     <module>CountOddAndEven</module>
     <module>CountRandom</module>
     <module>CountTokens</module>
+    <module>DatasetExample</module>
     <module>HelloWorld</module>
     <module>PageViewAnalytics</module>
     <module>Purchase</module>
