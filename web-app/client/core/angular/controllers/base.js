@@ -2,8 +2,8 @@
 
 define(function () {
 
-  var Ctrl = ['$scope', 'dataFactory', 'helpers', 'metricsService', 'statusService',
-    function ($scope, dataFactory, helpers, metricsService, statusService) {
+  var Ctrl = ['$scope', 'dataFactory', 'metricsService', 'statusService',
+    function ($scope, dataFactory, metricsService, statusService) {
 
     metricsService.initialize();
     statusService.initialize();

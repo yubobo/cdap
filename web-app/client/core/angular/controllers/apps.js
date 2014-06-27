@@ -1,11 +1,11 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$http', '$interval', 'dataFactory', 'helpers',
-    function ($scope, $http, $interval, dataFactory, helpers) {
+  var Ctrl = ['$scope', '$http', '$interval', 'dataFactory', 'metricsService', 'POLLING_INTERVAL',
+    function ($scope, $http, $interval, dataFactory, metricsService, POLLING_INTERVAL) {
 
     /** 
      * A list of app objects containing.
@@ -13,11 +13,16 @@ define(function () {
      */
     $scope.apps = [];
 
+    var metrics = [];
+
     var intervals = [];
 
     dataFactory.getApps(function (apps) {
       $scope.apps = apps;
       for (var i = 0; i < $scope.apps.length; i++) {
+
+        // Set up tracking for each app.        
+        metricsService.trackMetric($scope.apps[i].getBusynessEndpoint());
         
         // Use closures to localize scope of i so that it doesn't change when the async function
         // returns.
@@ -47,12 +52,25 @@ define(function () {
           });
         })(i);
       }
+
+      var ival = $interval(function () {
+        for (var i = 0; i < $scope.apps.length; i++) {
+          // Set up tracking for each app.        
+          $scope.apps[i].data = metricsService.getMetricByEndpoint(
+            $scope.apps[i].getBusynessEndpoint());
+        }
+      }, POLLING_INTERVAL);
+      intervals.push(ival);
+
     });
 
     /**
      * Gets triggered on every route change, cancel all activated intervals.
      */
     $scope.$on("$destroy", function() {
+      for (var i = 0, len = metrics.length; i < len; i++) {
+        metricsService.untrackMetric(metrics[i].endpoint);
+      }
       if (typeof intervals !== 'undefined') {
         helpers.cancelAllIntervals($interval, intervals);
       }

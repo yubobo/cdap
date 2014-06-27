@@ -806,7 +806,7 @@ define([], function () {
 						}
 						y = d3.scale.linear()
 							.domain([max + (max * yBuffer), min - (min * yBuffer)])
-							.range([margin, h - margin]);
+							.range([margin, h - 5]);
 					}
 
 

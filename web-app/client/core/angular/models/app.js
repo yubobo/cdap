@@ -1,6 +1,6 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   var Model = Class.create({
     initialize: function (data) {
@@ -12,12 +12,17 @@ define(function () {
       this.datasets = [];
       this.procedures = [];
       this.type = 'App';
+      this.finalMetric = 0;
 
       if (data && Object.prototype.toString.call(data) === '[object Object]') {
         for (var index in data) {
           this[index] = data[index];
         }
       }
+    },
+
+    getBusynessEndpoint: function () {
+      return helpers.getBusynessEndpoint(this);
     }
 
   });

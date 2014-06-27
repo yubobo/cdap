@@ -8,7 +8,8 @@ requirejs.config({
     'angular-route': ['/third_party/angular-1.2.16/angular-route'],
     'angular-sanitize': ['/third_party/angular-1.2.16/angular-sanitize'],
     'jQuery': ['/third_party/jquery-1.11.1.min'],
-    'bootstrap': ['/third_party/bootstrap/bootstrap.min']
+    'bootstrap': ['/third_party/bootstrap/bootstrap.min'],
+    'helpers': ['/core/angular/helpers']
   },
   shim: {
     'angular': {
@@ -67,10 +68,10 @@ require([
   './metrics-service',
   './status-service',
   './datafactory',
-  './helpers',
 
   // Directives.
   './directives/sparkline',
+  './directives/delay-counter',
 
   // Filters.
   './filters',
@@ -118,10 +119,10 @@ require([
     MetricsService,
     StatusService,
     DataFactory,
-    Helpers,
 
     // Directives
-    Sparkline) {
+    Sparkline,
+    DelayCounter) {
 
     // Instantiate Reactor webapp module.
     var reactorWebapp = angular.module('ReactorWebapp', [
@@ -229,7 +230,6 @@ require([
     reactorWebapp.factory('metricsService', MetricsService);
     reactorWebapp.factory('statusService', StatusService);
     reactorWebapp.factory('dataFactory', DataFactory);
-    reactorWebapp.factory('helpers', Helpers);
 
 
     // Declares any constants in the application here. These values SHOULD NOT change.
@@ -263,6 +263,7 @@ require([
 
     // Directives.
     reactorWebapp.directive('sparkline', Sparkline);
+    reactorWebapp.directive('delayCounter', DelayCounter);
 
 
     // Manually bootstrap the application since we are bootstrapping with requirejs.

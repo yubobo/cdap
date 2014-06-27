@@ -1,11 +1,11 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', 'metricsService', '$interval', 'helpers', 'POLLING_INTERVAL',
-    function($scope, metricsService, $interval, helpers, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', 'metricsService', '$interval', 'POLLING_INTERVAL',
+    function($scope, metricsService, $interval, POLLING_INTERVAL) {
 
     /**
      * A list of intervals.

@@ -2,10 +2,6 @@
 
 define(function () {
 
-  /* Items */
-
-  var Factory = [function() {
-
     var warningContainer = $('#warning');
     var warningSpan = $('#warning .warning-text');
 
@@ -62,11 +58,23 @@ define(function () {
           default:
             break;
         }
+      },
+
+
+      getBusynessEndpoint: function (entity, optionalAppName) {
+
+        switch(entity.type.toLowerCase()) {
+
+          case 'app':
+            return ('/reactor/apps/' + entity.name 
+              + '/process.busyness?start=now-60s&end=now-0s&count=60');
+            break;
+
+          default:
+            break;
+        }
       }
 
     }
-  }];
-
-  return Factory;
 
 });

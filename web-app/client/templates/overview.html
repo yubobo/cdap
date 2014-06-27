@@ -9,7 +9,7 @@
       <div class="quarter-title">Collect</div>
       <div class="quarter-value"><strong><span class="value-number">{{getMetricDisplayValue(collect.data)}}</span></strong><span class="value-measure"> EPS</span></div>
       <div class="dash-chart">
-        <sparkline data="collect.data"></sparkline>
+        <sparkline data="collect.data" dash="true"></sparkline>
       </div>
     </div>
   </div>
@@ -18,7 +18,7 @@
       <div class="quarter-title">Process</div>
       <div class="quarter-value"><strong><span class="value-number">{{getMetricDisplayValue(process.data)}}</span></strong><span class="value-measure">%</span></div>
       <div class="dash-chart">
-        <sparkline data="process.data"></sparkline>
+        <sparkline data="process.data" dash="true"></sparkline>
       </div>
     </div>
   </div>
@@ -27,7 +27,7 @@
       <div class="quarter-title">Store</div>
       <div class="quarter-value"><strong><span class="value-number">{{getMetricDisplayValue(store.data)}}</span></strong> <span class="value-measure">{{value.store.unit}}/s</span></div>
       <div class="dash-chart">
-        <sparkline data="store.data"></sparkline>
+        <sparkline data="store.data" dash="true"></sparkline>
       </div>
     </div>
   </div>
@@ -36,7 +36,7 @@
       <div class="quarter-title">Query</div>
       <div class="quarter-value"><strong><span class="value-number">{{getMetricDisplayValue(query.data)}}</span></strong><span class="value-measure"> QPS</span></div>
       <div class="dash-chart">
-        <sparkline data="query.data"></sparkline>
+        <sparkline data="query.data" dash="true"></sparkline>
       </div>
     </div>
   </div>
