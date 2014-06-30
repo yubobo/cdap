@@ -5,10 +5,178 @@
 Advanced Continuuity Reactor Features
 =====================================
 
-**The Flow, Dataset, and Transaction Systems with Best Practices for Developing Applications**
+**Custom Services, Flow, Dataset, and Transaction Systems, 
+with Best Practices for the Continuuity Reactor**
 
 .. reST Editor: .. section-numbering::
 .. reST Editor: .. contents::
+
+Custom Services
+===============
+In addition to Flows, MapReduce jobs, and Procedures, additional Services can be run in a 
+Reactor Application. Developers can implement Custom Services that run in program containers,
+to interface with a legacy system and perform additional processing beyond the Continuuity processing
+paradigms. Examples could include running an IP-to-Geo lookup and serving user-profiles.
+
+Services are implemented as `Twill applications <http://twill.incubator.apache.org>`__ and are run in
+YARN. A service's lifecycle can be controlled by using REST endpoints. 
+
+You can add services to your application by calling the ``addService`` method in the Application's ``configure`` method::
+
+	public class AnalyticsApp extends AbstractApplication {
+	  @Override
+	  public void configure() {
+	    setName("AnalyticsApp");
+	    setDescription("Application for generating mobile analytics");
+	    addStream(new Stream("event"));
+	    addFlow(new EventProcessingFlow());
+	    ....
+	    addService(new IpGeoLookupService());
+	    addService(new UserLookupServiceService());
+	    ...
+	  }
+	}
+
+
+A Custom Service is implemented as a Twill application, with one or more runnables. See the 
+`Apache Twill guide <http://twill.incubator.apache.org>`__ for additional information.
+
+::
+
+	 public class IpGeoLookupService implements TwillApplication {
+	   @Override
+	   public TwillSpecification configure() {
+	     return TwillSpecification.Builder.with()
+	       .setName("IpGeoApplication")
+	       .withRunnable()
+	       .add(new IpGeoRunnable())
+	       .noLocalFiles()
+	       .anyOrder()
+	       .build();
+	  }
+	}
+
+The service logic is implemented by extending the ``AbstractTwillRunnable`` and implementing these
+methods:
+
+- ``intialize()``
+- ``run()``
+- ``stop()``
+- ``destroy()``
+
+::
+
+	public final class IpGeoRunnable extends AbstractTwillRunnable {
+	
+	   @Override
+	   public void initialize(TwillContext context) {
+	     // Service initialization
+	   }
+	
+	   @Override
+	   public void run() {
+	     // Start the custom service
+	   }
+	
+	   @Override
+	   public void stop() {
+	     // Called to stop the running the service
+	   }
+	
+	   @Override
+	   public void destroy() {
+	     // Called before shutting down the service
+	   }
+	}
+
+
+Services Integration with Metrics and Logging
+---------------------------------------------
+Services are integrated with the Reactor Metrics and Logging framework. Programs implementing Custom Services can declare Metrics and Logger (SLF4J) member variables and the appropriate implementation will be injected by the run-time.
+
+::
+
+	public class IpGeoRunnable extends AbstractTwillRunnable {
+	  private Metrics metrics;
+	  private static final Logger LOG = LoggerFactory.getLogger(IpGeoRunnable.class);
+	
+	  @Override
+	  public void run() {
+	    LOG.info("Running ip geo lookup service");
+	           metrics.count("ipgeo.instance", 1);
+	  }
+	}
+
+The metrics and logs that are emitted by the service are aggregated and accessed similar to other program types. See the sections in the `Continuuity Reactor Operations Guide <operations.html>`__ on accessing 
+`logs <operations.html#logging>`__ and `metrics <operations.html#metrics>`__. 
+
+
+Service Discovery
+-----------------
+Services announce the host and port they are running on so that they can be discovered by—and provide
+access to—other programs: Flows, Procedures, MapReduce jobs, and other Custom Services.
+
+To announce a Service, call the ``announce`` method from ``TwillContext`` during the initialize method.
+The announce method takes a name—which the Service can register under—and the port which the Service is running on. The application name, service ID, and hostname required for registering the Service are automatically obtained.
+
+::
+
+	@Override
+	public void initialize (TwillContext context) {
+	  context.announce("GeoLookup", 7000);
+	}
+
+
+The service can then be discovered in Flows, Procedures, MapReduce jobs, and other Services using
+appropriate program contexts.
+
+For example, in Flows::
+
+	public class GeoFlowlet extends AbstractFlowlet {
+	
+	  // Service discovery for ip-geo service
+	  private ServiceDiscovered serviceDiscovered;
+	
+	  @Override
+	  public void intialize(FlowletContext context) {
+	    serviceDiscovered = context.discover("MyApp", "IpGeoLookupService", "GeoLookup"); 
+	  }
+	
+	  @ProcessInput
+	  public void process(String ip) {
+	    Discoverable discoverable = Iterables.getFirst(serviceDiscovered, null);
+	    if (discoverable != null) {
+	      String hostName = discoverable.getSocketAddress().getHostName();
+	      int port = discoverable.getSocketAddress().getPort();
+	      // Access the appropriate service using the host and port info
+	      ...
+	    }
+	  }
+	}
+
+In MapReduce Mapper/Reducer jobs::
+
+	public class GeoMapper extends Mapper<byte[], Location, Text, Text> 
+	    implements ProgramLifecycle<MapReduceContext> {
+	
+	  private ServiceDiscovered serviceDiscovered;
+	  
+	  @Override
+	  public void initialize(MapReduceContext mapReduceContext) throws Exception {
+	    serviceDiscovered = mapReduceContext.discover("MyApp", "IpGeoLookupService", "GeoLookup");
+	  }
+	  
+	  @Override
+	  public void map(byte[] key, Location location, Context context) throws IOException, InterruptedException {
+	    Discoverable discoverable = Iterables.getFirst(serviceDiscovered, null);
+	    if (discoverable != null) {
+	      String hostName = discoverable.getSocketAddress().getHostName();
+	      int port = discoverable.getSocketAddress().getPort();
+	      // Access the appropriate service using the host and port info
+	    }
+	  }
+	}
+
 
 
 Flow System
@@ -473,7 +641,7 @@ After the new Dataset implementation is deployed, applications use it to create 
 
   Class MyApp extends AbstractApplication {
     public void configure() {
-      createDataSet("myCounters", "UniqueCountTable")
+      createDataset("myCounters", "UniqueCountTable")
       ...
     }
   }
@@ -486,6 +654,10 @@ Application components can access it via ``@UseDataSet``::
     ...
   }
 
+
+You can also pass ``DatasetProperties`` as a third parameter to the ``createDataset`` method.
+These properties will be used by ``DatasetDefinition`` when configuring a Dataset with the 
+``configure`` method.
 
 Custom Datasets: Simplified APIs
 --------------------------------
@@ -505,8 +677,8 @@ Here's a simpler look at our ``UniqueCountTable``::
     private final Table uniqueCountTable;
 
     public UniqueCountTable(DatasetSpecification spec,
-                            @EmbeddedDataSet("entryCountTable") Table entryCountTable,
-                            @EmbeddedDataSet("uniqueCountTable") Table uniqueCountTable) {
+                            @EmbeddedDataset("entryCountTable") Table entryCountTable,
+                            @EmbeddedDataset("uniqueCountTable") Table uniqueCountTable) {
       super(spec.getName(), entryCountTable, uniqueCountTable);
       this.entryCountTable = entryCountTable;
       this.uniqueCountTable = uniqueCountTable;
@@ -540,14 +712,14 @@ applications to use, add into the Application implementation::
 
   Class MyApp extends AbstractApplication {
     public void configure() {
-      createDataSet("myCounters", UniqueCountTable.class)
+      createDataset("myCounters", UniqueCountTable.class)
       ...
     }
   }
 
 As with the previous example, deploy the custom Dataset packaged into a jar. No separate action of
 deploying the Dataset type is needed in this case: Continuuity Reactor will do it
-"under the covers" using the class of ``UniqueCountTable`` passed in the ``createDataSet`` method.
+"under the covers" using the class of ``UniqueCountTable`` passed in the ``createDataset`` method.
 
 Application components can access it via ``@UseDataSet``::
 
@@ -579,7 +751,7 @@ Because ``getSplits()`` has no arguments, it will typically create splits that c
 
 For example, the system Dataset ``KeyValueTable`` implements ``BatchReadable<byte[], byte[]>`` with an extra method that allows specification of the number of splits and a range of keys::
 
-	public class KeyValueTable extends DataSet
+	public class KeyValueTable extends AbstractDataset
 	                           implements BatchReadable<byte[], byte[]> {
 	  ...
 	  public List<Split> getSplits(int numSplits, byte[] start, byte[] stop);
@@ -707,42 +879,57 @@ Best Practices for Developing Applications
 
 Initializing Instance Fields
 ----------------------------
-There are three ways to initialize instance fields used in Datasets, Flowlets and Procedures:
+There are three ways to initialize instance fields used in Flowlets and Procedures:
 
 #. Using the default constructor;
-#. Using ``initialize()`` method of the Datasets, Flowlets and Procedures; and
+#. Using the ``initialize()`` method of the Flowlets and Procedures; and
 #. Using ``@Property`` annotations.
 
-To initialize using Property annotations, simply annotate the field definition with ``@Property``. 
+To initialize using an Property annotation, simply annotate the field definition with ``@Property``. 
 
-An example demonstrating this is the ``Ticker`` example, where it is used in the custom Dataset 
-``MultiIndexedTable`` to set a instance field ``timestampField``.
+The following example demonstrates the convenience of using ``@Property`` in a ``WordFilter`` flowlet
+that filters out specific words::
 
-The instance field ``timestampFieldName`` is annotated with ``@Property``, and
-when the Dataset is instantiated and deployed, a value is inserted into ``timestampFieldName``.
-
-When the Dataset is initialized, the value is then used to set ``timestampField``::
-
-	public class MultiIndexedTable extends DataSet {
-	  . . .
-	  // String representation of the field storing timestamp values
+	public static class WordFilter extends AbstractFlowlet {
+	
+	  private OutputEmitter<String> out;
+	
 	  @Property
-	  private String timestampFieldName;
-	  . . .
-	  public MultiIndexedTable(String name, byte[] timestampField, Set<byte[]> doNotIndex) {
-	    super(name);
-	    this.table = new Table(name);
-	    this.indexTable = new Table(name + INDEX_SUFFIX);
-	    this.timestampFieldName = Bytes.toString(timestampField);
-	    this.ignoreIndexing = doNotIndex;
+	  private final String toFilterOut;
+	
+	  public CountByField(String toFilterOut) {
+	    this.toFilterOut = toFilterOut;
 	  }
 	
-	  @Override
-	  public void initialize(DataSetSpecification spec, DataSetContext context) {
-	    super.initialize(spec, context);
-	    this.timestampField = Bytes.toBytes(timestampFieldName);
+	  @ProcessInput()
+	  public void process(String word) {
+	    if (!toFilterOut.equals(word)) {
+	      out.emit(word);
+	    }
 	  }
-	  . . .
+	}
+
+
+The Flowlet constructor is called with the parameter when the Flow is configured::
+
+  public static class WordCountFlow implements Flow {
+    @Override
+    public FlowSpecification configure() {
+      return FlowSpecification.Builder.with()
+        .setName("WordCountFlow")
+        .setDescription("Flow for counting words")
+        .withFlowlets().add(new Tokenizer())
+                       .add(new WordsFilter("the"))
+                       .add(new WordsCounter())
+        .connect().fromStream("text").to("Tokenizer")
+                  .from("Tokenizer").to("WordsFilter")
+                  .from("WordsFilter").to("WordsCounter")
+        .build();
+    }
+  }
+
+
+At run-time, when the Flowlet is started, a value is injected into the ``toFilterOut`` field.
 
 Field types that are supported using the ``@Property`` annotation are primitives,
 boxed types (e.g. ``Integer``), ``String`` and ``enum``.

@@ -61,7 +61,7 @@ Using the Reactor Maven Archetype
 To help you get started, Continuuity has created a Maven archetype to
 generate a skeleton for your Java project.
 
-`Maven <http://maven.apache.org>`_ is a very popular Java build and
+`Maven <http://maven.apache.org>`_ is the very popular Java build and
 dependencies management tool for creating and managing a Java
 application projects.
 
@@ -132,7 +132,7 @@ the Application metadata and declaring and configuring each of the Application e
       }
 
 Notice that *Streams* are
-defined using provided `Stream` class, and are referenced by names, while
+defined using provided ``Stream`` class, and are referenced by names, while
 other components are defined using user-written
 classes that implement correspondent interfaces and are referenced by passing
 an object, in addition to being assigned a unique name.
@@ -701,7 +701,7 @@ exist. For that you must declare its details in the Application specification.
 For example, to create a DataSet named *myCounters* of type `KeyValueTable`, write::
 
 	public void configure() {
-	    createDataSet("myCounters", "KeyValueTable")
+	    createDataset("myCounters", "KeyValueTable")
 	    ...
 
 To use the Dataset in a Flowlet or a Procedure, instruct the runtime
