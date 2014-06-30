@@ -7,13 +7,11 @@
   <div class="quarter" id="quarter1">
     <div class="panel">
       <div class="quarter-title">Collect</div>
-      <div class="quarter-value">
-        <strong>
-          <delay-counter data="collect.data"></delay-counter>
-        </strong>
-      </div>
+      <div class="quarter-value"><strong>
+        <delay-counter metric-endpoint="{{getEndpoint('collect')}}" countertype="dash"></delay-counter>
+      </strong><span class="value-measure"> EPS</span></div>
       <div class="dash-chart">
-        <sparkline data="collect.data" dash="true"></sparkline>
+        <sparkline dash="true" shade="true" metric-endpoint="{{getEndpoint('collect')}}"></sparkline>
       </div>
     </div>
   </div>
@@ -21,36 +19,32 @@
     <div class="panel">
       <div class="quarter-title">Process</div>
       <div class="quarter-value"><strong>
-        <delay-counter data="process.data" percent="true"></delay-counter>
-      </strong></div>
+        <delay-counter metric-endpoint="{{getEndpoint('process')}}" countertype="dash" percent="true"></delay-counter>
+      </strong><span class="value-measure"></span></div>
       <div class="dash-chart">
-        <sparkline data="process.data" dash="true"></sparkline>
+        <sparkline dash="true" percent="true" shade="true" metric-endpoint="{{getEndpoint('process')}}"></sparkline>
       </div>
     </div>
   </div>
   <div class="quarter" id="quarter3">
     <div class="panel">
       <div class="quarter-title">Store</div>
-      <div class="quarter-value">
-        <strong>
-          <delay-counter data="store.data"></delay-counter>
-        </strong>
-      </div>
+      <div class="quarter-value"><strong>
+        <delay-counter metric-endpoint="{{getEndpoint('store')}}" countertype="dash"></delay-counter>
+      </strong><span class="value-measure"> B/s</span></div>
       <div class="dash-chart">
-        <sparkline data="store.data" dash="true"></sparkline>
+        <sparkline dash="true" shade="true" metric-endpoint="{{getEndpoint('store')}}"></sparkline>
       </div>
     </div>
   </div>
   <div class="quarter" id="quarter4">
     <div class="panel" style="margin-right: 0;">
       <div class="quarter-title">Query</div>
-      <div class="quarter-value">
-        <strong>
-          <delay-counter data="query.data"></delay-counter>
-        </strong>  
-      </div>
+      <div class="quarter-value"><strong>
+        <delay-counter metric-endpoint="{{getEndpoint('query')}}" countertype="dash"></delay-counter>
+      </strong><span class="value-measure"> QPS</span></div>
       <div class="dash-chart">
-        <sparkline data="query.data" dash="true"></sparkline>
+        <sparkline dash="true" shade="true" metric-endpoint="{{getEndpoint('query')}}"></sparkline>
       </div>
     </div>
   </div>

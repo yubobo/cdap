@@ -9,7 +9,8 @@
 
 define(function() {
 
-  var Directive = ['$interval', function($interval) {
+  var Directive = ['$interval', 'metricsService', 'POLLING_INTERVAL',
+    function($interval, metricsService, POLLING_INTERVAL) {
 
     var AnimatedSparkline = Class.create({
 
@@ -22,7 +23,7 @@ define(function() {
           this.width = 150;
           this.height = 30;
           this.data = data || [];
-          this.interpolation = interpolation || "basis";
+          this.interpolation = interpolation || 'basis';
           this.animate = animate || true;
           this.updateDelay = updateDelay || 3000;
           this.transitionDelay = transitionDelay || 3000;
@@ -46,10 +47,11 @@ define(function() {
           var min = d3.min(this.formattedData);
 
           this.graph = d3.select(this.elm)
-            .append("svg:svg")
-            .attr("width", "100%")
-            .attr("height", "100%")
+            .append('svg:svg')
+            .attr('width', '100%')
+            .attr('height', '100%')
             .attr('preserveAspectRatio', 'none');
+
 
           this.x = d3.scale.linear().domain([0, 55]).range([-5, this.width - 5]);
 
@@ -64,8 +66,21 @@ define(function() {
               return self.y(d);
             }).interpolate(this.interpolation);
 
-          this.g = this.graph.append("svg:g");
-          this.g.append("svg:path").attr('class', 'sparkline-data').attr("d", this.line(this.formattedData));
+          this.g = this.graph.append('svg:g');
+
+          if (this.isPercent || this.isShade) {
+            this.area = d3.svg.area()
+              .x(this.line.x())
+              .y1(this.line.y())
+              .y0(this.y(0));
+            this.g.append('svg:path')
+              .attr('class', 'sparkline-area')
+              .attr('d', this.area(this.formattedData));  
+          }
+
+          this.g.append('svg:path')
+            .attr('class', 'sparkline-data')
+            .attr('d', this.line(this.formattedData));
 
           this.tDelay = transitionDelay;
 
@@ -95,9 +110,9 @@ define(function() {
 
       //   // create an SVG element inside the #graph div that fills 100% of the div
       //   this.graph = d3.select(this.elm)
-      //     .append("svg:svg")
-      //     .attr("width", "100%")
-      //     .attr("height", "100%")
+      //     .append('svg:svg')
+      //     .attr('width', '100%')
+      //     .attr('height', '100%')
       //     .attr('preserveAspectRatio', 'none');
 
       //   // X scale will fit values from 0-10 within pixels 0-100
@@ -112,7 +127,7 @@ define(function() {
       //       .range([margin, this.height - margin]);
 
       //   // create a line object that represents the SVN line we're creating
-      //   this.line = d3.svg.line().interpolate("monotone")
+      //   this.line = d3.svg.line().interpolate('monotone')
       //     // assign the X function to plot our line as we wish
       //     .x(function(d,i) {
       //       // verbose logging to show what's actually being done
@@ -122,31 +137,29 @@ define(function() {
       //     })
       //     .y(function(d) {
       //       // verbose logging to show what's actually being done
-      //       //console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
+      //       //console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + ' using our yScale.');
       //       // return the Y coordinate where we want to plot this datapoint
       //       return self.y(d);
       //     });
 
       //   // display the line by appending an svg:path element with the data line we created above
-      //   this.g = this.graph.append("svg:g");
-      //   this.g.append("svg:path").attr('class', 'sparkline-data').attr("d", this.line(this.formattedData));
+      //   this.g = this.graph.append('svg:g');
+      //   this.g.append('svg:path').attr('class', 'sparkline-data').attr('d', this.line(this.formattedData));
 
       // },
 
       redrawWithAnimation: function () {
         var self = this;
         if (this.dataChanged) {
-          this.graph.selectAll("path.sparkline-data")
+          this.graph.selectAll('path.sparkline-data')
             .data([this.formattedData])
-            .attr("transform", "translate(" + this.x(0) + ")")
-            .attr("d", this.line)
+            .attr('transform', 'translate(' + this.x(0) + ')')
+            .attr('d', this.line)
             .transition()
-            .ease("linear")
+            .ease('linear')
             .duration(3000)
-            .attr("transform", "translate(" + this.x(-3) + ")");
+            .attr('transform', 'translate(' + this.x(-3) + ')');
         }
-
-
       },
 
       updateData: function (newData) {
@@ -179,7 +192,7 @@ define(function() {
       },
 
       destroy: function () {
-        $(window).off("resize", this.resizerFn);
+        $(window).off('resize', this.resizerFn);
         clearInterval(this.interval);
       }
 
@@ -189,14 +202,27 @@ define(function() {
     return {
 
       restrict: 'AE',
+      replace: true,
       scope: {
-        data: "=",
-        area: "@",
-        percent: "@",
-        dash: "@"
+        area: '@',
+        percent: '@',
+        dash: '@',
+        metricEndpoint: '@'
       },
       link: function (scope, elm, attrs) {
+        if (!scope.metricEndpoint) {
+          console.error('no metric specified for chart in div', elm);
+          return;
+        }
 
+        metricsService.trackMetric(scope.metricEndpoint);
+
+        var ival = $interval(function () {
+          scope.data = metricsService.getMetricByEndpoint(scope.metricEndpoint);
+        }, POLLING_INTERVAL);
+
+        var isPercent = Boolean(scope.percent);
+        var isShade = Boolean(scope.shade);
         var dash = Boolean(scope.dash);
         var ts = new Date().getTime();
         var data = Array.apply(null, new Array(61)).map(
@@ -206,17 +232,19 @@ define(function() {
           }
         );
         var animatedSparkline = new AnimatedSparkline(
-          elm[0], data, scope.width, scope.height, "monotone", true, 3000, 3000, false, false,
+          elm[0], data, scope.width, scope.height, 'monotone', true, 3000, 3000, isPercent, isShade,
           dash);
 
         scope.$watch('data', function (newVal, oldVal) {
-          if (newVal && angular.isArray(newVal) && newVal.length) {
-            animatedSparkline.updateData(newVal);
+          if (newVal && angular.isArray(newVal.data) && newVal.data.length) {
+            animatedSparkline.updateData(newVal.data);
           }
         });
 
 
         scope.$on('$destroy', function() {
+          $interval.cancel(ival);
+          metricsService.untrackMetric(scope.metricEndpoint);
           animatedSparkline.destroy();
         });
       }

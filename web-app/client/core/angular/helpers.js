@@ -73,6 +73,31 @@ define(function () {
           default:
             break;
         }
+      },
+
+      getOverviewEndpoint: function (entity) {
+        
+        switch(entity.toLowerCase()) {
+
+          case 'collect':
+            return '/reactor/collect.events?count=60&start=now-65s&end=now-5s';
+            break;
+
+          case 'process':
+            return '/reactor/process.busyness?count=60&start=now-65s&end=now-5s';
+            break;
+
+          case 'store':
+            return '/reactor/dataset.store.bytes?count=60&start=now-65s&end=now-5s';
+            break;
+
+          case 'query':
+            return '/reactor/query.requests?count=60&start=now-65s&end=now-5s';
+            break;
+
+          default:
+            break;
+        }
       }
 
     }

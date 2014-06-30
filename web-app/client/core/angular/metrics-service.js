@@ -70,7 +70,7 @@ define(function () {
       getMetricByEndpoint: function (endpoint) {
         var self = this;
         if (endpoint in self.metricsResults) {
-          return self.metricsResults[endpoint];  
+          return self.metricsResults[endpoint];
         }        
       },
 
