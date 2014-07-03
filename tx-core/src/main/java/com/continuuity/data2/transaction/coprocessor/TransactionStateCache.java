@@ -2,9 +2,9 @@ package com.continuuity.data2.transaction.coprocessor;
 
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.data2.transaction.TxConstants;
-import com.continuuity.data2.transaction.persist.HDFSTransactionStateStorage;
+import com.continuuity.data2.transaction.persist.HDFSReadOnlyTransactionStateStorage;
+import com.continuuity.data2.transaction.persist.ReadOnlyTransactionStateStorage;
 import com.continuuity.data2.transaction.persist.TransactionSnapshot;
-import com.continuuity.data2.transaction.persist.TransactionStateStorage;
 import com.continuuity.data2.transaction.snapshot.SnapshotCodecProvider;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.apache.commons.logging.Log;
@@ -27,7 +27,7 @@ public class TransactionStateCache extends AbstractIdleService implements Config
 
   private Configuration hConf;
 
-  private TransactionStateStorage storage;
+  private ReadOnlyTransactionStateStorage storage;
   private volatile TransactionSnapshot latestState;
 
   private Thread refreshService;
@@ -69,7 +69,7 @@ public class TransactionStateCache extends AbstractIdleService implements Config
     try {
       CConfiguration conf = getSnapshotConfiguration();
       if (conf != null) {
-        this.storage = new HDFSTransactionStateStorage(conf, hConf, new SnapshotCodecProvider(conf));
+        this.storage = new HDFSReadOnlyTransactionStateStorage(conf, hConf, new SnapshotCodecProvider(conf));
         this.storage.startAndWait();
         this.snapshotRefreshFrequency = conf.getLong(TxConstants.Manager.CFG_TX_SNAPSHOT_INTERVAL,
                                                      TxConstants.Manager.DEFAULT_TX_SNAPSHOT_INTERVAL) * 1000;
@@ -77,8 +77,8 @@ public class TransactionStateCache extends AbstractIdleService implements Config
       } else {
         LOG.info("Could not load Continuuity configuration");
       }
-    } catch (IOException ioe) {
-      LOG.info("Failed to initialize TransactionStateCache due to: " + ioe.getMessage());
+    } catch (Exception e) {
+      LOG.info("Failed to initialize TransactionStateCache due to: " + e.getMessage());
     }
   }
 

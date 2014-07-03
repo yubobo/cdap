@@ -50,7 +50,7 @@ public class HDFSTransactionStateStorageTest extends AbstractTransactionStateSto
   }
 
   @Override
-  protected AbstractTransactionStateStorage getStorage(CConfiguration conf) {
+  protected TransactionStateStorage getStorage(CConfiguration conf) {
     return new HDFSTransactionStateStorage(conf, hConf, new SnapshotCodecProvider(conf));
   }
 }

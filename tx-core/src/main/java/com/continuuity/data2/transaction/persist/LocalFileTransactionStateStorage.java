@@ -27,7 +27,9 @@ import javax.annotation.Nullable;
 /**
  * Persists transaction snapshots and write-ahead logs to files on the local filesystem.
  */
-public class LocalFileTransactionStateStorage extends AbstractTransactionStateStorage {
+public class LocalFileTransactionStateStorage extends AbstractTransactionStateStorage
+  implements TransactionStateStorage {
+
   private static final String TMP_SNAPSHOT_FILE_PREFIX = ".in-progress.";
   private static final String SNAPSHOT_FILE_PREFIX = "snapshot.";
   private static final String LOG_FILE_PREFIX = "txlog.";
@@ -102,6 +104,11 @@ public class LocalFileTransactionStateStorage extends AbstractTransactionStateSt
     }
 
     LOG.info("Completed snapshot to file {}", finalFile);
+  }
+
+  @Override
+  public void writeSnapshot(OutputStream out, TransactionSnapshot snapshot) throws IOException {
+    codecProvider.encode(out, snapshot);
   }
 
   @Override

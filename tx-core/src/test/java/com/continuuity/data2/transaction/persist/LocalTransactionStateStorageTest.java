@@ -29,7 +29,7 @@ public class LocalTransactionStateStorageTest extends AbstractTransactionStateSt
   }
 
   @Override
-  protected AbstractTransactionStateStorage getStorage(CConfiguration conf) {
+  protected TransactionStateStorage getStorage(CConfiguration conf) {
     return new LocalFileTransactionStateStorage(conf, new SnapshotCodecProvider(conf));
   }
 }

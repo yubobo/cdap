@@ -36,7 +36,7 @@ public abstract class AbstractTransactionStateStorageTest {
 
   protected abstract CConfiguration getConfiguration(String testName) throws IOException;
 
-  protected abstract AbstractTransactionStateStorage getStorage(CConfiguration conf);
+  protected abstract TransactionStateStorage getStorage(CConfiguration conf);
 
   @Test
   public void testSnapshotPersistence() throws Exception {
