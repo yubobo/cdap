@@ -72,6 +72,7 @@ require([
   // Directives.
   './directives/sparkline',
   './directives/delay-counter',
+  './directives/status',
 
   // Filters.
   './filters',
@@ -122,7 +123,8 @@ require([
 
     // Directives
     Sparkline,
-    DelayCounter) {
+    DelayCounter,
+    Status) {
 
     // Instantiate Reactor webapp module.
     var reactorWebapp = angular.module('ReactorWebapp', [
@@ -264,6 +266,7 @@ require([
     // Directives.
     reactorWebapp.directive('sparkline', Sparkline);
     reactorWebapp.directive('delayCounter', DelayCounter);
+    reactorWebapp.directive('status', Status);
 
 
     // Manually bootstrap the application since we are bootstrapping with requirejs.

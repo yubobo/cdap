@@ -17,7 +17,7 @@ define(function () {
       $scope.flows = flows;
 
       $scope.flows.forEach(function (flow) {
-        flow.endpoint = helpers.getEndpoint(flow);
+        flow.endpoint = helpers.getStatusEndpoint(flow);
         statusService.trackStatus(flow.endpoint);
         statusEndpoints.push(flow.endpoint);
       });
@@ -33,7 +33,7 @@ define(function () {
     dataFactory.getMapreduces(function (mapreduces) {
       $scope.mapreduces = mapreduces;
       $scope.mapreduces.forEach(function (mapreduce) {
-        mapreduce.endpoint = helpers.getEndpoint(mapreduce);
+        mapreduce.endpoint = helpers.getStatusEndpoint(mapreduce);
         statusService.trackStatus(mapreduce.endpoint);
         statusEndpoints.push(mapreduce.endpoint);
       });
@@ -49,7 +49,7 @@ define(function () {
     dataFactory.getWorkflows(function (workflows) {
       $scope.workflows = workflows;
       $scope.workflows.forEach(function (workflow) {
-        workflow.endpoint = helpers.getEndpoint(workflow);
+        workflow.endpoint = helpers.getStatusEndpoint(workflow);
         statusService.trackStatus(workflow.endpoint);
         statusEndpoints.push(workflow.endpoint);
       });

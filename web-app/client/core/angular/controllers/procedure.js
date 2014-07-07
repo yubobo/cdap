@@ -41,7 +41,7 @@ define(function () {
       console.log($scope.procedure);
 
 
-        $scope.procedure.endpoint = helpers.getEndpoint($scope.procedure, appId);
+        $scope.procedure.endpoint = helpers.getStatusEndpoint($scope.procedure, appId);
         console.log($scope.procedure.endpoint);
         statusService.trackStatus($scope.procedure.endpoint);
         statusEndpoints.push($scope.procedure.endpoint);

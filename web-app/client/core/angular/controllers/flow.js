@@ -38,7 +38,7 @@ define(function () {
     dataFactory.getFlowByAppNameAndId(appId, flowId, function (flow) {
       $scope.flow = flow;
 
-      $scope.flow.endpoint = helpers.getEndpoint($scope.flow, appId);
+      $scope.flow.endpoint = helpers.getStatusEndpoint($scope.flow, appId);
       console.log($scope.flow.endpoint);
       statusService.trackStatus($scope.flow.endpoint);
       statusEndpoints.push($scope.flow.endpoint);

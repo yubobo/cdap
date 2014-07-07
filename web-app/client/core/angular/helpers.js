@@ -23,7 +23,7 @@ define(function () {
         return metricData[metricData.length - 1].value;
       },
 
-      getEndpoint: function (entity, optionalAppName) {
+      getStatusEndpoint: function (entity, optionalAppName) {
 
         switch(entity.type.toLowerCase()) {
 
@@ -60,13 +60,17 @@ define(function () {
         }
       },
 
-
       getBusynessEndpoint: function (entity, optionalAppName) {
 
         switch(entity.type.toLowerCase()) {
 
           case 'app':
             return ('/reactor/apps/' + entity.name 
+              + '/process.busyness?start=now-60s&end=now-0s&count=60');
+            break;
+
+          case 'flow':
+            return ('/reactor/apps/' + entity.app + '/flows/' + entity.name
               + '/process.busyness?start=now-60s&end=now-0s&count=60');
             break;
 

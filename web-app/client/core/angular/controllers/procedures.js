@@ -15,7 +15,7 @@ define(function () {
       $scope.procedures = procedures;
 
       $scope.procedures.forEach(function (procedure) {
-        procedure.endpoint = helpers.getEndpoint(procedure);
+        procedure.endpoint = helpers.getStatusEndpoint(procedure);
         statusService.trackStatus(procedure.endpoint);
         statusEndpoints.push(procedure.endpoint);
       });

@@ -1375,7 +1375,7 @@ input[type="text"] {
 	font-weight: normal;
 }
 
-.app-list-name > .app-list-status {
+.app-list-name > .app-list-status, .app-list-name .app-list-status  {
 	color: #9698A5;
 	font-size: 12px;
 	height: 14px;
