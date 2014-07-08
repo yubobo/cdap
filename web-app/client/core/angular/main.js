@@ -65,6 +65,7 @@ require([
   './models/workflow',
 
   // Helper library locations.
+  './action-service',
   './metrics-service',
   './status-service',
   './datafactory',
@@ -117,6 +118,7 @@ require([
     WorkflowModel,
 
     // Helper libraries.
+    ActionService,
     MetricsService,
     StatusService,
     DataFactory,
@@ -229,6 +231,7 @@ require([
 
 
     // Backend connections and all ajax calls are made in the factory handlers.
+    reactorWebapp.factory('actionService', ActionService);
     reactorWebapp.factory('metricsService', MetricsService);
     reactorWebapp.factory('statusService', StatusService);
     reactorWebapp.factory('dataFactory', DataFactory);

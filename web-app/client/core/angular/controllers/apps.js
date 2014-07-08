@@ -4,8 +4,8 @@ define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$http', '$interval', 'dataFactory', 'metricsService', 'POLLING_INTERVAL',
-    function ($scope, $http, $interval, dataFactory, metricsService, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', 'dataFactory', 'metricsService', 'POLLING_INTERVAL',
+    function ($scope, $interval, dataFactory, metricsService, POLLING_INTERVAL) {
 
     /** 
      * A list of app objects containing.

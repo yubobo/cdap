@@ -55,7 +55,6 @@ define(function() {
         var updatePending = false;
 
         scope.$watch('data', function (newVal, oldVal) {
-          console.log('my graph data is ', newVal);
           if (newVal && angular.isArray(newVal.data) && newVal.data.length) {
             if (!updatePending) {
               updatePending = true;
