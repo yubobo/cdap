@@ -85,7 +85,7 @@ define(['helpers'], function (helpers) {
         
         $scope.app.flows.forEach(function (flow) {
           actionService.stopFlow(flow, function success (data, status) {
-            var msg = flow.name + ' started';
+            var msg = flow.name + ' stopped';
             helpers.displayNotification(
               msg, NOTIFICATION_CATEGORIES.SUCCESS, DEFAULT_DISPLAY_TIME);
           }, function error (data, status) {
@@ -98,7 +98,7 @@ define(['helpers'], function (helpers) {
         
         $scope.app.procedures.forEach(function (procedure) {
           actionService.stopProcedure(procedure, function success (data, status) {
-            var msg = procedure.name + ' started';
+            var msg = procedure.name + ' stopped';
             helpers.displayNotification(
               msg, NOTIFICATION_CATEGORIES.SUCCESS, DEFAULT_DISPLAY_TIME);
           }, function error (data, status) {
