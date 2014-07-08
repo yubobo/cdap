@@ -240,7 +240,14 @@ require([
     // Declares any constants in the application here. These values SHOULD NOT change.
     // Constants are defined in capital letters.
     reactorWebapp.constant('REACTOR_ENDPOINT', '/rest')
-    .constant('POLLING_INTERVAL', 3000);
+    .constant('POLLING_INTERVAL', 3000)
+    .constant('NOTIFICATION_CATEGORIES', {
+      'SUCCESS': 'SUCCESS',
+      'DANGER': 'DANGER',
+      'WARNING': 'WARNING',
+      'INFO': 'INFO'
+    })
+    .constant('DEFAULT_DISPLAY_TIME', 1000);
 
 
     // Assing controllers a name so that they can be used in templates eg:
