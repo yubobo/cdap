@@ -1,33 +1,41 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', 'dataFactory', 'statusService', 'helpers', 'POLLING_INTERVAL',
-    function($scope, $interval, dataFactory, statusService, helpers, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', 'dataFactory', 'POLLING_INTERVAL',
+    function($scope, $interval, dataFactory, POLLING_INTERVAL) {
 
-    var statusEndpoints = [];
-    var intervals = [];
+    //var statusEndpoints = [];
     $scope.procedures = [];
 
-    dataFactory.getProcedures (function (procedures) {
-      $scope.procedures = procedures;
+    var intervals = [];
 
-      $scope.procedures.forEach(function (procedure) {
+    dataFactory.getProcedures(function (procedures) {
+      $scope.procedures = procedures;
+      for (var i = 0; i < $scope.procedures.length; i++) {
+
+        // Use closures to localize scope of i so that it doesn't change when the async function
+        // returns.
+        (function (i) {
+
+          /*$scope.procedures.forEach(function (procedure) {
         procedure.endpoint = helpers.getStatusEndpoint(procedure);
         statusService.trackStatus(procedure.endpoint);
         statusEndpoints.push(procedure.endpoint);
-      });
+          });
 
-      intervals.push($interval(function () {
+          intervals.push($interval(function () {
         $scope.procedures.forEach(function (procedure) {
           var status = statusService.getStatusByEndpoint(procedure.endpoint);
           procedure.status = status;
         });
-      }, POLLING_INTERVAL));
-
+          }, POLLING_INTERVAL));*/
+        })(i);
+      }
     });
+
 
     $scope.$on("$destroy", function() {
 

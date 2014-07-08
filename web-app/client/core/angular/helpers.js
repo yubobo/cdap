@@ -23,7 +23,7 @@ define(function () {
         return metricData[metricData.length - 1].value;
       },
 
-      getStatusEndpoint: function (entity, optionalAppName) {
+      getEndpoint: function (entity, optionalAppName) {
 
         switch(entity.type.toLowerCase()) {
 
@@ -60,17 +60,13 @@ define(function () {
         }
       },
 
+
       getBusynessEndpoint: function (entity, optionalAppName) {
 
         switch(entity.type.toLowerCase()) {
 
           case 'app':
-            return ('/reactor/apps/' + entity.name 
-              + '/process.busyness?start=now-60s&end=now-0s&count=60');
-            break;
-
-          case 'flow':
-            return ('/reactor/apps/' + entity.app + '/flows/' + entity.name
+            return ('/reactor/apps/' + entity.name
               + '/process.busyness?start=now-60s&end=now-0s&count=60');
             break;
 
@@ -79,8 +75,34 @@ define(function () {
         }
       },
 
+      getRequestRateEndpoint: function (entity, optionalAppName) {
+
+        switch(entity.type.toLowerCase()) {
+
+          case 'procedure':
+            return ('/reactor/apps/' + optionalAppName + '/procedures/' + entity.name + '/query.requests?start=now-60s&end=now-0s&count=60');
+            break;
+
+          default:
+            break;
+        }
+      },
+
+      getErrorRateEndpoint: function (entity, optionalAppName) {
+
+        switch(entity.type.toLowerCase()) {
+
+          case 'procedure':
+            return ('/reactor/apps/' + optionalAppName + '/procedures/' + entity.name + '/query.failures?start=now-60s&end=now-0s&count=60');
+            break;
+
+          default:
+            break;
+        }
+      },
+
       getOverviewEndpoint: function (entity) {
-        
+
         switch(entity.toLowerCase()) {
 
           case 'collect':

@@ -1,24 +1,30 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'statusService', 'metricsService', 'helpers', 'POLLING_INTERVAL',
-    function($scope, $interval, $routeParams, dataFactory, statusService, metricsService, helpers, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'POLLING_INTERVAL',
+    function($scope, $interval, $routeParams, dataFactory, POLLING_INTERVAL) {
 
-    var statusEndpoints = [];
+    /**
+     * @type {Procedure}
+     */
+    $scope.procedure = {};
+
     var intervals = [];
+    var statusEndpoints = [];
+
     var appId = $routeParams.appId;
     var procedureId = $routeParams.procedureId;
 
-    $scope.failedEps = [];
-    $scope.successfulEps = [];
+    //$scope.failedEps = [];
+    //$scope.successfulEps = [];
 
     /**
      * List of metrics to track.
      */
-    var metrics = [
+    /*var metrics = [
       { name: 'successfulEps',
         endpoint: '/reactor/apps/' + appId + '/procedures/' + procedureId + '/query.requests?start=now-60s&end=now-0s&count=60' }
     ];
@@ -33,7 +39,7 @@ define(function () {
         $scope[metric.name] = metricsService.getMetricByEndpoint(metric.endpoint);
       });
     }, POLLING_INTERVAL);
-    intervals.push(ival);
+    intervals.push(ival);*/
 
 
     dataFactory.getProcedureByAppNameAndId(appId, procedureId, function (procedure) {
@@ -41,7 +47,7 @@ define(function () {
       console.log($scope.procedure);
 
 
-        $scope.procedure.endpoint = helpers.getStatusEndpoint($scope.procedure, appId);
+        /*$scope.procedure.endpoint = helpers.getStatusEndpoint($scope.procedure, appId);
         console.log($scope.procedure.endpoint);
         statusService.trackStatus($scope.procedure.endpoint);
         statusEndpoints.push($scope.procedure.endpoint);
@@ -49,9 +55,15 @@ define(function () {
       intervals.push($interval(function () {
           var status = statusService.getStatusByEndpoint($scope.procedure.endpoint);
           $scope.procedure.status = status;
-      }, POLLING_INTERVAL));
+      }, POLLING_INTERVAL));*/
     });
 
+    $scope.getStatusEndpoint = function (entity) {
+      return helpers.getStatusEndpoint(entity);
+    };
+    /**
+     * Gets triggered on every route change, cancel all activated intervals.
+     */
     $scope.$on("$destroy", function () {
       for (var i = 0, len = metrics.length; i < len; i++) {
         metricsService.untrackMetric(metrics[i].endpoint);

@@ -34,7 +34,7 @@ define(function() {
         metricEndpoint: '@'
       },
       link: function (scope, elm, attrs) {
-        
+
         elm.html(getTemplate(scope.countertype)).show();
         $compile(elm.contents())(scope);
 
@@ -55,6 +55,7 @@ define(function() {
         var updatePending = false;
 
         scope.$watch('data', function (newVal, oldVal) {
+          console.log('my graph data is ', newVal);
           if (newVal && angular.isArray(newVal.data) && newVal.data.length) {
             if (!updatePending) {
               updatePending = true;
@@ -70,9 +71,9 @@ define(function() {
                     }
                   }, i * 1000);
                 })(i);
-                
+
               }
-            }            
+            }
           }
         });
 
