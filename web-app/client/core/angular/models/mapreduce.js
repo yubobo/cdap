@@ -1,6 +1,6 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   var Model = Class.create({
     initialize: function (data) {
@@ -13,6 +13,18 @@ define(function () {
           this[index] = data[index];
         }
       }
+    },
+
+    getMappingStatus: function () {
+      return helpers.getMappingStatus(this);
+    },
+
+    getReducingStatus: function () {
+      return helpers.getReducingStatus(this);
+    },
+
+    getStatusEndpoint: function () {
+      return helpers.getStatusEndpoint(this);
     }
 
   });
