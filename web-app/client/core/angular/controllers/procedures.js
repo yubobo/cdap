@@ -14,28 +14,7 @@ define(['helpers'], function (helpers) {
 
     dataFactory.getProcedures(function (procedures) {
       $scope.procedures = procedures;
-      for (var i = 0; i < $scope.procedures.length; i++) {
-
-        // Use closures to localize scope of i so that it doesn't change when the async function
-        // returns.
-        (function (i) {
-
-          /*$scope.procedures.forEach(function (procedure) {
-        procedure.endpoint = helpers.getStatusEndpoint(procedure);
-        statusService.trackStatus(procedure.endpoint);
-        statusEndpoints.push(procedure.endpoint);
-          });
-
-          intervals.push($interval(function () {
-        $scope.procedures.forEach(function (procedure) {
-          var status = statusService.getStatusByEndpoint(procedure.endpoint);
-          procedure.status = status;
-        });
-          }, POLLING_INTERVAL));*/
-        })(i);
-      }
     });
-
 
     $scope.$on("$destroy", function() {
 

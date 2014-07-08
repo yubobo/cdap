@@ -23,7 +23,7 @@ define(function () {
         return metricData[metricData.length - 1].value;
       },
 
-      getEndpoint: function (entity, optionalAppName) {
+      getStatusEndpoint: function (entity, optionalAppName) {
 
         switch(entity.type.toLowerCase()) {
 
@@ -94,6 +94,32 @@ define(function () {
 
           case 'procedure':
             return ('/reactor/apps/' + optionalAppName + '/procedures/' + entity.name + '/query.failures?start=now-60s&end=now-0s&count=60');
+            break;
+
+          default:
+            break;
+        }
+      },
+
+      getMappingStatus: function (entity, optionalAppName) {
+
+        switch(entity.type.toLowerCase()) {
+
+          case 'mapreduce':
+            return ('/reactor/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/mappers/process.completion?start=now-60s&end=now-0s&count=60');
+            break;
+
+          default:
+            break;
+        }
+      },
+
+      getReducingStatus: function (entity, optionalAppName) {
+
+        switch(entity.type.toLowerCase()) {
+
+          case 'mapreduce':
+            return ('/reactor/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/reducers/process.completion?start=now-60s&end=now-0s&count=60');
             break;
 
           default:
