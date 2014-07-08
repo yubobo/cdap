@@ -1,4 +1,9 @@
 <td class="app-list-name">
+    <a {{bindAttr href="href"}}>{{mapreduce.name}}</a><br />
+    <status status-endpoint="{{mapreduce.getStatusEndpoint()}}"></status>
+</td>
+
+<td class="app-list-name">
     <a href"#/workflows/{{workflow.name}}">{{workflow.name}}</a><br />
-    <span class="app-list-status app-status">{{workflow.status}}</span>
+    <status status-endpoint="{{workflow.getStatusEndpoint()}}"></status>
 </td>
