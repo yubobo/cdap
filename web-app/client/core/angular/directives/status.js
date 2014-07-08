@@ -44,10 +44,6 @@ define(function() {
           scope.status = statusService.getStatusByEndpoint(scope.statusEndpoint);
         }, POLLING_INTERVAL);
 
-        scope.$watch('status', function (newVal, oldVal) {
-          console.log(newVal);
-        });
-
 
         scope.$on('$destroy', function() {
           $interval.cancel(ival);

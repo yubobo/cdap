@@ -4,9 +4,9 @@ define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory',
+  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'actionService',
     'POLLING_INTERVAL',
-    function ($scope, $interval, $routeParams, dataFactory,
+    function ($scope, $interval, $routeParams, dataFactory, actionService,
       POLLING_INTERVAL) {
 
     /**
@@ -49,6 +49,13 @@ define(['helpers'], function (helpers) {
     $scope.getStatusEndpoint = function (entity) {
       return helpers.getStatusEndpoint(entity);
     };
+
+    $scope.startRunnables = function () {
+      $scope.app.flows.forEach(function (flow) {
+        
+      });
+    };
+
 
 
     /**
