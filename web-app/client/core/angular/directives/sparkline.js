@@ -206,6 +206,8 @@ define(function() {
         var isShade = Boolean(scope.shade);
         var dash = Boolean(scope.dash);
         var ts = new Date().getTime();
+
+        // Set default value to 0.
         var data = Array.apply(null, new Array(61)).map(
           Object.prototype.valueOf, {
             time: ++ts,
