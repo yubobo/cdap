@@ -271,6 +271,7 @@ define(function () {
       getMapreduceByAppNameAndId: function (appId, mapreduceId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/mapreduce/' + mapreduceId).success(function (data) {
           var mapreduce = new Mapreduce(data);
+          mapreduce.app = appId;
           callback(mapreduce);
         });
       },

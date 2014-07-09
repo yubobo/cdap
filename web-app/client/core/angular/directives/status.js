@@ -30,20 +30,24 @@ define(function() {
         statusEndpoint: '@'
       },
       link: function (scope, elm, attrs) {
-        
-        elm.html(getTemplate(scope.displaytype)).show();
-        $compile(elm.contents())(scope);
 
-        if (!scope.statusEndpoint) {
-          console.error('no endpoint specified for status in element', elm);
-          return;
-        }
+        scope.$watch('statusEndpoint', function (newVal, oldVal) {
+          if (newVal) {
+            elm.html(getTemplate(scope.displaytype)).show();
+            $compile(elm.contents())(scope);
 
-        statusService.trackStatus(scope.statusEndpoint);
-        var ival = $interval(function () {
-          scope.status = statusService.getStatusByEndpoint(scope.statusEndpoint);
-        }, POLLING_INTERVAL);
+            if (!scope.statusEndpoint) {
+              console.error('no endpoint specified for status in element', elm);
+              return;
+            }
 
+            statusService.trackStatus(scope.statusEndpoint);
+            var ival = $interval(function () {
+              scope.status = statusService.getStatusByEndpoint(scope.statusEndpoint);
+            }, POLLING_INTERVAL);
+            
+          }
+        });
 
         scope.$on('$destroy', function() {
           $interval.cancel(ival);

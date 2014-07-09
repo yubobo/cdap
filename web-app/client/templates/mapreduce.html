@@ -12,15 +12,14 @@
 
   <div class="info-box" style="float: right; border: 0;">
     <div id="action-buttons" class="btn-group pull-right">
-      <button class="btn btn-blank" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}><span {{bindAttr class="model.actionIcon"}}></span><span>{{model.defaultAction}}</span></button>
-      <button class="btn btn-blank btn-icon" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
+      <button class="btn btn-blank" style="width:64px;"><span></span><span></span></button>
+      <button class="btn btn-blank btn-icon"><span class="btn-config"></span></button>
     </div>
-    <status status-endpoint="{{mapreduce.getStatusEndpoint()}}"></status>
-    <div class="flow-state"><strong>{{model.currentState}}</strong></div>
+    <status status-endpoint="{{mapreduce.getStatusEndpoint()}}" displaytype="large"></status>
   </div>
 
-  <div class="info-box sparkline-box">{{view C.Embed.Chart metrics="/reactor/apps/{parent}/mapreduce/{id}/mappers/process.completion" title="Mapping" unit="percent"}}</div>
-  <div class="info-box sparkline-box">{{view C.Embed.Chart metrics="/reactor/apps/{parent}/mapreduce/{id}/reducers/process.completion" title="Reducing" unit="percent"}}</div>
+  <div class="info-box sparkline-box"></div>
+  <div class="info-box sparkline-box"></div>
 
 </div>
 <div id="panels">
@@ -37,10 +36,10 @@
               <div>{{model.metricData.mappersEntriesOut}} OUT</div>
             </div>
           </div>
-          {{#if model.running}}
+          
 
-          <progress {{bindAttr value="model.metricData.mappersCompletion" }} max="100"></progress>
-          {{/if}}
+          <progress></progress>
+          
         </div>
         <div class="batch-item">
           <div id="batch-reduce" class="batch-icon batch-reduce">
@@ -51,10 +50,10 @@
               <div>{{model.metricData.reducersEntriesOut}} OUT</div>
             </div>
           </div>
-          {{#if model.running}}
+          
 
           <progress {{bindAttr value="model.metricData.reducersCompletion" }} max="100"></progress>
-          {{/if}}
+          
         </div>
       </div>
     </div>
@@ -65,7 +64,7 @@
   <div id="informer"></div>
   <div class="panel">
     <div id="object-list">
-      {{#if runs.length}}
+      
         <table class="table table-condensed">
         <thead>
           <tr><th style="width: 300px;">Started</th>
@@ -74,23 +73,23 @@
           </tr>
         </thead>
         <tbody>
-        {{#each runs}}
+        
           <tr class="run-list">
             <td>{{started}}<div class="flow-run-date"> {{startDate}} </div></td>
             <td>{{ended}} <div class="flow-run-date"> {{endDate}}</div></td>
             <td>{{detail}}</td>
           </tr>
-        {{/each}}
+        
         </tbody>
         </table>
-      {{else}}
+      
         <div class="object-list-empty">
         <div class="object-list-empty-content">
         <div>No History.</div>
         <span>This Mapreduce job has not completed a run yet.</span>
         </div>
         </div>
-      {{/if}}
+      
     </div>
   </div>
 </div>

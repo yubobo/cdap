@@ -42,6 +42,7 @@ require([
   './controllers/streams',
   './controllers/app',
   './controllers/flow',
+  './controllers/mapreduce',
   './controllers/stream',
   './controllers/procedure',
   './controllers/dataset',
@@ -95,6 +96,7 @@ require([
     StreamsCtrl,
     AppCtrl,
     FlowCtrl,
+    MapreduceCtrl,
     StreamCtrl,
     ProcedureCtrl,
     DatasetCtrl,
@@ -190,7 +192,7 @@ require([
       });
 
       $routeProvider.when('/apps/:appId/mapreduces/:mapreduceId', {
-        templateUrl: '/templates/mapreduce.html', controller: FlowCtrl
+        templateUrl: '/templates/mapreduce.html', controller: MapreduceCtrl
       });
 
       $routeProvider.when('/apps/:appId/workflows/:workflowId', {
@@ -270,6 +272,7 @@ require([
     .controller('StreamsCtrl', StreamsCtrl)
     .controller('AppCtrl', AppCtrl)
     .controller('FlowCtrl', FlowCtrl)
+    .controller('FlowCtrl', MapreduceCtrl)
     .controller('StreamCtrl', StreamCtrl)
     .controller('ProcedureCtrl', ProcedureCtrl)
     .controller('DatasetCtrl', DatasetCtrl)

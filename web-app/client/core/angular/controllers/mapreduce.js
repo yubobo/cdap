@@ -8,25 +8,17 @@ define(['helpers'], function (helpers) {
     function($scope, $interval, $routeParams, dataFactory, POLLING_INTERVAL) {
 
     /**
-     * @type {Flow}
+     * @type {Mapreduce}
      */
-    $scope.flow = {};
-
-    var statusEndpoints = [];
-    var intervals = [];
+    $scope.mapreduce = {};
 
     var appId = $routeParams.appId;
-    var flowId = $routeParams.flowId;
-    var workflowId = $routeParams.workflowId;
+    var mapreduceId = $routeParams.mapreduceId;
 
 
-    dataFactory.getFlowByAppNameAndId(appId, flowId, function (flow) {
-      $scope.flow = flow;
+    dataFactory.getMapreduceByAppNameAndId(appId, mapreduceId, function (mapreduce) {
+      $scope.mapreduce = mapreduce;
     });
-
-    $scope.getStatusEndpoint = function (entity) {
-      return helpers.getStatusEndpoint(entity);
-    };
 
     $scope.$on("$destroy", function(){
 
