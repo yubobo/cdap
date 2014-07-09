@@ -1,10 +1,7 @@
 
 <div id="title">
-  <ul class="nav nav-pills pull-right" style="margin: 2px 14px;">
-    <li>{{#linkTo WorkflowStatus model}}Status{{/linkTo}}</li>
-    <li>{{#linkTo Workflow.History model}}History{{/linkTo}}</li>
-  </ul>
-  <h1><span>Workflow</span> {{model.name}}</h1>
+  <div ng-include="'/templates/partials/overview-right-menu.html'"></div>
+  <h1><span>Workflow</span> {{workflow.name}}</h1>
 </div>
 
 <div id="info">
@@ -54,7 +51,7 @@
       <button class="btn btn-blank btn-icon" style="border-right:0;" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
 
     </div>
-    <div class="flow-state"><strong>{{model.currentState}}</strong></div>
+    <div class="flow-state"><strong>{{workflow.getStatusEndpoint}}</strong></div>
   </div>
 
 </div>
@@ -64,7 +61,7 @@
   <div class="panel">
     <div id="batchviz-container">
       <div id="workflowviz" class="clearfix chart">
-        {{#each elements.Action}}
+        <!--{{#each elements.Action}}-->
         <div class="batch-item" {{bindAttr id="divId"}} {{action loadAction this}} style="cursor: pointer;">
           <div class="batch-icon batch-map">
             <div class="info-window">
