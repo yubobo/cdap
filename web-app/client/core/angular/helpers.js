@@ -48,7 +48,7 @@ define(function () {
         if (typeof displayTime === 'number') {
           setTimeout(function () {
             notificationContainer.fadeOut();
-          }, displayTime);  
+          }, displayTime);
         }
       },
 
@@ -103,7 +103,7 @@ define(function () {
               + '/process.busyness?start=now-60s&end=now-0s&count=60');
 
           case 'flow':
-            return ('/reactor/apps/' + entity.app + '/flows/' + entity.name 
+            return ('/reactor/apps/' + entity.app + '/flows/' + entity.name
               + '/process.busyness?start=now-60s&end=now-0s&count=60');
 
           default:
@@ -120,7 +120,7 @@ define(function () {
               + '/process.events.processed?start=now-60s&end=now-0s&count=60"');
 
           case 'flow':
-            return ('/reactor/apps/' + entity.app + '/flows/' + entity.name 
+            return ('/reactor/apps/' + entity.app + '/flows/' + entity.name
               + '/process.events.processed?start=now-60s&end=now-0s&count=60"');
 
           default:
@@ -128,7 +128,7 @@ define(function () {
         }
       },
 
-      
+
 
       getRequestRateEndpoint: function (entity, optionalAppName) {
 

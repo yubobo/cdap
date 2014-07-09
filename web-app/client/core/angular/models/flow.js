@@ -9,6 +9,7 @@ define(['helpers'], function (helpers) {
       this.name = '';
       this.description = '';
       this.type = 'Flow';
+      this.finalMetric = 0;
 
       if (data && Object.prototype.toString.call(data) === '[object Object]') {
         for (var index in data) {
