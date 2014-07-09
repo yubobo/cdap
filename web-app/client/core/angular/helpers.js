@@ -159,7 +159,7 @@ define(function () {
         switch(entity.type.toLowerCase()) {
 
           case 'mapreduce':
-            return ('/reactor/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/mappers/process.completion?start=now-60s&end=now-0s&count=60');
+            return ('/reactor/apps/' + optionalAppName + '/mapreduces/' + entity.name + '/mappers/process.completion?start=now-60s&end=now-0s&count=60');
             break;
 
           default:
@@ -172,7 +172,7 @@ define(function () {
         switch(entity.type.toLowerCase()) {
 
           case 'mapreduce':
-            return ('/reactor/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/reducers/process.completion?start=now-60s&end=now-0s&count=60');
+            return ('/reactor/apps/' + optionalAppName + '/mapreduces/' + entity.name + '/reducers/process.completion?start=now-60s&end=now-0s&count=60');
             break;
 
           default:

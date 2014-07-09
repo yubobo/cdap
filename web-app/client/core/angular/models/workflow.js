@@ -7,6 +7,7 @@ define(['helpers'], function (helpers) {
       this.type = 'Workflow';
       this.id = '';
       this.name = '';
+      this.description = '';
       this.finalMetric = 0;
 
       if (data && Object.prototype.toString.call(data) === '[object Object]') {

@@ -24,18 +24,18 @@
             </li>
           </ul>
 
-          <button class="btn btn-blank start-stop" {{bindAttr disabled="model.startStopDisabled"}} style="width:64px;" {{action "exec" on="click"}}>
+          <button class="btn btn-blank start-stop" style="width:64px;">
             <span class="btn-start"><!-- this is a commented-out attribute for the preceding span -> {{bindAttr class="model.actionIcon"}}-->
             </span>
             <span>Start<!--{{model.defaultAction}}--></span>
           </button>
-          <button class="btn btn-blank btn-icon" style="border-right:0;" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
+          <button class="btn btn-blank btn-icon" style="border-right:0;"><span class="btn-config"></span></button>
         </div>
-        <div class="flow-state"><strong>{{flow.status}}</strong></div>
+        <status status-endpoint="{{flow.getStatusEndpoint()}}" displaytype="large"></status>
       </div>
 
       <div class="info-box sparkline-box app-processed">
-        <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;">{{model.storageLabel}}<span>{{model.storageUnits}}</span></div>
+        <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;"><!--{{model.storageLabel}}--><span><!--{{model.storageUnits}}--></span></div>
         <div class="sparkline-box-title">Processing Rate</div>
         <div class="sparkline-box-container">
           <sparkline data="processingRate"></sparkline>
@@ -43,7 +43,7 @@
         <!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.events.processed" title="Processing Rate"}}-->
       </div>
       <div class="info-box sparkline-box app-busyness">
-        <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;">{{model.storageLabel}}<span>{{model.storageUnits}}</span></div>
+        <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;"><!--{{model.storageLabel}}--><span><!--{{model.storageUnits}}--></span></div>
         <div class="sparkline-box-title">Busyness</div>
         <div class="sparkline-box-container">
           <sparkline data="busyness"></sparkline>
@@ -61,9 +61,9 @@
                 <button class="btn btn-blank dropdown-toggle" data-toggle="dropdown" style="padding-left:14px;float: right;"><!--{{flowletLabelName}}--> <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a {{action "setFlowletLabel" "rate"}}>Flowlet Rate</a></li>
-                    <li><a {{action "setFlowletLabel" "pending"}}>Flowlet Pending</a></li>
-                    <li><a {{action "setFlowletLabel" "aggregate"}}>Flowlet Processed</a></li>
+                    <li><a>Flowlet Rate</a></li> <!--{{action "setFlowletLabel" "rate"}}-->
+                    <li><a>Flowlet Pending</a></li> <!--{{action "setFlowletLabel" "pending"}}-->
+                    <li><a>Flowlet Processed</a></li> <!--{{action "setFlowletLabel" "aggregate"}}-->
                 </ul>
             </div>
             <div id="flowfiz" class="clearfix" style="width: 678px;">

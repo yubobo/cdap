@@ -291,12 +291,13 @@ define(function () {
       },
 
       /**
-       * Gets a mapreduce by app name and id. Depends on the Mapreduce model.
-       * @param  {Function} callback that consumes a Mapreduce object.
+       * Gets a workflow by app name and id. Depends on the Workflow model.
+       * @param  {Function} callback that consumes a Workflow object.
        */
       getWorkflowByAppNameAndId: function (appId, workflowId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/workflows/' + workflowId).success(function (data) {
           var workflow = new Workflow(data);
+          workflow.app = appId;
           callback(workflow);
         });
       },
