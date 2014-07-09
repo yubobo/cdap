@@ -15,12 +15,12 @@ define(['helpers'], function (helpers) {
       }
     },
 
-    getMappingStatus: function () {
-      return helpers.getMappingStatus(this);
+    getMappingStatusEndpoint: function () {
+      return helpers.getMappingStatusEndpoint(this);
     },
 
-    getReducingStatus: function () {
-      return helpers.getReducingStatus(this);
+    getReducingStatusEndpoint: function () {
+      return helpers.getReducingStatusEndpoint(this);
     },
 
     getStatusEndpoint: function () {

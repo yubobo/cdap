@@ -18,7 +18,7 @@ define(function () {
         }
       },
 
-      displayNotification: function (message, category) {
+      displayNotification: function (message, category, displayTime) {
 
         // Hide any existing notifications.
         notificationContainer.hide();
@@ -43,6 +43,13 @@ define(function () {
 
         // Show the notification.
         notificationContainer.show();
+
+        // If display time is provided, show only for that period of time and then hide.
+        if (typeof displayTime === 'number') {
+          setTimeout(function () {
+            notificationContainer.fadeOut();
+          }, displayTime);  
+        }
       },
 
       getLastValue: function (metricData) {
@@ -104,6 +111,23 @@ define(function () {
         }
       },
 
+      getEventsProcessedEndpoint: function (entity) {
+
+        switch(entity.type.toLowerCase()) {
+
+          case 'app':
+            return ('/reactor/apps/' + entity.name
+              + '/process.events.processed?start=now-60s&end=now-0s&count=60"');
+
+          case 'flow':
+            return ('/reactor/apps/' + entity.app + '/flows/' + entity.name 
+              + '/process.events.processed?start=now-60s&end=now-0s&count=60"');
+
+          default:
+            break;
+        }
+      },
+
       
 
       getRequestRateEndpoint: function (entity, optionalAppName) {
@@ -130,7 +154,7 @@ define(function () {
         }
       },
 
-      getMappingStatus: function (entity, optionalAppName) {
+      getMappingStatusEndpoint: function (entity, optionalAppName) {
 
         switch(entity.type.toLowerCase()) {
 
@@ -143,7 +167,7 @@ define(function () {
         }
       },
 
-      getReducingStatus: function (entity, optionalAppName) {
+      getReducingStatusEndpoint: function (entity, optionalAppName) {
 
         switch(entity.type.toLowerCase()) {
 
@@ -184,6 +208,19 @@ define(function () {
 
           case 'procedure':
             return '/rest/apps/' + entity.app + '/procedures/' + entity.name + '/start';
+
+          default:
+            break;
+        }
+      },
+
+      getStopEndpoint: function (entity) {
+        switch(entity.type.toLowerCase()) {
+          case 'flow':
+            return '/rest/apps/' + entity.app + '/flows/' + entity.name + '/stop';
+
+          case 'procedure':
+            return '/rest/apps/' + entity.app + '/procedures/' + entity.name + '/stop';
 
           default:
             break;

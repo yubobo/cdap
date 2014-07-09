@@ -18,19 +18,23 @@ define(['helpers'], function (helpers) {
 
     return {
 
-      callStart: function (endpoint, successCb, errorCb) {
+      callEndpoint: function (endpoint, successCb, errorCb) {
+        if (!endpoint) {
+          console.error('No endpoint specified for action call.');
+          return;  
+        }
         $http({
           method: 'POST',
           url: endpoint
         }).success(function (data, status, headers, config) {
 
-          if (typeof callback === 'function') {
+          if (typeof successCb === 'function') {
             successCb(data, status, headers, config);
           }
 
         }).error(function (data, status, headers, config) {
 
-          if (typeof callback === 'function') {
+          if (typeof errorCb === 'function') {
             errorCb(data, status, headers, config);  
           }
 
@@ -38,15 +42,20 @@ define(['helpers'], function (helpers) {
       },
 
       startFlow: function (flow, successCb, errorCb) {
-        var endpoint = helpers.getStartEndpoint(flow);
-        this.callStart(endpoint, successCb, errorCb);
+        this.callEndpoint(flow.getStartEndpoint(), successCb, errorCb);
       },
 
       startProcedure: function (procedure, successCb, errorCb) {
-        var endpoint = helpers.getStartEndpoint(procedure);
-        this.callStart(endpoint, successCb, errorCb);
+        this.callEndpoint(procedure.getStartEndpoint(), successCb, errorCb);
       },
       
+      stopFlow: function (flow, successCb, errorCb) {
+        this.callEndpoint(flow.getStopEndpoint(), successCb, errorCb);
+      },
+
+      stopProcedure: function (procedure, successCb, errorCb) {
+        this.callEndpoint(procedure.getStopEndpoint(), successCb, errorCb);
+      }
     };
 
 

@@ -23,7 +23,16 @@ define(['helpers'], function (helpers) {
 
     getStatusEndpoint: function () {
       return helpers.getStatusEndpoint(this);
+    },
+
+    getStartEndpoint: function () {
+      return helpers.getStartEndpoint(this);
+    },
+
+    getStopEndpoint: function () {
+      return helpers.getStopEndpoint(this);
     }
+
 
   });
 
