@@ -189,6 +189,14 @@ require([
         templateUrl: '/templates/procedure.html', controller: ProcedureCtrl
       });
 
+      $routeProvider.when('/apps/:appId/mapreduces/:mapreduceId', {
+        templateUrl: '/templates/mapreduce.html', controller: FlowCtrl
+      });
+
+      $routeProvider.when('/apps/:appId/workflows/:workflowId', {
+        templateUrl: '/templates/workflow.html', controller: FlowCtrl
+      });
+
       $routeProvider.when('/services/:serviceId', {
         templateUrl: '/templates/service.html', controller: ServiceCtrl
       });

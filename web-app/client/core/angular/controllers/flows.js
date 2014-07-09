@@ -10,6 +10,7 @@ define(['helpers'], function (helpers) {
     //var statusEndpoints = [];
     var intervals = [];
 
+
     $scope.flows = [];
     $scope.mapreduces = [];
     $scope.workflows = [];

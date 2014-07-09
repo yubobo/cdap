@@ -12,19 +12,15 @@ define(['helpers'], function (helpers) {
 
     var appId = $routeParams.appId;
     var flowId = $routeParams.flowId;
+    var workflowId = $routeParams.workflowId;
 
-    //$scope.processingRate = [];
-    //$scope.busyness = [];
-
-    /*var metrics = [
-      { name: 'processingRate',
-        endpoint: '/reactor/apps/' + appId + '/flows/' + flowId + '/process.events.processed?start=now-60s&end=now-0s&count=6' },
-      { name: 'busyness',
-        endpoint: '/reactor/apps/' + appId + '/flows/' + flowId + '/process.busyness?start=now-60s&end=now-0s&count=60'}
-    ];*/
 
     dataFactory.getFlowByAppNameAndId(appId, flowId, function (flow) {
       $scope.flow = flow;
+    });
+
+    dataFactory.getWorkflowByAppNameAndId(appId, workflowId, function (flow) {
+      $scope.workflow = workflow;
     });
 
     $scope.$on("$destroy", function(){
