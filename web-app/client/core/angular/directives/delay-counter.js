@@ -35,24 +35,26 @@ define(function() {
       },
       link: function (scope, elm, attrs) {
 
-        elm.html(getTemplate(scope.countertype)).show();
-        $compile(elm.contents())(scope);
-
-        if (!scope.metricEndpoint) {
-          console.error('no metric specified for chart in div', elm);
-          return;
-        }
-
-        metricsService.trackMetric(scope.metricEndpoint);
-        var ival = $interval(function () {
-          scope.data = metricsService.getMetricByEndpoint(scope.metricEndpoint);
-        }, POLLING_INTERVAL);
-
-
-
         var percent = Boolean(scope.percent);
         var intervals = [];
         var updatePending = false;
+
+        scope.$watch('metricEndpoint', function (newVal, oldVal) {
+          if (newVal) {
+            elm.html(getTemplate(scope.countertype)).show();
+            $compile(elm.contents())(scope);
+
+            if (!scope.metricEndpoint) {
+              console.error('no metric specified for chart in div', elm);
+              return;
+            }
+
+            metricsService.trackMetric(scope.metricEndpoint);
+            var ival = $interval(function () {
+              scope.data = metricsService.getMetricByEndpoint(scope.metricEndpoint);
+            }, POLLING_INTERVAL);
+          }
+        });
 
         scope.$watch('data', function (newVal, oldVal) {
           if (newVal && angular.isArray(newVal.data) && newVal.data.length) {

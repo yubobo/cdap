@@ -196,11 +196,16 @@ define(function() {
           return;
         }
 
-        metricsService.trackMetric(scope.metricEndpoint);
+        scope.$watch('metricEndpoint', function (newVal, oldVal) {
+          if (newVal) {
+            metricsService.trackMetric(scope.metricEndpoint);
 
-        var ival = $interval(function () {
-          scope.data = metricsService.getMetricByEndpoint(scope.metricEndpoint);
-        }, POLLING_INTERVAL);
+            var ival = $interval(function () {
+              scope.data = metricsService.getMetricByEndpoint(scope.metricEndpoint);
+            }, POLLING_INTERVAL);  
+          }          
+        });
+        
 
         var isPercent = Boolean(scope.percent);
         var isShade = Boolean(scope.shade);
