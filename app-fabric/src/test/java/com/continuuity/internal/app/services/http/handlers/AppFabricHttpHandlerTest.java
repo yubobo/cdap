@@ -292,6 +292,12 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
     setFlowletInstances("WordCountApp", "WordCountFlow", "StreamSource", 3);
     Assert.assertEquals(3, getFlowletInstances("WordCountApp", "WordCountFlow", "StreamSource"));
 
+    //Test invalid set instances
+    JsonObject json = new JsonObject();
+    json.addProperty("instances", 5);
+    HttpResponse response = doPut("/v2/apps/WordCountApp/flows/WordCountFlow/flowlets/XXXX/instances", json.toString());
+    Assert.assertEquals(404, response.getStatusLine().getStatusCode());
+
     // Stop the flow and check its status
     Assert.assertEquals(200, getRunnableStartStop("flows", "WordCountApp", "WordCountFlow", "stop"));
     Assert.assertEquals("STOPPED", getRunnableStatus("flows", "WordCountApp", "WordCountFlow"));

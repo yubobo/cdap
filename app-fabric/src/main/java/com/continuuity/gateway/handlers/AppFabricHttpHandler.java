@@ -947,7 +947,13 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     try {
       String accountId = getAuthenticatedAccountId(request);
       Id.Program programID = Id.Program.from(accountId, appId, flowId);
-      int oldInstances = store.getFlowletInstances(programID, flowletId);
+      int oldInstances;
+      try {
+        oldInstances = store.getFlowletInstances(programID, flowletId);
+      } catch (Exception e) {
+        responder.sendError(HttpResponseStatus.NOT_FOUND, "Invalid app, flow or flowlet id.");
+        return;
+      }
       if (oldInstances != instances) {
         store.setFlowletInstances(programID, flowletId, instances);
         ProgramRuntimeService.RuntimeInfo runtimeInfo = findRuntimeInfo(accountId, appId, flowId, Type.FLOW);
