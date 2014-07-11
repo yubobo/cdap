@@ -26,8 +26,8 @@ public class TransactionDistributedModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(SnapshotCodecProvider.class).in(Singleton.class);
-    bind(TransactionStateStorage.class).annotatedWith(Names.named("persist"))
-      .to(HDFSTransactionStateStorage.class).in(Singleton.class);
+    // NOTE: should not be singleton: it is a service that we want to start/stop again in HA case
+    bind(TransactionStateStorage.class).annotatedWith(Names.named("persist")).to(HDFSTransactionStateStorage.class);
     bind(TransactionStateStorage.class).toProvider(TransactionStateStorageProvider.class).in(Singleton.class);
 
     bind(InMemoryTransactionManager.class).in(Singleton.class);
