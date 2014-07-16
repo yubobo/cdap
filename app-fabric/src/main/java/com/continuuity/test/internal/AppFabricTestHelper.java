@@ -186,13 +186,7 @@ public class AppFabricTestHelper {
     httpHandler.runnableHistory(request, responder, appId, "workflows", wflowId);
     Preconditions.checkArgument(responder.getStatus().getCode() == 200, " getting workflow schedules failed");
 
-    List<Map<String, String>> runList = responder.decodeResponseContent(new TypeToken<List<Map<String, String>>>() { });
-    List<RunRecord> runRecords = Lists.newArrayList();
-    for (Map<String, String> run : runList) {
-      runRecords.add(new RunRecord(run.get("runid"), Long.parseLong(run.get("start")),
-                                       Long.parseLong(run.get("end")), run.get("status")));
-    }
-    return runRecords;
+    return responder.decodeResponseContent(new TypeToken<List<RunRecord>>() { });
   }
 
   public static void suspend(AppFabricHttpHandler httpHandler, String appId, String wflowId,
