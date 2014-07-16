@@ -4,10 +4,10 @@
 package com.continuuity.internal.app.runtime.workflow;
 
 import com.continuuity.api.mapreduce.MapReduceSpecification;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.Id;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.internal.app.ForwardingApplicationSpecification;
 import com.continuuity.internal.app.program.ForwardingProgram;
 import com.google.common.collect.ImmutableMap;
@@ -38,8 +38,8 @@ public final class WorkflowMapReduceProgram extends ForwardingProgram {
   }
 
   @Override
-  public Type getType() {
-    return Type.MAPREDUCE;
+  public ProgramType getType() {
+    return ProgramType.MAPREDUCE;
   }
 
   @Override

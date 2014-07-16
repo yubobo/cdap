@@ -1,9 +1,12 @@
 package com.continuuity.gateway.handlers;
 
+import com.continuuity.api.metadata.Containers;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.NotRunningProgramLiveInfo;
+import com.continuuity.api.metadata.ProgramLiveInfo;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.Id;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.ProgramRuntimeService;
 import com.continuuity.app.store.Store;
 import com.continuuity.app.store.StoreFactory;
@@ -15,9 +18,6 @@ import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.UserErrors;
 import com.continuuity.internal.UserMessages;
 import com.continuuity.internal.app.runtime.ProgramOptionConstants;
-import com.continuuity.internal.app.runtime.distributed.Containers;
-import com.continuuity.internal.app.runtime.service.LiveInfo;
-import com.continuuity.internal.app.runtime.service.NotRunningLiveInfo;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonArray;
@@ -73,7 +73,7 @@ public class ServiceHttpHandler extends AbstractAppFabricHttpHandler {
         JsonArray services = new JsonArray();
         for (Map.Entry<String, ServiceSpecification> entry : spec.getServices().entrySet()) {
           JsonObject service = new JsonObject();
-          service.addProperty("type", Type.SERVICE.prettyName());
+          service.addProperty("type", ProgramType.SERVICE.getPrettyName());
           service.addProperty("app", appId);
           service.addProperty("id", entry.getValue().getName());
           service.addProperty("name", entry.getValue().getName());
@@ -180,7 +180,7 @@ public class ServiceHttpHandler extends AbstractAppFabricHttpHandler {
       ProgramRuntimeService.RuntimeInfo runtimeInfo = findRuntimeInfo(programId.getAccountId(),
                                                                       programId.getApplicationId(),
                                                                       programId.getId(),
-                                                                      Type.SERVICE);
+                                                                      ProgramType.SERVICE);
       if (runtimeInfo != null) {
         runtimeInfo.getController().command(ProgramOptionConstants.RUNNABLE_INSTANCES,
                                             ImmutableMap.of("runnable", runnableName,
@@ -209,7 +209,7 @@ public class ServiceHttpHandler extends AbstractAppFabricHttpHandler {
                          runtimeService.getLiveInfo(Id.Program.from(accountId,
                                                                     appId,
                                                                     serviceId),
-                                                    Type.SERVICE));
+                                                    ProgramType.SERVICE));
     } catch (SecurityException e) {
       responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (Throwable e) {
@@ -243,9 +243,10 @@ public class ServiceHttpHandler extends AbstractAppFabricHttpHandler {
   }
 
   private int getRunnableCount(String accountId, String appId, String serviceName, String runnable) {
-    LiveInfo info = runtimeService.getLiveInfo(Id.Program.from(accountId, appId, serviceName), Type.SERVICE);
+    ProgramLiveInfo info = runtimeService.getLiveInfo(Id.Program.from(accountId, appId, serviceName),
+                                                      ProgramType.SERVICE);
     int count = 0;
-    if (info instanceof NotRunningLiveInfo) {
+    if (info instanceof NotRunningProgramLiveInfo) {
       return count;
     } else if (info instanceof Containers) {
       Containers containers = (Containers) info;
@@ -262,8 +263,8 @@ public class ServiceHttpHandler extends AbstractAppFabricHttpHandler {
   }
 
   private ProgramRuntimeService.RuntimeInfo findRuntimeInfo(String accountId, String appId,
-                                                            String flowId, Type typeId) {
-    Type type = Type.valueOf(typeId.name());
+                                                            String flowId, ProgramType typeId) {
+    ProgramType type = ProgramType.valueOf(typeId.name());
     Collection<ProgramRuntimeService.RuntimeInfo> runtimeInfos = runtimeService.list(type).values();
     Preconditions.checkNotNull(runtimeInfos, UserMessages.getMessage(UserErrors.RUNTIME_INFO_NOT_FOUND),
                                accountId, flowId);

@@ -3,10 +3,10 @@
  */
 package com.continuuity.internal.app.runtime.distributed;
 
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.procedure.ProcedureSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramOptions;
 import com.continuuity.common.conf.CConfiguration;
@@ -39,9 +39,9 @@ public final class DistributedProcedureProgramRunner extends AbstractDistributed
     ApplicationSpecification appSpec = program.getSpecification();
     Preconditions.checkNotNull(appSpec, "Missing application specification.");
 
-    Type processorType = program.getType();
+    ProgramType processorType = program.getType();
     Preconditions.checkNotNull(processorType, "Missing processor type.");
-    Preconditions.checkArgument(processorType == Type.PROCEDURE, "Only PROCEDURE process type is supported.");
+    Preconditions.checkArgument(processorType == ProgramType.PROCEDURE, "Only PROCEDURE process type is supported.");
 
     ProcedureSpecification procedureSpec = appSpec.getProcedures().get(program.getName());
     Preconditions.checkNotNull(procedureSpec, "Missing ProcedureSpecification for %s", program.getName());

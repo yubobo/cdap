@@ -1,7 +1,7 @@
 package com.continuuity.internal.app.runtime;
 
 import com.continuuity.api.data.DataSetContext;
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
 import com.continuuity.app.program.Program;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.queue.QueueName;

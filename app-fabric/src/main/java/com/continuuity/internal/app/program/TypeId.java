@@ -1,6 +1,6 @@
 package com.continuuity.internal.app.program;
 
-import com.continuuity.app.program.Type;
+import com.continuuity.api.metadata.ProgramType;
 
 /**
  * Helper class for getting the program type id to use when emitting metrics.
@@ -12,7 +12,7 @@ public final class TypeId {
    *
    * @return id of the program type for use in metrics contexts.
    */
-  public static String getMetricContextId(Type programType) {
+  public static String getMetricContextId(ProgramType programType) {
     switch (programType) {
       case FLOW:
         return "f";

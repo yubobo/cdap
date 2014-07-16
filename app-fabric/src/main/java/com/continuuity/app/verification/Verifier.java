@@ -1,6 +1,6 @@
 package com.continuuity.app.verification;
 
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
 
 /**
  * A verifier for verifying the specifications provided.

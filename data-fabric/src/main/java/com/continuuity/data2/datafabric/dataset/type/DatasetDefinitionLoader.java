@@ -3,6 +3,8 @@ package com.continuuity.data2.datafabric.dataset.type;
 import com.continuuity.api.dataset.DatasetDefinition;
 import com.continuuity.api.dataset.module.DatasetDefinitionRegistry;
 import com.continuuity.api.dataset.module.DatasetModule;
+import com.continuuity.api.metadata.DatasetModuleMeta;
+import com.continuuity.api.metadata.DatasetTypeMeta;
 import com.continuuity.common.lang.ClassLoaders;
 import com.continuuity.common.lang.jar.JarClassLoader;
 import com.continuuity.data2.dataset2.InMemoryDatasetDefinitionRegistry;
@@ -35,7 +37,7 @@ public class DatasetDefinitionLoader {
   }
 
   /**
-   * Loads {@link com.continuuity.api.dataset.DatasetDefinition} using {@link DatasetTypeMeta} info. It will use given
+   * Loads {@link DatasetDefinition} using {@link DatasetTypeMeta} info. It will use given
    * {@link DatasetDefinitionRegistry} to load all required modules and types. If registry is missing some of them,
    * it will load respective jars and add them to the registry (thus, modifying the given registry).
    * @param meta info of type to load

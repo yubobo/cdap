@@ -4,7 +4,7 @@
 
 package com.continuuity.app.verification;
 
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
 import com.continuuity.error.Err;
 import com.google.common.base.CharMatcher;
 

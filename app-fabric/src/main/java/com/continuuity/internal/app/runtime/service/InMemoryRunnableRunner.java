@@ -1,11 +1,11 @@
 package com.continuuity.internal.app.runtime.service;
 
 import com.continuuity.api.common.RuntimeArguments;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.metrics.ServiceRunnableMetrics;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramOptions;
 import com.continuuity.app.runtime.ProgramRunner;
@@ -78,9 +78,9 @@ public class InMemoryRunnableRunner implements ProgramRunner {
       ApplicationSpecification appSpec = program.getSpecification();
       Preconditions.checkNotNull(appSpec, "Missing application specification.");
 
-      Type processorType = program.getType();
+      ProgramType processorType = program.getType();
       Preconditions.checkNotNull(processorType, "Missing processor type.");
-      Preconditions.checkArgument(processorType == Type.SERVICE, "Only Service process type is supported.");
+      Preconditions.checkArgument(processorType == ProgramType.SERVICE, "Only Service process type is supported.");
 
       String processorName = program.getName();
       Preconditions.checkNotNull(processorName, "Missing processor name.");

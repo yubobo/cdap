@@ -2,11 +2,11 @@ package com.continuuity.explore.executor;
 
 import com.continuuity.api.data.batch.RecordScannable;
 import com.continuuity.api.dataset.Dataset;
+import com.continuuity.api.metadata.QueryHandle;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.dataset2.DatasetFramework;
 import com.continuuity.explore.client.DatasetExploreFacade;
 import com.continuuity.explore.service.ExploreService;
-import com.continuuity.explore.service.Handle;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.io.UnsupportedTypeException;
@@ -57,7 +57,7 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
                    "type parameter of dataset {} that is not present in the dataset's jar file. See the developer " +
                    "guide for more information.", instance, className, className, instance);
         JsonObject json = new JsonObject();
-        json.addProperty("handle", Handle.NO_OP.getHandle());
+        json.addProperty("handle", QueryHandle.NO_OP.getHandle());
         responder.sendJson(HttpResponseStatus.OK, json);
         return;
       }
@@ -71,7 +71,7 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
         // call originates from.
         LOG.debug("Dataset {} does not implement {}", instance, RecordScannable.class.getName());
         JsonObject json = new JsonObject();
-        json.addProperty("handle", Handle.NO_OP.getHandle());
+        json.addProperty("handle", QueryHandle.NO_OP.getHandle());
         responder.sendJson(HttpResponseStatus.OK, json);
         return;
       }
@@ -92,7 +92,7 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
                 dataset.getClass().getName(),
                 createStatement);
 
-      Handle handle = exploreService.execute(createStatement);
+      QueryHandle handle = exploreService.execute(createStatement);
       JsonObject json = new JsonObject();
       json.addProperty("handle", handle.getHandle());
       responder.sendJson(HttpResponseStatus.OK, json);
@@ -133,7 +133,7 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
         // call originates from.
         LOG.debug("Dataset {} does not implement {}", instance, RecordScannable.class.getName());
         JsonObject json = new JsonObject();
-        json.addProperty("handle", Handle.NO_OP.getHandle());
+        json.addProperty("handle", QueryHandle.NO_OP.getHandle());
         responder.sendJson(HttpResponseStatus.OK, json);
         return;
       }
@@ -143,7 +143,7 @@ public class ExploreExecutorHttpHandler extends AbstractHttpHandler {
                 instance,
                 deleteStatement);
 
-      Handle handle = exploreService.execute(deleteStatement);
+      QueryHandle handle = exploreService.execute(deleteStatement);
       JsonObject json = new JsonObject();
       json.addProperty("handle", handle.getHandle());
       responder.sendJson(HttpResponseStatus.OK, json);

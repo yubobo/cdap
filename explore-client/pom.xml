@@ -22,6 +22,11 @@
       <artifactId>common</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.continuuity</groupId>
+      <artifactId>continuuity-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
 </project>

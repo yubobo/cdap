@@ -12,9 +12,11 @@ import com.continuuity.api.dataset.module.DatasetModule;
 import com.continuuity.api.dataset.table.Get;
 import com.continuuity.api.dataset.table.Put;
 import com.continuuity.api.dataset.table.Table;
+import com.continuuity.api.metadata.DatasetMeta;
+import com.continuuity.api.metadata.DatasetModuleMeta;
+import com.continuuity.api.metadata.DatasetTypeAndProperties;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.ObjectResponse;
-import com.continuuity.data2.datafabric.dataset.type.DatasetModuleMeta;
 import com.continuuity.data2.dataset2.lib.table.CoreDatasetsModule;
 import com.continuuity.data2.dataset2.module.lib.inmemory.InMemoryOrderedTableModule;
 import com.continuuity.data2.transaction.DefaultTransactionExecutor;
@@ -71,7 +73,7 @@ public class DatasetInstanceHandlerTest extends DatasetServiceTestBase {
     Assert.assertEquals(dataset1Spec, instances.get(0));
 
     // verify created instance info can be retrieved
-    DatasetInstanceMeta datasetInfo = getInstance("dataset1").getResponseObject();
+    DatasetMeta datasetInfo = getInstance("dataset1").getResponseObject();
     Assert.assertEquals(dataset1Spec, datasetInfo.getSpec());
     Assert.assertEquals(dataset1Spec.getType(), datasetInfo.getType().getName());
     // type meta should have 2 modules that has to be loaded to create type's class and in the order they must be loaded
@@ -177,8 +179,7 @@ public class DatasetInstanceHandlerTest extends DatasetServiceTestBase {
   }
 
   private int createInstance(String instanceName, String typeName, DatasetProperties props) throws IOException {
-    DatasetInstanceHandler.DatasetTypeAndProperties typeAndProps =
-      new DatasetInstanceHandler.DatasetTypeAndProperties(typeName, props.getProperties());
+    DatasetTypeAndProperties typeAndProps = new DatasetTypeAndProperties(typeName, props.getProperties());
     return HttpRequests.put(getUrl("/data/datasets/" + instanceName), new Gson().toJson(typeAndProps))
       .getResponseCode();
   }
@@ -189,9 +190,9 @@ public class DatasetInstanceHandlerTest extends DatasetServiceTestBase {
                                        }.getType());
   }
 
-  private ObjectResponse<DatasetInstanceMeta> getInstance(String instanceName) throws IOException {
+  private ObjectResponse<DatasetMeta> getInstance(String instanceName) throws IOException {
     return ObjectResponse.fromJsonBody(HttpRequests.get(getUrl("/data/datasets/" + instanceName)),
-                                       DatasetInstanceMeta.class);
+                                       DatasetMeta.class);
   }
 
   private int deleteInstance(String instanceName) throws IOException {

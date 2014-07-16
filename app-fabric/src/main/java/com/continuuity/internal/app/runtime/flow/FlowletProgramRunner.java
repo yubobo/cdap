@@ -22,11 +22,11 @@ import com.continuuity.api.flow.flowlet.FlowletSpecification;
 import com.continuuity.api.flow.flowlet.InputContext;
 import com.continuuity.api.flow.flowlet.OutputEmitter;
 import com.continuuity.api.flow.flowlet.StreamEvent;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.stream.StreamEventData;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.Id;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.queue.QueueReader;
 import com.continuuity.app.queue.QueueSpecification;
 import com.continuuity.app.queue.QueueSpecificationGenerator.Node;
@@ -163,9 +163,9 @@ public final class FlowletProgramRunner implements ProgramRunner {
       ApplicationSpecification appSpec = program.getSpecification();
       Preconditions.checkNotNull(appSpec, "Missing application specification.");
 
-      Type processorType = program.getType();
+      ProgramType processorType = program.getType();
       Preconditions.checkNotNull(processorType, "Missing processor type.");
-      Preconditions.checkArgument(processorType == Type.FLOW, "Only FLOW process type is supported.");
+      Preconditions.checkArgument(processorType == ProgramType.FLOW, "Only FLOW process type is supported.");
 
       String processorName = program.getName();
       Preconditions.checkNotNull(processorName, "Missing processor name.");

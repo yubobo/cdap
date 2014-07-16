@@ -1,8 +1,8 @@
 package com.continuuity.internal.app.runtime.distributed;
 
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.google.common.base.Preconditions;
 import org.apache.twill.api.EventHandler;
 import org.apache.twill.api.ResourceSpecification;
@@ -37,7 +37,7 @@ public class ServiceTwillApplication implements TwillApplication {
   @Override
   public TwillSpecification configure() {
     TwillSpecification.Builder.MoreRunnable moreRunnable = TwillSpecification.Builder.with()
-      .setName(String.format("%s.%s.%s.%s", Type.SERVICE.name().toLowerCase(), program.getAccountId(),
+      .setName(String.format("%s.%s.%s.%s", ProgramType.SERVICE.name().toLowerCase(), program.getAccountId(),
                              program.getApplicationId(), spec.getName()))
       .withRunnable();
 

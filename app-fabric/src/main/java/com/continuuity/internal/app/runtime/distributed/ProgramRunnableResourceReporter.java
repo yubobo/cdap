@@ -1,7 +1,7 @@
 package com.continuuity.internal.app.runtime.distributed;
 
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.internal.app.program.TypeId;
 import com.continuuity.internal.app.runtime.AbstractResourceReporter;
@@ -36,7 +36,7 @@ public class ProgramRunnableResourceReporter extends AbstractResourceReporter {
    */
   private String getMetricContext(Program program, TwillContext context) {
     String metricContext = program.getApplicationId() + "." + TypeId.getMetricContextId(program.getType());
-    if (program.getType() == Type.FLOW) {
+    if (program.getType() == ProgramType.FLOW) {
       metricContext += "." + program.getName();
     }
     metricContext += "." + context.getSpecification().getName() + "." + context.getInstanceId();

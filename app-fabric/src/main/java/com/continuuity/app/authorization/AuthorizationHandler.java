@@ -4,7 +4,7 @@
 
 package com.continuuity.app.authorization;
 
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
 
 /**
  *

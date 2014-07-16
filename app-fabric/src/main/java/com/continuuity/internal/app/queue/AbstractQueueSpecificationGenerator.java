@@ -6,7 +6,7 @@ package com.continuuity.internal.app.queue;
 
 import com.continuuity.api.flow.FlowletConnection;
 import com.continuuity.api.flow.FlowletDefinition;
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
 import com.continuuity.app.queue.QueueSpecification;
 import com.continuuity.app.queue.QueueSpecificationGenerator;
 import com.continuuity.common.queue.QueueName;

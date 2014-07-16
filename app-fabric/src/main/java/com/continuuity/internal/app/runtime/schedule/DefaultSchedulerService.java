@@ -1,7 +1,7 @@
 package com.continuuity.internal.app.runtime.schedule;
 
-import com.continuuity.app.Id;
-import com.continuuity.app.program.Type;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.runtime.Arguments;
 import com.continuuity.app.runtime.ProgramRuntimeService;
 import com.continuuity.app.store.Store;
@@ -43,7 +43,7 @@ public class DefaultSchedulerService {
       String[] parts = key.split(":");
       Preconditions.checkArgument(parts.length == 4);
 
-      Type programType = Type.valueOf(parts[0]);
+      ProgramType programType = ProgramType.valueOf(parts[0]);
       String accountId = parts[1];
       String applicationId = parts[2];
       String programId = parts[3];

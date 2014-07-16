@@ -1,12 +1,13 @@
 package com.continuuity.test.internal;
 
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
+import com.continuuity.api.metadata.RunRecord;
 import com.continuuity.app.deploy.Manager;
 import com.continuuity.app.deploy.ManagerFactory;
 import com.continuuity.app.program.ManifestFields;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.program.Programs;
-import com.continuuity.app.program.RunRecord;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.lang.jar.JarFinder;
@@ -229,7 +230,7 @@ public class AppFabricTestHelper {
 
     return factory.create(new ProgramTerminator() {
       @Override
-      public void stop(Id.Account id, Id.Program programId, com.continuuity.app.program.Type type) throws Exception {
+      public void stop(Id.Account id, Id.Program programId, ProgramType type) throws Exception {
         //No-op
       }
     });

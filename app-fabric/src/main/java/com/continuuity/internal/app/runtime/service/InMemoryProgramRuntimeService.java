@@ -1,9 +1,12 @@
 package com.continuuity.internal.app.runtime.service;
 
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.InMemoryProgramLiveInfo;
+import com.continuuity.api.metadata.NotRunningProgramLiveInfo;
+import com.continuuity.api.metadata.ProgramLiveInfo;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.program.Programs;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.AbstractProgramRuntimeService;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramOptions;
@@ -60,10 +63,10 @@ public final class InMemoryProgramRuntimeService extends AbstractProgramRuntimeS
   }
 
   @Override
-  public LiveInfo getLiveInfo(Id.Program programId, Type type) {
+  public ProgramLiveInfo getLiveInfo(Id.Program programId, ProgramType type) {
     return isRunning(programId, type)
-      ? new InMemoryLiveInfo(programId, type)
-      : new NotRunningLiveInfo(programId, type);
+      ? new InMemoryProgramLiveInfo(programId, type)
+      : new NotRunningProgramLiveInfo(programId, type);
   }
 
   @Override
@@ -76,7 +79,7 @@ public final class InMemoryProgramRuntimeService extends AbstractProgramRuntimeS
     LOG.info("Stopping all running programs.");
 
     List<ListenableFuture<ProgramController>> futures = Lists.newLinkedList();
-    for (Type type : Type.values()) {
+    for (ProgramType type : ProgramType.values()) {
       for (Map.Entry<RunId, RuntimeInfo> entry : list(type).entrySet()) {
         RuntimeInfo runtimeInfo = entry.getValue();
         if (isRunning(runtimeInfo.getProgramId(), type)) {

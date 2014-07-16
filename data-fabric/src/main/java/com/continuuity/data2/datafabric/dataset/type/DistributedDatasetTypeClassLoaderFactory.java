@@ -1,5 +1,6 @@
 package com.continuuity.data2.datafabric.dataset.type;
 
+import com.continuuity.api.metadata.DatasetModuleMeta;
 import com.continuuity.common.lang.ClassLoaders;
 import com.continuuity.common.lang.jar.BundleJarUtil;
 import com.google.common.io.Files;

@@ -4,8 +4,8 @@
 
 package com.continuuity.internal.app.deploy.pipeline;
 
+import com.continuuity.api.metadata.Id;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.Id;
 import org.apache.twill.filesystem.Location;
 
 /**

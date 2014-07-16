@@ -1,7 +1,7 @@
 package com.continuuity.gateway.handlers;
 
-import com.continuuity.app.Id;
-import com.continuuity.app.program.Type;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.gateway.GatewayFastTestsSuite;
 import com.continuuity.gateway.GatewayTestBase;
@@ -44,7 +44,8 @@ public class RuntimeArgumentTest extends GatewayTestBase {
     Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpResponseStatus.OK.getCode());
 
     // Check the procedure status. Make sure it is running before querying it
-    waitState(Type.PROCEDURE, Id.Program.from(Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "Count"), "RUNNING");
+    waitState(ProgramType.PROCEDURE, Id.Program.from(
+      Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "Count"), "RUNNING");
 
     // Check the count. Gives it couple trials as it takes time for flow to process and write to the table
     checkCount("1");
@@ -59,7 +60,8 @@ public class RuntimeArgumentTest extends GatewayTestBase {
     response = GatewayFastTestsSuite.doPost("/v2/apps/HighPassFilterApp/flows/FilterFlow/stop", null);
     Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpResponseStatus.OK.getCode());
 
-    waitState(Type.FLOW, Id.Program.from(Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "FilterFlow"), "STOPPED");
+    waitState(ProgramType.FLOW, Id.Program.from(
+      Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "FilterFlow"), "STOPPED");
 
     response = GatewayFastTestsSuite.doPost("/v2/apps/HighPassFilterApp/flows/FilterFlow/start", null);
     Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpResponseStatus.OK.getCode());
@@ -77,7 +79,8 @@ public class RuntimeArgumentTest extends GatewayTestBase {
     response = GatewayFastTestsSuite.doPost("/v2/apps/HighPassFilterApp/flows/FilterFlow/stop", null);
     Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpResponseStatus.OK.getCode());
 
-    waitState(Type.FLOW, Id.Program.from(Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "FilterFlow"), "STOPPED");
+    waitState(ProgramType.FLOW, Id.Program.from(
+      Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "FilterFlow"), "STOPPED");
 
     json.addProperty("threshold", "100");
     response = GatewayFastTestsSuite.doPost("/v2/apps/HighPassFilterApp/flows/FilterFlow/start", json.toString());
@@ -98,8 +101,10 @@ public class RuntimeArgumentTest extends GatewayTestBase {
     Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpResponseStatus.OK.getCode());
 
     // Wait for program states. Make sure they are stopped before deletion
-    waitState(Type.FLOW, Id.Program.from(Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "FilterFlow"), "STOPPED");
-    waitState(Type.PROCEDURE, Id.Program.from(Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "Count"), "STOPPED");
+    waitState(ProgramType.FLOW, Id.Program.from(
+      Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "FilterFlow"), "STOPPED");
+    waitState(ProgramType.PROCEDURE, Id.Program.from(
+      Constants.DEVELOPER_ACCOUNT_ID, "HighPassFilterApp", "Count"), "STOPPED");
 
     response = GatewayFastTestsSuite.doDelete("/v2/apps/HighPassFilterApp");
     Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpResponseStatus.OK.getCode());
@@ -108,8 +113,8 @@ public class RuntimeArgumentTest extends GatewayTestBase {
   private void checkCount(String expected) throws Exception {
     int trials = 0;
     while (trials++ < 5) {
-      HttpResponse response = GatewayFastTestsSuite.doPost("/v2/apps/HighPassFilterApp/procedures/Count/methods/result",
-                                                           null);
+      HttpResponse response = GatewayFastTestsSuite.doPost(
+        "/v2/apps/HighPassFilterApp/procedures/Count/methods/result", null);
       if (response.getStatusLine().getStatusCode() == HttpResponseStatus.OK.getCode()) {
         String count = EntityUtils.toString(response.getEntity());
         if (expected.equals(count)) {
@@ -121,7 +126,7 @@ public class RuntimeArgumentTest extends GatewayTestBase {
     Assert.assertTrue(trials < 5);
   }
 
-  private void waitState(Type type, Id.Program programId, String state) throws Exception {
+  private void waitState(ProgramType type, Id.Program programId, String state) throws Exception {
     int trials = 0;
     while (trials++ < 5) {
       HttpResponse response = GatewayFastTestsSuite.doGet(String.format("/v2/apps/%s/%ss/%s/status",

@@ -5,8 +5,8 @@ package com.continuuity.runtime;
 
 import com.continuuity.OneActionWorkflowApp;
 import com.continuuity.WorkflowApp;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.ProgramOptions;
 import com.continuuity.app.runtime.ProgramRunner;
 import com.continuuity.internal.app.deploy.pipeline.ApplicationWithPrograms;
@@ -71,7 +71,7 @@ public class WorkflowTest {
     Program program = Iterators.filter(app.getPrograms().iterator(), new Predicate<Program>() {
       @Override
       public boolean apply(Program input) {
-        return input.getType() == Type.WORKFLOW;
+        return input.getType() == ProgramType.WORKFLOW;
       }
     }).next();
 
@@ -108,7 +108,7 @@ public class WorkflowTest {
     Program program = Iterators.filter(app.getPrograms().iterator(), new Predicate<Program>() {
       @Override
       public boolean apply(Program input) {
-        return input.getType() == Type.WORKFLOW;
+        return input.getType() == ProgramType.WORKFLOW;
       }
     }).next();
 

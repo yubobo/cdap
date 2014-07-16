@@ -4,9 +4,9 @@
 package com.continuuity.internal.app.runtime.distributed;
 
 import com.continuuity.api.flow.FlowSpecification;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramOptions;
 import com.continuuity.common.conf.CConfiguration;
@@ -54,9 +54,9 @@ public final class DistributedFlowProgramRunner extends AbstractDistributedProgr
     ApplicationSpecification appSpec = program.getSpecification();
     Preconditions.checkNotNull(appSpec, "Missing application specification.");
 
-    Type processorType = program.getType();
+    ProgramType processorType = program.getType();
     Preconditions.checkNotNull(processorType, "Missing processor type.");
-    Preconditions.checkArgument(processorType == Type.FLOW, "Only FLOW process type is supported.");
+    Preconditions.checkArgument(processorType == ProgramType.FLOW, "Only FLOW process type is supported.");
 
     try {
       FlowSpecification flowSpec = appSpec.getFlows().get(program.getName());

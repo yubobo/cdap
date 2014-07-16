@@ -6,9 +6,9 @@ package com.continuuity.internal.app.deploy;
 
 import com.continuuity.api.app.Application;
 import com.continuuity.api.app.ApplicationContext;
+import com.continuuity.api.metadata.Id;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.DefaultAppConfigurer;
-import com.continuuity.app.Id;
 import com.continuuity.app.deploy.ConfigResponse;
 import com.continuuity.app.deploy.Configurator;
 import com.continuuity.app.program.Archive;

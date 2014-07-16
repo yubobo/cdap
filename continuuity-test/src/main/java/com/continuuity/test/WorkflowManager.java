@@ -1,6 +1,6 @@
 package com.continuuity.test;
 
-import com.continuuity.app.program.RunRecord;
+import com.continuuity.api.metadata.RunRecord;
 
 import java.util.List;
 

@@ -3,7 +3,8 @@
  */
 package com.continuuity.app.program;
 
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
 import com.google.common.base.Objects;
 import org.apache.twill.filesystem.Location;
 import org.apache.twill.filesystem.LocationFactory;
@@ -49,7 +50,7 @@ public final class Programs {
    * @return         Location corresponding to the program id
    * @throws IOException incase of errors
    */
-  public static Location programLocation(LocationFactory factory, String filePath, Id.Program id, Type type)
+  public static Location programLocation(LocationFactory factory, String filePath, Id.Program id, ProgramType type)
                                          throws IOException {
     Location allAppsLocation = factory.create(filePath);
 

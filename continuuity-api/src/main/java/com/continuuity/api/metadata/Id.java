@@ -2,7 +2,7 @@
  * Copyright 2012-2013 Continuuity,Inc. All Rights Reserved.
  */
 
-package com.continuuity.app;
+package com.continuuity.api.metadata;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;

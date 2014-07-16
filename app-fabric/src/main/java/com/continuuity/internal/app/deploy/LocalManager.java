@@ -4,7 +4,7 @@
 
 package com.continuuity.internal.app.deploy;
 
-import com.continuuity.app.Id;
+import com.continuuity.api.metadata.Id;
 import com.continuuity.app.deploy.Manager;
 import com.continuuity.app.store.Store;
 import com.continuuity.app.store.StoreFactory;

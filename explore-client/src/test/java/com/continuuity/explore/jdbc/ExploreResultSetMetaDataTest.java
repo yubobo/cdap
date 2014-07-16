@@ -1,6 +1,6 @@
 package com.continuuity.explore.jdbc;
 
-import com.continuuity.explore.service.ColumnDesc;
+import com.continuuity.api.metadata.ColumnDesc;
 
 import com.google.common.collect.Lists;
 import org.junit.Assert;

@@ -1,5 +1,9 @@
 package com.continuuity.explore.service;
 
+import com.continuuity.api.metadata.ColumnDesc;
+import com.continuuity.api.metadata.QueryHandle;
+import com.continuuity.api.metadata.QueryResult;
+import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.guice.ConfigModule;
@@ -68,11 +72,13 @@ public class BaseHiveExploreServiceTest {
   }
 
   protected static void runCommand(String command, boolean expectedHasResult,
-                                 List<ColumnDesc> expectedColumnDescs, List<Result> expectedResults) throws Exception {
-    Handle handle = exploreClient.execute(command);
+                                 List<ColumnDesc> expectedColumnDescs,
+                                 List<QueryResult> expectedResults) throws Exception {
+    QueryHandle handle = exploreClient.execute(command);
 
-    Status status = ExploreClientUtil.waitForCompletionStatus(exploreClient, handle, 200, TimeUnit.MILLISECONDS, 20);
-    Assert.assertEquals(Status.OpStatus.FINISHED, status.getStatus());
+    QueryStatus status = ExploreClientUtil.waitForCompletionStatus(exploreClient, handle, 200,
+                                                                   TimeUnit.MILLISECONDS, 20);
+    Assert.assertEquals(QueryStatus.OpStatus.FINISHED, status.getStatus());
     Assert.assertEquals(expectedHasResult, status.hasResults());
 
     Assert.assertEquals(expectedColumnDescs, exploreClient.getResultSchema(handle));
@@ -81,9 +87,9 @@ public class BaseHiveExploreServiceTest {
     exploreClient.close(handle);
   }
 
-  protected static List<Result> trimColumnValues(List<Result> results) {
-    List<Result> newResults = Lists.newArrayList();
-    for (Result result : results) {
+  protected static List<QueryResult> trimColumnValues(List<QueryResult> results) {
+    List<QueryResult> newResults = Lists.newArrayList();
+    for (QueryResult result : results) {
       List<Object> newCols = Lists.newArrayList();
       for (Object obj : result.getColumns()) {
         if (obj instanceof String) {
@@ -95,7 +101,7 @@ public class BaseHiveExploreServiceTest {
           newCols.add(obj);
         }
       }
-      newResults.add(new Result(newCols));
+      newResults.add(new QueryResult(newCols));
     }
     return newResults;
   }

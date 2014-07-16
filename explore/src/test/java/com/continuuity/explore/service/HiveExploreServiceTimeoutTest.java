@@ -1,6 +1,9 @@
 package com.continuuity.explore.service;
 
 import com.continuuity.api.dataset.DatasetProperties;
+import com.continuuity.api.metadata.ColumnDesc;
+import com.continuuity.api.metadata.QueryHandle;
+import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.transaction.Transaction;
@@ -86,7 +89,7 @@ public class HiveExploreServiceTimeoutTest extends BaseHiveExploreServiceTest {
   public void testTimeoutRunning() throws Exception {
     Set<Long> beforeTxns = transactionManager.getCurrentState().getInProgress().keySet();
 
-    Handle handle = exploreService.execute("select key, value from my_table");
+    QueryHandle handle = exploreService.execute("select key, value from my_table");
 
     Set<Long> queryTxns = Sets.difference(transactionManager.getCurrentState().getInProgress().keySet(), beforeTxns);
     Assert.assertFalse(queryTxns.isEmpty());
@@ -113,13 +116,14 @@ public class HiveExploreServiceTimeoutTest extends BaseHiveExploreServiceTest {
   public void testTimeoutFetchAllResults() throws Exception {
     Set<Long> beforeTxns = transactionManager.getCurrentState().getInProgress().keySet();
 
-    Handle handle = exploreService.execute("select key, value from my_table");
+    QueryHandle handle = exploreService.execute("select key, value from my_table");
 
     Set<Long> queryTxns = Sets.difference(transactionManager.getCurrentState().getInProgress().keySet(), beforeTxns);
     Assert.assertFalse(queryTxns.isEmpty());
 
-    Status status = ExploreClientUtil.waitForCompletionStatus(exploreClient, handle, 200, TimeUnit.MILLISECONDS, 20);
-    Assert.assertEquals(Status.OpStatus.FINISHED, status.getStatus());
+    QueryStatus status = ExploreClientUtil.waitForCompletionStatus(exploreClient, handle, 200,
+                                                                   TimeUnit.MILLISECONDS, 20);
+    Assert.assertEquals(QueryStatus.OpStatus.FINISHED, status.getStatus());
     Assert.assertTrue(status.hasResults());
 
     List<ColumnDesc> schema = exploreService.getResultSchema(handle);
@@ -159,7 +163,7 @@ public class HiveExploreServiceTimeoutTest extends BaseHiveExploreServiceTest {
   public void testTimeoutCancel() throws Exception {
     Set<Long> beforeTxns = transactionManager.getCurrentState().getInProgress().keySet();
 
-    Handle handle = exploreService.execute("select key, value from my_table");
+    QueryHandle handle = exploreService.execute("select key, value from my_table");
 
     Set<Long> queryTxns = Sets.difference(transactionManager.getCurrentState().getInProgress().keySet(), beforeTxns);
     Assert.assertFalse(queryTxns.isEmpty());
@@ -177,7 +181,7 @@ public class HiveExploreServiceTimeoutTest extends BaseHiveExploreServiceTest {
     );
 
     // Check if calls using inactive handle still work
-    Assert.assertEquals(new Status(Status.OpStatus.CANCELED, false), exploreService.getStatus(handle));
+    Assert.assertEquals(new QueryStatus(QueryStatus.OpStatus.CANCELED, false), exploreService.getStatus(handle));
     Assert.assertEquals(ImmutableList.<ColumnDesc>of(), exploreService.getResultSchema(handle));
     exploreService.cancel(handle);
     exploreService.close(handle);
@@ -197,13 +201,14 @@ public class HiveExploreServiceTimeoutTest extends BaseHiveExploreServiceTest {
   public void testTimeoutNoResults() throws Exception {
     Set<Long> beforeTxns = transactionManager.getCurrentState().getInProgress().keySet();
 
-    Handle handle = exploreService.execute("drop table if exists not_existing_table_name");
+    QueryHandle handle = exploreService.execute("drop table if exists not_existing_table_name");
 
     Set<Long> queryTxns = Sets.difference(transactionManager.getCurrentState().getInProgress().keySet(), beforeTxns);
     Assert.assertFalse(queryTxns.isEmpty());
 
-    Status status = ExploreClientUtil.waitForCompletionStatus(exploreClient, handle, 200, TimeUnit.MILLISECONDS, 20);
-    Assert.assertEquals(Status.OpStatus.FINISHED, status.getStatus());
+    QueryStatus status = ExploreClientUtil.waitForCompletionStatus(exploreClient, handle, 200,
+                                                                   TimeUnit.MILLISECONDS, 20);
+    Assert.assertEquals(QueryStatus.OpStatus.FINISHED, status.getStatus());
     Assert.assertFalse(status.hasResults());
 
     List<ColumnDesc> schema = exploreService.getResultSchema(handle);

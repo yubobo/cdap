@@ -1,9 +1,9 @@
 package com.continuuity.internal.app.runtime.procedure;
 
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.procedure.ProcedureSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.Arguments;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramOptions;
@@ -103,9 +103,9 @@ public final class ProcedureProgramRunner implements ProgramRunner {
       ApplicationSpecification appSpec = program.getSpecification();
       Preconditions.checkNotNull(appSpec, "Missing application specification.");
 
-      Type processorType = program.getType();
+      ProgramType processorType = program.getType();
       Preconditions.checkNotNull(processorType, "Missing processor type.");
-      Preconditions.checkArgument(processorType == Type.PROCEDURE, "Only PROCEDURE process type is supported.");
+      Preconditions.checkArgument(processorType == ProgramType.PROCEDURE, "Only PROCEDURE process type is supported.");
 
       ProcedureSpecification procedureSpec = appSpec.getProcedures().get(program.getName());
       Preconditions.checkNotNull(procedureSpec, "Missing ProcedureSpecification for %s", program.getName());

@@ -1,7 +1,7 @@
 package com.continuuity.internal.app.verification;
 
+import com.continuuity.api.metadata.Id;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.Id;
 import com.continuuity.app.verification.AbstractVerifier;
 import com.continuuity.app.verification.VerifyResult;
 import com.continuuity.error.Err;

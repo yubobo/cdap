@@ -1,10 +1,9 @@
 package com.continuuity.explore.jdbc;
 
+import com.continuuity.api.metadata.ColumnDesc;
+import com.continuuity.api.metadata.QueryHandle;
+import com.continuuity.api.metadata.QueryResult;
 import com.continuuity.explore.client.ExploreClient;
-import com.continuuity.explore.service.ColumnDesc;
-import com.continuuity.explore.service.Handle;
-import com.continuuity.explore.service.Result;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -42,8 +41,8 @@ public class ExploreQueryResultSetTest {
             new ColumnDesc("column15", "array<string>", 14, ""),
             new ColumnDesc("column16", "struct<name:string,attr:string>", 15, "")
         )),
-        ImmutableMap.of("foobar", (List<Result>) Lists.newArrayList(
-            new Result(ImmutableList.<Object>of(
+        ImmutableMap.of("foobar", (List<QueryResult>) Lists.newArrayList(
+            new QueryResult(ImmutableList.<Object>of(
                 "value1",
                 1,
                 "c",
@@ -65,7 +64,7 @@ public class ExploreQueryResultSetTest {
 
     ResultSet resultSet = new ExploreQueryResultSet(exploreClient,
                                                     new ExploreStatement(null, exploreClient),
-                                                    Handle.fromId("foobar"));
+                                                    QueryHandle.fromId("foobar"));
     Assert.assertTrue(resultSet.next());
     Assert.assertEquals(resultSet.getObject(1), resultSet.getObject("column1"));
     Assert.assertEquals("value1", resultSet.getString(1));
@@ -100,14 +99,14 @@ public class ExploreQueryResultSetTest {
             new ColumnDesc("column1", "STRING", 2, ""),
             new ColumnDesc("column1", "int", 1, "")
         )),
-        ImmutableMap.of("foobar", (List<Result>) Lists.newArrayList(
-            new Result(ImmutableList.<Object>of(1, "value1"))
+        ImmutableMap.of("foobar", (List<QueryResult>) Lists.newArrayList(
+            new QueryResult(ImmutableList.<Object>of(1, "value1"))
         ))
     );
 
     ResultSet resultSet = new ExploreQueryResultSet(exploreClient,
                                                     new ExploreStatement(null, exploreClient),
-                                                    Handle.fromId("foobar"));
+                                                    QueryHandle.fromId("foobar"));
     Assert.assertTrue(resultSet.next());
     Assert.assertEquals(1, resultSet.findColumn("column1"));
     Assert.assertEquals(1, resultSet.getObject("column1"));

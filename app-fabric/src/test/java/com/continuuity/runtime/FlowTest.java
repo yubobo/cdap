@@ -4,8 +4,8 @@ import com.continuuity.ArgumentCheckApp;
 import com.continuuity.InvalidFlowOutputApp;
 import com.continuuity.WordCountApp;
 import com.continuuity.api.flow.flowlet.StreamEvent;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramRunner;
 import com.continuuity.common.discovery.EndpointStrategy;
@@ -128,7 +128,7 @@ public class FlowTest {
 
     for (final Program program : app.getPrograms()) {
       // running mapreduce is out of scope of this tests (there's separate unit-test for that)
-      if (program.getType() == Type.MAPREDUCE) {
+      if (program.getType() == ProgramType.MAPREDUCE) {
         continue;
       }
       ProgramRunner runner = runnerFactory.create(ProgramRunnerFactory.Type.valueOf(program.getType().name()));

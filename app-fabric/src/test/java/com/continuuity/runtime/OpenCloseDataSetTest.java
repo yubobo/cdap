@@ -3,8 +3,8 @@ package com.continuuity.runtime;
 import com.continuuity.DummyAppWithTrackingTable;
 import com.continuuity.TrackingTable;
 import com.continuuity.api.flow.flowlet.StreamEvent;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramRunner;
 import com.continuuity.common.queue.QueueName;
@@ -79,7 +79,7 @@ public class OpenCloseDataSetTest {
 
     // start the flow and procedure
     for (Program program : app.getPrograms()) {
-      if (program.getType().equals(Type.MAPREDUCE)) {
+      if (program.getType().equals(ProgramType.MAPREDUCE)) {
         continue;
       }
       ProgramRunner runner = runnerFactory.create(ProgramRunnerFactory.Type.valueOf(program.getType().name()));
@@ -155,7 +155,7 @@ public class OpenCloseDataSetTest {
     // start the flow and procedure
     ProgramController controller = null;
     for (Program program : app.getPrograms()) {
-      if (program.getType().equals(Type.MAPREDUCE)) {
+      if (program.getType().equals(ProgramType.MAPREDUCE)) {
         ProgramRunner runner = runnerFactory.create(
           ProgramRunnerFactory.Type.valueOf(program.getType().name()));
         controller = runner.run(program, new SimpleProgramOptions(program));

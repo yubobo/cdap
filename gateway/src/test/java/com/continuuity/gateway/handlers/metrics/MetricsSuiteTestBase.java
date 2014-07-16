@@ -4,8 +4,8 @@
 package com.continuuity.gateway.handlers.metrics;
 
 import com.continuuity.api.Application;
+import com.continuuity.api.metadata.Id;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.Id;
 import com.continuuity.app.store.Store;
 import com.continuuity.app.store.StoreFactory;
 import com.continuuity.common.conf.CConfiguration;

@@ -3,9 +3,9 @@
  */
 package com.continuuity.internal.app.runtime.distributed;
 
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.procedure.ProcedureSpecification;
 import com.continuuity.app.program.Program;
-import com.continuuity.app.program.Type;
 import org.apache.twill.api.EventHandler;
 import org.apache.twill.api.ResourceSpecification;
 import org.apache.twill.api.TwillApplication;
@@ -46,7 +46,7 @@ public final class ProcedureTwillApplication implements TwillApplication {
 
     return TwillSpecification.Builder.with()
       .setName(String.format("%s.%s.%s.%s",
-                             Type.PROCEDURE.name().toLowerCase(),
+                             ProgramType.PROCEDURE.name().toLowerCase(),
                              program.getAccountId(), program.getApplicationId(), spec.getName()))
       .withRunnable()
         .add(spec.getName(),

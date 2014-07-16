@@ -10,14 +10,14 @@ import com.continuuity.api.data.stream.StreamSpecification;
 import com.continuuity.api.flow.FlowSpecification;
 import com.continuuity.api.flow.FlowletConnection;
 import com.continuuity.api.flow.FlowletDefinition;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
+import com.continuuity.api.metadata.RunRecord;
 import com.continuuity.api.procedure.ProcedureSpecification;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.Id;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.program.Programs;
-import com.continuuity.app.program.RunRecord;
-import com.continuuity.app.program.Type;
 import com.continuuity.app.store.Store;
 import com.continuuity.archive.ArchiveBundler;
 import com.continuuity.common.conf.CConfiguration;
@@ -98,7 +98,7 @@ public class MDTBasedStore implements Store {
    * @throws IOException
    */
   @Override
-  public Program loadProgram(Id.Program id, Type type) throws IOException {
+  public Program loadProgram(Id.Program id, ProgramType type) throws IOException {
     try {
       MetaDataEntry entry = metaDataTable.get(new OperationContext(id.getAccountId()), id.getAccountId(),
                                               null, FieldTypes.Application.ENTRY_TYPE, id.getApplicationId());
@@ -124,7 +124,7 @@ public class MDTBasedStore implements Store {
    * @return The {@link Location} of the given program.
    * @throws RuntimeException if program can't be found.
    */
-  private Location getProgramLocation(Id.Program id, Type type) throws IOException {
+  private Location getProgramLocation(Id.Program id, ProgramType type) throws IOException {
     String appFabricOutputDir = configuration.get(Constants.AppFabric.OUTPUT_DIR,
                                                   System.getProperty("java.io.tmpdir"));
     return Programs.programLocation(locationFactory, appFabricOutputDir, id, type);
@@ -235,7 +235,9 @@ public class MDTBasedStore implements Store {
   }
 
   @Override
-  public Table<Type, Id.Program, List<RunRecord>> getAllRunHistory(Id.Account account) throws OperationException {
+  public Table<ProgramType, Id.Program, List<RunRecord>> getAllRunHistory(Id.Account account)
+    throws OperationException {
+
     OperationContext context = new OperationContext(account.getId());
     LOG.trace("Removing all applications of account with id: {}", account.getId());
     List<MetaDataEntry> applications =
@@ -243,18 +245,18 @@ public class MDTBasedStore implements Store {
 
     ApplicationSpecificationAdapter adapter = ApplicationSpecificationAdapter.create();
 
-    ImmutableTable.Builder<Type, Id.Program, List<RunRecord>> builder = ImmutableTable.builder();
+    ImmutableTable.Builder<ProgramType, Id.Program, List<RunRecord>> builder = ImmutableTable.builder();
     for (MetaDataEntry entry : applications) {
       ApplicationSpecification appSpec = adapter.fromJson(entry.getTextField(FieldTypes.Application.SPEC_JSON));
       for (FlowSpecification flowSpec : appSpec.getFlows().values()) {
         Id.Program programId = Id.Program.from(account.getId(), appSpec.getName(), flowSpec.getName());
         List<RunRecord> runRecords = getRunRecords(programId);
-        builder.put(Type.FLOW, programId, runRecords);
+        builder.put(ProgramType.FLOW, programId, runRecords);
       }
       for (ProcedureSpecification procedureSpec : appSpec.getProcedures().values()) {
         Id.Program programId = Id.Program.from(account.getId(), appSpec.getName(), procedureSpec.getName());
         List<RunRecord> runRecords = getRunRecords(programId);
-        builder.put(Type.PROCEDURE, programId, runRecords);
+        builder.put(ProgramType.PROCEDURE, programId, runRecords);
       }
     }
     return builder.build();
@@ -480,7 +482,7 @@ public class MDTBasedStore implements Store {
               id.getAccountId(), id.getApplicationId(), id.getId(), flowletId, count);
 
     ApplicationSpecification newAppSpec = updateFlowletInstancesInAppSpec(id, flowletId, count);
-    replaceAppSpecInProgramJar(id, newAppSpec, Type.FLOW);
+    replaceAppSpecInProgramJar(id, newAppSpec, ProgramType.FLOW);
 
     long timestamp = System.currentTimeMillis();
     storeAppSpec(id.getApplication(), newAppSpec, timestamp);
@@ -541,7 +543,7 @@ public class MDTBasedStore implements Store {
                                                                                  count);
 
     ApplicationSpecification newAppSpec = replaceProcedureInAppSpec(appSpec, id, newSpecification);
-    replaceAppSpecInProgramJar(id, newAppSpec, Type.PROCEDURE);
+    replaceAppSpecInProgramJar(id, newAppSpec, ProgramType.PROCEDURE);
 
     long timestamp = System.currentTimeMillis();
     storeAppSpec(id.getApplication(), newAppSpec, timestamp);
@@ -580,7 +582,7 @@ public class MDTBasedStore implements Store {
 
     ApplicationSpecification newAppSpec = replaceServiceSpec(appSpec, id.getId(),
                                                              replaceRuntimeSpec(runnable, serviceSpec, newRuntimeSpec));
-    replaceAppSpecInProgramJar(id, newAppSpec, Type.SERVICE);
+    replaceAppSpecInProgramJar(id, newAppSpec, ProgramType.SERVICE);
 
     long timestamp = System.currentTimeMillis();
     storeAppSpec(id.getApplication(), newAppSpec, timestamp);
@@ -638,7 +640,7 @@ public class MDTBasedStore implements Store {
                                            });
   }
 
-  private void replaceAppSpecInProgramJar(Id.Program id, ApplicationSpecification appSpec, Type type) {
+  private void replaceAppSpecInProgramJar(Id.Program id, ApplicationSpecification appSpec, ProgramType type) {
     try {
       Location programLocation = getProgramLocation(id, type);
       ArchiveBundler bundler = new ArchiveBundler(programLocation);
@@ -990,7 +992,7 @@ public class MDTBasedStore implements Store {
     FlowletDefinition newFlowletDef = new FlowletDefinition(flowletDef, oldValue, newValue);
     ApplicationSpecification newAppSpec = replaceInAppSpec(appSpec, flow, flowSpec, newFlowletDef, conns);
 
-    replaceAppSpecInProgramJar(flow, newAppSpec, Type.FLOW);
+    replaceAppSpecInProgramJar(flow, newAppSpec, ProgramType.FLOW);
 
     long timestamp = System.currentTimeMillis();
     storeAppSpec(flow.getApplication(), newAppSpec, timestamp);

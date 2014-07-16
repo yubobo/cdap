@@ -1,16 +1,16 @@
 package com.continuuity.internal.app.deploy.pipeline;
 
 import com.continuuity.api.ProgramSpecification;
+import com.continuuity.api.metadata.ProgramType;
+import com.continuuity.api.webapp.WebappSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.program.Programs;
-import com.continuuity.app.program.Type;
 import com.continuuity.archive.ArchiveBundler;
 import com.continuuity.common.conf.Configuration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.internal.app.program.ProgramBundle;
 import com.continuuity.internal.app.runtime.webapp.WebappProgramRunner;
-import com.continuuity.internal.app.runtime.webapp.WebappSpecification;
 import com.continuuity.pipeline.AbstractStage;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -73,8 +73,8 @@ public class ProgramGenerationStage extends AbstractStage<ApplicationSpecLocatio
     // Generate webapp program if required
     Set<String> servingHostNames = WebappProgramRunner.getServingHostNames(o.getArchive().getInputStream());
     if (!servingHostNames.isEmpty()) {
-      specifications = Iterables.concat(specifications,
-                                        ImmutableList.of(createWebappSpec(Type.WEBAPP.toString().toLowerCase())));
+      specifications = Iterables.concat(specifications, ImmutableList.of(
+        createWebappSpec(ProgramType.WEBAPP.toString().toLowerCase())));
     }
 
     ListeningExecutorService executorService = MoreExecutors.listeningDecorator(
@@ -87,7 +87,7 @@ public class ProgramGenerationStage extends AbstractStage<ApplicationSpecLocatio
           new Callable<Location>() {
           @Override
           public Location call() throws Exception {
-            Type type = Type.typeOfSpecification(spec);
+            ProgramType type = ProgramType.typeOfSpecification(spec);
             String name = String.format(Locale.ENGLISH, "%s/%s", type, applicationName);
             Location programDir = newOutputDir.append(name);
             if (!programDir.exists()) {

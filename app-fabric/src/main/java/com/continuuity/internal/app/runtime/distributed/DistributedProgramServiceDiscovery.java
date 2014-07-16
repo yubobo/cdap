@@ -1,7 +1,7 @@
 package com.continuuity.internal.app.runtime.distributed;
 
-import com.continuuity.app.Id;
-import com.continuuity.app.program.Type;
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.internal.app.runtime.ProgramServiceDiscovery;
@@ -32,7 +32,7 @@ public class DistributedProgramServiceDiscovery implements ProgramServiceDiscove
       public DiscoveryServiceClient load(Id.Program programId) throws Exception {
         // A twill service started by Reactor would have Twill applicationId = [type].[accountId].[appId].[programId]
         String namespace = String.format("/%s.%s.%s.%s",
-                                         Type.SERVICE.name().toLowerCase(),
+                                         ProgramType.SERVICE.name().toLowerCase(),
                                          programId.getAccountId(), programId.getApplicationId(), programId.getId());
         return new ZKDiscoveryService(ZKClients.namespace(twillZKClient, namespace));
       }

@@ -1,7 +1,7 @@
 package com.continuuity.test.internal;
 
+import com.continuuity.api.metadata.RunRecord;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.program.RunRecord;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.lang.jar.JarClassLoader;
 import com.continuuity.common.queue.QueueName;

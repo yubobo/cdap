@@ -1,9 +1,9 @@
 package com.continuuity.internal.app.program;
 
+import com.continuuity.api.metadata.Id;
+import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.app.Id;
 import com.continuuity.app.program.ManifestFields;
-import com.continuuity.app.program.Type;
 import com.continuuity.archive.ArchiveBundler;
 import com.continuuity.internal.app.ApplicationSpecificationAdapter;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
@@ -42,12 +42,13 @@ public final class ProgramBundle {
    * @throws java.io.IOException in case of any issue related to copying jars.
    */
   public static Location create(Id.Application id, ArchiveBundler bundler, Location output, String programName,
-                                String className, Type type, ApplicationSpecification appSpec) throws IOException {
+                                String className, ProgramType type,
+                                ApplicationSpecification appSpec) throws IOException {
     return create(id, bundler, output, programName, className, type, appSpec, null);
   }
 
   public static Location create(Id.Application id, ArchiveBundler bundler, Location output, String programName,
-                               String className, Type type, ApplicationSpecification appSpec,
+                               String className, ProgramType type, ApplicationSpecification appSpec,
                                Manifest other) throws IOException {
     // Create a MANIFEST file
     Manifest manifest = new Manifest();

@@ -2,6 +2,9 @@ package com.continuuity.data2.datafabric.dataset.service;
 
 import com.continuuity.api.dataset.DatasetProperties;
 import com.continuuity.api.dataset.DatasetSpecification;
+import com.continuuity.api.metadata.DatasetMeta;
+import com.continuuity.api.metadata.DatasetTypeAndProperties;
+import com.continuuity.api.metadata.DatasetTypeMeta;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.exception.HandlerException;
@@ -9,11 +12,11 @@ import com.continuuity.data2.datafabric.dataset.instance.DatasetInstanceManager;
 import com.continuuity.data2.datafabric.dataset.service.executor.DatasetAdminOpResponse;
 import com.continuuity.data2.datafabric.dataset.service.executor.DatasetOpExecutor;
 import com.continuuity.data2.datafabric.dataset.type.DatasetTypeManager;
-import com.continuuity.data2.datafabric.dataset.type.DatasetTypeMeta;
 import com.continuuity.explore.client.DatasetExploreFacade;
 import com.continuuity.explore.service.ExploreException;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
@@ -24,6 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -62,7 +67,12 @@ public class DatasetInstanceHandler extends AbstractHttpHandler {
   @GET
   @Path("/data/datasets/")
   public void list(HttpRequest request, final HttpResponder responder) {
-    responder.sendJson(HttpResponseStatus.OK, instanceManager.getAll());
+    Collection<DatasetSpecification> specifications = instanceManager.getAll();
+    List<DatasetMeta> result = Lists.newArrayList();
+    for (DatasetSpecification specification : specifications) {
+      result.add(new DatasetMeta(specification, implManager.getTypeInfo(specification.getType())));
+    }
+    responder.sendJson(HttpResponseStatus.OK, result);
   }
 
   @DELETE
@@ -100,7 +110,7 @@ public class DatasetInstanceHandler extends AbstractHttpHandler {
     if (spec == null) {
       responder.sendStatus(HttpResponseStatus.NOT_FOUND);
     } else {
-      DatasetInstanceMeta info = new DatasetInstanceMeta(spec, implManager.getTypeInfo(spec.getType()));
+      DatasetMeta info = new DatasetMeta(spec, implManager.getTypeInfo(spec.getType()));
       responder.sendJson(HttpResponseStatus.OK, info);
     }
   }
@@ -230,27 +240,6 @@ public class DatasetInstanceHandler extends AbstractHttpHandler {
                            @PathParam("method") String method) {
     // todo: execute data operation
     responder.sendStatus(HttpResponseStatus.NOT_IMPLEMENTED);
-  }
-
-  /**
-   * POJO that carries dataset type and properties information for create dataset request
-   */
-  public static final class DatasetTypeAndProperties {
-    private final String typeName;
-    private final Map<String, String> properties;
-
-    public DatasetTypeAndProperties(String typeName, Map<String, String> properties) {
-      this.typeName = typeName;
-      this.properties = properties;
-    }
-
-    public String getTypeName() {
-      return typeName;
-    }
-
-    public Map<String, String> getProperties() {
-      return properties;
-    }
   }
 
   /**

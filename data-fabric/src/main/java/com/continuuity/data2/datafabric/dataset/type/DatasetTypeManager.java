@@ -4,6 +4,8 @@ import com.continuuity.api.dataset.DatasetDefinition;
 import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.api.dataset.module.DatasetDefinitionRegistry;
 import com.continuuity.api.dataset.module.DatasetModule;
+import com.continuuity.api.metadata.DatasetModuleMeta;
+import com.continuuity.api.metadata.DatasetTypeMeta;
 import com.continuuity.common.lang.ClassLoaders;
 import com.continuuity.common.lang.jar.JarClassLoader;
 import com.continuuity.data2.datafabric.dataset.service.mds.MDSDatasets;
@@ -159,7 +161,7 @@ public class DatasetTypeManager extends AbstractIdleService {
   /**
    * Get dataset type information
    * @param typeName name of the type to get info for
-   * @return instance of {@link com.continuuity.data2.datafabric.dataset.type.DatasetTypeMeta} or {@code null} if type
+   * @return instance of {@link com.continuuity.api.metadata.DatasetTypeMeta} or {@code null} if type
    *         does NOT exist
    */
   @Nullable
