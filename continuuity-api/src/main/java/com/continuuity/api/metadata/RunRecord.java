@@ -19,7 +19,7 @@ package com.continuuity.api.metadata;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * This class record information for a particular run.
+ * This class records information for a particular run.
  */
 public final class RunRecord {
 

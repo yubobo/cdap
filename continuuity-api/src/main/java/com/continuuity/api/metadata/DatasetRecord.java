@@ -19,7 +19,7 @@ package com.continuuity.api.metadata;
 import com.continuuity.api.data.DataSetSpecification;
 
 /**
- *
+ * Represents a dataset in an HTTP response.
  */
 public class DatasetRecord {
 

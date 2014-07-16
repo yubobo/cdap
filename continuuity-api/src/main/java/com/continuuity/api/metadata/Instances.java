@@ -17,7 +17,7 @@
 package com.continuuity.api.metadata;
 
 /**
- *
+ * Represents the number of instances a program currently is running with.
  */
 public class Instances {
 

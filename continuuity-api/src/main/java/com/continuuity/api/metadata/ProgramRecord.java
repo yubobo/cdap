@@ -17,7 +17,7 @@
 package com.continuuity.api.metadata;
 
 /**
- * Represents a program.
+ * Represents a program in an HTTP response.
  */
 public class ProgramRecord {
   private final ProgramType type;

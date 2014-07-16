@@ -19,7 +19,7 @@ package com.continuuity.api.metadata;
 import com.continuuity.api.data.stream.StreamSpecification;
 
 /**
- *
+ * Represents a stream in an HTTP response.
  */
 public class StreamRecord {
 
