@@ -18,9 +18,9 @@ package com.continuuity.data2.datafabric.dataset;
 
 import com.continuuity.api.dataset.DatasetProperties;
 import com.continuuity.api.dataset.DatasetSpecification;
+import com.continuuity.api.metadata.DatasetInstanceConfiguration;
 import com.continuuity.api.metadata.DatasetMeta;
 import com.continuuity.api.metadata.DatasetModuleMeta;
-import com.continuuity.api.metadata.DatasetTypeAndProperties;
 import com.continuuity.api.metadata.DatasetTypeMeta;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.discovery.EndpointStrategy;
@@ -125,9 +125,9 @@ class DatasetServiceClient {
   public void addInstance(String datasetInstanceName, String datasetType, DatasetProperties props)
     throws DatasetManagementException {
 
-    DatasetTypeAndProperties typeAndProps =
-      new DatasetTypeAndProperties(datasetType, props.getProperties());
-    HttpResponse response = doPut("datasets/" + datasetInstanceName, GSON.toJson(typeAndProps));
+    DatasetInstanceConfiguration creationProperties = new DatasetInstanceConfiguration(datasetType,
+                                                                                       props.getProperties());
+    HttpResponse response = doPut("datasets/" + datasetInstanceName, GSON.toJson(creationProperties));
     if (HttpResponseStatus.CONFLICT.getCode() == response.getResponseCode()) {
       throw new InstanceConflictException(String.format("Failed to add instance %s due to conflict, details: %s",
                                                         datasetInstanceName, getDetails(response)));

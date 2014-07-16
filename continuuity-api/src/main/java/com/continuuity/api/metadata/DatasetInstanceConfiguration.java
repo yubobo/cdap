@@ -21,11 +21,11 @@ import java.util.Map;
 /**
  * POJO that carries dataset type and properties information for create dataset request
  */
-public final class DatasetTypeAndProperties {
+public final class DatasetInstanceConfiguration {
   private final String typeName;
   private final Map<String, String> properties;
 
-  public DatasetTypeAndProperties(String typeName, Map<String, String> properties) {
+  public DatasetInstanceConfiguration(String typeName, Map<String, String> properties) {
     this.typeName = typeName;
     this.properties = properties;
   }

@@ -28,9 +28,9 @@ import com.continuuity.api.dataset.module.DatasetModule;
 import com.continuuity.api.dataset.table.Get;
 import com.continuuity.api.dataset.table.Put;
 import com.continuuity.api.dataset.table.Table;
+import com.continuuity.api.metadata.DatasetInstanceConfiguration;
 import com.continuuity.api.metadata.DatasetMeta;
 import com.continuuity.api.metadata.DatasetModuleMeta;
-import com.continuuity.api.metadata.DatasetTypeAndProperties;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.ObjectResponse;
 import com.continuuity.data2.dataset2.lib.table.CoreDatasetsModule;
@@ -195,8 +195,8 @@ public class DatasetInstanceHandlerTest extends DatasetServiceTestBase {
   }
 
   private int createInstance(String instanceName, String typeName, DatasetProperties props) throws IOException {
-    DatasetTypeAndProperties typeAndProps = new DatasetTypeAndProperties(typeName, props.getProperties());
-    return HttpRequests.put(getUrl("/data/datasets/" + instanceName), new Gson().toJson(typeAndProps))
+    DatasetInstanceConfiguration creationProperties = new DatasetInstanceConfiguration(typeName, props.getProperties());
+    return HttpRequests.put(getUrl("/data/datasets/" + instanceName), new Gson().toJson(creationProperties))
       .getResponseCode();
   }
 
