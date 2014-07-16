@@ -26,6 +26,7 @@ import com.continuuity.api.dataset.module.DatasetDefinitionRegistry;
 import com.continuuity.api.dataset.module.DatasetModule;
 import com.continuuity.api.metadata.DatasetModuleMeta;
 import com.continuuity.api.metadata.DatasetTypeMeta;
+import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.ObjectResponse;
 import com.google.common.base.Function;
@@ -176,19 +177,19 @@ public class DatasetTypeHandlerTest extends DatasetServiceTestBase {
   }
 
   private ObjectResponse<List<DatasetTypeMeta>> getTypes() throws IOException {
-    return ObjectResponse.fromJsonBody(HttpRequests.get(getUrl("/data/types")),
-                                       new TypeToken<List<DatasetTypeMeta>>() {
-                                       }.getType());
+    HttpRequest request = HttpRequest.get(getUrl("/data/types")).build();
+    return ObjectResponse.fromJsonBody(HttpRequests.execute(request),
+                                       new TypeToken<List<DatasetTypeMeta>>() { }.getType());
   }
 
   private ObjectResponse<DatasetModuleMeta> getModule(String moduleName) throws IOException {
-    return ObjectResponse.fromJsonBody(HttpRequests.get(getUrl("/data/modules/" + moduleName)),
-                                       DatasetModuleMeta.class);
+    HttpRequest request = HttpRequest.get(getUrl("/data/modules/" + moduleName)).build();
+    return ObjectResponse.fromJsonBody(HttpRequests.execute(request), DatasetModuleMeta.class);
   }
 
   private ObjectResponse<DatasetTypeMeta> getType(String typeName) throws IOException {
-    return ObjectResponse.fromJsonBody(HttpRequests.get(getUrl("/data/types/" + typeName)),
-                                       DatasetTypeMeta.class);
+    HttpRequest request = HttpRequest.get(getUrl("/data/types/" + typeName)).build();
+    return ObjectResponse.fromJsonBody(HttpRequests.execute(request), DatasetTypeMeta.class);
   }
 
   /**

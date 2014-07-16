@@ -29,8 +29,8 @@ import com.continuuity.api.dataset.table.Get;
 import com.continuuity.api.dataset.table.Put;
 import com.continuuity.api.dataset.table.Table;
 import com.continuuity.api.metadata.DatasetInstanceConfiguration;
-import com.continuuity.api.metadata.DatasetMeta;
 import com.continuuity.api.metadata.DatasetModuleMeta;
+import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.ObjectResponse;
 import com.continuuity.data2.dataset2.lib.table.CoreDatasetsModule;
@@ -89,7 +89,7 @@ public class DatasetInstanceHandlerTest extends DatasetServiceTestBase {
     Assert.assertEquals(dataset1Spec, instances.get(0));
 
     // verify created instance info can be retrieved
-    DatasetMeta datasetInfo = getInstance("dataset1").getResponseObject();
+    DatasetInstanceMeta datasetInfo = getInstance("dataset1").getResponseObject();
     Assert.assertEquals(dataset1Spec, datasetInfo.getSpec());
     Assert.assertEquals(dataset1Spec.getType(), datasetInfo.getType().getName());
     // type meta should have 2 modules that has to be loaded to create type's class and in the order they must be loaded
@@ -195,24 +195,27 @@ public class DatasetInstanceHandlerTest extends DatasetServiceTestBase {
   }
 
   private int createInstance(String instanceName, String typeName, DatasetProperties props) throws IOException {
-    DatasetInstanceConfiguration creationProperties = new DatasetInstanceConfiguration(typeName, props.getProperties());
-    return HttpRequests.put(getUrl("/data/datasets/" + instanceName), new Gson().toJson(creationProperties))
-      .getResponseCode();
+    DatasetInstanceConfiguration instanceConfiguration =
+      new DatasetInstanceConfiguration(typeName, props.getProperties());
+    HttpRequest request = HttpRequest.put(getUrl("/data/datasets/" + instanceName))
+      .withBody(new Gson().toJson(instanceConfiguration)).build();
+    return HttpRequests.execute(request).getResponseCode();
   }
 
   private ObjectResponse<List<DatasetSpecification>> getInstances() throws IOException {
-    return ObjectResponse.fromJsonBody(HttpRequests.get(getUrl("/data/datasets")),
-                                       new TypeToken<List<DatasetSpecification>>() {
-                                       }.getType());
+    HttpRequest request = HttpRequest.get(getUrl("/data/datasets")).build();
+    return ObjectResponse.fromJsonBody(HttpRequests.execute(request),
+                                       new TypeToken<List<DatasetSpecification>>() { }.getType());
   }
 
-  private ObjectResponse<DatasetMeta> getInstance(String instanceName) throws IOException {
-    return ObjectResponse.fromJsonBody(HttpRequests.get(getUrl("/data/datasets/" + instanceName)),
-                                       DatasetMeta.class);
+  private ObjectResponse<DatasetInstanceMeta> getInstance(String instanceName) throws IOException {
+    HttpRequest request = HttpRequest.get(getUrl("/data/datasets/" + instanceName)).build();
+    return ObjectResponse.fromJsonBody(HttpRequests.execute(request), DatasetInstanceMeta.class);
   }
 
   private int deleteInstance(String instanceName) throws IOException {
-    return HttpRequests.delete(getUrl("/data/datasets/" + instanceName)).getResponseCode();
+    HttpRequest request = HttpRequest.delete(getUrl("/data/datasets/" + instanceName)).build();
+    return HttpRequests.execute(request).getResponseCode();
   }
 
   /**
