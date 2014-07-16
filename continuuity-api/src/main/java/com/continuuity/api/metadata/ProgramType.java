@@ -23,16 +23,31 @@ import com.continuuity.api.procedure.ProcedureSpecification;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.api.webapp.WebappSpecification;
 import com.continuuity.api.workflow.WorkflowSpecification;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Defines types of programs supported by the system.
  */
 public enum ProgramType {
+
+  // @SerializedName to maintain backwards-compatibility
+
+  @SerializedName("Flow")
   FLOW(1, "flows", "Flow", true, FlowSpecification.class),
+
+  @SerializedName("Procedure")
   PROCEDURE(2, "procedures", "Procedure", true, ProcedureSpecification.class),
+
+  @SerializedName("Mapreduce")
   MAPREDUCE(3, "mapreduce", "Mapreduce", true, MapReduceSpecification.class),
+
+  @SerializedName("Workflow")
   WORKFLOW(4, "workflows", "Workflow", true, WorkflowSpecification.class),
+
+  @SerializedName("Webapp")
   WEBAPP(5, "webapp", "Webapp", false, WebappSpecification.class),
+
+  @SerializedName("Service")
   SERVICE(6, "services", "Service", true, ServiceSpecification.class);
 
   private final int programType;
@@ -76,6 +91,7 @@ public enum ProgramType {
     return valueOf(pretty.toUpperCase());
   }
 
+  @Override
   public String toString() {
     return prettyName;
   }

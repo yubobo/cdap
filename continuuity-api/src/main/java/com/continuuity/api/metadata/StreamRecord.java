@@ -26,9 +26,9 @@ public class StreamRecord {
   private String type;
   private String id;
   private String name;
-  private StreamSpecification specification;
+  private String specification;
 
-  public StreamRecord(String type, String id, String name, StreamSpecification specification) {
+  public StreamRecord(String type, String id, String name, String specification) {
     this.type = type;
     this.id = id;
     this.name = name;
@@ -47,7 +47,8 @@ public class StreamRecord {
     return name;
   }
 
-  public StreamSpecification getSpecification() {
+  public String getSpecification() {
     return specification;
   }
+
 }

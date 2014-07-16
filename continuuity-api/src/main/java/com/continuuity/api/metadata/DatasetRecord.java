@@ -27,9 +27,9 @@ public class DatasetRecord {
   private final String id;
   private final String name;
   private final String classname;
-  private final DataSetSpecification specification;
+  private final String specification;
 
-  public DatasetRecord(String type, String id, String name, String classname, DataSetSpecification specification) {
+  public DatasetRecord(String type, String id, String name, String classname, String specification) {
     this.type = type;
     this.id = id;
     this.name = name;
@@ -53,7 +53,7 @@ public class DatasetRecord {
     return classname;
   }
 
-  public DataSetSpecification getSpecification() {
+  public String getSpecification() {
     return specification;
   }
 }

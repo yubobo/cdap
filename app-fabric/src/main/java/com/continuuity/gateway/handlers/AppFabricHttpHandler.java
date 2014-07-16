@@ -3179,11 +3179,11 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
   }
 
   private static DatasetRecord makeDataSetRecord(String name, String classname, DataSetSpecification specification) {
-    return new DatasetRecord("Dataset", name, name, classname, specification);
+    return new DatasetRecord("Dataset", name, name, classname, GSON.toJson(specification));
   }
 
   private static StreamRecord makeStreamRecord(String name, StreamSpecification specification) {
-    return new StreamRecord("Stream", name, name, specification);
+    return new StreamRecord("Stream", name, name, GSON.toJson(specification));
   }
 
   /**
