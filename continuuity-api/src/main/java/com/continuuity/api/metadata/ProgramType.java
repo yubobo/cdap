@@ -76,4 +76,8 @@ public enum ProgramType {
     return valueOf(pretty.toUpperCase());
   }
 
+  public String toString() {
+    return prettyName;
+  }
+
 }
