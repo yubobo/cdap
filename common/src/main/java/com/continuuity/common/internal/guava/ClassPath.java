@@ -388,7 +388,8 @@ public final class ClassPath {
       for (File f : files) {
         String name = f.getName();
         if (f.isDirectory()) {
-          scanDirectory(f, classloader, packagePrefix + name + "/", newAncestors);
+          // NOTE: do not recurse into child dirs of classpath entries
+//          scanDirectory(f, classloader, packagePrefix + name + "/", newAncestors);
         } else {
           String resourceName = packagePrefix + name;
           if (!resourceName.equals(JarFile.MANIFEST_NAME)) {
