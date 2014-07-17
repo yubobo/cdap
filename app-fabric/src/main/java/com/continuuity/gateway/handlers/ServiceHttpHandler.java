@@ -20,7 +20,10 @@ import com.continuuity.api.metadata.Containers;
 import com.continuuity.api.metadata.Id;
 import com.continuuity.api.metadata.NotRunningProgramLiveInfo;
 import com.continuuity.api.metadata.ProgramLiveInfo;
+import com.continuuity.api.metadata.ProgramRecord;
 import com.continuuity.api.metadata.ProgramType;
+import com.continuuity.api.metadata.ServiceInstances;
+import com.continuuity.api.metadata.ServiceMeta;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.runtime.ProgramRuntimeService;
@@ -36,9 +39,7 @@ import com.continuuity.internal.UserMessages;
 import com.continuuity.internal.app.runtime.ProgramOptionConstants;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.twill.api.RuntimeSpecification;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -47,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.ws.rs.GET;
@@ -86,15 +88,11 @@ public class ServiceHttpHandler extends AbstractAppFabricHttpHandler {
       String accountId = getAuthenticatedAccountId(request);
       ApplicationSpecification spec = store.getApplication(Id.Application.from(accountId, appId));
       if (spec != null) {
-        JsonArray services = new JsonArray();
+        List<ProgramRecord> services = Lists.newArrayList();
         for (Map.Entry<String, ServiceSpecification> entry : spec.getServices().entrySet()) {
-          JsonObject service = new JsonObject();
-          service.addProperty("type", ProgramType.SERVICE.getPrettyName());
-          service.addProperty("app", appId);
-          service.addProperty("id", entry.getValue().getName());
-          service.addProperty("name", entry.getValue().getName());
-          service.addProperty("description", entry.getValue().getDescription());
-          services.add(service);
+          ServiceSpecification specification = entry.getValue();
+          services.add(new ProgramRecord(ProgramType.SERVICE, appId, specification.getName(),
+                                         specification.getName(), specification.getDescription()));
         }
         responder.sendJson(HttpResponseStatus.OK, services);
       } else {
@@ -121,16 +119,8 @@ public class ServiceHttpHandler extends AbstractAppFabricHttpHandler {
       String accountId = getAuthenticatedAccountId(request);
       ServiceSpecification spec = getServiceSpecification(accountId, appId, serviceId);
       if (spec != null) {
-        JsonObject service = new JsonObject();
-        service.addProperty("id", spec.getName());
-        service.addProperty("name", spec.getName());
-        service.addProperty("description", spec.getDescription());
-        JsonArray runnables = new JsonArray();
-        for (Map.Entry<String, RuntimeSpecification> entry : spec.getRunnables().entrySet()) {
-          runnables.add(new JsonPrimitive(entry.getKey()));
-        }
-        service.add("runnables", runnables);
-        responder.sendJson(HttpResponseStatus.OK, service);
+        responder.sendJson(HttpResponseStatus.OK, new ServiceMeta(
+          spec.getName(), spec.getName(), spec.getDescription(), spec.getRunnables().keySet()));
       } else {
         responder.sendStatus(HttpResponseStatus.NOT_FOUND);
       }
@@ -157,10 +147,10 @@ public class ServiceHttpHandler extends AbstractAppFabricHttpHandler {
       if (specification == null) {
         responder.sendStatus(HttpResponseStatus.NOT_FOUND);
       } else {
-        JsonObject reply = new JsonObject();
-        reply.addProperty("requested", specification.getResourceSpecification().getInstances());
-        reply.addProperty("provisioned", getRunnableCount(accountId, appId, serviceId, runnableName));
-        responder.sendJson(HttpResponseStatus.OK, reply);
+        responder.sendJson(HttpResponseStatus.OK, new ServiceInstances(
+          specification.getResourceSpecification().getInstances(),
+          getRunnableCount(accountId, appId, serviceId, runnableName
+        )));
       }
     } catch (SecurityException e) {
       responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
