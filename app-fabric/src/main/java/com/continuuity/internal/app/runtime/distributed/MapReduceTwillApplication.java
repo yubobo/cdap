@@ -16,8 +16,8 @@
 package com.continuuity.internal.app.runtime.distributed;
 
 import com.continuuity.api.mapreduce.MapReduceSpecification;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
+import com.continuuity.reactor.metadata.ProgramType;
 import org.apache.twill.api.EventHandler;
 import org.apache.twill.api.ResourceSpecification;
 import org.apache.twill.api.TwillApplication;

@@ -14,29 +14,25 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
-import com.continuuity.api.data.stream.StreamSpecification;
+import java.util.Set;
 
 /**
- * Represents a stream in an HTTP response.
+ * Metadata of a service.
  */
-public class StreamRecord {
+public class ServiceMeta {
 
-  private String type;
-  private String id;
-  private String name;
-  private String specification;
+  private final String id;
+  private final String name;
+  private final String description;
+  private final Set<String> runnables;
 
-  public StreamRecord(String type, String id, String name, String specification) {
-    this.type = type;
+  public ServiceMeta(String id, String name, String description, Set<String> runnables) {
     this.id = id;
     this.name = name;
-    this.specification = specification;
-  }
-
-  public String getType() {
-    return type;
+    this.description = description;
+    this.runnables = runnables;
   }
 
   public String getId() {
@@ -47,8 +43,11 @@ public class StreamRecord {
     return name;
   }
 
-  public String getSpecification() {
-    return specification;
+  public String getDescription() {
+    return description;
   }
 
+  public Set<String> getRunnables() {
+    return runnables;
+  }
 }

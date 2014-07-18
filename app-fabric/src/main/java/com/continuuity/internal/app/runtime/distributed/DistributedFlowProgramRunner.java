@@ -16,7 +16,6 @@
 package com.continuuity.internal.app.runtime.distributed;
 
 import com.continuuity.api.flow.FlowSpecification;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.runtime.ProgramController;
@@ -28,6 +27,7 @@ import com.continuuity.common.twill.AbortOnTimeoutEventHandler;
 import com.continuuity.data2.transaction.queue.QueueAdmin;
 import com.continuuity.data2.transaction.stream.StreamAdmin;
 import com.continuuity.internal.app.runtime.flow.FlowUtils;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Multimap;

@@ -16,7 +16,6 @@
 
 package com.continuuity.test.internal;
 
-import com.continuuity.api.metadata.RunRecord;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.lang.jar.JarClassLoader;
@@ -30,6 +29,7 @@ import com.continuuity.data2.transaction.TransactionContext;
 import com.continuuity.data2.transaction.TransactionFailureException;
 import com.continuuity.data2.transaction.TransactionSystemClient;
 import com.continuuity.gateway.handlers.AppFabricHttpHandler;
+import com.continuuity.reactor.metadata.RunRecord;
 import com.continuuity.test.ApplicationManager;
 import com.continuuity.test.DataSetManager;
 import com.continuuity.test.FlowManager;

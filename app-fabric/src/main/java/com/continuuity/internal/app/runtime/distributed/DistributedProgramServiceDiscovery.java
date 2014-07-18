@@ -16,11 +16,11 @@
 
 package com.continuuity.internal.app.runtime.distributed;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.internal.app.runtime.ProgramServiceDiscovery;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;

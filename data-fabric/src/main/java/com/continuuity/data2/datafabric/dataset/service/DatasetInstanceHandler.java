@@ -17,10 +17,6 @@
 package com.continuuity.data2.datafabric.dataset.service;
 
 import com.continuuity.api.dataset.DatasetProperties;
-import com.continuuity.api.dataset.DatasetSpecification;
-import com.continuuity.api.metadata.DatasetInstanceConfiguration;
-import com.continuuity.api.metadata.DatasetMeta;
-import com.continuuity.api.metadata.DatasetTypeMeta;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.exception.HandlerException;
@@ -32,6 +28,10 @@ import com.continuuity.explore.client.DatasetExploreFacade;
 import com.continuuity.explore.service.ExploreException;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
+import com.continuuity.reactor.metadata.DatasetInstanceConfiguration;
+import com.continuuity.reactor.metadata.DatasetMeta;
+import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.reactor.metadata.DatasetTypeMeta;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import org.jboss.netty.buffer.ChannelBufferInputStream;

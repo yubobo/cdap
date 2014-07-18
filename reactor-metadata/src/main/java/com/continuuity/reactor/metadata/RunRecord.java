@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
 import com.google.gson.annotations.SerializedName;
 

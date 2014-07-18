@@ -16,8 +16,7 @@
 
 package com.continuuity.explore.jdbc;
 
-import com.continuuity.api.metadata.ColumnDesc;
-
+import com.continuuity.reactor.metadata.ColumnDesc;
 import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;

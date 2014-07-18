@@ -14,14 +14,20 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
 /**
- * A live info for in-memory runtime envirnment.
+ * Represents the number of instances a program currently is running with.
  */
-public class InMemoryProgramLiveInfo extends ProgramLiveInfo {
+public class Instances {
 
-  public InMemoryProgramLiveInfo(Id.Program programId, ProgramType type) {
-    super(programId, type, "in-memory");
+  private final int instances;
+
+  public Instances(int instances) {
+    this.instances = instances;
+  }
+
+  public int getInstances() {
+    return instances;
   }
 }

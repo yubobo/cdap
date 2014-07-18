@@ -16,9 +16,6 @@
 
 package com.continuuity.test.internal;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
-import com.continuuity.api.metadata.RunRecord;
 import com.continuuity.app.deploy.Manager;
 import com.continuuity.app.deploy.ManagerFactory;
 import com.continuuity.app.program.ManifestFields;
@@ -36,6 +33,9 @@ import com.continuuity.internal.app.deploy.ProgramTerminator;
 import com.continuuity.internal.app.deploy.pipeline.ApplicationWithPrograms;
 import com.continuuity.internal.app.runtime.schedule.SchedulerService;
 import com.continuuity.logging.appender.LogAppenderInitializer;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.reactor.metadata.RunRecord;
 import com.continuuity.test.internal.guice.AppFabricTestModule;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
@@ -44,7 +44,6 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.gson.Gson;

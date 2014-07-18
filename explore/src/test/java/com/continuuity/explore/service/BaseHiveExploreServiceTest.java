@@ -16,10 +16,6 @@
 
 package com.continuuity.explore.service;
 
-import com.continuuity.api.metadata.ColumnDesc;
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryResult;
-import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.guice.ConfigModule;
@@ -39,6 +35,10 @@ import com.continuuity.explore.executor.ExploreExecutorService;
 import com.continuuity.explore.guice.ExploreRuntimeModule;
 import com.continuuity.gateway.auth.AuthModule;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
+import com.continuuity.reactor.metadata.ColumnDesc;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryResult;
+import com.continuuity.reactor.metadata.QueryStatus;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;

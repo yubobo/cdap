@@ -16,15 +16,15 @@
 
 package com.continuuity.explore.executor;
 
-import com.continuuity.api.metadata.ColumnDesc;
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryResult;
-import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.explore.service.ExploreService;
 import com.continuuity.explore.service.HandleNotFoundException;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
+import com.continuuity.reactor.metadata.ColumnDesc;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryResult;
+import com.continuuity.reactor.metadata.QueryStatus;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;

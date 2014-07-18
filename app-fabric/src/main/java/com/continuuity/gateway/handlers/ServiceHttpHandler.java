@@ -16,14 +16,6 @@
 
 package com.continuuity.gateway.handlers;
 
-import com.continuuity.api.metadata.Containers;
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.NotRunningProgramLiveInfo;
-import com.continuuity.api.metadata.ProgramLiveInfo;
-import com.continuuity.api.metadata.ProgramRecord;
-import com.continuuity.api.metadata.ProgramType;
-import com.continuuity.api.metadata.ServiceInstances;
-import com.continuuity.api.metadata.ServiceMeta;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.runtime.ProgramRuntimeService;
@@ -37,6 +29,14 @@ import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.UserErrors;
 import com.continuuity.internal.UserMessages;
 import com.continuuity.internal.app.runtime.ProgramOptionConstants;
+import com.continuuity.reactor.metadata.Containers;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.NotRunningProgramLiveInfo;
+import com.continuuity.reactor.metadata.ProgramLiveInfo;
+import com.continuuity.reactor.metadata.ProgramRecord;
+import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.reactor.metadata.ServiceInstances;
+import com.continuuity.reactor.metadata.ServiceMeta;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;

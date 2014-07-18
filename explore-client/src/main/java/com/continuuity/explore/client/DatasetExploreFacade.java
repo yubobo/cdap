@@ -17,8 +17,6 @@
 package com.continuuity.explore.client;
 
 import com.continuuity.api.data.batch.RecordScannable;
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.explore.service.ExploreException;
@@ -26,6 +24,8 @@ import com.continuuity.explore.service.HandleNotFoundException;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
 import com.continuuity.internal.io.Schema;
 import com.continuuity.internal.io.UnsupportedTypeException;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryStatus;
 import com.google.common.base.Throwables;
 import com.google.inject.Inject;
 import org.slf4j.Logger;

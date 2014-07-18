@@ -14,20 +14,27 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
 /**
- * Represents the number of instances a program currently is running with.
+ * Dataset instance metadata.
  */
-public class Instances {
+public class DatasetMeta {
+  private final DatasetSpecification spec;
 
-  private final int instances;
+  // todo: meta of modules inside will have list of all types in the module that is redundant here
+  private final DatasetTypeMeta type;
 
-  public Instances(int instances) {
-    this.instances = instances;
+  public DatasetMeta(DatasetSpecification spec, DatasetTypeMeta type) {
+    this.spec = spec;
+    this.type = type;
   }
 
-  public int getInstances() {
-    return instances;
+  public DatasetSpecification getSpec() {
+    return spec;
+  }
+
+  public DatasetTypeMeta getType() {
+    return type;
   }
 }

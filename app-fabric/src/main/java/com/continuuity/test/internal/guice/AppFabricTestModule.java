@@ -15,8 +15,6 @@
  */
 package com.continuuity.test.internal.guice;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.schedule.Schedule;
 import com.continuuity.app.guice.AppFabricServiceRuntimeModule;
 import com.continuuity.app.guice.ProgramRunnerRuntimeModule;
@@ -35,6 +33,8 @@ import com.continuuity.internal.app.runtime.schedule.Scheduler;
 import com.continuuity.logging.guice.LoggingModules;
 import com.continuuity.metrics.guice.MetricsClientRuntimeModule;
 import com.continuuity.metrics.guice.MetricsHandlerModule;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.PrivateModule;

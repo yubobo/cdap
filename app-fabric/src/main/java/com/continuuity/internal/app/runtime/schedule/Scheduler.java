@@ -16,9 +16,9 @@
 
 package com.continuuity.internal.app.runtime.schedule;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.schedule.Schedule;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
 
 import java.util.List;
 

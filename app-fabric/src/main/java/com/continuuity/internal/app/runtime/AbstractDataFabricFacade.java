@@ -17,7 +17,6 @@
 package com.continuuity.internal.app.runtime;
 
 import com.continuuity.api.data.DataSetContext;
-import com.continuuity.api.metadata.Id;
 import com.continuuity.app.program.Program;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.queue.QueueName;
@@ -39,6 +38,7 @@ import com.continuuity.data2.transaction.queue.QueueMetrics;
 import com.continuuity.data2.transaction.stream.ForwardingStreamConsumer;
 import com.continuuity.data2.transaction.stream.StreamConsumer;
 import com.continuuity.data2.transaction.stream.StreamConsumerFactory;
+import com.continuuity.reactor.metadata.Id;
 import com.google.common.base.Throwables;
 import org.apache.twill.filesystem.LocationFactory;
 

@@ -16,13 +16,13 @@
 
 package com.continuuity.internal.app.program;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.ManifestFields;
 import com.continuuity.archive.ArchiveBundler;
 import com.continuuity.internal.app.ApplicationSpecificationAdapter;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;

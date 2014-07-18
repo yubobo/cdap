@@ -16,8 +16,8 @@
 
 package com.continuuity.explore.service.hive;
 
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryStatus;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryStatus;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import org.slf4j.Logger;

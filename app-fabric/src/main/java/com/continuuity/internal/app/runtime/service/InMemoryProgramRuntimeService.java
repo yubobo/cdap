@@ -16,11 +16,6 @@
 
 package com.continuuity.internal.app.runtime.service;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.InMemoryProgramLiveInfo;
-import com.continuuity.api.metadata.NotRunningProgramLiveInfo;
-import com.continuuity.api.metadata.ProgramLiveInfo;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.program.Programs;
 import com.continuuity.app.runtime.AbstractProgramRuntimeService;
@@ -29,6 +24,11 @@ import com.continuuity.app.runtime.ProgramOptions;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.internal.app.runtime.ProgramRunnerFactory;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.InMemoryProgramLiveInfo;
+import com.continuuity.reactor.metadata.NotRunningProgramLiveInfo;
+import com.continuuity.reactor.metadata.ProgramLiveInfo;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;

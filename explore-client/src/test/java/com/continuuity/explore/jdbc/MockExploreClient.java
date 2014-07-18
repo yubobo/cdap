@@ -16,13 +16,13 @@
 
 package com.continuuity.explore.jdbc;
 
-import com.continuuity.api.metadata.ColumnDesc;
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryResult;
-import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.explore.client.ExploreClient;
 import com.continuuity.explore.service.ExploreException;
 import com.continuuity.explore.service.HandleNotFoundException;
+import com.continuuity.reactor.metadata.ColumnDesc;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryResult;
+import com.continuuity.reactor.metadata.QueryStatus;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;

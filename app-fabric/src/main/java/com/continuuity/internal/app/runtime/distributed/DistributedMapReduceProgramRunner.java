@@ -16,12 +16,12 @@
 package com.continuuity.internal.app.runtime.distributed;
 
 import com.continuuity.api.mapreduce.MapReduceSpecification;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramOptions;
 import com.continuuity.common.conf.CConfiguration;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import org.apache.hadoop.conf.Configuration;

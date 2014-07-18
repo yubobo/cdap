@@ -16,10 +16,6 @@
 
 package com.continuuity.explore.service.hive;
 
-import com.continuuity.api.metadata.ColumnDesc;
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryResult;
-import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.dataset2.DatasetFramework;
@@ -33,6 +29,10 @@ import com.continuuity.hive.context.ConfigurationUtil;
 import com.continuuity.hive.context.ContextManager;
 import com.continuuity.hive.context.HConfCodec;
 import com.continuuity.hive.context.TxnCodec;
+import com.continuuity.reactor.metadata.ColumnDesc;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryResult;
+import com.continuuity.reactor.metadata.QueryStatus;
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -370,7 +370,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   }
 
   /**
-   * Returns {@link OperationHandle} associated with Explore {@link com.continuuity.api.metadata.QueryHandle}.
+   * Returns {@link OperationHandle} associated with Explore {@link QueryHandle}.
    * @param handle explore handle.
    * @return OperationHandle.
    * @throws ExploreException
@@ -384,7 +384,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
    * @param operationHandle {@link OperationHandle} of the Hive operation running.
    * @param sessionHandle {@link SessionHandle} for the Hive operation running.
    * @param sessionConf configuration for the session running the Hive operation.
-   * @return {@link com.continuuity.api.metadata.QueryHandle} that represents the Hive operation being run.
+   * @return {@link QueryHandle} that represents the Hive operation being run.
    */
   protected QueryHandle saveOperationInfo(OperationHandle operationHandle, SessionHandle sessionHandle,
                                      Map<String, String> sessionConf) {

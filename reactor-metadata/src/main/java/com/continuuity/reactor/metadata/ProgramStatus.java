@@ -14,29 +14,23 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
-
-import com.continuuity.api.dataset.DatasetSpecification;
+package com.continuuity.reactor.metadata;
 
 /**
- * Dataset instance metadata.
+ * Class containing a program status.
  */
-public class DatasetMeta {
-  private final DatasetSpecification spec;
+public class ProgramStatus {
+  private String applicationId;
+  private String runnableId;
+  private String status;
 
-  // todo: meta of modules inside will have list of all types in the module that is redundant here
-  private final DatasetTypeMeta type;
-
-  public DatasetMeta(DatasetSpecification spec, DatasetTypeMeta type) {
-    this.spec = spec;
-    this.type = type;
+  public ProgramStatus(String applicationId, String runnableId, String status) {
+    this.applicationId = applicationId;
+    this.runnableId = runnableId;
+    this.status = status;
   }
 
-  public DatasetSpecification getSpec() {
-    return spec;
-  }
-
-  public DatasetTypeMeta getType() {
-    return type;
+  public String getStatus() {
+    return this.status;
   }
 }

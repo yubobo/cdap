@@ -17,12 +17,12 @@
 package com.continuuity.data2.dataset2.lib.table.hbase;
 
 import com.continuuity.api.common.Bytes;
-import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
 import com.continuuity.data2.transaction.TxConstants;
 import com.continuuity.data2.util.hbase.HBaseTableUtil;
+import com.continuuity.reactor.metadata.DatasetSpecification;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;

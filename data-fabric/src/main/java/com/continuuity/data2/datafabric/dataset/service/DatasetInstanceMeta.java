@@ -16,8 +16,8 @@
 
 package com.continuuity.data2.datafabric.dataset.service;
 
-import com.continuuity.api.dataset.DatasetSpecification;
-import com.continuuity.api.metadata.DatasetTypeMeta;
+import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.reactor.metadata.DatasetTypeMeta;
 
 /**
  * Dataset instance metadata.

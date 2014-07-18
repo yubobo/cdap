@@ -16,9 +16,9 @@
 
 package com.continuuity.gateway.handlers.util;
 
-import com.continuuity.api.metadata.Instances;
 import com.continuuity.gateway.auth.Authenticator;
 import com.continuuity.gateway.handlers.AuthenticatedHttpHandler;
+import com.continuuity.reactor.metadata.Instances;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;

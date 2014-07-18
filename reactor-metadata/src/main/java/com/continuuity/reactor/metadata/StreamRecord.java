@@ -14,22 +14,23 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
 /**
- * Represents item in the list from /apps
+ * Represents a stream in an HTTP response.
  */
-public class ApplicationRecord {
-  private final String type;
-  private final String id;
-  private final String name;
-  private final String description;
+public class StreamRecord {
 
-  public ApplicationRecord(String type, String id, String name, String description) {
+  private String type;
+  private String id;
+  private String name;
+  private String specification;
+
+  public StreamRecord(String type, String id, String name, String specification) {
     this.type = type;
     this.id = id;
     this.name = name;
-    this.description = description;
+    this.specification = specification;
   }
 
   public String getType() {
@@ -44,7 +45,8 @@ public class ApplicationRecord {
     return name;
   }
 
-  public String getDescription() {
-    return description;
+  public String getSpecification() {
+    return specification;
   }
+
 }

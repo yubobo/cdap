@@ -16,7 +16,7 @@
 
 package com.continuuity.app.deploy;
 
-import com.continuuity.api.metadata.Id;
+import com.continuuity.reactor.metadata.Id;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import javax.annotation.Nullable;

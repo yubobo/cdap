@@ -17,9 +17,9 @@
 package com.continuuity.data2.dataset2.lib.table.inmemory;
 
 import com.continuuity.api.dataset.DatasetProperties;
-import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.api.dataset.lib.AbstractDatasetDefinition;
 import com.continuuity.api.dataset.table.ConflictDetection;
+import com.continuuity.reactor.metadata.DatasetSpecification;
 
 import java.io.IOException;
 

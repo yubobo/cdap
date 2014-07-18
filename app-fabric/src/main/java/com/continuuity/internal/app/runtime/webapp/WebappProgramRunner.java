@@ -16,7 +16,6 @@
 
 package com.continuuity.internal.app.runtime.webapp;
 
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.runtime.ProgramController;
 import com.continuuity.app.runtime.ProgramOptions;
@@ -24,6 +23,7 @@ import com.continuuity.app.runtime.ProgramRunner;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.utils.Networks;
 import com.continuuity.http.NettyHttpService;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;

@@ -17,13 +17,13 @@
 package com.continuuity.explore.service;
 
 import com.continuuity.api.dataset.DatasetProperties;
-import com.continuuity.api.metadata.ColumnDesc;
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.transaction.Transaction;
 import com.continuuity.explore.client.ExploreClientUtil;
+import com.continuuity.reactor.metadata.ColumnDesc;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryStatus;
 import com.continuuity.test.XSlowTests;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

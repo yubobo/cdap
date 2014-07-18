@@ -14,27 +14,14 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
-
-import java.util.Map;
+package com.continuuity.reactor.metadata;
 
 /**
- * POJO that carries dataset type and properties information for create dataset request
+ *
  */
-public final class DatasetInstanceConfiguration {
-  private final String typeName;
-  private final Map<String, String> properties;
+public class NotRunningProgramLiveInfo extends ProgramLiveInfo {
 
-  public DatasetInstanceConfiguration(String typeName, Map<String, String> properties) {
-    this.typeName = typeName;
-    this.properties = properties;
-  }
-
-  public String getTypeName() {
-    return typeName;
-  }
-
-  public Map<String, String> getProperties() {
-    return properties;
+  public NotRunningProgramLiveInfo(Id.Program programId, ProgramType type) {
+    super(programId, type, null);
   }
 }

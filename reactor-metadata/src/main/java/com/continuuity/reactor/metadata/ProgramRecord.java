@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2014 Continuuity, Inc.
+ * Copyright 2014 Continuuity, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -14,31 +14,32 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
-
-import com.continuuity.api.data.DataSetSpecification;
+package com.continuuity.reactor.metadata;
 
 /**
- * Represents a dataset in an HTTP response.
+ * Represents a program in an HTTP response.
  */
-public class DatasetRecord {
-
-  private final String type;
+public class ProgramRecord {
+  private final ProgramType type;
+  private final String app;
   private final String id;
   private final String name;
-  private final String classname;
-  private final String specification;
+  private final String description;
 
-  public DatasetRecord(String type, String id, String name, String classname, String specification) {
+  public ProgramRecord(ProgramType type, String app, String id, String name, String description) {
     this.type = type;
+    this.app = app;
     this.id = id;
     this.name = name;
-    this.classname = classname;
-    this.specification = specification;
+    this.description = description;
   }
 
-  public String getType() {
+  public ProgramType getType() {
     return type;
+  }
+
+  public String getApp() {
+    return app;
   }
 
   public String getId() {
@@ -49,11 +50,7 @@ public class DatasetRecord {
     return name;
   }
 
-  public String getClassname() {
-    return classname;
-  }
-
-  public String getSpecification() {
-    return specification;
+  public String getDescription() {
+    return description;
   }
 }

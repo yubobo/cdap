@@ -16,12 +16,12 @@
 
 package com.continuuity.explore.jdbc;
 
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryStatus;
 import com.continuuity.explore.client.ExploreClientUtil;
 import com.continuuity.explore.service.Explore;
 import com.continuuity.explore.service.ExploreException;
 import com.continuuity.explore.service.HandleNotFoundException;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

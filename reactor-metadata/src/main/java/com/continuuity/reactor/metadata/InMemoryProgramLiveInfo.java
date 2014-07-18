@@ -14,14 +14,14 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
 /**
- *
+ * A live info for in-memory runtime envirnment.
  */
-public class NotRunningProgramLiveInfo extends ProgramLiveInfo {
+public class InMemoryProgramLiveInfo extends ProgramLiveInfo {
 
-  public NotRunningProgramLiveInfo(Id.Program programId, ProgramType type) {
-    super(programId, type, null);
+  public InMemoryProgramLiveInfo(Id.Program programId, ProgramType type) {
+    super(programId, type, "in-memory");
   }
 }

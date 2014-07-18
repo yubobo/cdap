@@ -14,23 +14,26 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
 /**
- * Class containing a program status.
+ * Represents the number of instances a service currently is running with.
  */
-public class ProgramStatus {
-  private String applicationId;
-  private String runnableId;
-  private String status;
+public class ServiceInstances {
 
-  public ProgramStatus(String applicationId, String runnableId, String status) {
-    this.applicationId = applicationId;
-    this.runnableId = runnableId;
-    this.status = status;
+  private final int requested;
+  private final int provisioned;
+
+  public ServiceInstances(int requested, int provisioned) {
+    this.requested = requested;
+    this.provisioned = provisioned;
   }
 
-  public String getStatus() {
-    return this.status;
+  public int getRequested() {
+    return requested;
+  }
+
+  public int getProvisioned() {
+    return provisioned;
   }
 }

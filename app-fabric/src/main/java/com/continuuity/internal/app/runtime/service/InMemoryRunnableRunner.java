@@ -17,7 +17,6 @@
 package com.continuuity.internal.app.runtime.service;
 
 import com.continuuity.api.common.RuntimeArguments;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.metrics.ServiceRunnableMetrics;
@@ -33,6 +32,7 @@ import com.continuuity.internal.app.runtime.ProgramOptionConstants;
 import com.continuuity.internal.app.runtime.ProgramServiceDiscovery;
 import com.continuuity.internal.lang.Reflections;
 import com.continuuity.logging.context.UserServiceLoggingContext;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;

@@ -17,11 +17,6 @@
 package com.continuuity.data2.datafabric.dataset;
 
 import com.continuuity.api.dataset.DatasetProperties;
-import com.continuuity.api.dataset.DatasetSpecification;
-import com.continuuity.api.metadata.DatasetInstanceConfiguration;
-import com.continuuity.api.metadata.DatasetMeta;
-import com.continuuity.api.metadata.DatasetModuleMeta;
-import com.continuuity.api.metadata.DatasetTypeMeta;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.discovery.EndpointStrategy;
 import com.continuuity.common.discovery.RandomEndpointStrategy;
@@ -33,6 +28,11 @@ import com.continuuity.common.http.HttpResponse;
 import com.continuuity.data2.dataset2.DatasetManagementException;
 import com.continuuity.data2.dataset2.InstanceConflictException;
 import com.continuuity.data2.dataset2.ModuleConflictException;
+import com.continuuity.reactor.metadata.DatasetInstanceConfiguration;
+import com.continuuity.reactor.metadata.DatasetMeta;
+import com.continuuity.reactor.metadata.DatasetModuleMeta;
+import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.reactor.metadata.DatasetTypeMeta;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;

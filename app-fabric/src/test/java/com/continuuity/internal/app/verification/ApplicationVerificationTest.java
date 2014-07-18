@@ -18,12 +18,12 @@ package com.continuuity.internal.app.verification;
 
 import com.continuuity.WebCrawlApp;
 import com.continuuity.api.Application;
-import com.continuuity.api.metadata.Id;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.verification.VerifyResult;
 import com.continuuity.internal.app.ApplicationSpecificationAdapter;
 import com.continuuity.internal.app.Specifications;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
+import com.continuuity.reactor.metadata.Id;
 import org.junit.Assert;
 import org.junit.Test;
 

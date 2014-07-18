@@ -14,26 +14,27 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
+
+import java.util.Map;
 
 /**
- * Represents the number of instances a service currently is running with.
+ * POJO that carries dataset type and properties information for create dataset request
  */
-public class ServiceInstances {
+public final class DatasetInstanceConfiguration {
+  private final String typeName;
+  private final Map<String, String> properties;
 
-  private final int requested;
-  private final int provisioned;
-
-  public ServiceInstances(int requested, int provisioned) {
-    this.requested = requested;
-    this.provisioned = provisioned;
+  public DatasetInstanceConfiguration(String typeName, Map<String, String> properties) {
+    this.typeName = typeName;
+    this.properties = properties;
   }
 
-  public int getRequested() {
-    return requested;
+  public String getTypeName() {
+    return typeName;
   }
 
-  public int getProvisioned() {
-    return provisioned;
+  public Map<String, String> getProperties() {
+    return properties;
   }
 }

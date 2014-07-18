@@ -16,11 +16,11 @@
 
 package com.continuuity.internal.app.runtime.distributed;
 
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
 import com.continuuity.common.metrics.MetricsCollectionService;
 import com.continuuity.internal.app.program.TypeId;
 import com.continuuity.internal.app.runtime.AbstractResourceReporter;
+import com.continuuity.reactor.metadata.ProgramType;
 import org.apache.twill.api.TwillContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

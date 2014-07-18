@@ -17,10 +17,8 @@
 package com.continuuity.data2.datafabric.dataset.service;
 
 import com.continuuity.api.dataset.module.DatasetModule;
-import com.continuuity.api.metadata.DatasetModuleMeta;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
-import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.ObjectResponse;
@@ -40,6 +38,7 @@ import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.data2.transaction.inmemory.InMemoryTxSystemClient;
 import com.continuuity.explore.client.DatasetExploreFacade;
 import com.continuuity.explore.client.DiscoveryExploreClient;
+import com.continuuity.reactor.metadata.DatasetModuleMeta;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.InputSupplier;
 import com.google.gson.reflect.TypeToken;

@@ -17,7 +17,7 @@
 package com.continuuity.internal.app.deploy.pipeline;
 
 import com.continuuity.api.ProgramSpecification;
-import com.continuuity.api.metadata.ProgramType;
+import com.continuuity.api.ProgramTypes;
 import com.continuuity.api.webapp.WebappSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
@@ -28,6 +28,7 @@ import com.continuuity.common.conf.Constants;
 import com.continuuity.internal.app.program.ProgramBundle;
 import com.continuuity.internal.app.runtime.webapp.WebappProgramRunner;
 import com.continuuity.pipeline.AbstractStage;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -103,7 +104,7 @@ public class ProgramGenerationStage extends AbstractStage<ApplicationSpecLocatio
           new Callable<Location>() {
           @Override
           public Location call() throws Exception {
-            ProgramType type = ProgramType.typeOfSpecification(spec);
+            ProgramType type = ProgramTypes.fromSpecification(spec);
             String name = String.format(Locale.ENGLISH, "%s/%s", type, applicationName);
             Location programDir = newOutputDir.append(name);
             if (!programDir.exists()) {

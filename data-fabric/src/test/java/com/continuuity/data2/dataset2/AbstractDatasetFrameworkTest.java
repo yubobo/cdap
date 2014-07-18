@@ -19,7 +19,6 @@ package com.continuuity.data2.dataset2;
 import com.continuuity.api.common.Bytes;
 import com.continuuity.api.dataset.DatasetAdmin;
 import com.continuuity.api.dataset.DatasetProperties;
-import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.api.dataset.table.OrderedTable;
 import com.continuuity.api.dataset.table.Table;
 import com.continuuity.data2.dataset2.lib.table.CoreDatasetsModule;
@@ -28,6 +27,7 @@ import com.continuuity.data2.transaction.DefaultTransactionExecutor;
 import com.continuuity.data2.transaction.TransactionAware;
 import com.continuuity.data2.transaction.TransactionExecutor;
 import com.continuuity.data2.transaction.inmemory.MinimalTxSystemClient;
+import com.continuuity.reactor.metadata.DatasetSpecification;
 import org.junit.Assert;
 import org.junit.Test;
 

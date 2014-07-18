@@ -17,6 +17,7 @@
 package com.continuuity.gateway.handlers;
 
 import com.continuuity.api.ProgramSpecification;
+import com.continuuity.api.ProgramTypes;
 import com.continuuity.api.common.Bytes;
 import com.continuuity.api.data.DataSet;
 import com.continuuity.api.data.DataSetInstantiationException;
@@ -24,19 +25,10 @@ import com.continuuity.api.data.DataSetSpecification;
 import com.continuuity.api.data.dataset.table.Row;
 import com.continuuity.api.data.dataset.table.Table;
 import com.continuuity.api.data.stream.StreamSpecification;
-import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.api.flow.FlowSpecification;
 import com.continuuity.api.flow.FlowletConnection;
 import com.continuuity.api.flow.FlowletDefinition;
 import com.continuuity.api.mapreduce.MapReduceSpecification;
-import com.continuuity.api.metadata.ApplicationRecord;
-import com.continuuity.api.metadata.DatasetRecord;
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.Instances;
-import com.continuuity.api.metadata.ProgramRecord;
-import com.continuuity.api.metadata.ProgramStatus;
-import com.continuuity.api.metadata.ProgramType;
-import com.continuuity.api.metadata.StreamRecord;
 import com.continuuity.api.procedure.ProcedureSpecification;
 import com.continuuity.api.workflow.WorkflowSpecification;
 import com.continuuity.app.ApplicationSpecification;
@@ -92,6 +84,15 @@ import com.continuuity.internal.app.runtime.schedule.Scheduler;
 import com.continuuity.internal.filesystem.LocationCodec;
 import com.continuuity.logging.LoggingConfiguration;
 import com.continuuity.metrics.MetricsConstants;
+import com.continuuity.reactor.metadata.ApplicationRecord;
+import com.continuuity.reactor.metadata.DatasetRecord;
+import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.Instances;
+import com.continuuity.reactor.metadata.ProgramRecord;
+import com.continuuity.reactor.metadata.ProgramStatus;
+import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.reactor.metadata.StreamRecord;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -1951,7 +1952,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
                                                                    specification.getWorkflows().values());
 
     for (ProgramSpecification spec : programSpecs) {
-      ProgramType type = ProgramType.typeOfSpecification(spec);
+      ProgramType type = ProgramTypes.fromSpecification(spec);
       Id.Program programId = Id.Program.from(appId, spec.getName());
       Location location = Programs.programLocation(locationFactory, appFabricDir, programId, type);
       location.delete();

@@ -19,12 +19,12 @@ package com.continuuity.app.store;
 import com.continuuity.api.ProgramSpecification;
 import com.continuuity.api.data.DataSetSpecification;
 import com.continuuity.api.data.stream.StreamSpecification;
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
-import com.continuuity.api.metadata.RunRecord;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
 import com.continuuity.data2.OperationException;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.reactor.metadata.RunRecord;
 import com.google.common.collect.Table;
 import org.apache.twill.filesystem.Location;
 

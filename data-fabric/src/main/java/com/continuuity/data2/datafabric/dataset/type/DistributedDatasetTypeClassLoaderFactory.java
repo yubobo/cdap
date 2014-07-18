@@ -16,9 +16,9 @@
 
 package com.continuuity.data2.datafabric.dataset.type;
 
-import com.continuuity.api.metadata.DatasetModuleMeta;
 import com.continuuity.common.lang.ClassLoaders;
 import com.continuuity.common.lang.jar.BundleJarUtil;
+import com.continuuity.reactor.metadata.DatasetModuleMeta;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import org.apache.twill.filesystem.LocationFactory;

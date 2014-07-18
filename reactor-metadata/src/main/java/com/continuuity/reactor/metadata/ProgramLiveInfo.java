@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
 /**
  * Represents information about running programs. This class can be extended to add information for specific runtime

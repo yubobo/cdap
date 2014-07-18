@@ -16,13 +16,13 @@
 
 package com.continuuity.app.program;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.common.lang.ApiResourceListHolder;
 import com.continuuity.common.lang.ClassLoaders;
 import com.continuuity.common.lang.jar.BundleJarUtil;
 import com.continuuity.internal.app.ApplicationSpecificationAdapter;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;

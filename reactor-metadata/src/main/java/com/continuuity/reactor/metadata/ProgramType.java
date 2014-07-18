@@ -14,15 +14,8 @@
  * the License.
  */
 
-package com.continuuity.api.metadata;
+package com.continuuity.reactor.metadata;
 
-import com.continuuity.api.ProgramSpecification;
-import com.continuuity.api.flow.FlowSpecification;
-import com.continuuity.api.mapreduce.MapReduceSpecification;
-import com.continuuity.api.procedure.ProcedureSpecification;
-import com.continuuity.api.service.ServiceSpecification;
-import com.continuuity.api.webapp.WebappSpecification;
-import com.continuuity.api.workflow.WorkflowSpecification;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -33,46 +26,33 @@ public enum ProgramType {
   // @SerializedName to maintain backwards-compatibility
 
   @SerializedName("Flow")
-  FLOW(1, "flows", "Flow", true, FlowSpecification.class),
+  FLOW(1, "flows", "Flow", true),
 
   @SerializedName("Procedure")
-  PROCEDURE(2, "procedures", "Procedure", true, ProcedureSpecification.class),
+  PROCEDURE(2, "procedures", "Procedure", true),
 
   @SerializedName("Mapreduce")
-  MAPREDUCE(3, "mapreduce", "Mapreduce", true, MapReduceSpecification.class),
+  MAPREDUCE(3, "mapreduce", "Mapreduce", true),
 
   @SerializedName("Workflow")
-  WORKFLOW(4, "workflows", "Workflow", true, WorkflowSpecification.class),
+  WORKFLOW(4, "workflows", "Workflow", true),
 
   @SerializedName("Webapp")
-  WEBAPP(5, "webapp", "Webapp", false, WebappSpecification.class),
+  WEBAPP(5, "webapp", "Webapp", false),
 
   @SerializedName("Service")
-  SERVICE(6, "services", "Service", true, ServiceSpecification.class);
+  SERVICE(6, "services", "Service", true);
 
   private final int programType;
   private final String prettyName;
   private final boolean listable;
-  private final Class<? extends ProgramSpecification> specClass;
   private final String categoryName;
 
-  private ProgramType(int type, String categoryName, String prettyName, boolean listable,
-                      Class<? extends ProgramSpecification> specClass) {
+  private ProgramType(int type, String categoryName, String prettyName, boolean listable) {
     this.programType = type;
     this.categoryName = categoryName;
     this.prettyName = prettyName;
     this.listable = listable;
-    this.specClass = specClass;
-  }
-
-  public static ProgramType typeOfSpecification(ProgramSpecification spec) {
-    Class<? extends ProgramSpecification> specClass = spec.getClass();
-    for (ProgramType type : ProgramType.values()) {
-      if (type.specClass.isAssignableFrom(specClass)) {
-        return type;
-      }
-    }
-    throw new IllegalArgumentException("Unknown specification type: " + specClass);
   }
 
   public boolean isListable() {

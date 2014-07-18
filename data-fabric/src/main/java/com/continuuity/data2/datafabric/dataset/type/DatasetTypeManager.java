@@ -17,11 +17,8 @@
 package com.continuuity.data2.datafabric.dataset.type;
 
 import com.continuuity.api.dataset.DatasetDefinition;
-import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.api.dataset.module.DatasetDefinitionRegistry;
 import com.continuuity.api.dataset.module.DatasetModule;
-import com.continuuity.api.metadata.DatasetModuleMeta;
-import com.continuuity.api.metadata.DatasetTypeMeta;
 import com.continuuity.common.lang.ClassLoaders;
 import com.continuuity.common.lang.jar.JarClassLoader;
 import com.continuuity.data2.datafabric.dataset.service.mds.MDSDatasets;
@@ -30,6 +27,9 @@ import com.continuuity.data2.dataset2.InMemoryDatasetDefinitionRegistry;
 import com.continuuity.data2.dataset2.module.lib.DatasetModules;
 import com.continuuity.data2.dataset2.tx.TxCallable;
 import com.continuuity.data2.transaction.TransactionFailureException;
+import com.continuuity.reactor.metadata.DatasetModuleMeta;
+import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.reactor.metadata.DatasetTypeMeta;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
@@ -177,7 +177,7 @@ public class DatasetTypeManager extends AbstractIdleService {
   /**
    * Get dataset type information
    * @param typeName name of the type to get info for
-   * @return instance of {@link com.continuuity.api.metadata.DatasetTypeMeta} or {@code null} if type
+   * @return instance of {@link DatasetTypeMeta} or {@code null} if type
    *         does NOT exist
    */
   @Nullable

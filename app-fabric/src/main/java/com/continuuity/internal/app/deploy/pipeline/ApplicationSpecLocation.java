@@ -16,8 +16,8 @@
 
 package com.continuuity.internal.app.deploy.pipeline;
 
-import com.continuuity.api.metadata.Id;
 import com.continuuity.app.ApplicationSpecification;
+import com.continuuity.reactor.metadata.Id;
 import org.apache.twill.filesystem.Location;
 
 /**

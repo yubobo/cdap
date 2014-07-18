@@ -18,7 +18,6 @@ package com.continuuity.explore.executor;
 
 import com.continuuity.api.data.batch.RecordScannable;
 import com.continuuity.api.dataset.Dataset;
-import com.continuuity.api.metadata.QueryHandle;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.dataset2.DatasetFramework;
 import com.continuuity.explore.client.DatasetExploreFacade;
@@ -26,6 +25,7 @@ import com.continuuity.explore.service.ExploreService;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.io.UnsupportedTypeException;
+import com.continuuity.reactor.metadata.QueryHandle;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpRequest;

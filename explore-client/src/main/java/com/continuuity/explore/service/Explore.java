@@ -16,10 +16,10 @@
 
 package com.continuuity.explore.service;
 
-import com.continuuity.api.metadata.ColumnDesc;
-import com.continuuity.api.metadata.QueryHandle;
-import com.continuuity.api.metadata.QueryResult;
-import com.continuuity.api.metadata.QueryStatus;
+import com.continuuity.reactor.metadata.ColumnDesc;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryResult;
+import com.continuuity.reactor.metadata.QueryStatus;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -34,7 +34,7 @@ public interface Explore {
    * of the operation.
 
    * @param statement SQL statement.
-   * @return {@link com.continuuity.api.metadata.QueryHandle} representing the operation.
+   * @return {@link QueryHandle} representing the operation.
    * @throws ExploreException on any error executing statement.
    * @throws SQLException if there are errors in the SQL statement.
    */
@@ -70,7 +70,7 @@ public interface Explore {
 
    * @param handle handle returned by {@link #execute(String)}.
    * @param size max rows to fetch in the call.
-   * @return list of {@link com.continuuity.api.metadata.QueryResult}s.
+   * @return list of {@link QueryResult}s.
    * @throws ExploreException on any error fetching results.
    * @throws HandleNotFoundException when handle is not found.
    * @throws SQLException if there are errors in the SQL statement.

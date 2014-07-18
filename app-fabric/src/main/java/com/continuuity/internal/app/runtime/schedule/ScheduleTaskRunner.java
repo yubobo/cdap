@@ -16,8 +16,6 @@
 
 package com.continuuity.internal.app.runtime.schedule;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.app.program.Program;
 import com.continuuity.app.runtime.Arguments;
 import com.continuuity.app.runtime.ProgramController;
@@ -29,6 +27,8 @@ import com.continuuity.internal.UserMessages;
 import com.continuuity.internal.app.runtime.AbstractListener;
 import com.continuuity.internal.app.runtime.BasicArguments;
 import com.continuuity.internal.app.runtime.SimpleProgramOptions;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Preconditions;
 import org.apache.twill.common.Threads;
 import org.quartz.JobExecutionException;

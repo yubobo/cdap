@@ -16,12 +16,12 @@
 
 package com.continuuity.gateway.handlers;
 
-import com.continuuity.api.metadata.Id;
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.gateway.GatewayFastTestsSuite;
 import com.continuuity.gateway.GatewayTestBase;
 import com.continuuity.gateway.apps.HighPassFilterApp;
+import com.continuuity.reactor.metadata.Id;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.apache.http.HttpResponse;

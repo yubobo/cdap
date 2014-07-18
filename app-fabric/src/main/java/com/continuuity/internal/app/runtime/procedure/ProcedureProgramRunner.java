@@ -16,7 +16,6 @@
 
 package com.continuuity.internal.app.runtime.procedure;
 
-import com.continuuity.api.metadata.ProgramType;
 import com.continuuity.api.procedure.ProcedureSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
@@ -33,6 +32,7 @@ import com.continuuity.internal.app.runtime.AbstractProgramController;
 import com.continuuity.internal.app.runtime.DataFabricFacadeFactory;
 import com.continuuity.internal.app.runtime.ProgramOptionConstants;
 import com.continuuity.internal.app.runtime.ProgramServiceDiscovery;
+import com.continuuity.reactor.metadata.ProgramType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
