@@ -25,7 +25,6 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.lang.jar.JarFinder;
 import com.continuuity.common.utils.Networks;
-import com.continuuity.data2.transaction.inmemory.InMemoryTransactionManager;
 import com.continuuity.gateway.handlers.AppFabricHttpHandler;
 import com.continuuity.http.BodyConsumer;
 import com.continuuity.internal.app.BufferFileInputStream;
@@ -36,6 +35,7 @@ import com.continuuity.logging.appender.LogAppenderInitializer;
 import com.continuuity.reactor.metadata.Id;
 import com.continuuity.reactor.metadata.ProgramType;
 import com.continuuity.reactor.metadata.RunRecord;
+import com.continuuity.tephra.inmemory.InMemoryTransactionManager;
 import com.continuuity.test.internal.guice.AppFabricTestModule;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
@@ -74,7 +74,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
-
 
 /**
  * This is helper class to make calls to AppFabricHttpHandler methods directly.
