@@ -40,7 +40,7 @@ import javax.ws.rs.PathParam;
 
 @Path("/v1")
 public class HubHttpHandler extends AbstractHttpHandler {
-  private HubDataStore hubDataStore;
+  private final HubDataStore hubDataStore;
 
   public HubHttpHandler(HubDataStore ds) {
     this.hubDataStore = ds;

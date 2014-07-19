@@ -37,9 +37,9 @@ import java.net.URL;
 
 public class DiscoveryServerTest {
 
-  protected static URI baseURI;
-  protected static HubDataStore hubDataStore;
-  protected static DiscoveryServer discoveryServer;
+  private static URI baseURI;
+  private static HubDataStore hubDataStore;
+  private static DiscoveryServer discoveryServer;
 
   @BeforeClass
   public static void setup() throws Exception {
@@ -55,7 +55,7 @@ public class DiscoveryServerTest {
     baseURI = URI.create(String.format("http://" + discoveryServer.getHubAddress()));
   }
 
-  protected HttpURLConnection request(String path, HttpMethod method) throws IOException {
+  private HttpURLConnection request(String path, HttpMethod method) throws IOException {
     URL url = baseURI.resolve(path).toURL();
     HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
     if (method == HttpMethod.POST || method == HttpMethod.PUT) {
@@ -66,11 +66,11 @@ public class DiscoveryServerTest {
     return urlConn;
   }
 
-  protected String getContent(HttpURLConnection urlConn) throws IOException {
+  private String getContent(HttpURLConnection urlConn) throws IOException {
     return new String(ByteStreams.toByteArray(urlConn.getInputStream()), Charsets.UTF_8);
   }
 
-  protected void writeContent(HttpURLConnection urlConn, String content) throws IOException {
+  private void writeContent(HttpURLConnection urlConn, String content) throws IOException {
     urlConn.getOutputStream().write(content.getBytes(Charsets.UTF_8));
   }
 

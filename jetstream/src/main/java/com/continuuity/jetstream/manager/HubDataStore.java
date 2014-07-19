@@ -26,8 +26,8 @@ import java.util.List;
 
 public class HubDataStore {
 
-  private List<HubDataSource> hubDataSources;
-  private List<HubDataSink> hubDataSinks;
+  private final List<HubDataSource> hubDataSources;
+  private final List<HubDataSink> hubDataSinks;
   private String instanceName;
   private int hftaCount;
   private InetSocketAddress hubAddress;

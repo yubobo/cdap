@@ -29,8 +29,8 @@ import java.net.InetSocketAddress;
 
 public class ProcessInitiatorTest {
 
-  protected static HubDataStore hubDataStore;
-  protected static ProcessInitiator processInitiator;
+  private static HubDataStore hubDataStore;
+  private static ProcessInitiator processInitiator;
 
   @BeforeClass
   public static void setup() throws Exception {

@@ -29,13 +29,13 @@ import java.util.List;
 public class ProcessInitiator {
   private final HubDataStore hubDataStore;
   private final Runtime rt;
-  private List<Process> rtsProcessList;
+  private final List<Process> rtsProcessList;
   private final List<Process> hftaProcessList;
   private final List<Process> gsExitProcessList;
 
   /**
    * Constructs ProcessInitiator object for the specified HubDataStore
-   * @param ds
+   * @param ds associated HubDataStore
    */
   public ProcessInitiator(HubDataStore ds) {
     this.hubDataStore = ds;
@@ -70,9 +70,8 @@ public class ProcessInitiator {
   /**
    * Starts RTS process
    * @throws IOException
-   * @throws InterruptedException
    */
-  public void startRTS() throws IOException, InterruptedException {
+  public void startRTS() throws IOException {
     List<HubDataSource> dataSources = this.hubDataStore.getHubDataSources();
     String[] arguments = new String[dataSources.size() + 2];
     arguments[0] = this.hubDataStore.getHubAddress().toString();
@@ -88,9 +87,8 @@ public class ProcessInitiator {
   /**
    * Starts HFTA processes
    * @throws IOException
-   * @throws InterruptedException
    */
-  public void startHFTA() throws IOException, InterruptedException {
+  public void startHFTA() throws IOException {
     int hftaCount = this.hubDataStore.getHFTACount();
     String[] arguments = {this.hubDataStore.getHubAddress().toString(), this.hubDataStore.getInstanceName()};
     for (int i = 0; i < hftaCount; i++) {
@@ -102,9 +100,8 @@ public class ProcessInitiator {
   /**
    * Starts GSEXIT processes
    * @throws IOException
-   * @throws InterruptedException
    */
-  public void startGSEXIT() throws IOException, InterruptedException {
+  public void startGSEXIT() throws IOException {
     List<HubDataSink> dataSinks = this.hubDataStore.getHubDataSinks();
     String[] arguments = new String[4];
     arguments[0] = this.hubDataStore.getHubAddress().toString();

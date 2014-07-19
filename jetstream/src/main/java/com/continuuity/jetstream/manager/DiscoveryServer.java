@@ -28,9 +28,9 @@ import java.util.List;
  * DiscoveryServer
  */
 
-public class DiscoveryServer {
+class DiscoveryServer {
   private final NettyHttpService service;
-  private HubDataStore hubDataStore;
+  private final HubDataStore hubDataStore;
 
   public DiscoveryServer(HubDataStore ds) {
     this.hubDataStore = ds;
@@ -45,6 +45,7 @@ public class DiscoveryServer {
   }
 
   protected void finalize() throws Throwable {
+    super.finalize();
     service.stopAndWait();
   }
 
