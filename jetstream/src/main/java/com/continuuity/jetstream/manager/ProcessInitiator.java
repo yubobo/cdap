@@ -16,29 +16,29 @@
 
 package com.continuuity.jetstream.manager;
 
-import com.google.gson.JsonArray;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * ProcessInitiator is responsible for initiating all processes required by GigaScope
  */
 
 public class ProcessInitiator {
-  private DataStore dataStore;
-  private Runtime rt;
-  private ArrayList<Process> rtsProcessList;
-  private ArrayList<Process> hftaProcessList;
-  private ArrayList<Process> gsExitProcessList;
+  private final HubDataStore hubDataStore;
+  private final Runtime rt;
+  private List<Process> rtsProcessList;
+  private final List<Process> hftaProcessList;
+  private final List<Process> gsExitProcessList;
 
   /**
-   * Constructs ProcessInitiator object for the specified DataStore
+   * Constructs ProcessInitiator object for the specified HubDataStore
    * @param ds
    */
-  public ProcessInitiator(DataStore ds) {
-    this.dataStore = ds;
+  public ProcessInitiator(HubDataStore ds) {
+    this.hubDataStore = ds;
     this.rt = Runtime.getRuntime();
     this.rtsProcessList = new ArrayList<Process>();
     this.hftaProcessList = new ArrayList<Process>();
@@ -72,23 +72,17 @@ public class ProcessInitiator {
    * @throws IOException
    * @throws InterruptedException
    */
-  public String[] startRTS() throws IOException, InterruptedException {
-    JsonArray dataSources = this.dataStore.getDataSources();
+  public void startRTS() throws IOException, InterruptedException {
+    List<HubDataSource> dataSources = this.hubDataStore.getHubDataSources();
     String[] arguments = new String[dataSources.size() + 2];
-    arguments[0] = this.dataStore.getHubAddress();
-    arguments[1] = this.dataStore.getInstanceName();
+    arguments[0] = this.hubDataStore.getHubAddress().toString();
+    arguments[1] = this.hubDataStore.getInstanceName();
     for (int i = 0; i < dataSources.size(); i++) {
-      arguments[i + 2] = dataSources.get(i).getAsJsonObject().get("name").getAsString();
+      arguments[i + 2] = dataSources.get(i).getName();
     }
     Process p;
     p = this.rt.exec("rts", arguments);
     rtsProcessList.add(p);
-    String[] ret = new String[arguments.length + 1];
-    ret[0] = "rts";
-    for (int i = 0; i < arguments.length; i++) {
-      ret[i + 1] = arguments[i];
-    }
-    return ret;
   }
 
   /**
@@ -96,24 +90,13 @@ public class ProcessInitiator {
    * @throws IOException
    * @throws InterruptedException
    */
-  public String[][] startHFTA() throws IOException, InterruptedException {
-    int hftaCount = this.dataStore.getHFTACount();
-    String[] arguments = {this.dataStore.getHubAddress(), this.dataStore.getInstanceName()};
+  public void startHFTA() throws IOException, InterruptedException {
+    int hftaCount = this.hubDataStore.getHFTACount();
+    String[] arguments = {this.hubDataStore.getHubAddress().toString(), this.hubDataStore.getInstanceName()};
     for (int i = 0; i < hftaCount; i++) {
       Process p = this.rt.exec("hfta_" + i, arguments);
       this.hftaProcessList.add(p);
     }
-    for (int i = 0; i < hftaCount; i++) {
-      this.hftaProcessList.get(i).waitFor();
-    }
-    String[][] ret = new String[hftaCount][arguments.length + 1];
-    for (int j = 0; j < hftaCount; j++) {
-      ret[j][0] = "hfta_" + j;
-      for (int i = 0; i < arguments.length; i++) {
-        ret[j][i + 1] = arguments[i];
-      }
-    }
-    return ret;
   }
 
   /**
@@ -121,29 +104,17 @@ public class ProcessInitiator {
    * @throws IOException
    * @throws InterruptedException
    */
-  public String[][] startGSEXIT() throws IOException, InterruptedException {
-    JsonArray dataSinks = this.dataStore.getDataSinks();
+  public void startGSEXIT() throws IOException, InterruptedException {
+    List<HubDataSink> dataSinks = this.hubDataStore.getHubDataSinks();
     String[] arguments = new String[4];
-    arguments[0] = this.dataStore.getHubAddress();
-    arguments[1] = this.dataStore.getInstanceName();
+    arguments[0] = this.hubDataStore.getHubAddress().toString();
+    arguments[1] = this.hubDataStore.getInstanceName();
     for (int i = 0; i < dataSinks.size(); i++) {
-      arguments[2] = dataSinks.get(i).getAsJsonObject().get("fta_name").getAsString();
-      arguments[3] = dataSinks.get(i).getAsJsonObject().get("name").getAsString();
+      arguments[2] = dataSinks.get(i).getFtaName();
+      arguments[3] = dataSinks.get(i).getName();
       Process p = this.rt.exec("GSEXIT", arguments);
       this.gsExitProcessList.add(p);
     }
-    for (int i = 0; i < dataSinks.size(); i++) {
-      this.gsExitProcessList.get(i).waitFor();
-    }
-    String[][] ret = new String[dataSinks.size()][arguments.length + 1];
-    for (int j = 0; j < dataSinks.size(); j++) {
-      ret[j][0] = "GSEXIT";
-      ret[j][1] = this.dataStore.getHubAddress();
-      ret[j][2] = this.dataStore.getInstanceName();
-      ret[j][3] = dataSinks.get(j).getAsJsonObject().get("fta_name").getAsString();
-      ret[j][4] = dataSinks.get(j).getAsJsonObject().get("name").getAsString();
-    }
-    return ret;
   }
 
   public String startProcess(String command, String[] arguments) throws IOException, InterruptedException {

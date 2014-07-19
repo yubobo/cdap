@@ -16,13 +16,12 @@
 
 package com.continuuity.jetstream.manager;
 
-import com.continuuity.jetstream.manager.DataStore;
-import com.continuuity.jetstream.manager.ProcessInitiator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 /**
  * ProcessInitiatorTest
@@ -30,21 +29,22 @@ import java.io.IOException;
 
 public class ProcessInitiatorTest {
 
-  protected static DataStore dataStore;
+  protected static HubDataStore hubDataStore;
   protected static ProcessInitiator processInitiator;
 
   @BeforeClass
   public static void setup() throws Exception {
-    dataStore = new DataStore();
-    dataStore.addDataSource("source1", "127.0.0.1:8081");
-    dataStore.addDataSource("source2", "127.0.0.1:8082");
-    dataStore.addDataSink("sink1", "query1", "127.0.0.1:8081");
-    dataStore.addDataSink("sink2", "query2", "127.0.0.1:8082");
-    dataStore.setHFTACount(5);
-    dataStore.setInstanceName("test");
-    dataStore.setClearingHouseAddress("127.0.0.1:1111");
-    dataStore.setHubAddress("testAddress");
-    processInitiator = new ProcessInitiator(dataStore);
+    hubDataStore = new HubDataStore();
+    hubDataStore = new HubDataStore();
+    hubDataStore.addDataSource("source1", new InetSocketAddress("127.0.0.1",8081));
+    hubDataStore.addDataSource("source2", new InetSocketAddress("127.0.0.1",8082));
+    hubDataStore.addDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",8081));
+    hubDataStore.addDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1",8082));
+    hubDataStore.setHFTACount(5);
+    hubDataStore.setInstanceName("test");
+    hubDataStore.setClearingHouseAddress(new InetSocketAddress("127.0.0.1",1111));
+    hubDataStore.setHubAddress(new InetSocketAddress("127.0.0.1",2222));
+    processInitiator = new ProcessInitiator(hubDataStore);
   }
 
   /*
@@ -62,9 +62,8 @@ public class ProcessInitiatorTest {
   @Test
   public void testRTSExecution() throws IOException, InterruptedException {
     try {
-      System.out.print(processInitiator.startRTS());
+      processInitiator.startRTS();
     } catch (IOException e) {
-      //System.out.print(e.toString());
       Assert.assertEquals("java.io.IOException: Cannot run program \"rts\": error=2, No such file or directory",
                           e.toString());
     }
@@ -73,7 +72,7 @@ public class ProcessInitiatorTest {
   @Test
   public void testHFTAExecution() throws IOException, InterruptedException {
     try {
-      System.out.print(processInitiator.startHFTA());
+      processInitiator.startHFTA();
     } catch (IOException e) {
       Assert.assertEquals("java.io.IOException: Cannot run program \"hfta_0\": error=2, No such file or directory",
                           e.toString());
@@ -83,7 +82,7 @@ public class ProcessInitiatorTest {
   @Test
   public void testGSEXITExecution() throws IOException, InterruptedException {
     try {
-      System.out.print(processInitiator.startGSEXIT());
+      processInitiator.startGSEXIT();
     } catch (IOException e) {
       Assert.assertEquals("java.io.IOException: Cannot run program \"GSEXIT\": error=2, No such file or directory",
                           e.toString());

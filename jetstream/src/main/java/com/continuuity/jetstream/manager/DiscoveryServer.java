@@ -21,6 +21,7 @@ import com.continuuity.http.NettyHttpService;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Service;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 
 /**
@@ -28,11 +29,11 @@ import java.util.List;
  */
 
 public class DiscoveryServer {
-  private NettyHttpService service;
-  private DataStore dataStore;
+  private final NettyHttpService service;
+  private HubDataStore hubDataStore;
 
-  public DiscoveryServer(DataStore ds) {
-    this.dataStore = ds;
+  public DiscoveryServer(HubDataStore ds) {
+    this.hubDataStore = ds;
     List<HttpHandler> handlers = Lists.newArrayList();
     handlers.add(new HubHttpHandler(ds));
     NettyHttpService.Builder builder = NettyHttpService.builder();
@@ -40,7 +41,7 @@ public class DiscoveryServer {
     builder.setHttpChunkLimit(75 * 1024);
     service = builder.build();
     service.startAndWait();
-    ds.setHubAddress(service.getBindAddress().getAddress().getHostAddress() + ":" + service.getBindAddress().getPort());
+    ds.setHubAddress(new InetSocketAddress(service.getBindAddress().getAddress().getHostAddress(), service.getBindAddress().getPort()));
   }
 
   protected void finalize() throws Throwable {
@@ -56,10 +57,10 @@ public class DiscoveryServer {
   }
 
   public String getInstanceName() {
-    return this.dataStore.getInstanceName();
+    return this.hubDataStore.getInstanceName();
   }
 
-  public String getClearingHouseAddress() {
-    return this.dataStore.getClearingHouseAddress();
+  public InetSocketAddress getClearingHouseAddress() {
+    return this.hubDataStore.getClearingHouseAddress();
   }
 }
