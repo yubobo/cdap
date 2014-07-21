@@ -20,12 +20,14 @@ import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import org.apache.commons.io.IOUtils;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.util.List;
 import javax.ws.rs.GET;
@@ -64,7 +66,6 @@ public class HubHttpHandler extends AbstractHttpHandler {
     try {
       requestData = (JsonObject) jsonParser.parse(req);
     } catch (Exception e) {
-      //throw new RuntimeException("Cannot read HTTP request");
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       return;
     }
@@ -97,13 +98,22 @@ public class HubHttpHandler extends AbstractHttpHandler {
   @POST
   public void announceInitializedInstance(HttpRequest request, HttpResponder responder) {
     String req;
+    JsonObject requestData;
     try {
       req = getStringContent(request);
     } catch (Exception e) {
+      responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       throw new RuntimeException("Cannot read HTTP request");
     }
-    JsonParser jsonParser = new JsonParser();
-    JsonObject requestData = (JsonObject) jsonParser.parse(req);
+    try {
+      JsonParser jsonParser = new JsonParser();
+      JsonReader jsonReader = new JsonReader(new StringReader(req));
+      jsonReader.setLenient(true);
+      requestData = (JsonObject) jsonParser.parse(jsonReader);
+    } catch (Exception e) {
+      responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
+      throw new RuntimeException("Cannot parse JSON");
+    }
     if (this.hubDataStore.getInstanceName().equals(requestData.get("name").getAsString())) {
       this.hubDataStore.initialize();
       responder.sendStatus(HttpResponseStatus.OK);
