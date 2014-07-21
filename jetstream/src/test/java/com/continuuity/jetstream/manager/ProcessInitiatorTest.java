@@ -47,14 +47,6 @@ public class ProcessInitiatorTest {
     processInitiator = new ProcessInitiator(hubDataStore);
   }
 
-  /*
-  @Test
-  public void testProcessExecution() throws IOException, InterruptedException {
-    String[] arg = {"-l"};
-    System.out.print(processInitiator.startProcess("ls", arg));
-  }
-  */
-
 /**
  *  These Tests Return IOExceptions as these binaries don't exist
  */

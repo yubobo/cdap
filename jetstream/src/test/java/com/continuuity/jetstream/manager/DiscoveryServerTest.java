@@ -23,7 +23,9 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -35,6 +37,7 @@ import java.net.URL;
  * DiscoveryServerTest
  */
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class DiscoveryServerTest {
 
   private static URI baseURI;
@@ -75,28 +78,19 @@ public class DiscoveryServerTest {
   }
 
   @Test
-  public void testServiceState() throws IOException {
+  public void test0ServiceState() throws IOException {
     Assert.assertEquals(Service.State.RUNNING, discoveryServer.state());
   }
 
   @Test
-  public void testDiscoverInstance() throws IOException {
-    HttpURLConnection urlConn = request("/v1/DiscoverInstance/TestInstance", HttpMethod.GET);
-    Assert.assertEquals(200, urlConn.getResponseCode());
-    Assert.assertEquals("{\"ip\":\"127.0.0.1\",\"port\":1111}", getContent(urlConn));
-    urlConn.disconnect();
+  public void test05AnnounceInitializedInstance() throws IOException {
+    HttpURLConnection urlConn = request("/v1/AnnounceInitializedInstance", HttpMethod.POST);
+    writeContent(urlConn, "{\"name\":\"TestInstance\"}");
+    Assert.assertEquals(400, urlConn.getResponseCode());
   }
 
   @Test
-  public void testDiscoverInitializedInstance() throws IOException {
-    HttpURLConnection urlConn = request("/v1/DiscoverInitializedInstance/TestInstance", HttpMethod.GET);
-    Assert.assertEquals(200, urlConn.getResponseCode());
-    Assert.assertEquals("{\"ip\":\"127.0.0.1\",\"port\":1111}", getContent(urlConn));
-    urlConn.disconnect();
-  }
-
-  @Test
-  public void testAnnounceInstance() throws IOException {
+  public void test1AnnounceInstance() throws IOException {
     HttpURLConnection urlConn = request("/v1/AnnounceInstance", HttpMethod.POST);
     writeContent(urlConn, "{\"name\":\"TestInstance\",\"ip\":\"127.0.0.1\",\"port\":\"1111\"}");
     urlConn.disconnect();
@@ -106,11 +100,48 @@ public class DiscoveryServerTest {
   }
 
   @Test
-  public void testAnnounceInitializedInstance() throws IOException {
-    HttpURLConnection urlConn = request("/v1/AnnounceInitializedInstance", HttpMethod.POST);
-    writeContent(urlConn, "{\"name\":\"TestInstance1\"}");
+  public void test2DiscoverInstance() throws IOException {
+    HttpURLConnection urlConn = request("/v1/DiscoverInstance/TestInstance", HttpMethod.GET);
     Assert.assertEquals(200, urlConn.getResponseCode());
-    Assert.assertEquals("TestInstance1", discoveryServer.getInstanceName());
+    Assert.assertEquals("{\"ip\":\"127.0.0.1\",\"port\":1111}", getContent(urlConn));
+    urlConn.disconnect();
+  }
+
+  @Test
+  public void test2BadDiscoverInstance() throws IOException {
+    HttpURLConnection urlConn = request("/v1/DiscoverInstance/BadTestInstance", HttpMethod.GET);
+    Assert.assertEquals(400, urlConn.getResponseCode());
+    urlConn.disconnect();
+  }
+
+  @Test
+  public void test25DiscoverInitializedInstance() throws IOException {
+    HttpURLConnection urlConn = request("/v1/DiscoverInitializedInstance/TestInstance", HttpMethod.GET);
+    Assert.assertEquals(400, urlConn.getResponseCode());
+    urlConn.disconnect();
+  }
+
+  @Test
+  public void test3AnnounceInitializedInstance() throws IOException {
+    HttpURLConnection urlConn = request("/v1/AnnounceInitializedInstance", HttpMethod.POST);
+    writeContent(urlConn, "{\"name\":\"TestInstance\"}");
+    Assert.assertEquals(200, urlConn.getResponseCode());
+    Assert.assertEquals("TestInstance", discoveryServer.getInstanceName());
+  }
+
+  @Test
+  public void test4DiscoverInitializedInstance() throws IOException {
+    HttpURLConnection urlConn = request("/v1/DiscoverInitializedInstance/TestInstance", HttpMethod.GET);
+    Assert.assertEquals(200, urlConn.getResponseCode());
+    Assert.assertEquals("{\"ip\":\"127.0.0.1\",\"port\":1111}", getContent(urlConn));
+    urlConn.disconnect();
+  }
+
+  @Test
+  public void test4BadDiscoverInitializedInstance() throws IOException {
+    HttpURLConnection urlConn = request("/v1/DiscoverInitializedInstance/BadTestInstance", HttpMethod.GET);
+    Assert.assertEquals(400, urlConn.getResponseCode());
+    urlConn.disconnect();
   }
 
   @Test

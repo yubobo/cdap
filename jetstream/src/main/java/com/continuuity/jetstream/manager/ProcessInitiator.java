@@ -16,14 +16,12 @@
 
 package com.continuuity.jetstream.manager;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ProcessInitiator is responsible for initiating all processes required by GigaScope
+ * ProcessInitiator is responsible for initiating all processes required by Streaming Engine
  */
 
 public class ProcessInitiator {
@@ -43,11 +41,10 @@ public class ProcessInitiator {
     this.rtsProcessList = new ArrayList<Process>();
     this.hftaProcessList = new ArrayList<Process>();
     this.gsExitProcessList = new ArrayList<Process>();
-    //this.init();
   }
 
   /**
-   * Sequentially invokes the required GigaScope processes
+   * Sequentially invokes the required Streaming Engine processes
    */
   public void init() {
     try {
@@ -112,10 +109,5 @@ public class ProcessInitiator {
       Process p = this.rt.exec("GSEXIT", arguments);
       this.gsExitProcessList.add(p);
     }
-  }
-
-  public String startProcess(String command, String[] arguments) throws IOException, InterruptedException {
-    Process p = this.rt.exec(command, arguments);
-    return IOUtils.toString(p.getInputStream(), "UTF-8");
   }
 }

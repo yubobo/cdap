@@ -76,7 +76,12 @@ public class HubHttpHandler extends AbstractHttpHandler {
 
   @Path("/DiscoverInstance/{instance}")
   @GET
-  public void discoverInstance(HttpRequest request, HttpResponder responder, @PathParam("instance") String instance) {
+  public void discoverInstance(HttpRequest request, HttpResponder responder,
+                               @PathParam("instance") String instance) {
+    if (!instance.equals(this.hubDataStore.getInstanceName())) {
+      responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
+      return;
+    }
     InetSocketAddress address = this.hubDataStore.getClearingHouseAddress();
     if (address == null) {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
@@ -99,14 +104,22 @@ public class HubHttpHandler extends AbstractHttpHandler {
     }
     JsonParser jsonParser = new JsonParser();
     JsonObject requestData = (JsonObject) jsonParser.parse(req);
-    this.hubDataStore.setInstanceName(requestData.get("name").getAsString());
-    responder.sendStatus(HttpResponseStatus.OK);
+    if (this.hubDataStore.getInstanceName().equals(requestData.get("name").getAsString())) {
+      this.hubDataStore.initialize();
+      responder.sendStatus(HttpResponseStatus.OK);
+      return;
+    }
+    responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
   }
 
   @Path("/DiscoverInitializedInstance/{instance}")
   @GET
   public void discoverInitializedInstance(HttpRequest request, HttpResponder responder,
                                           @PathParam("instance") String instance) {
+    if ((!this.hubDataStore.isInitialized()) || (!instance.equals(this.hubDataStore.getInstanceName()))){
+      responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
+      return;
+    }
     InetSocketAddress address = this.hubDataStore.getClearingHouseAddress();
     if (address == null) {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
@@ -124,7 +137,7 @@ public class HubHttpHandler extends AbstractHttpHandler {
                              @PathParam("dataSourceName") String dataSourceName) {
     List<HubDataSource> dataSources = this.hubDataStore.getHubDataSources();
     HubDataSource ds = null;
-    for (HubDataSource hds : dataSources ) {
+    for (HubDataSource hds : dataSources) {
       if (dataSourceName.equals(hds.getName())) {
         ds = hds;
         break;

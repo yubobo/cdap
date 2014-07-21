@@ -32,10 +32,27 @@ public class HubDataStore {
   private int hftaCount;
   private InetSocketAddress hubAddress;
   private InetSocketAddress clearingHouseAddress;
+  private boolean isInitialized;
 
   public HubDataStore() {
     hubDataSources = new ArrayList<HubDataSource>();
     hubDataSinks = new ArrayList<HubDataSink>();
+    isInitialized = false;
+  }
+
+
+  /**
+   * Returns initialization state for this instance
+   */
+  public boolean isInitialized() {
+    return isInitialized;
+  }
+
+  /**
+   * Set flag as true when the "AnnounceInitializedInstance" is called
+   */
+  public void initialize() {
+    isInitialized = true;
   }
 
   /**
