@@ -55,7 +55,8 @@ public class DiscoveryServerTest {
     hubDataStore.setInstanceName("test");
     hubDataStore.setClearingHouseAddress(new InetSocketAddress("127.0.0.1",1111));
     discoveryServer = new DiscoveryServer(hubDataStore);
-    baseURI = URI.create(String.format("http://" + discoveryServer.getHubAddress()));
+    baseURI = URI.create(String.format("http://" + discoveryServer.getHubAddress().getAddress().getHostAddress() +
+                                         ":" + discoveryServer.getHubAddress().getPort()));
   }
 
   private HttpURLConnection request(String path, HttpMethod method) throws IOException {
@@ -87,16 +88,15 @@ public class DiscoveryServerTest {
     HttpURLConnection urlConn = request("/v1/AnnounceInitializedInstance", HttpMethod.POST);
     writeContent(urlConn, "{\"name\":\"TestInstance\"}");
     Assert.assertEquals(400, urlConn.getResponseCode());
+    urlConn.disconnect();
   }
 
   @Test
   public void test1AnnounceInstance() throws IOException {
     HttpURLConnection urlConn = request("/v1/AnnounceInstance", HttpMethod.POST);
     writeContent(urlConn, "{\"name\":\"TestInstance\",\"ip\":\"127.0.0.1\",\"port\":\"1111\"}");
-    urlConn.disconnect();
     Assert.assertEquals(200, urlConn.getResponseCode());
-    Assert.assertEquals("TestInstance", discoveryServer.getInstanceName());
-    Assert.assertEquals(new InetSocketAddress("127.0.0.1",1111), discoveryServer.getClearingHouseAddress());
+    urlConn.disconnect();
   }
 
   @Test
@@ -126,7 +126,7 @@ public class DiscoveryServerTest {
     HttpURLConnection urlConn = request("/v1/AnnounceInitializedInstance", HttpMethod.POST);
     writeContent(urlConn, "{\"name\":\"TestInstance\"}");
     Assert.assertEquals(200, urlConn.getResponseCode());
-    Assert.assertEquals("TestInstance", discoveryServer.getInstanceName());
+    urlConn.disconnect();
   }
 
   @Test
@@ -152,12 +152,14 @@ public class DiscoveryServerTest {
     urlConn = request("/v1/DiscoverSource/source2", HttpMethod.GET);
     Assert.assertEquals(200, urlConn.getResponseCode());
     Assert.assertEquals("{\"ip\":\"127.0.0.1\",\"port\":8082}", getContent(urlConn));
+    urlConn.disconnect();
   }
 
   @Test
   public void testBadDataSource() throws IOException {
     HttpURLConnection urlConn = request("/v1/DiscoverSource/badSource", HttpMethod.GET);
     Assert.assertEquals(400, urlConn.getResponseCode());
+    urlConn.disconnect();
   }
 
   @Test
@@ -168,12 +170,14 @@ public class DiscoveryServerTest {
     urlConn = request("/v1/DiscoverSink/sink2", HttpMethod.GET);
     Assert.assertEquals(200, urlConn.getResponseCode());
     Assert.assertEquals("{\"ip\":\"127.0.0.1\",\"port\":7082}", getContent(urlConn));
+    urlConn.disconnect();
   }
 
   @Test
   public void testBadDataSink() throws IOException {
     HttpURLConnection urlConn = request("/v1/DiscoverSink/badSink", HttpMethod.GET);
     Assert.assertEquals(400, urlConn.getResponseCode());
+    urlConn.disconnect();
   }
 
 }

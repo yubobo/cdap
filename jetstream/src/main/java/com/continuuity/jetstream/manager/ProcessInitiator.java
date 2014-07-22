@@ -104,7 +104,7 @@ public class ProcessInitiator {
     arguments[0] = this.hubDataStore.getHubAddress().toString();
     arguments[1] = this.hubDataStore.getInstanceName();
     for (int i = 0; i < dataSinks.size(); i++) {
-      arguments[2] = dataSinks.get(i).getFtaName();
+      arguments[2] = dataSinks.get(i).getFTAName();
       arguments[3] = dataSinks.get(i).getName();
       Process p = this.rt.exec("GSEXIT", arguments);
       this.gsExitProcessList.add(p);

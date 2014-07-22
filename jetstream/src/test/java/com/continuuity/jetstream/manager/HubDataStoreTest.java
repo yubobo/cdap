@@ -54,15 +54,15 @@ public class HubDataStoreTest {
     hubDataStore.addDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",8081));
     List<HubDataSink> dataSinks= hubDataStore.getHubDataSinks();
     Assert.assertEquals("sink1", dataSinks.get(0).getName());
-    Assert.assertEquals("query1", dataSinks.get(0).getFtaName());
+    Assert.assertEquals("query1", dataSinks.get(0).getFTAName());
     Assert.assertEquals(new InetSocketAddress("127.0.0.1",8081), dataSinks.get(0).getAddress());
     hubDataStore.addDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1", 8082));
     dataSinks = hubDataStore.getHubDataSinks();
     Assert.assertEquals("sink1", dataSinks.get(0).getName());
-    Assert.assertEquals("query1", dataSinks.get(0).getFtaName());
+    Assert.assertEquals("query1", dataSinks.get(0).getFTAName());
     Assert.assertEquals(new InetSocketAddress("127.0.0.1",8081), dataSinks.get(0).getAddress());
     Assert.assertEquals("sink2", dataSinks.get(1).getName());
-    Assert.assertEquals("query2", dataSinks.get(1).getFtaName());
+    Assert.assertEquals("query2", dataSinks.get(1).getFTAName());
     Assert.assertEquals(new InetSocketAddress("127.0.0.1",8082), dataSinks.get(1).getAddress());
   }
 

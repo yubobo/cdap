@@ -21,8 +21,7 @@ import com.continuuity.http.HttpResponder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
-import org.apache.commons.io.IOUtils;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.apache.commons.io.Charsets;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
@@ -39,7 +38,6 @@ import javax.ws.rs.PathParam;
 /**
  * HubHttpHandler
  */
-
 @Path("/v1")
 public class HubHttpHandler extends AbstractHttpHandler {
   private final HubDataStore hubDataStore;
@@ -49,7 +47,7 @@ public class HubHttpHandler extends AbstractHttpHandler {
   }
 
   private String getStringContent(HttpRequest request) throws IOException {
-    return IOUtils.toString(new ChannelBufferInputStream(request.getContent()));
+    return request.getContent().toString(Charsets.UTF_8);
   }
 
   @Path("/AnnounceInstance")
@@ -126,7 +124,7 @@ public class HubHttpHandler extends AbstractHttpHandler {
   @GET
   public void discoverInitializedInstance(HttpRequest request, HttpResponder responder,
                                           @PathParam("instance") String instance) {
-    if ((!this.hubDataStore.isInitialized()) || (!instance.equals(this.hubDataStore.getInstanceName()))){
+    if ((!this.hubDataStore.isInitialized()) || (!instance.equals(this.hubDataStore.getInstanceName()))) {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       return;
     }

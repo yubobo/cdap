@@ -30,14 +30,6 @@ class HubDataSource {
     this.address = address;
   }
 
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public void setAddress(InetSocketAddress address) {
-    this.address = address;
-  }
-
   public String getName() {
     return name;
   }

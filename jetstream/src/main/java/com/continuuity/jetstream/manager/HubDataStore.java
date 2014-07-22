@@ -16,8 +16,9 @@
 
 package com.continuuity.jetstream.manager;
 
+import com.google.common.collect.Lists;
+
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,11 +36,10 @@ public class HubDataStore {
   private boolean isInitialized;
 
   public HubDataStore() {
-    hubDataSources = new ArrayList<HubDataSource>();
-    hubDataSinks = new ArrayList<HubDataSink>();
+    hubDataSources = Lists.newArrayList();
+    hubDataSinks = Lists.newArrayList();
     isInitialized = false;
   }
-
 
   /**
    * Returns initialization state for this instance

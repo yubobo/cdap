@@ -21,19 +21,26 @@ import java.net.InetSocketAddress;
 /**
  * Class to store HubDataSink Information
  */
-class HubDataSink extends HubDataSource {
+class HubDataSink {
+  private String name;
+  private InetSocketAddress address;
   private String ftaName;
 
   public HubDataSink(String name, String ftaName, InetSocketAddress address) {
-    super(name, address);
+    this.name = name;
+    this.address = address;
     this.ftaName = ftaName;
   }
 
-  public void setFtaName(String name) {
-    this.ftaName = name;
+  public String getName() {
+    return name;
   }
 
-  public String getFtaName() {
+  public InetSocketAddress getAddress() {
+    return address;
+  }
+
+  public String getFTAName() {
     return ftaName;
   }
 }

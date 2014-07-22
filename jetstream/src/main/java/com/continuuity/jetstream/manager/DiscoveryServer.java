@@ -28,12 +28,10 @@ import java.util.List;
  * DiscoveryServer
  */
 
-class DiscoveryServer {
+class DiscoveryServer{
   private final NettyHttpService service;
-  private final HubDataStore hubDataStore;
 
   public DiscoveryServer(HubDataStore ds) {
-    this.hubDataStore = ds;
     List<HttpHandler> handlers = Lists.newArrayList();
     handlers.add(new HubHttpHandler(ds));
     NettyHttpService.Builder builder = NettyHttpService.builder();
@@ -49,19 +47,11 @@ class DiscoveryServer {
     service.stopAndWait();
   }
 
-  public String getHubAddress() {
-    return service.getBindAddress().getAddress().getHostAddress() + ":" + service.getBindAddress().getPort();
+  public InetSocketAddress getHubAddress() {
+    return new InetSocketAddress(service.getBindAddress().getAddress().getHostAddress(), service.getBindAddress().getPort());
   }
 
   public Service.State state() {
     return service.state();
-  }
-
-  public String getInstanceName() {
-    return this.hubDataStore.getInstanceName();
-  }
-
-  public InetSocketAddress getClearingHouseAddress() {
-    return this.hubDataStore.getClearingHouseAddress();
   }
 }
