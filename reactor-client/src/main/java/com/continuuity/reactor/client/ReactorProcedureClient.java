@@ -24,7 +24,6 @@ import com.continuuity.reactor.client.config.ReactorClientConfig;
 import com.continuuity.reactor.client.exception.BadRequestException;
 import com.continuuity.reactor.client.exception.NotFoundException;
 import com.continuuity.reactor.client.util.RestClient;
-import com.continuuity.reactor.client.util.RestClients;
 import com.continuuity.reactor.metadata.ProgramRecord;
 import com.google.common.base.Charsets;
 import com.google.common.reflect.TypeToken;
@@ -50,7 +49,7 @@ public class ReactorProcedureClient {
   @Inject
   public ReactorProcedureClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClients.createDefault(config);
+    this.restClient = RestClient.create(config);
   }
 
   /**

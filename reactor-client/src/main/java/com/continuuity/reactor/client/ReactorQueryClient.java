@@ -24,7 +24,6 @@ import com.continuuity.reactor.client.config.ReactorClientConfig;
 import com.continuuity.reactor.client.exception.BadRequestException;
 import com.continuuity.reactor.client.exception.QueryNotFoundException;
 import com.continuuity.reactor.client.util.RestClient;
-import com.continuuity.reactor.client.util.RestClients;
 import com.continuuity.reactor.metadata.ColumnDesc;
 import com.continuuity.reactor.metadata.QueryHandle;
 import com.continuuity.reactor.metadata.QueryResult;
@@ -52,7 +51,7 @@ public class ReactorQueryClient {
   @Inject
   public ReactorQueryClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClients.createDefault(config);
+    this.restClient = RestClient.create(config);
   }
 
   /**

@@ -24,7 +24,6 @@ import com.continuuity.reactor.client.config.ReactorClientConfig;
 import com.continuuity.reactor.client.exception.NotFoundException;
 import com.continuuity.reactor.client.exception.ProgramNotFoundException;
 import com.continuuity.reactor.client.util.RestClient;
-import com.continuuity.reactor.client.util.RestClients;
 import com.continuuity.reactor.metadata.DistributedProgramLiveInfo;
 import com.continuuity.reactor.metadata.Instances;
 import com.continuuity.reactor.metadata.ProgramLiveInfo;
@@ -54,7 +53,7 @@ public class ReactorProgramClient {
   @Inject
   public ReactorProgramClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClients.createDefault(config);
+    this.restClient = RestClient.create(config);
   }
 
   /**

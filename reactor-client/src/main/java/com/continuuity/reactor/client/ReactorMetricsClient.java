@@ -21,7 +21,6 @@ import com.continuuity.common.http.HttpResponse;
 import com.continuuity.common.http.ObjectResponse;
 import com.continuuity.reactor.client.config.ReactorClientConfig;
 import com.continuuity.reactor.client.util.RestClient;
-import com.continuuity.reactor.client.util.RestClients;
 
 import java.io.IOException;
 import java.net.URL;
@@ -38,7 +37,7 @@ public class ReactorMetricsClient {
   @Inject
   public ReactorMetricsClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClients.createDefault(config);
+    this.restClient = RestClient.create(config);
   }
 
   /**
