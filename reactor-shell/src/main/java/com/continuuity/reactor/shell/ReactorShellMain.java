@@ -18,7 +18,6 @@ package com.continuuity.reactor.shell;
 
 import com.continuuity.reactor.client.config.ReactorClientConfig;
 import com.continuuity.reactor.client.util.RestClient;
-import com.continuuity.reactor.client.util.RestClients;
 import com.continuuity.reactor.shell.command.CommandSet;
 import com.continuuity.reactor.shell.command.ExitCommand;
 import com.continuuity.reactor.shell.command.HelpCommand;
@@ -71,7 +70,7 @@ public class ReactorShellMain {
   public ReactorShellMain(String reactorHost, PrintStream output) throws URISyntaxException {
     this.reactorHost = Objects.firstNonNull(reactorHost, "localhost");
     this.reactorConfig = new ReactorClientConfig(reactorHost);
-    this.restClient = RestClients.createDefault(reactorConfig);
+    this.restClient = RestClient.create(reactorConfig);
     this.output = output;
     this.helpCommand = new HelpCommand(new Supplier<CommandSet>() {
       @Override

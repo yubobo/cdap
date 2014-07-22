@@ -14,24 +14,21 @@
  * the License.
  */
 
-package com.continuuity.internal.app.runtime.service;
-
-import com.continuuity.app.Id;
-import com.continuuity.app.program.Type;
+package com.continuuity.reactor.metadata;
 
 /**
  * Represents information about running programs. This class can be extended to add information for specific runtime
  * environments.
  */
-public abstract class LiveInfo {
+public abstract class ProgramLiveInfo {
   private final String app;
   private final String type;
   private final String id;
   private final String runtime;
 
-  public LiveInfo(Id.Program programId, Type type, String runtime) {
+  public ProgramLiveInfo(Id.Program programId, ProgramType type, String runtime) {
     this.app = programId.getApplicationId();
-    this.type = type.prettyName();
+    this.type = type.getPrettyName();
     this.id = programId.getId();
     this.runtime = runtime;
   }
@@ -40,8 +37,8 @@ public abstract class LiveInfo {
     return app;
   }
 
-  public Type getType() {
-    return Type.valueOfPrettyName(type);
+  public ProgramType getType() {
+    return ProgramType.valueOfPrettyName(type);
   }
 
   public String getId() {

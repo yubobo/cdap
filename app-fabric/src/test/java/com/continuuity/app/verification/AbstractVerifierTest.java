@@ -16,7 +16,7 @@
 
 package com.continuuity.app.verification;
 
-import com.continuuity.app.Id;
+import com.continuuity.reactor.metadata.Id;
 import org.junit.Assert;
 import org.junit.Test;
 

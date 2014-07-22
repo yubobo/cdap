@@ -16,7 +16,7 @@
 
 package com.continuuity.test;
 
-import com.continuuity.app.program.RunRecord;
+import com.continuuity.reactor.metadata.RunRecord;
 
 import java.util.List;
 

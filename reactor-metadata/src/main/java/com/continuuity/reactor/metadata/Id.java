@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.continuuity.app;
+package com.continuuity.reactor.metadata;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;

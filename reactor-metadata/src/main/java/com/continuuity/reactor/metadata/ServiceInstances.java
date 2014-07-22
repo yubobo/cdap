@@ -14,17 +14,26 @@
  * the License.
  */
 
-package com.continuuity.internal.app.runtime.service;
-
-import com.continuuity.app.Id;
-import com.continuuity.app.program.Type;
+package com.continuuity.reactor.metadata;
 
 /**
- *
+ * Represents the number of instances a service currently is running with.
  */
-public class NotRunningLiveInfo extends LiveInfo {
+public class ServiceInstances {
 
-  public NotRunningLiveInfo(Id.Program programId, Type type) {
-    super(programId, type, null);
+  private final int requested;
+  private final int provisioned;
+
+  public ServiceInstances(int requested, int provisioned) {
+    this.requested = requested;
+    this.provisioned = provisioned;
+  }
+
+  public int getRequested() {
+    return requested;
+  }
+
+  public int getProvisioned() {
+    return provisioned;
   }
 }

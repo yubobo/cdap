@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.continuuity.app;
+package com.continuuity.reactor.metadata;
 
 /**
  * Class containing a program status.

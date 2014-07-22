@@ -23,7 +23,6 @@ import com.continuuity.common.http.ObjectResponse;
 import com.continuuity.reactor.client.config.ReactorClientConfig;
 import com.continuuity.reactor.client.exception.StreamNotFoundException;
 import com.continuuity.reactor.client.util.RestClient;
-import com.continuuity.reactor.client.util.RestClients;
 import com.continuuity.reactor.metadata.StreamRecord;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
@@ -49,7 +48,7 @@ public class ReactorStreamClient {
   @Inject
   public ReactorStreamClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClients.createDefault(config);
+    this.restClient = RestClient.create(config);
   }
 
   /**

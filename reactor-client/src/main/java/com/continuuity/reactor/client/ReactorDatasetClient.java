@@ -25,7 +25,6 @@ import com.continuuity.reactor.client.exception.DatasetAlreadyExistsException;
 import com.continuuity.reactor.client.exception.DatasetNotFoundException;
 import com.continuuity.reactor.client.exception.DatasetTypeNotFoundException;
 import com.continuuity.reactor.client.util.RestClient;
-import com.continuuity.reactor.client.util.RestClients;
 import com.continuuity.reactor.metadata.DatasetInstanceConfiguration;
 import com.continuuity.reactor.metadata.DatasetMeta;
 import com.continuuity.reactor.metadata.DatasetSpecification;
@@ -52,7 +51,7 @@ public class ReactorDatasetClient {
   @Inject
   public ReactorDatasetClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClients.createDefault(config);
+    this.restClient = RestClient.create(config);
   }
 
   /**

@@ -27,7 +27,6 @@ import com.continuuity.reactor.client.exception.DatasetModuleAlreadyExistsExcept
 import com.continuuity.reactor.client.exception.DatasetModuleCannotBeDeletedException;
 import com.continuuity.reactor.client.exception.DatasetModuleNotFoundException;
 import com.continuuity.reactor.client.util.RestClient;
-import com.continuuity.reactor.client.util.RestClients;
 import com.continuuity.reactor.metadata.DatasetModuleMeta;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
@@ -51,7 +50,7 @@ public class ReactorDatasetModuleClient {
   @Inject
   public ReactorDatasetModuleClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClients.createDefault(config);
+    this.restClient = RestClient.create(config);
   }
 
   /**

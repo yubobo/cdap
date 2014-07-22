@@ -14,23 +14,14 @@
  * the License.
  */
 
-package com.continuuity.reactor.client.util;
-
-import com.continuuity.reactor.client.config.ReactorClientConfig;
+package com.continuuity.reactor.metadata;
 
 /**
- * Constructs {@link RestClient} instances.
+ *
  */
-public class RestClients {
+public class NotRunningProgramLiveInfo extends ProgramLiveInfo {
 
-  /**
-   * Creates a default {@link RestClient}.
-   *
-   * @param config {@link ReactorClientConfig} that provides information about the Reactor host and timeouts
-   * @return {@link RestClient} instance
-   */
-  public static RestClient createDefault(ReactorClientConfig config) {
-    return new RestClient(config.getDefaultConfig(), config.getUploadConfig());
+  public NotRunningProgramLiveInfo(Id.Program programId, ProgramType type) {
+    super(programId, type, null);
   }
-
 }

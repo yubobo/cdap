@@ -14,37 +14,37 @@
  * the License.
  */
 
-package com.continuuity.app.program;
+package com.continuuity.reactor.metadata;
 
 /**
- * This class record information for a particular run.
+ * Represents item in the list from /apps
  */
-public final class RunRecord {
-  private String pid;
-  private long startTs;
-  private long stopTs;
-  private String endStatus;
+public class ApplicationRecord {
+  private final String type;
+  private final String id;
+  private final String name;
+  private final String description;
 
-  public RunRecord(final String pid, final long startTs, final long stopTs, final String endStatus) {
-    this.pid = pid;
-    this.startTs = startTs;
-    this.stopTs = stopTs;
-    this.endStatus = endStatus;
+  public ApplicationRecord(String type, String id, String name, String description) {
+    this.type = type;
+    this.id = id;
+    this.name = name;
+    this.description = description;
   }
 
-  public String getPid() {
-    return pid;
+  public String getType() {
+    return type;
   }
 
-  public long getStartTs() {
-    return startTs;
+  public String getId() {
+    return id;
   }
 
-  public long getStopTs() {
-    return stopTs;
+  public String getName() {
+    return name;
   }
 
-  public String getEndStatus() {
-    return endStatus;
+  public String getDescription() {
+    return description;
   }
 }

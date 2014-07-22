@@ -21,17 +21,18 @@ import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.HttpResponse;
-import com.continuuity.explore.service.ColumnDesc;
 import com.continuuity.explore.service.Explore;
 import com.continuuity.explore.service.ExploreException;
-import com.continuuity.explore.service.Handle;
 import com.continuuity.explore.service.HandleNotFoundException;
-import com.continuuity.explore.service.Result;
-import com.continuuity.explore.service.Status;
-
+import com.continuuity.reactor.metadata.ColumnDesc;
+import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.reactor.metadata.QueryResult;
+import com.continuuity.reactor.metadata.QueryStatus;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
@@ -41,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -58,9 +58,11 @@ public abstract class AbstractExploreClient implements Explore, ExploreClient {
 
   private static final Type MAP_TYPE_TOKEN = new TypeToken<Map<String, String>>() { }.getType();
   private static final Type COL_DESC_LIST_TYPE = new TypeToken<List<ColumnDesc>>() { }.getType();
-  private static final Type ROW_LIST_TYPE = new TypeToken<List<Result>>() { }.getType();
+  private static final Type ROW_LIST_TYPE = new TypeToken<List<QueryResult>>() { }.getType();
 
   protected abstract InetSocketAddress getExploreServiceAddress();
+
+  protected abstract String getAuthorizationToken();
 
   @Override
   public boolean isAvailable() {
@@ -74,45 +76,45 @@ public abstract class AbstractExploreClient implements Explore, ExploreClient {
   }
 
   @Override
-  public Handle enableExplore(String datasetInstance) throws ExploreException {
+  public QueryHandle enableExplore(String datasetInstance) throws ExploreException {
     HttpResponse response = doPost(String.format("explore/instances/%s/enable", datasetInstance), null, null);
     if (HttpResponseStatus.OK.getCode() == response.getResponseCode()) {
-      return Handle.fromId(parseResponseAsMap(response, "handle"));
+      return QueryHandle.fromId(parseResponseAsMap(response, "handle"));
     }
     throw new ExploreException("Cannot enable explore on dataset " + datasetInstance + ". Reason: " +
                                getDetails(response));
   }
 
   @Override
-  public Handle disableExplore(String datasetInstance) throws ExploreException {
+  public QueryHandle disableExplore(String datasetInstance) throws ExploreException {
     HttpResponse response = doPost(String.format("explore/instances/%s/disable", datasetInstance), null, null);
     if (HttpResponseStatus.OK.getCode() == response.getResponseCode()) {
-      return Handle.fromId(parseResponseAsMap(response, "handle"));
+      return QueryHandle.fromId(parseResponseAsMap(response, "handle"));
     }
     throw new ExploreException("Cannot disable explore on dataset " + datasetInstance + ". Reason: " +
                                getDetails(response));
   }
 
   @Override
-  public Handle execute(String statement) throws ExploreException {
+  public QueryHandle execute(String statement) throws ExploreException {
     HttpResponse response = doPost("data/queries", GSON.toJson(ImmutableMap.of("query", statement)), null);
     if (HttpResponseStatus.OK.getCode() == response.getResponseCode()) {
-      return Handle.fromId(parseResponseAsMap(response, "handle"));
+      return QueryHandle.fromId(parseResponseAsMap(response, "handle"));
     }
     throw new ExploreException("Cannot execute query. Reason: " + getDetails(response));
   }
 
   @Override
-  public Status getStatus(Handle handle) throws ExploreException, HandleNotFoundException {
+  public QueryStatus getStatus(QueryHandle handle) throws ExploreException, HandleNotFoundException {
     HttpResponse response = doGet(String.format("data/queries/%s/%s", handle.getHandle(), "status"));
     if (HttpResponseStatus.OK.getCode() == response.getResponseCode()) {
-      return parseJson(response, Status.class);
+      return parseJson(response, QueryStatus.class);
     }
     throw new ExploreException("Cannot get status. Reason: " + getDetails(response));
   }
 
   @Override
-  public List<ColumnDesc> getResultSchema(Handle handle) throws ExploreException, HandleNotFoundException {
+  public List<ColumnDesc> getResultSchema(QueryHandle handle) throws ExploreException, HandleNotFoundException {
     HttpResponse response = doGet(String.format("data/queries/%s/%s", handle.getHandle(), "schema"));
     if (HttpResponseStatus.OK.getCode() == response.getResponseCode()) {
       return parseJson(response, COL_DESC_LIST_TYPE);
@@ -121,7 +123,7 @@ public abstract class AbstractExploreClient implements Explore, ExploreClient {
   }
 
   @Override
-  public List<Result> nextResults(Handle handle, int size) throws ExploreException, HandleNotFoundException {
+  public List<QueryResult> nextResults(QueryHandle handle, int size) throws ExploreException, HandleNotFoundException {
     HttpResponse response = doPost(String.format("data/queries/%s/%s", handle.getHandle(), "next"),
                                    GSON.toJson(ImmutableMap.of("size", size)), null);
     if (HttpResponseStatus.OK.getCode() == response.getResponseCode()) {
@@ -131,7 +133,7 @@ public abstract class AbstractExploreClient implements Explore, ExploreClient {
   }
 
   @Override
-  public void cancel(Handle handle) throws ExploreException, HandleNotFoundException {
+  public void cancel(QueryHandle handle) throws ExploreException, HandleNotFoundException {
     HttpResponse response = doPost(String.format("data/queries/%s/%s", handle.getHandle(), "cancel"), null, null);
     if (HttpResponseStatus.OK.getCode() == response.getResponseCode()) {
       return;
@@ -140,7 +142,7 @@ public abstract class AbstractExploreClient implements Explore, ExploreClient {
   }
 
   @Override
-  public void close(Handle handle) throws ExploreException, HandleNotFoundException {
+  public void close(QueryHandle handle) throws ExploreException, HandleNotFoundException {
     HttpResponse response = doDelete(String.format("data/queries/%s", handle.getHandle()));
     if (HttpResponseStatus.OK.getCode() == response.getResponseCode()) {
       return;
@@ -190,21 +192,26 @@ public abstract class AbstractExploreClient implements Explore, ExploreClient {
   private HttpResponse doRequest(String resource, String requestMethod,
                                  @Nullable Map<String, String> headers,
                                  @Nullable String body) throws ExploreException {
+    Map<String, String> newHeaders = headers;
+    if (getAuthorizationToken() != null && !getAuthorizationToken().isEmpty()) {
+      newHeaders = (headers != null) ? Maps.newHashMap(headers) : Maps.<String, String>newHashMap();
+      newHeaders.put("Authorization", "Bearer " + getAuthorizationToken());
+    }
     String resolvedUrl = resolve(resource);
     try {
       URL url = new URL(resolvedUrl);
       if (body != null) {
         return HttpRequests.execute(HttpRequest.builder(HttpMethod.valueOf(requestMethod), url)
-                                      .addHeaders(headers).withBody(body).build());
+                                      .addHeaders(newHeaders).withBody(body).build());
       } else {
         return HttpRequests.execute(HttpRequest.builder(HttpMethod.valueOf(requestMethod), url)
-                                      .addHeaders(headers).build());
+                                      .addHeaders(newHeaders).build());
       }
     } catch (IOException e) {
       throw new ExploreException(
         String.format("Error connecting to Explore Service at %s while doing %s with headers %s and body %s",
                       resolvedUrl, requestMethod,
-                      headers == null ? "null" : Joiner.on(",").withKeyValueSeparator("=").join(headers),
+                      newHeaders == null ? "null" : Joiner.on(",").withKeyValueSeparator("=").join(newHeaders),
                       body == null ? "null" : body), e);
     }
   }

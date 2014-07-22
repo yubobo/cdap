@@ -17,18 +17,17 @@
 package com.continuuity.data2.datafabric.dataset.service.executor;
 
 import com.continuuity.api.dataset.DatasetProperties;
-import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.discovery.EndpointStrategy;
 import com.continuuity.common.discovery.RandomEndpointStrategy;
 import com.continuuity.common.discovery.TimeLimitEndpointStrategy;
 import com.continuuity.common.exception.HandlerException;
-import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.HttpResponse;
 import com.continuuity.common.http.ObjectResponse;
-import com.continuuity.data2.datafabric.dataset.type.DatasetTypeMeta;
+import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.reactor.metadata.DatasetTypeMeta;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;

@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.continuuity.explore.service;
+package com.continuuity.reactor.metadata;
 
 import com.google.common.base.Objects;
 

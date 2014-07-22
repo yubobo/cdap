@@ -14,13 +14,27 @@
  * the License.
  */
 
-package com.continuuity.internal.app.runtime.webapp;
-
-import com.continuuity.api.ProgramSpecification;
+package com.continuuity.reactor.metadata;
 
 /**
- * Specification for webapp.
+ * Dataset instance metadata.
  */
-public interface WebappSpecification extends ProgramSpecification {
+public class DatasetMeta {
+  private final DatasetSpecification spec;
 
+  // todo: meta of modules inside will have list of all types in the module that is redundant here
+  private final DatasetTypeMeta type;
+
+  public DatasetMeta(DatasetSpecification spec, DatasetTypeMeta type) {
+    this.spec = spec;
+    this.type = type;
+  }
+
+  public DatasetSpecification getSpec() {
+    return spec;
+  }
+
+  public DatasetTypeMeta getType() {
+    return type;
+  }
 }

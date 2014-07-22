@@ -21,6 +21,7 @@ import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpRequestConfig;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.HttpResponse;
+import com.continuuity.reactor.client.config.ReactorClientConfig;
 import org.apache.commons.lang.ArrayUtils;
 
 import java.io.IOException;
@@ -38,6 +39,16 @@ public class RestClient {
   public RestClient(HttpRequestConfig defaultConfig, HttpRequestConfig uploadConfig) {
     this.defaultConfig = defaultConfig;
     this.uploadConfig = uploadConfig;
+  }
+
+  /**
+   * Creates a default {@link RestClient}.
+   *
+   * @param config {@link ReactorClientConfig} that provides information about the Reactor host and timeouts
+   * @return {@link RestClient} instance
+   */
+  public static RestClient create(ReactorClientConfig config) {
+    return new RestClient(config.getDefaultConfig(), config.getUploadConfig());
   }
 
   public HttpResponse execute(HttpRequest request, int... allowedErrorCodes) throws IOException {

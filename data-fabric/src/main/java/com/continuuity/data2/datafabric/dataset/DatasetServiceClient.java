@@ -17,7 +17,6 @@
 package com.continuuity.data2.datafabric.dataset;
 
 import com.continuuity.api.dataset.DatasetProperties;
-import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.common.discovery.EndpointStrategy;
 import com.continuuity.common.discovery.RandomEndpointStrategy;
@@ -26,13 +25,14 @@ import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.HttpResponse;
-import com.continuuity.data2.datafabric.dataset.service.DatasetInstanceHandler;
-import com.continuuity.data2.datafabric.dataset.service.DatasetInstanceMeta;
-import com.continuuity.data2.datafabric.dataset.type.DatasetModuleMeta;
-import com.continuuity.data2.datafabric.dataset.type.DatasetTypeMeta;
 import com.continuuity.data2.dataset2.DatasetManagementException;
 import com.continuuity.data2.dataset2.InstanceConflictException;
 import com.continuuity.data2.dataset2.ModuleConflictException;
+import com.continuuity.reactor.metadata.DatasetInstanceConfiguration;
+import com.continuuity.reactor.metadata.DatasetMeta;
+import com.continuuity.reactor.metadata.DatasetModuleMeta;
+import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.reactor.metadata.DatasetTypeMeta;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
@@ -77,7 +77,7 @@ class DatasetServiceClient {
   }
 
   @Nullable
-  public DatasetInstanceMeta getInstance(String instanceName) throws DatasetManagementException {
+  public DatasetMeta getInstance(String instanceName) throws DatasetManagementException {
     HttpResponse response = doGet("datasets/" + instanceName);
     if (HttpResponseStatus.NOT_FOUND.getCode() == response.getResponseCode()) {
       return null;
@@ -87,7 +87,7 @@ class DatasetServiceClient {
                                                          instanceName, getDetails(response)));
     }
 
-    return GSON.fromJson(new String(response.getResponseBody(), Charsets.UTF_8), DatasetInstanceMeta.class);
+    return GSON.fromJson(new String(response.getResponseBody(), Charsets.UTF_8), DatasetMeta.class);
   }
 
   public Collection<DatasetSpecification> getAllInstances() throws DatasetManagementException {
@@ -127,9 +127,9 @@ class DatasetServiceClient {
   public void addInstance(String datasetInstanceName, String datasetType, DatasetProperties props)
     throws DatasetManagementException {
 
-    DatasetInstanceHandler.DatasetTypeAndProperties typeAndProps =
-      new DatasetInstanceHandler.DatasetTypeAndProperties(datasetType, props.getProperties());
-    HttpResponse response = doPut("datasets/" + datasetInstanceName, GSON.toJson(typeAndProps));
+    DatasetInstanceConfiguration creationProperties = new DatasetInstanceConfiguration(datasetType,
+                                                                                       props.getProperties());
+    HttpResponse response = doPut("datasets/" + datasetInstanceName, GSON.toJson(creationProperties));
     if (HttpResponseStatus.CONFLICT.getCode() == response.getResponseCode()) {
       throw new InstanceConflictException(String.format("Failed to add instance %s due to conflict, details: %s",
                                                         datasetInstanceName, getDetails(response)));

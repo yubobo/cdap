@@ -14,17 +14,13 @@
  * the License.
  */
 
-package com.continuuity.internal.app.runtime.service;
+package com.continuuity.api.webapp;
 
-import com.continuuity.app.Id;
-import com.continuuity.app.program.Type;
+import com.continuuity.api.ProgramSpecification;
 
 /**
- * A live info for in-memory runtime envirnment.
+ * Specification for webapp.
  */
-public class InMemoryLiveInfo extends LiveInfo {
+public interface WebappSpecification extends ProgramSpecification {
 
-  public InMemoryLiveInfo(Id.Program programId, Type type) {
-    super(programId, type, "in-memory");
-  }
 }
