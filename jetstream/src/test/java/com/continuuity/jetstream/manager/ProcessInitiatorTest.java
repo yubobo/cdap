@@ -16,12 +16,14 @@
 
 package com.continuuity.jetstream.manager;
 
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * ProcessInitiatorTest
@@ -34,16 +36,14 @@ public class ProcessInitiatorTest {
 
   @BeforeClass
   public static void setup() throws Exception {
-    hubDataStore = new HubDataStore();
-    hubDataStore = new HubDataStore();
-    hubDataStore.addDataSource("source1", new InetSocketAddress("127.0.0.1",8081));
-    hubDataStore.addDataSource("source2", new InetSocketAddress("127.0.0.1",8082));
-    hubDataStore.addDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",8081));
-    hubDataStore.addDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1",8082));
-    hubDataStore.setHFTACount(5);
-    hubDataStore.setInstanceName("test");
-    hubDataStore.setClearingHouseAddress(new InetSocketAddress("127.0.0.1",1111));
-    hubDataStore.setHubAddress(new InetSocketAddress("127.0.0.1",2222));
+    List<HubDataSource> sourceList = Lists.newArrayList();
+    sourceList.add(new HubDataSource("source1", new InetSocketAddress("127.0.0.1",8081)));
+    sourceList.add(new HubDataSource("source2", new InetSocketAddress("127.0.0.1",8082)));
+    List<HubDataSink> sinkList = Lists.newArrayList();
+    sinkList.add(new HubDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",7081)));
+    sinkList.add(new HubDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1", 7082)));
+    hubDataStore = new HubDataStore("test", false, sourceList, sinkList, 5, new InetSocketAddress("127.0.0.1",2222),
+                                    new InetSocketAddress("127.0.0.1",1111));
     processInitiator = new ProcessInitiator(hubDataStore);
   }
 

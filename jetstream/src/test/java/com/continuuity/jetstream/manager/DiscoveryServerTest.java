@@ -17,6 +17,7 @@
 package com.continuuity.jetstream.manager;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.Service;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -32,6 +33,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.util.List;
 
 /**
  * DiscoveryServerTest
@@ -46,15 +48,16 @@ public class DiscoveryServerTest {
 
   @BeforeClass
   public static void setup() throws Exception {
-    hubDataStore = new HubDataStore();
-    hubDataStore.addDataSource("source1", new InetSocketAddress("127.0.0.1",8081));
-    hubDataStore.addDataSource("source2", new InetSocketAddress("127.0.0.1",8082));
-    hubDataStore.addDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",7081));
-    hubDataStore.addDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1",7082));
-    hubDataStore.setHFTACount(5);
-    hubDataStore.setInstanceName("test");
-    hubDataStore.setClearingHouseAddress(new InetSocketAddress("127.0.0.1",1111));
+    List<HubDataSource> sourceList = Lists.newArrayList();
+    sourceList.add(new HubDataSource("source1", new InetSocketAddress("127.0.0.1",8081)));
+    sourceList.add(new HubDataSource("source2", new InetSocketAddress("127.0.0.1",8082)));
+    List<HubDataSink> sinkList = Lists.newArrayList();
+    sinkList.add(new HubDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",7081)));
+    sinkList.add(new HubDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1", 7082)));
+    hubDataStore = new HubDataStore("test", false, sourceList, sinkList, 5, null,
+                                    new InetSocketAddress("127.0.0.1",1111));
     discoveryServer = new DiscoveryServer(hubDataStore);
+    discoveryServer.startAndWait();
     baseURI = URI.create(String.format("http://" + discoveryServer.getHubAddress().getAddress().getHostAddress() +
                                          ":" + discoveryServer.getHubAddress().getPort()));
   }
@@ -79,7 +82,7 @@ public class DiscoveryServerTest {
   }
 
   @Test
-  public void test0ServiceState() throws IOException {
+  public void test00ServiceState() throws IOException {
     Assert.assertEquals(Service.State.RUNNING, discoveryServer.state());
   }
 

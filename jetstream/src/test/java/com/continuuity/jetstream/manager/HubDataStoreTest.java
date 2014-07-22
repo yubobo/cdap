@@ -16,6 +16,7 @@
 
 package com.continuuity.jetstream.manager;
 
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,17 +33,19 @@ public class HubDataStoreTest {
 
   @BeforeClass
   public static void setup() throws Exception {
-    hubDataStore = new HubDataStore();
+    List<HubDataSource> sourceList = Lists.newArrayList();
+    sourceList.add(new HubDataSource("source1", new InetSocketAddress("127.0.0.1",8081)));
+    sourceList.add(new HubDataSource("source2", new InetSocketAddress("127.0.0.1",8082)));
+    List<HubDataSink> sinkList = Lists.newArrayList();
+    sinkList.add(new HubDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",7081)));
+    sinkList.add(new HubDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1", 7082)));
+    hubDataStore = new HubDataStore("test", false, sourceList, sinkList, 5, new InetSocketAddress("127.0.0.1",8080),
+                                    new InetSocketAddress("127.0.0.1",9090));
   }
 
   @Test
   public void testDataSources() {
-    hubDataStore.addDataSource("source1", new InetSocketAddress("127.0.0.1",8081));
     List<HubDataSource> dataSources = hubDataStore.getHubDataSources();
-    Assert.assertEquals("source1", dataSources.get(0).getName());
-    Assert.assertEquals(new InetSocketAddress("127.0.0.1",8081), dataSources.get(0).getAddress());
-    hubDataStore.addDataSource("source2", new InetSocketAddress("127.0.0.1", 8082));
-    dataSources = hubDataStore.getHubDataSources();
     Assert.assertEquals("source1", dataSources.get(0).getName());
     Assert.assertEquals(new InetSocketAddress("127.0.0.1",8081), dataSources.get(0).getAddress());
     Assert.assertEquals("source2", dataSources.get(1).getName());
@@ -51,44 +54,32 @@ public class HubDataStoreTest {
 
   @Test
   public void testDataSinks() {
-    hubDataStore.addDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",8081));
     List<HubDataSink> dataSinks= hubDataStore.getHubDataSinks();
     Assert.assertEquals("sink1", dataSinks.get(0).getName());
     Assert.assertEquals("query1", dataSinks.get(0).getFTAName());
-    Assert.assertEquals(new InetSocketAddress("127.0.0.1",8081), dataSinks.get(0).getAddress());
-    hubDataStore.addDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1", 8082));
-    dataSinks = hubDataStore.getHubDataSinks();
-    Assert.assertEquals("sink1", dataSinks.get(0).getName());
-    Assert.assertEquals("query1", dataSinks.get(0).getFTAName());
-    Assert.assertEquals(new InetSocketAddress("127.0.0.1",8081), dataSinks.get(0).getAddress());
+    Assert.assertEquals(new InetSocketAddress("127.0.0.1",7081), dataSinks.get(0).getAddress());
     Assert.assertEquals("sink2", dataSinks.get(1).getName());
     Assert.assertEquals("query2", dataSinks.get(1).getFTAName());
-    Assert.assertEquals(new InetSocketAddress("127.0.0.1",8082), dataSinks.get(1).getAddress());
+    Assert.assertEquals(new InetSocketAddress("127.0.0.1",7082), dataSinks.get(1).getAddress());
   }
 
   @Test
   public void testHFTACount() {
-    hubDataStore.setHFTACount(5);
     Assert.assertEquals(5, hubDataStore.getHFTACount());
   }
 
   @Test
   public void testHubAddress() {
-    hubDataStore.setHubAddress(new InetSocketAddress("127.0.0.1",8080));
     Assert.assertEquals(new InetSocketAddress("127.0.0.1",8080), hubDataStore.getHubAddress());
   }
 
   @Test
   public void testClearingHouse() {
-    hubDataStore.setClearingHouseAddress(new InetSocketAddress("127.0.0.1",8080));
-    Assert.assertEquals(new InetSocketAddress("127.0.0.1",8080), hubDataStore.getClearingHouseAddress());
+    Assert.assertEquals(new InetSocketAddress("127.0.0.1",9090), hubDataStore.getClearingHouseAddress());
   }
 
   @Test
   public void testInstanceName() {
-    hubDataStore.setInstanceName("Test");
-    Assert.assertEquals("Test", hubDataStore.getInstanceName());
-    hubDataStore.setInstanceName("Test2");
-    Assert.assertEquals("Test2", hubDataStore.getInstanceName());
+    Assert.assertEquals("test", hubDataStore.getInstanceName());
   }
 }

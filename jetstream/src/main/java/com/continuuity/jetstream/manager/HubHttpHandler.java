@@ -40,7 +40,7 @@ import javax.ws.rs.PathParam;
  */
 @Path("/v1")
 public class HubHttpHandler extends AbstractHttpHandler {
-  private final HubDataStore hubDataStore;
+  private HubDataStore hubDataStore;
 
   public HubHttpHandler(HubDataStore ds) {
     this.hubDataStore = ds;
@@ -49,6 +49,10 @@ public class HubHttpHandler extends AbstractHttpHandler {
   private String getStringContent(HttpRequest request) throws IOException {
     return request.getContent().toString(Charsets.UTF_8);
   }
+
+ public void updateHubDataStore(HubDataStore hubDataStore) {
+   this.hubDataStore = hubDataStore;
+ }
 
   @Path("/AnnounceInstance")
   @POST
@@ -67,9 +71,9 @@ public class HubHttpHandler extends AbstractHttpHandler {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       return;
     }
-    this.hubDataStore.setInstanceName(requestData.get("name").getAsString());
-    this.hubDataStore.setClearingHouseAddress(
-      new InetSocketAddress(requestData.get("ip").getAsString(), requestData.get("port").getAsInt()));
+    updateHubDataStore(HubDataStoreFactory.setInstanceName(hubDataStore, requestData.get("name").getAsString()));
+    updateHubDataStore(HubDataStoreFactory.setClearingHouseAddress(hubDataStore,
+                new InetSocketAddress(requestData.get("ip").getAsString(), requestData.get("port").getAsInt())));
     responder.sendStatus(HttpResponseStatus.OK);
   }
 
@@ -113,7 +117,7 @@ public class HubHttpHandler extends AbstractHttpHandler {
       throw new RuntimeException("Cannot parse JSON");
     }
     if (this.hubDataStore.getInstanceName().equals(requestData.get("name").getAsString())) {
-      this.hubDataStore.initialize();
+      updateHubDataStore(HubDataStoreFactory.initialize(hubDataStore));
       responder.sendStatus(HttpResponseStatus.OK);
       return;
     }

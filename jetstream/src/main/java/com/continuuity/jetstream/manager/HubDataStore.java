@@ -16,8 +16,6 @@
 
 package com.continuuity.jetstream.manager;
 
-import com.google.common.collect.Lists;
-
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -27,18 +25,24 @@ import java.util.List;
 
 public class HubDataStore {
 
+
+  private final String instanceName;
+  private final boolean isInitialized;
   private final List<HubDataSource> hubDataSources;
   private final List<HubDataSink> hubDataSinks;
-  private String instanceName;
-  private int hftaCount;
-  private InetSocketAddress hubAddress;
-  private InetSocketAddress clearingHouseAddress;
-  private boolean isInitialized;
+  private final int hftaCount;
+  private final InetSocketAddress hubAddress;
+  private final InetSocketAddress clearingHouseAddress;
 
-  public HubDataStore() {
-    hubDataSources = Lists.newArrayList();
-    hubDataSinks = Lists.newArrayList();
-    isInitialized = false;
+  public HubDataStore(String name, boolean initialized, List<HubDataSource> sourceList, List<HubDataSink> sinkList,
+                      int count, InetSocketAddress hubAddress, InetSocketAddress clearingHouseAddress) {
+    this.instanceName = name;
+    this.isInitialized = initialized;
+    this.hubDataSources = sourceList;
+    this.hubDataSinks = sinkList;
+    this.hftaCount = count;
+    this.hubAddress = hubAddress;
+    this.clearingHouseAddress = clearingHouseAddress;
   }
 
   /**
@@ -46,13 +50,6 @@ public class HubDataStore {
    */
   public boolean isInitialized() {
     return isInitialized;
-  }
-
-  /**
-   * Set flag as true when the "AnnounceInitializedInstance" is called
-   */
-  public void initialize() {
-    isInitialized = true;
   }
 
   /**
@@ -92,53 +89,6 @@ public class HubDataStore {
 
   public InetSocketAddress getClearingHouseAddress() {
     return clearingHouseAddress;
-  }
-
-  /**
-   * Set hub address
-   * @param address Hub address
-   */
-  public void setHubAddress(InetSocketAddress address) {
-    this.hubAddress = address;
-  }
-
-  public void setClearingHouseAddress(InetSocketAddress address) {
-    clearingHouseAddress = address;
-  }
-
-  /**
-   * Add Data Source
-   * @param dsName data sink name
-   * @param address IP:port of the data store
-   */
-  public void addDataSource(String dsName, InetSocketAddress address) {
-    hubDataSources.add(new HubDataSource(dsName, address));
-  }
-
-  /**
-   * Add Data Sink
-   * @param dsName data sink name
-   * @param ftaName FTA Name
-   * @param address IP:port of the data store
-   */
-  public void addDataSink(String dsName, String ftaName, InetSocketAddress address) {
-    hubDataSinks.add(new HubDataSink(dsName, ftaName, address));
-  }
-
-  /**
-   * Set Instance name
-   * @param instanceName Instance Name
-   */
-  public void setInstanceName(String instanceName) {
-    this.instanceName = instanceName;
-  }
-
-  /**
-   * Set HFTA Count
-   * @param count number of HFTA
-   */
-  public void setHFTACount(int count) {
-   this.hftaCount = count;
   }
 }
 

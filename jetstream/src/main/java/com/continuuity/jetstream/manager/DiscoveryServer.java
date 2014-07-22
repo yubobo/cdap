@@ -19,7 +19,7 @@ package com.continuuity.jetstream.manager;
 import com.continuuity.http.HttpHandler;
 import com.continuuity.http.NettyHttpService;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.AbstractIdleService;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -28,18 +28,32 @@ import java.util.List;
  * DiscoveryServer
  */
 
-class DiscoveryServer{
-  private final NettyHttpService service;
+class DiscoveryServer extends AbstractIdleService {
+  private NettyHttpService service;
+  private HubDataStore hubDataStore;
+  private InetSocketAddress serviceAddress;
 
-  public DiscoveryServer(HubDataStore ds) {
+  @Override
+  public void startUp() {
     List<HttpHandler> handlers = Lists.newArrayList();
-    handlers.add(new HubHttpHandler(ds));
+    HubHttpHandler handler = new HubHttpHandler(this.hubDataStore);
+    handlers.add(handler);
     NettyHttpService.Builder builder = NettyHttpService.builder();
     builder.addHttpHandlers(handlers);
     builder.setHttpChunkLimit(75 * 1024);
     service = builder.build();
     service.startAndWait();
-    ds.setHubAddress(new InetSocketAddress(service.getBindAddress().getAddress().getHostAddress(), service.getBindAddress().getPort()));
+    serviceAddress = new InetSocketAddress(service.getBindAddress().getAddress().getHostAddress(), service.getBindAddress().getPort());
+    handler.updateHubDataStore(HubDataStoreFactory.setHubAddress(hubDataStore, this.serviceAddress));
+  }
+
+  @Override
+  public void shutDown() {
+    service.stopAndWait();
+  }
+
+  public DiscoveryServer(HubDataStore ds) {
+    this.hubDataStore = ds;
   }
 
   protected void finalize() throws Throwable {
@@ -48,10 +62,6 @@ class DiscoveryServer{
   }
 
   public InetSocketAddress getHubAddress() {
-    return new InetSocketAddress(service.getBindAddress().getAddress().getHostAddress(), service.getBindAddress().getPort());
-  }
-
-  public Service.State state() {
-    return service.state();
+    return this.serviceAddress;
   }
 }
