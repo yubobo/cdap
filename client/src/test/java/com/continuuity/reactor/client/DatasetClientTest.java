@@ -17,13 +17,13 @@
 package com.continuuity.reactor.client;
 
 import com.continuuity.client.DatasetClient;
-import com.continuuity.client.ReactorDatasetModuleClient;
-import com.continuuity.client.ReactorDatasetTypeClient;
+import com.continuuity.client.DatasetModuleClient;
+import com.continuuity.client.DatasetTypeClient;
+import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.proto.DatasetTypeMeta;
 import com.continuuity.reactor.client.app.FakeDataset;
 import com.continuuity.reactor.client.app.FakeDatasetModule;
-import com.continuuity.reactor.client.common.ReactorClientTestBase;
-import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.reactor.client.common.ClientTestBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,13 +35,13 @@ import java.io.File;
 /**
  *
  */
-public class DatasetClientTest extends ReactorClientTestBase {
+public class DatasetClientTest extends ClientTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(DatasetClientTest.class);
 
   private DatasetClient datasetClient;
-  private ReactorDatasetModuleClient moduleClient;
-  private ReactorDatasetTypeClient typeClient;
+  private DatasetModuleClient moduleClient;
+  private DatasetTypeClient typeClient;
 
   @Before
   public void setUp() throws Throwable {
@@ -49,8 +49,8 @@ public class DatasetClientTest extends ReactorClientTestBase {
 
     ReactorClientConfig config = new ReactorClientConfig("localhost");
     datasetClient = new DatasetClient(config);
-    moduleClient = new ReactorDatasetModuleClient(config);
-    typeClient = new ReactorDatasetTypeClient(config);
+    moduleClient = new DatasetModuleClient(config);
+    typeClient = new DatasetTypeClient(config);
   }
 
   @Test

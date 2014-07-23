@@ -19,12 +19,12 @@ package com.continuuity.reactor.client;
 import com.continuuity.client.ApplicationClient;
 import com.continuuity.client.ProcedureClient;
 import com.continuuity.client.ProgramClient;
+import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.proto.ProgramType;
 import com.continuuity.reactor.client.app.FakeApp;
 import com.continuuity.reactor.client.app.FakeFlow;
 import com.continuuity.reactor.client.app.FakeProcedure;
-import com.continuuity.reactor.client.common.ReactorClientTestBase;
-import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.reactor.client.common.ClientTestBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class ProgramClientTest extends ReactorClientTestBase {
+public class ProgramClientTest extends ClientTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProgramClientTest.class);
 

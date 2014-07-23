@@ -18,12 +18,12 @@ package com.continuuity.reactor.client;
 
 import com.continuuity.client.ApplicationClient;
 import com.continuuity.client.ProcedureClient;
-import com.continuuity.client.ReactorProgramClient;
+import com.continuuity.client.ProgramClient;
+import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.proto.ProgramType;
 import com.continuuity.reactor.client.app.FakeApp;
 import com.continuuity.reactor.client.app.FakeProcedure;
-import com.continuuity.reactor.client.common.ReactorClientTestBase;
-import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.reactor.client.common.ClientTestBase;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import org.junit.Assert;
@@ -37,14 +37,14 @@ import java.io.File;
 /**
  *
  */
-public class ProcedureClientTest extends ReactorClientTestBase {
+public class ProcedureClientTest extends ClientTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProcedureClientTest.class);
   private static final Gson GSON = new Gson();
 
   private ApplicationClient appClient;
   private ProcedureClient procedureClient;
-  private ReactorProgramClient programClient;
+  private ProgramClient programClient;
 
   @Before
   public void setUp() throws Throwable {
@@ -53,7 +53,7 @@ public class ProcedureClientTest extends ReactorClientTestBase {
     ReactorClientConfig config = new ReactorClientConfig("localhost");
     appClient = new ApplicationClient(config);
     procedureClient = new ProcedureClient(config);
-    programClient = new ReactorProgramClient(config);
+    programClient = new ProgramClient(config);
   }
 
   @Test

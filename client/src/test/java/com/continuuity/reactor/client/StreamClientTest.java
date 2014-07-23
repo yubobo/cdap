@@ -17,8 +17,8 @@
 package com.continuuity.reactor.client;
 
 import com.continuuity.client.StreamClient;
-import com.continuuity.reactor.client.common.ReactorClientTestBase;
 import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.reactor.client.common.ClientTestBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class StreamClientTest extends ReactorClientTestBase {
+public class StreamClientTest extends ClientTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(StreamClientTest.class);
 

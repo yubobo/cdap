@@ -17,10 +17,10 @@
 package com.continuuity.reactor.client.common;
 
 import com.continuuity.client.ProgramClient;
-import com.continuuity.proto.ProgramRecord;
-import com.continuuity.proto.ProgramType;
 import com.continuuity.client.exception.NotFoundException;
 import com.continuuity.client.exception.ProgramNotFoundException;
+import com.continuuity.proto.ProgramRecord;
+import com.continuuity.proto.ProgramType;
 import org.junit.Assert;
 
 import java.io.IOException;

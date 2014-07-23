@@ -17,9 +17,9 @@
 package com.continuuity.reactor.client;
 
 import com.continuuity.client.MonitorClient;
-import com.continuuity.proto.SystemServiceMeta;
-import com.continuuity.reactor.client.common.ReactorClientTestBase;
 import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.proto.SystemServiceMeta;
+import com.continuuity.reactor.client.common.ClientTestBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +31,7 @@ import java.util.List;
 /**
  *
  */
-public class MonitorClientTest extends ReactorClientTestBase {
+public class MonitorClientTest extends ClientTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(MonitorClientTest.class);
 

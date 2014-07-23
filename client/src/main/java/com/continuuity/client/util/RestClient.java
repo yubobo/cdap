@@ -16,12 +16,12 @@
 
 package com.continuuity.client.util;
 
+import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpRequestConfig;
 import com.continuuity.common.http.HttpRequests;
 import com.continuuity.common.http.HttpResponse;
-import com.continuuity.client.config.ReactorClientConfig;
 import org.apache.commons.lang.ArrayUtils;
 
 import java.io.IOException;

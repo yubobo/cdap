@@ -16,6 +16,10 @@
 
 package com.continuuity.client;
 
+import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.client.exception.NotFoundException;
+import com.continuuity.client.exception.ProgramNotFoundException;
+import com.continuuity.client.util.RestClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpResponse;
@@ -26,10 +30,6 @@ import com.continuuity.proto.ProgramLiveInfo;
 import com.continuuity.proto.ProgramStatus;
 import com.continuuity.proto.ProgramType;
 import com.continuuity.proto.RunRecord;
-import com.continuuity.client.config.ReactorClientConfig;
-import com.continuuity.client.exception.NotFoundException;
-import com.continuuity.client.exception.ProgramNotFoundException;
-import com.continuuity.client.util.RestClient;
 import com.google.common.base.Charsets;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;

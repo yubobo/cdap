@@ -16,12 +16,12 @@
 
 package com.continuuity.client;
 
+import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.client.util.RestClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpResponse;
 import com.continuuity.common.http.ObjectResponse;
 import com.continuuity.proto.DatasetTypeMeta;
-import com.continuuity.client.config.ReactorClientConfig;
-import com.continuuity.client.util.RestClient;
 import com.google.common.reflect.TypeToken;
 
 import java.io.IOException;

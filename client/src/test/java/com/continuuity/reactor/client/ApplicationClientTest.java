@@ -17,11 +17,11 @@
 package com.continuuity.reactor.client;
 
 import com.continuuity.client.ApplicationClient;
+import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.proto.ProgramRecord;
 import com.continuuity.proto.ProgramType;
 import com.continuuity.reactor.client.app.FakeApp;
-import com.continuuity.reactor.client.common.ReactorClientTestBase;
-import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.reactor.client.common.ClientTestBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import java.util.Map;
 /**
  *
  */
-public class ApplicationClientTest extends ReactorClientTestBase {
+public class ApplicationClientTest extends ClientTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(ApplicationClientTest.class);
 
