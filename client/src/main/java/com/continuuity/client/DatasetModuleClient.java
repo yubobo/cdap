@@ -16,11 +16,6 @@
 
 package com.continuuity.client;
 
-import com.continuuity.common.http.HttpMethod;
-import com.continuuity.common.http.HttpRequest;
-import com.continuuity.common.http.HttpResponse;
-import com.continuuity.common.http.ObjectResponse;
-import com.continuuity.proto.DatasetModuleMeta;
 import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.client.exception.AlreadyExistsException;
 import com.continuuity.client.exception.BadRequestException;
@@ -28,6 +23,11 @@ import com.continuuity.client.exception.DatasetModuleAlreadyExistsException;
 import com.continuuity.client.exception.DatasetModuleCannotBeDeletedException;
 import com.continuuity.client.exception.DatasetModuleNotFoundException;
 import com.continuuity.client.util.RestClient;
+import com.continuuity.common.http.HttpMethod;
+import com.continuuity.common.http.HttpRequest;
+import com.continuuity.common.http.HttpResponse;
+import com.continuuity.common.http.ObjectResponse;
+import com.continuuity.proto.DatasetModuleMeta;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 

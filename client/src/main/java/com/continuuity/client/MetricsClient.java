@@ -16,11 +16,11 @@
 
 package com.continuuity.client;
 
+import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.client.util.RestClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpResponse;
 import com.continuuity.common.http.ObjectResponse;
-import com.continuuity.client.config.ReactorClientConfig;
-import com.continuuity.client.util.RestClient;
 
 import java.io.IOException;
 import java.net.URL;

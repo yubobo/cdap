@@ -18,13 +18,13 @@ package com.continuuity.reactor.client;
 
 import com.continuuity.client.ApplicationClient;
 import com.continuuity.client.QueryClient;
+import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.proto.ColumnDesc;
 import com.continuuity.proto.QueryHandle;
 import com.continuuity.proto.QueryResult;
 import com.continuuity.proto.QueryStatus;
 import com.continuuity.reactor.client.app.FakeApp;
 import com.continuuity.reactor.client.common.ClientTestBase;
-import com.continuuity.client.config.ReactorClientConfig;
 import org.junit.Assert;
 import org.junit.Before;
 import org.slf4j.Logger;

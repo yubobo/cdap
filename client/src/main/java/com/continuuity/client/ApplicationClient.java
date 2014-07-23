@@ -16,6 +16,9 @@
 
 package com.continuuity.client;
 
+import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.client.exception.ApplicationNotFoundException;
+import com.continuuity.client.util.RestClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpResponse;
@@ -23,9 +26,6 @@ import com.continuuity.common.http.ObjectResponse;
 import com.continuuity.proto.ApplicationRecord;
 import com.continuuity.proto.ProgramRecord;
 import com.continuuity.proto.ProgramType;
-import com.continuuity.client.config.ReactorClientConfig;
-import com.continuuity.client.exception.ApplicationNotFoundException;
-import com.continuuity.client.util.RestClient;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
