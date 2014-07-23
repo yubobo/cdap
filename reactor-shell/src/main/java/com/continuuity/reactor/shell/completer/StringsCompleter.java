@@ -16,6 +16,7 @@
 
 package com.continuuity.reactor.shell.completer;
 
+import com.continuuity.reactor.shell.util.AsyncCachingSupplier;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import jline.console.completer.Completer;
@@ -40,7 +41,7 @@ public class StringsCompleter implements Completer {
 
   public StringsCompleter(Supplier<Collection<String>> strings) {
     checkNotNull(strings);
-    this.strings = strings;
+    this.strings = AsyncCachingSupplier.of(strings, 5000);
   }
 
   public StringsCompleter(Collection<String> strings) {

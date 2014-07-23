@@ -28,6 +28,6 @@ public class DescribeDatasetCommandSet extends CommandSet {
   @Inject
   public DescribeDatasetCommandSet(DescribeDatasetModuleCommand describeDatasetModuleCommand,
                                    DescribeDatasetTypeCommand describeDatasetTypeCommand) {
-    super("describe", describeDatasetModuleCommand, describeDatasetTypeCommand);
+    super("dataset", describeDatasetModuleCommand, describeDatasetTypeCommand);
   }
 }

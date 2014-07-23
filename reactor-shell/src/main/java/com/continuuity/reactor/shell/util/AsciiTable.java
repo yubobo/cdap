@@ -122,7 +122,7 @@ public class AsciiTable<T> {
   private int getMaxLength(Object[][] rows, int column) {
     int maxLength = 0;
     for (Object[] row : rows) {
-      if (row != null) {
+      if (row != null && row[column] != null) {
         String string = row[column].toString();
         if (string != null && string.length() > maxLength) {
           maxLength = string.length();
