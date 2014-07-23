@@ -20,7 +20,7 @@ import com.continuuity.ToyApp;
 import com.continuuity.WebCrawlApp;
 import com.continuuity.common.lang.jar.JarFinder;
 import com.continuuity.internal.app.deploy.pipeline.ApplicationWithPrograms;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramType;
 import com.continuuity.test.internal.AppFabricTestHelper;
 import com.continuuity.test.internal.DefaultId;
 import com.google.common.util.concurrent.ListenableFuture;

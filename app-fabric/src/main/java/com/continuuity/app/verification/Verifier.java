@@ -16,7 +16,7 @@
 
 package com.continuuity.app.verification;
 
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 
 /**
  * A verifier for verifying the specifications provided.

@@ -25,7 +25,7 @@ import com.continuuity.app.queue.QueueSpecificationGenerator;
 import com.continuuity.internal.app.ApplicationSpecificationAdapter;
 import com.continuuity.internal.app.Specifications;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 import com.continuuity.test.internal.DefaultId;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;

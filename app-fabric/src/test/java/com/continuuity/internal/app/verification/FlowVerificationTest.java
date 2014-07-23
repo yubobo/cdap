@@ -29,7 +29,7 @@ import com.continuuity.app.verification.VerifyResult;
 import com.continuuity.internal.app.ApplicationSpecificationAdapter;
 import com.continuuity.internal.app.Specifications;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 import org.junit.Assert;
 import org.junit.Test;
 

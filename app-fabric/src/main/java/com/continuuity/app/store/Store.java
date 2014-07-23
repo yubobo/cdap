@@ -22,9 +22,9 @@ import com.continuuity.api.data.stream.StreamSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
 import com.continuuity.data2.OperationException;
-import com.continuuity.reactor.metadata.Id;
-import com.continuuity.reactor.metadata.ProgramType;
-import com.continuuity.reactor.metadata.RunRecord;
+import com.continuuity.proto.Id;
+import com.continuuity.proto.ProgramType;
+import com.continuuity.proto.RunRecord;
 import com.google.common.collect.Table;
 import org.apache.twill.filesystem.Location;
 

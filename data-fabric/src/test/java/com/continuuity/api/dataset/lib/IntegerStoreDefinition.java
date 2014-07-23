@@ -21,7 +21,7 @@ import com.continuuity.api.dataset.DatasetDefinition;
 import com.continuuity.api.dataset.DatasetProperties;
 import com.continuuity.data2.dataset2.lib.table.ObjectStoreDataset;
 import com.continuuity.internal.io.UnsupportedTypeException;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.proto.DatasetSpecification;
 
 import java.io.IOException;
 

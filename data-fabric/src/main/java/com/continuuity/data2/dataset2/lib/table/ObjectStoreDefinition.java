@@ -25,7 +25,7 @@ import com.continuuity.api.dataset.lib.ObjectStore;
 import com.continuuity.internal.io.Schema;
 import com.continuuity.internal.io.SchemaTypeAdapter;
 import com.continuuity.internal.io.TypeRepresentation;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.proto.DatasetSpecification;
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

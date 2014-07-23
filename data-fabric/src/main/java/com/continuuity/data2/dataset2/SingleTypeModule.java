@@ -23,7 +23,7 @@ import com.continuuity.api.dataset.module.DatasetDefinitionRegistry;
 import com.continuuity.api.dataset.module.DatasetModule;
 import com.continuuity.api.dataset.module.DatasetType;
 import com.continuuity.api.dataset.module.EmbeddedDataset;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.proto.DatasetSpecification;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;

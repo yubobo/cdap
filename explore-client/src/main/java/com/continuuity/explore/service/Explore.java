@@ -16,10 +16,10 @@
 
 package com.continuuity.explore.service;
 
-import com.continuuity.reactor.metadata.ColumnDesc;
-import com.continuuity.reactor.metadata.QueryHandle;
-import com.continuuity.reactor.metadata.QueryResult;
-import com.continuuity.reactor.metadata.QueryStatus;
+import com.continuuity.proto.ColumnDesc;
+import com.continuuity.proto.QueryHandle;
+import com.continuuity.proto.QueryResult;
+import com.continuuity.proto.QueryStatus;
 
 import java.sql.SQLException;
 import java.util.List;

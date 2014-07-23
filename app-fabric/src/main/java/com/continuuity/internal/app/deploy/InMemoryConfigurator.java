@@ -29,7 +29,7 @@ import com.continuuity.common.utils.DirUtils;
 import com.continuuity.internal.app.ApplicationSpecificationAdapter;
 import com.continuuity.internal.app.Specifications;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;

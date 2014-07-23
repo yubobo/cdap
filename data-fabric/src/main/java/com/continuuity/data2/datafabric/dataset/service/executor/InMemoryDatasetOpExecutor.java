@@ -21,8 +21,8 @@ import com.continuuity.api.dataset.DatasetProperties;
 import com.continuuity.data2.datafabric.dataset.DatasetType;
 import com.continuuity.data2.datafabric.dataset.RemoteDatasetFramework;
 import com.continuuity.data2.dataset2.DatasetManagementException;
-import com.continuuity.reactor.metadata.DatasetSpecification;
-import com.continuuity.reactor.metadata.DatasetTypeMeta;
+import com.continuuity.proto.DatasetSpecification;
+import com.continuuity.proto.DatasetTypeMeta;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 

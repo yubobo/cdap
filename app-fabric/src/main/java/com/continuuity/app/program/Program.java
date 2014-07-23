@@ -16,8 +16,8 @@
 package com.continuuity.app.program;
 
 import com.continuuity.app.ApplicationSpecification;
-import com.continuuity.reactor.metadata.Id;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.Id;
+import com.continuuity.proto.ProgramType;
 import org.apache.twill.filesystem.Location;
 
 /**

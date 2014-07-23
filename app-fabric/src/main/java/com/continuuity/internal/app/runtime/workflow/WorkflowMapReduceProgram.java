@@ -20,8 +20,8 @@ import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.program.Program;
 import com.continuuity.internal.app.ForwardingApplicationSpecification;
 import com.continuuity.internal.app.program.ForwardingProgram;
-import com.continuuity.reactor.metadata.Id;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.Id;
+import com.continuuity.proto.ProgramType;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;

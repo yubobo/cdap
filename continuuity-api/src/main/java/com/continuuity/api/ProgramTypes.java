@@ -22,7 +22,7 @@ import com.continuuity.api.procedure.ProcedureSpecification;
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.api.webapp.WebappSpecification;
 import com.continuuity.api.workflow.WorkflowSpecification;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramType;
 import com.google.common.collect.ImmutableMap;
 
 /**

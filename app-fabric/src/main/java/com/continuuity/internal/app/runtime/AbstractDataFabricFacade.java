@@ -33,7 +33,7 @@ import com.continuuity.data2.transaction.queue.QueueMetrics;
 import com.continuuity.data2.transaction.stream.ForwardingStreamConsumer;
 import com.continuuity.data2.transaction.stream.StreamConsumer;
 import com.continuuity.data2.transaction.stream.StreamConsumerFactory;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 import com.continuuity.tephra.TransactionAware;
 import com.continuuity.tephra.TransactionContext;
 import com.continuuity.tephra.TransactionExecutor;

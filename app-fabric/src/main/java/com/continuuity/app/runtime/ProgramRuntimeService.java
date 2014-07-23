@@ -17,9 +17,9 @@
 package com.continuuity.app.runtime;
 
 import com.continuuity.app.program.Program;
-import com.continuuity.reactor.metadata.Id;
-import com.continuuity.reactor.metadata.ProgramLiveInfo;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.Id;
+import com.continuuity.proto.ProgramLiveInfo;
+import com.continuuity.proto.ProgramType;
 import com.google.common.util.concurrent.Service;
 import org.apache.twill.api.RunId;
 

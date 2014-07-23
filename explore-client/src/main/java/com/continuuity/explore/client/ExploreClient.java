@@ -18,7 +18,7 @@ package com.continuuity.explore.client;
 
 import com.continuuity.explore.service.Explore;
 import com.continuuity.explore.service.ExploreException;
-import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.proto.QueryHandle;
 
 /**
  * Explore client discovers explore service, and executes explore commands using the service.

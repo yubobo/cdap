@@ -19,7 +19,7 @@ package com.continuuity.data2.dataset2;
 import com.continuuity.api.dataset.lib.AbstractDataset;
 import com.continuuity.api.dataset.module.EmbeddedDataset;
 import com.continuuity.api.dataset.table.Table;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.proto.DatasetSpecification;
 import org.apache.hadoop.hbase.util.Bytes;
 
 /**

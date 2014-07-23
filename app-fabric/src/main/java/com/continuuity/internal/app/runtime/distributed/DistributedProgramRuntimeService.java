@@ -38,12 +38,12 @@ import com.continuuity.internal.app.runtime.AbstractResourceReporter;
 import com.continuuity.internal.app.runtime.ProgramRunnerFactory;
 import com.continuuity.internal.app.runtime.flow.FlowUtils;
 import com.continuuity.internal.app.runtime.service.SimpleRuntimeInfo;
-import com.continuuity.reactor.metadata.Containers;
-import com.continuuity.reactor.metadata.DistributedProgramLiveInfo;
-import com.continuuity.reactor.metadata.Id;
-import com.continuuity.reactor.metadata.NotRunningProgramLiveInfo;
-import com.continuuity.reactor.metadata.ProgramLiveInfo;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.Containers;
+import com.continuuity.proto.DistributedProgramLiveInfo;
+import com.continuuity.proto.Id;
+import com.continuuity.proto.NotRunningProgramLiveInfo;
+import com.continuuity.proto.ProgramLiveInfo;
+import com.continuuity.proto.ProgramType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -85,8 +85,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.continuuity.reactor.metadata.Containers.ContainerInfo;
-import static com.continuuity.reactor.metadata.Containers.ContainerType.FLOWLET;
+import static com.continuuity.proto.Containers.ContainerInfo;
+import static com.continuuity.proto.Containers.ContainerType.FLOWLET;
 
 /**
  *

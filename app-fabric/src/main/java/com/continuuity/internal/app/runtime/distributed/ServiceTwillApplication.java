@@ -18,7 +18,7 @@ package com.continuuity.internal.app.runtime.distributed;
 
 import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.app.program.Program;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramType;
 import com.google.common.base.Preconditions;
 import org.apache.twill.api.EventHandler;
 import org.apache.twill.api.ResourceSpecification;

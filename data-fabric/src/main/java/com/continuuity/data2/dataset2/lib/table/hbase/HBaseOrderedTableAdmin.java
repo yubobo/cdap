@@ -21,7 +21,7 @@ import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
 import com.continuuity.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
 import com.continuuity.data2.util.hbase.HBaseTableUtil;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.proto.DatasetSpecification;
 import com.continuuity.tephra.TxConstants;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;

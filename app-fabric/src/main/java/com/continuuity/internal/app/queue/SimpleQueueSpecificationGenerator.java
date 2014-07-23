@@ -25,7 +25,7 @@ import com.continuuity.app.queue.QueueSpecificationGenerator;
 import com.continuuity.internal.io.ReflectionSchemaGenerator;
 import com.continuuity.internal.io.Schema;
 import com.continuuity.internal.io.UnsupportedTypeException;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;

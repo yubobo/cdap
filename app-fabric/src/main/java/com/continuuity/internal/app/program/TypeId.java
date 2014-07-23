@@ -16,7 +16,7 @@
 
 package com.continuuity.internal.app.program;
 
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramType;
 
 /**
  * Helper class for getting the program type id to use when emitting metrics.

@@ -25,7 +25,7 @@ import com.continuuity.explore.service.ExploreService;
 import com.continuuity.http.AbstractHttpHandler;
 import com.continuuity.http.HttpResponder;
 import com.continuuity.internal.io.UnsupportedTypeException;
-import com.continuuity.reactor.metadata.QueryHandle;
+import com.continuuity.proto.QueryHandle;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpRequest;

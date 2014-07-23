@@ -31,7 +31,7 @@ import com.continuuity.internal.app.verification.FlowVerification;
 import com.continuuity.internal.app.verification.ProgramVerification;
 import com.continuuity.internal.app.verification.StreamVerification;
 import com.continuuity.pipeline.AbstractStage;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;

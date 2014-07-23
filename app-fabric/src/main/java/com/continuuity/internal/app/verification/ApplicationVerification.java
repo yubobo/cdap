@@ -20,7 +20,7 @@ import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.verification.AbstractVerifier;
 import com.continuuity.app.verification.VerifyResult;
 import com.continuuity.error.Err;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 
 /**
  * This class is responsible for verifying the Application details of

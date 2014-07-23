@@ -23,8 +23,8 @@ import com.continuuity.common.lang.ClassLoaders;
 import com.continuuity.common.lang.jar.JarClassLoader;
 import com.continuuity.data2.dataset2.InMemoryDatasetDefinitionRegistry;
 import com.continuuity.data2.dataset2.module.lib.DatasetModules;
-import com.continuuity.reactor.metadata.DatasetModuleMeta;
-import com.continuuity.reactor.metadata.DatasetTypeMeta;
+import com.continuuity.proto.DatasetModuleMeta;
+import com.continuuity.proto.DatasetTypeMeta;
 import com.google.common.base.Throwables;
 import org.apache.twill.filesystem.LocationFactory;
 

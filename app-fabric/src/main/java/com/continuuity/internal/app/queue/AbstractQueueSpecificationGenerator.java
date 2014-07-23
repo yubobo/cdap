@@ -24,7 +24,7 @@ import com.continuuity.common.queue.QueueName;
 import com.continuuity.common.utils.ImmutablePair;
 import com.continuuity.internal.app.SchemaFinder;
 import com.continuuity.internal.io.Schema;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 

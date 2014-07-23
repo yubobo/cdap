@@ -17,8 +17,8 @@
 package com.continuuity.data2.datafabric.dataset.service.executor;
 
 import com.continuuity.api.dataset.DatasetProperties;
-import com.continuuity.reactor.metadata.DatasetSpecification;
-import com.continuuity.reactor.metadata.DatasetTypeMeta;
+import com.continuuity.proto.DatasetSpecification;
+import com.continuuity.proto.DatasetTypeMeta;
 import com.google.common.util.concurrent.Service;
 
 import java.io.IOException;

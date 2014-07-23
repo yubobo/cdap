@@ -20,8 +20,8 @@ import com.continuuity.explore.client.ExploreClientUtil;
 import com.continuuity.explore.service.Explore;
 import com.continuuity.explore.service.ExploreException;
 import com.continuuity.explore.service.HandleNotFoundException;
-import com.continuuity.reactor.metadata.QueryHandle;
-import com.continuuity.reactor.metadata.QueryStatus;
+import com.continuuity.proto.QueryHandle;
+import com.continuuity.proto.QueryStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

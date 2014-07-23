@@ -25,7 +25,7 @@ import com.continuuity.api.dataset.module.DatasetModule;
 import com.continuuity.api.dataset.table.Get;
 import com.continuuity.api.dataset.table.Increment;
 import com.continuuity.api.dataset.table.Table;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.proto.DatasetSpecification;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;

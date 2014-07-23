@@ -17,9 +17,9 @@
 package com.continuuity.explore.jdbc;
 
 import com.continuuity.explore.client.ExploreClient;
-import com.continuuity.reactor.metadata.ColumnDesc;
-import com.continuuity.reactor.metadata.QueryHandle;
-import com.continuuity.reactor.metadata.QueryResult;
+import com.continuuity.proto.ColumnDesc;
+import com.continuuity.proto.QueryHandle;
+import com.continuuity.proto.QueryResult;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;

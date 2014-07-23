@@ -16,7 +16,7 @@
 
 package com.continuuity.data2.datafabric.dataset.type;
 
-import com.continuuity.reactor.metadata.DatasetModuleMeta;
+import com.continuuity.proto.DatasetModuleMeta;
 
 import java.io.IOException;
 import java.net.URL;

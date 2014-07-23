@@ -17,7 +17,7 @@ package com.continuuity.internal.app.runtime.distributed;
 
 import com.continuuity.app.program.Program;
 import com.continuuity.internal.app.runtime.webapp.WebappProgramRunner;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramType;
 import com.google.common.base.Throwables;
 import org.apache.twill.api.EventHandler;
 import org.apache.twill.api.ResourceSpecification;

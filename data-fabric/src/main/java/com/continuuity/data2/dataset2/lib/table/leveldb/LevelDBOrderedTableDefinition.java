@@ -20,7 +20,7 @@ import com.continuuity.api.dataset.DatasetProperties;
 import com.continuuity.api.dataset.lib.AbstractDatasetDefinition;
 import com.continuuity.api.dataset.table.ConflictDetection;
 import com.continuuity.data2.dataset.lib.table.leveldb.LevelDBOcTableService;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.proto.DatasetSpecification;
 import com.google.inject.Inject;
 
 import java.io.IOException;

@@ -16,8 +16,8 @@
 
 package com.continuuity.internal.app.deploy;
 
-import com.continuuity.reactor.metadata.Id;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.Id;
+import com.continuuity.proto.ProgramType;
 
 /**
  * Interface that is responsible to stopping programs. Used while stop programs that are being deleted during

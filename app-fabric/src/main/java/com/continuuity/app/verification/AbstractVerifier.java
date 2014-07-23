@@ -17,7 +17,7 @@
 package com.continuuity.app.verification;
 
 import com.continuuity.error.Err;
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 import com.google.common.base.CharMatcher;
 
 /**

@@ -26,7 +26,7 @@ import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data.dataset.DataSetInstantiator;
 import com.continuuity.data2.dataset2.DatasetFramework;
 import com.continuuity.gateway.handlers.AppFabricHttpHandler;
-import com.continuuity.reactor.metadata.RunRecord;
+import com.continuuity.proto.RunRecord;
 import com.continuuity.tephra.TransactionContext;
 import com.continuuity.tephra.TransactionFailureException;
 import com.continuuity.tephra.TransactionSystemClient;

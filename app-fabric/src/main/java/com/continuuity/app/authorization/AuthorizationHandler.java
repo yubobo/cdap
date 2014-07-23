@@ -16,7 +16,7 @@
 
 package com.continuuity.app.authorization;
 
-import com.continuuity.reactor.metadata.Id;
+import com.continuuity.proto.Id;
 
 /**
  *

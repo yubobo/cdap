@@ -26,7 +26,7 @@ import com.continuuity.api.data.batch.SplitReader;
 import com.continuuity.api.dataset.table.Put;
 import com.continuuity.api.dataset.table.Row;
 import com.continuuity.api.dataset.table.Table;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.proto.DatasetSpecification;
 import com.google.common.base.Preconditions;
 
 import java.util.ArrayList;

@@ -22,7 +22,7 @@ import com.continuuity.common.twill.ReactorServiceManager;
 import com.continuuity.gateway.auth.Authenticator;
 import com.continuuity.gateway.handlers.util.AbstractAppFabricHttpHandler;
 import com.continuuity.http.HttpResponder;
-import com.continuuity.reactor.metadata.SystemServiceMeta;
+import com.continuuity.proto.SystemServiceMeta;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

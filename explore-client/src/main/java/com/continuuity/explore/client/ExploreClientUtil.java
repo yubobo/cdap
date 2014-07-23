@@ -19,8 +19,8 @@ package com.continuuity.explore.client;
 import com.continuuity.explore.service.Explore;
 import com.continuuity.explore.service.ExploreException;
 import com.continuuity.explore.service.HandleNotFoundException;
-import com.continuuity.reactor.metadata.QueryHandle;
-import com.continuuity.reactor.metadata.QueryStatus;
+import com.continuuity.proto.QueryHandle;
+import com.continuuity.proto.QueryStatus;
 
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
