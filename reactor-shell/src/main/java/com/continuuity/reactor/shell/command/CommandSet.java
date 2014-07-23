@@ -89,18 +89,15 @@ public class CommandSet implements Command, Completable {
 
   @Override
   public String getHelperText(String namePrefix) {
-    String realNamePrefix = (namePrefix == null ? "" : namePrefix);
-    String realName = (name == null ? "" : name + " ");
+    String realNamePrefix = (namePrefix == null ? "" : namePrefix + " ");
+    String realName = (name == null ? "" : name);
 
     StringBuilder sb = new StringBuilder();
     for (Command command : commands) {
-      sb.append(command.getHelperText(realNamePrefix + realName));
-      if (!(command instanceof CommandSet)) {
-        sb.append('\n');
-      }
+      sb.append(command.getHelperText(realNamePrefix + realName).trim());
+      sb.append('\n');
     }
 
-    sb.deleteCharAt(sb.length() - 1);
     return sb.toString();
   }
 
