@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.get;
 
 import com.continuuity.client.ProgramClient;
-import com.continuuity.reactor.metadata.ProgramLiveInfo;
+import com.continuuity.proto.ProgramLiveInfo;
 import com.continuuity.shell.ProgramElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;

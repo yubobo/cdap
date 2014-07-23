@@ -17,8 +17,8 @@
 package com.continuuity.shell.command.list;
 
 import com.continuuity.client.DatasetTypeClient;
-import com.continuuity.reactor.metadata.DatasetModuleMeta;
-import com.continuuity.reactor.metadata.DatasetTypeMeta;
+import com.continuuity.proto.DatasetModuleMeta;
+import com.continuuity.proto.DatasetTypeMeta;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;

@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.list;
 
 import com.continuuity.client.StreamClient;
-import com.continuuity.reactor.metadata.StreamRecord;
+import com.continuuity.proto.StreamRecord;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;

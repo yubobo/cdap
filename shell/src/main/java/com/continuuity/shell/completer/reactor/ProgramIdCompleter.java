@@ -17,8 +17,8 @@
 package com.continuuity.shell.completer.reactor;
 
 import com.continuuity.client.ApplicationClient;
-import com.continuuity.reactor.metadata.ProgramRecord;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramRecord;
+import com.continuuity.proto.ProgramType;
 import com.continuuity.shell.completer.StringsCompleter;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;

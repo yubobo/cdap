@@ -16,7 +16,7 @@
 
 package com.continuuity.shell;
 
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramType;
 import com.google.common.collect.Sets;
 
 import java.util.Set;

@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.describe;
 
 import com.continuuity.client.DatasetTypeClient;
-import com.continuuity.reactor.metadata.DatasetTypeMeta;
+import com.continuuity.proto.DatasetTypeMeta;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.DatasetTypeNameCompleter;

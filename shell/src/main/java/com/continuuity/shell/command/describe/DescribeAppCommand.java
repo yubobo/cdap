@@ -17,8 +17,8 @@
 package com.continuuity.shell.command.describe;
 
 import com.continuuity.client.ApplicationClient;
-import com.continuuity.reactor.metadata.ProgramRecord;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramRecord;
+import com.continuuity.proto.ProgramType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.AppIdCompleter;

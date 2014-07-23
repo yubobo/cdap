@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.list;
 
 import com.continuuity.client.ApplicationClient;
-import com.continuuity.reactor.metadata.ProgramType;
+import com.continuuity.proto.ProgramType;
 import com.continuuity.shell.command.CommandSet;
 
 import javax.inject.Inject;

@@ -16,8 +16,8 @@
 
 package com.continuuity.shell.command.list;
 
+import com.continuuity.api.DatasetSpecification;
 import com.continuuity.client.DatasetClient;
-import com.continuuity.reactor.metadata.DatasetSpecification;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;
