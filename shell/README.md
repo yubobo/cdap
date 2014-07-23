@@ -10,7 +10,7 @@ The shell client provides a way to interact with Reactor using a shell, similar 
 mvn clean package -DskipTests -pl reactor-shell -am
 ```
 
-The reactor executable is located at `reactor-shell/target/reactor`.
+The shell executable is located at `reactor-shell/target/reactor`.
 
 ## Usage
 
@@ -24,7 +24,7 @@ To run the shell in interactive mode, run the `reactor` executable with no argum
 reactor (localhost)>
 ```
 
-This indicates that the shell client is currently set to interact with the Reactor instance at localhost. To interact with a different Reactor instance, you may modify the environment variable REACTOR_HOST. For example, with REACTOR_HOST set to example.com, the shell client would be interacting with a Reactor instance at example.com port 10000.
+This indicates that the shell client is currently set to interact with the Reactor instance at localhost. To interact with a different Reactor instance, you may modify the environment variable `REACTOR_HOST`. For example, with `REACTOR_HOST` set to `example.com`, the shell client would be interacting with a Reactor instance at `example.com` port `10000`.
 
 To list all of the available commands, you may enter `help`.
 
