@@ -25,7 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 /**
- * Provides {@link ProgramIdCompleter} implementations.
+ * Provides {@link ProgramIdCompleter} implementations per {@link ProgramElementType}.
  */
 public class ProgramIdCompleterFactory {
 
