@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.get;
 
-import com.continuuity.reactor.client.ReactorProgramClient;
+import com.continuuity.client.ProgramClient;
 import com.continuuity.reactor.metadata.RunRecord;
 import com.continuuity.shell.ProgramElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
@@ -35,13 +35,13 @@ import java.util.List;
  */
 public class GetProgramHistoryCommand extends AbstractCommand implements Completable {
 
-  private final ReactorProgramClient programClient;
+  private final ProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
   private final ProgramElementType programElementType;
 
   protected GetProgramHistoryCommand(ProgramElementType programElementType,
                                      ProgramIdCompleterFactory completerFactory,
-                                     ReactorProgramClient programClient) {
+                                     ProgramClient programClient) {
     super(programElementType.getName(), "<app-id>.<program-id>",
           "Gets the run history of a " + programElementType.getName());
     this.programElementType = programElementType;

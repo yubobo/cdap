@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.list;
 
-import com.continuuity.reactor.client.ReactorDatasetModuleClient;
+import com.continuuity.client.DatasetModuleClient;
 import com.continuuity.reactor.metadata.DatasetModuleMeta;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
@@ -31,10 +31,10 @@ import javax.inject.Inject;
  */
 public class ListDatasetModulesCommand extends AbstractCommand {
 
-  private final ReactorDatasetModuleClient client;
+  private final DatasetModuleClient client;
 
   @Inject
-  public ListDatasetModulesCommand(ReactorDatasetModuleClient client) {
+  public ListDatasetModulesCommand(DatasetModuleClient client) {
     super("modules", null, "Lists dataset modules");
     this.client = client;
   }

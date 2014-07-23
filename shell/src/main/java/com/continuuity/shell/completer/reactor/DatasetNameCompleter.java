@@ -16,8 +16,8 @@
 
 package com.continuuity.shell.completer.reactor;
 
-import com.continuuity.reactor.client.ReactorDatasetClient;
-import com.continuuity.reactor.metadata.DatasetSpecification;
+import com.continuuity.client.DatasetClient;
+import com.continuuity.proto.DatasetSpecification;
 import com.continuuity.shell.completer.StringsCompleter;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
@@ -35,12 +35,12 @@ import javax.inject.Inject;
 public class DatasetNameCompleter extends StringsCompleter {
 
   @Inject
-  public DatasetNameCompleter(final ReactorDatasetClient reactorDatasetClient) {
+  public DatasetNameCompleter(final DatasetClient datasetClient) {
     super(new Supplier<Collection<String>>() {
       @Override
       public Collection<String> get() {
         try {
-          List<DatasetSpecification> list = reactorDatasetClient.list();
+          List<DatasetSpecification> list = datasetClient.list();
           return Lists.newArrayList(
             Iterables.transform(list, new Function<DatasetSpecification, String>() {
               @Override

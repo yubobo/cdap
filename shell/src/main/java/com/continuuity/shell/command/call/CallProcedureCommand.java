@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.call;
 
-import com.continuuity.reactor.client.ReactorProcedureClient;
+import com.continuuity.client.ProcedureClient;
 import com.continuuity.shell.ProgramElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
@@ -37,15 +37,15 @@ import javax.inject.Inject;
  */
 public class CallProcedureCommand extends AbstractCommand implements Completable {
 
-  private final ReactorProcedureClient reactorProcedureClient;
+  private final ProcedureClient procedureClient;
   private final ProgramIdCompleterFactory programIdCompleterFactory;
 
   @Inject
   public CallProcedureCommand(ProgramIdCompleterFactory programIdCompleterFactory,
-                              ReactorProcedureClient reactorProcedureClient) {
+                              ProcedureClient procedureClient) {
     super("procedure", "<app-id>.<procedure-id> <method-id> <parameters-map>", "Calls a procedure");
     this.programIdCompleterFactory = programIdCompleterFactory;
-    this.reactorProcedureClient = reactorProcedureClient;
+    this.procedureClient = procedureClient;
   }
 
   @Override
@@ -67,7 +67,7 @@ public class CallProcedureCommand extends AbstractCommand implements Completable
       parametersMap.put(key, value);
     }
 
-    String result = reactorProcedureClient.call(appId, procedureId, methodId, parametersMap);
+    String result = procedureClient.call(appId, procedureId, methodId, parametersMap);
     output.println(result);
   }
 

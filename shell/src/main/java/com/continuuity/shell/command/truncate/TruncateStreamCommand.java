@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.truncate;
 
-import com.continuuity.reactor.client.ReactorStreamClient;
+import com.continuuity.client.StreamClient;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.StreamIdCompleter;
@@ -32,11 +32,11 @@ import javax.inject.Inject;
  */
 public class TruncateStreamCommand extends AbstractCommand implements Completable {
 
-  private final ReactorStreamClient streamClient;
+  private final StreamClient streamClient;
   private final StreamIdCompleter completer;
 
   @Inject
-  public TruncateStreamCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
+  public TruncateStreamCommand(StreamIdCompleter completer, StreamClient streamClient) {
     super("stream", null, "Truncates a stream");
     this.completer = completer;
     this.streamClient = streamClient;

@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.list;
 
-import com.continuuity.reactor.client.ReactorStreamClient;
+import com.continuuity.client.StreamClient;
 import com.continuuity.reactor.metadata.StreamRecord;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
@@ -30,10 +30,10 @@ import javax.inject.Inject;
  */
 public class ListStreamsCommand extends AbstractCommand {
 
-  private final ReactorStreamClient streamClient;
+  private final StreamClient streamClient;
 
   @Inject
-  public ListStreamsCommand(ReactorStreamClient streamClient) {
+  public ListStreamsCommand(StreamClient streamClient) {
     super("streams", null, "Lists streams");
     this.streamClient = streamClient;
   }

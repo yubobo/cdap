@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.get;
 
-import com.continuuity.reactor.client.ReactorProgramClient;
+import com.continuuity.client.ProgramClient;
 import com.continuuity.shell.ProgramElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
@@ -32,13 +32,13 @@ import java.util.List;
  */
 public class GetProgramInstancesCommand extends AbstractCommand implements Completable {
 
-  private final ReactorProgramClient programClient;
+  private final ProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
   private final ProgramElementType programElementType;
 
   protected GetProgramInstancesCommand(ProgramElementType programElementType,
                                        ProgramIdCompleterFactory completerFactory,
-                                       ReactorProgramClient programClient) {
+                                       ProgramClient programClient) {
     super(programElementType.getName(), "<app-id>.<program-id>",
           "Gets the instances of a " + programElementType.getName());
     this.programElementType = programElementType;

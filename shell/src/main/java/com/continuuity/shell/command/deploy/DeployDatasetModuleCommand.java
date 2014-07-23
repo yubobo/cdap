@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.deploy;
 
-import com.continuuity.reactor.client.ReactorDatasetModuleClient;
+import com.continuuity.client.DatasetModuleClient;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.google.common.base.Preconditions;
@@ -34,10 +34,10 @@ import javax.inject.Inject;
  */
 public class DeployDatasetModuleCommand extends AbstractCommand implements Completable {
 
-  private final ReactorDatasetModuleClient datasetModuleClient;
+  private final DatasetModuleClient datasetModuleClient;
 
   @Inject
-  public DeployDatasetModuleCommand(ReactorDatasetModuleClient datasetModuleClient) {
+  public DeployDatasetModuleCommand(DatasetModuleClient datasetModuleClient) {
     super("module", "<module-jar-file> <module-name> <module-jar-classname>", "Deploys a dataset module");
     this.datasetModuleClient = datasetModuleClient;
   }

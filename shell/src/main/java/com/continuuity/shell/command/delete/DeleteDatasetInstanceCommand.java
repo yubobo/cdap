@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.delete;
 
-import com.continuuity.reactor.client.ReactorDatasetClient;
+import com.continuuity.client.DatasetClient;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.DatasetNameCompleter;
@@ -32,12 +32,12 @@ import javax.inject.Inject;
  */
 public class DeleteDatasetInstanceCommand extends AbstractCommand implements Completable {
 
-  private final ReactorDatasetClient datasetClient;
+  private final DatasetClient datasetClient;
   private final DatasetNameCompleter completer;
 
   @Inject
   public DeleteDatasetInstanceCommand(DatasetNameCompleter completer,
-                                      ReactorDatasetClient datasetClient) {
+                                      DatasetClient datasetClient) {
     super("instance", "<dataset-name>", "Deletes a dataset");
     this.completer = completer;
     this.datasetClient = datasetClient;

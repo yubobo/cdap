@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.delete;
 
-import com.continuuity.reactor.client.ReactorAppClient;
+import com.continuuity.client.ApplicationClient;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.AppIdCompleter;
@@ -32,11 +32,11 @@ import javax.inject.Inject;
  */
 public class DeleteAppCommand extends AbstractCommand implements Completable {
 
-  private final ReactorAppClient appClient;
+  private final ApplicationClient appClient;
   private final AppIdCompleter completer;
 
   @Inject
-  public DeleteAppCommand(AppIdCompleter completer, ReactorAppClient appClient) {
+  public DeleteAppCommand(AppIdCompleter completer, ApplicationClient appClient) {
     super("app", "<app-id>", "Deletes an application");
     this.completer = completer;
     this.appClient = appClient;

@@ -16,8 +16,8 @@
 
 package com.continuuity.shell.completer.reactor;
 
-import com.continuuity.reactor.client.ReactorStreamClient;
-import com.continuuity.reactor.metadata.StreamRecord;
+import com.continuuity.client.StreamClient;
+import com.continuuity.proto.StreamRecord;
 import com.continuuity.shell.completer.StringsCompleter;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
@@ -35,12 +35,12 @@ import javax.inject.Inject;
 public class StreamIdCompleter extends StringsCompleter {
 
   @Inject
-  public StreamIdCompleter(final ReactorStreamClient reactorStreamClient) {
+  public StreamIdCompleter(final StreamClient streamClient) {
     super(new Supplier<Collection<String>>() {
       @Override
       public Collection<String> get() {
         try {
-          List<StreamRecord> list = reactorStreamClient.list();
+          List<StreamRecord> list = streamClient.list();
           return Lists.newArrayList(
             Iterables.transform(list, new Function<StreamRecord, String>() {
               @Override

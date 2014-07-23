@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.list;
 
-import com.continuuity.reactor.client.ReactorDatasetTypeClient;
+import com.continuuity.client.DatasetTypeClient;
 import com.continuuity.reactor.metadata.DatasetModuleMeta;
 import com.continuuity.reactor.metadata.DatasetTypeMeta;
 import com.continuuity.shell.command.AbstractCommand;
@@ -34,10 +34,10 @@ import javax.inject.Inject;
  */
 public class ListDatasetTypesCommand extends AbstractCommand {
 
-  private final ReactorDatasetTypeClient datasetTypeClient;
+  private final DatasetTypeClient datasetTypeClient;
 
   @Inject
-  public ListDatasetTypesCommand(ReactorDatasetTypeClient datasetTypeClient) {
+  public ListDatasetTypesCommand(DatasetTypeClient datasetTypeClient) {
     super("types", null, "Lists dataset types");
     this.datasetTypeClient = datasetTypeClient;
   }

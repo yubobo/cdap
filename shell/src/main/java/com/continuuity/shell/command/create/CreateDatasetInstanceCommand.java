@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.create;
 
-import com.continuuity.reactor.client.ReactorDatasetClient;
+import com.continuuity.client.DatasetClient;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.DatasetTypeNameCompleter;
@@ -32,11 +32,11 @@ import javax.inject.Inject;
  */
 public class CreateDatasetInstanceCommand extends AbstractCommand implements Completable {
 
-  private final ReactorDatasetClient datasetClient;
+  private final DatasetClient datasetClient;
   private final Completer completer;
 
   @Inject
-  public CreateDatasetInstanceCommand(DatasetTypeNameCompleter completer, ReactorDatasetClient datasetClient) {
+  public CreateDatasetInstanceCommand(DatasetTypeNameCompleter completer, DatasetClient datasetClient) {
     super("instance", "<type-name> <new-dataset-name>", "Creates a dataset");
     this.completer = completer;
     this.datasetClient = datasetClient;

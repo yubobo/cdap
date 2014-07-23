@@ -16,8 +16,8 @@
 
 package com.continuuity.shell.completer.reactor;
 
-import com.continuuity.reactor.client.ReactorAppClient;
-import com.continuuity.reactor.metadata.ApplicationRecord;
+import com.continuuity.client.ApplicationClient;
+import com.continuuity.proto.ApplicationRecord;
 import com.continuuity.shell.completer.StringsCompleter;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
@@ -33,12 +33,12 @@ import javax.inject.Inject;
 public class AppIdCompleter extends StringsCompleter {
 
   @Inject
-  public AppIdCompleter(final ReactorAppClient reactorAppClient) {
+  public AppIdCompleter(final ApplicationClient applicationClient) {
     super(new Supplier<Collection<String>>() {
       @Override
       public Collection<String> get() {
         try {
-          List<ApplicationRecord> appsList = reactorAppClient.list();
+          List<ApplicationRecord> appsList = applicationClient.list();
           List<String> appIds = Lists.newArrayList();
           for (ApplicationRecord item : appsList) {
             appIds.add(item.getId());

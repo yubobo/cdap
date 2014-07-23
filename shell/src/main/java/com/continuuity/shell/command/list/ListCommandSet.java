@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.list;
 
-import com.continuuity.reactor.client.ReactorAppClient;
+import com.continuuity.client.ApplicationClient;
 import com.continuuity.reactor.metadata.ProgramType;
 import com.continuuity.shell.command.CommandSet;
 
@@ -28,7 +28,7 @@ import javax.inject.Inject;
 public class ListCommandSet extends CommandSet {
 
   @Inject
-  public ListCommandSet(ReactorAppClient appClient,
+  public ListCommandSet(ApplicationClient appClient,
                         ListAppsCommand listAppsCommand,
                         ListAllProgramsCommand listAllProgramsCommand,
                         ListDatasetCommandSet listDatasetCommandSet,

@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.describe;
 
-import com.continuuity.reactor.client.ReactorAppClient;
+import com.continuuity.client.ApplicationClient;
 import com.continuuity.reactor.metadata.ProgramRecord;
 import com.continuuity.reactor.metadata.ProgramType;
 import com.continuuity.shell.command.AbstractCommand;
@@ -37,14 +37,14 @@ import javax.inject.Inject;
  */
 public class DescribeAppCommand extends AbstractCommand implements Completable {
 
-  private final ReactorAppClient reactorAppClient;
+  private final ApplicationClient applicationClient;
   private final AppIdCompleter completer;
 
   @Inject
-  public DescribeAppCommand(AppIdCompleter completer, ReactorAppClient reactorAppClient) {
+  public DescribeAppCommand(AppIdCompleter completer, ApplicationClient applicationClient) {
     super("app", "<app-id>", "Shows detailed information about an application");
     this.completer = completer;
-    this.reactorAppClient = reactorAppClient;
+    this.applicationClient = applicationClient;
   }
 
   @Override
@@ -52,7 +52,7 @@ public class DescribeAppCommand extends AbstractCommand implements Completable {
     super.process(args, output);
 
     String appId = args[0];
-    Map<ProgramType, List<ProgramRecord>> programs = reactorAppClient.listPrograms(appId);
+    Map<ProgramType, List<ProgramRecord>> programs = applicationClient.listPrograms(appId);
     List<ProgramRecord> programsList = Lists.newArrayList();
     for (List<ProgramRecord> subList : programs.values()) {
       programsList.addAll(subList);

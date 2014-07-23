@@ -16,7 +16,7 @@
 
 package com.continuuity.shell;
 
-import com.continuuity.reactor.client.config.ReactorClientConfig;
+import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.shell.command.CommandSet;
 import com.continuuity.shell.command.ExitCommand;
 import com.continuuity.shell.command.HelpCommand;

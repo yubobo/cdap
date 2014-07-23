@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.create;
 
-import com.continuuity.reactor.client.ReactorStreamClient;
+import com.continuuity.client.StreamClient;
 import com.continuuity.shell.command.AbstractCommand;
 
 import java.io.PrintStream;
@@ -27,10 +27,10 @@ import javax.inject.Inject;
  */
 public class CreateStreamCommand extends AbstractCommand {
 
-  private final ReactorStreamClient streamClient;
+  private final StreamClient streamClient;
 
   @Inject
-  public CreateStreamCommand(ReactorStreamClient streamClient) {
+  public CreateStreamCommand(StreamClient streamClient) {
     super("stream", "<new-stream-id>", "Creates a stream");
     this.streamClient = streamClient;
   }

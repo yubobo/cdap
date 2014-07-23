@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.deploy;
 
-import com.continuuity.reactor.client.ReactorAppClient;
+import com.continuuity.client.ApplicationClient;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.google.common.base.Preconditions;
@@ -34,12 +34,12 @@ import javax.inject.Inject;
  */
 public class DeployAppCommand extends AbstractCommand implements Completable {
 
-  private final ReactorAppClient reactorAppClient;
+  private final ApplicationClient applicationClient;
 
   @Inject
-  public DeployAppCommand(ReactorAppClient reactorAppClient) {
+  public DeployAppCommand(ApplicationClient applicationClient) {
     super("app", "<app-jar-file>", "Deploys an application");
-    this.reactorAppClient = reactorAppClient;
+    this.applicationClient = applicationClient;
   }
 
   @Override
@@ -49,7 +49,7 @@ public class DeployAppCommand extends AbstractCommand implements Completable {
     File file = new File(args[0]);
     Preconditions.checkArgument(file.exists(), "File " + file.getAbsolutePath() + " does not exist");
     Preconditions.checkArgument(file.canRead(), "File " + file.getAbsolutePath() + " is not readable");
-    reactorAppClient.deploy(file);
+    applicationClient.deploy(file);
   }
 
   @Override

@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.list;
 
-import com.continuuity.reactor.client.ReactorAppClient;
+import com.continuuity.client.ApplicationClient;
 import com.continuuity.reactor.metadata.ProgramRecord;
 import com.continuuity.reactor.metadata.ProgramType;
 import com.continuuity.shell.command.AbstractCommand;
@@ -34,10 +34,10 @@ import javax.inject.Inject;
  */
 public class ListAllProgramsCommand extends AbstractCommand {
 
-  private final ReactorAppClient appClient;
+  private final ApplicationClient appClient;
 
   @Inject
-  public ListAllProgramsCommand(ReactorAppClient appClient) {
+  public ListAllProgramsCommand(ApplicationClient appClient) {
     super("programs", null, "Lists all programs");
     this.appClient = appClient;
   }

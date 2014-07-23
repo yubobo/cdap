@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.completer.reactor;
 
-import com.continuuity.reactor.client.ReactorAppClient;
+import com.continuuity.client.ApplicationClient;
 import com.continuuity.reactor.metadata.ProgramRecord;
 import com.continuuity.reactor.metadata.ProgramType;
 import com.continuuity.shell.completer.StringsCompleter;
@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class ProgramIdCompleter extends StringsCompleter {
 
-  public ProgramIdCompleter(final ReactorAppClient appClient, final ProgramType programType) {
+  public ProgramIdCompleter(final ApplicationClient appClient, final ProgramType programType) {
     super(new Supplier<Collection<String>>() {
       @Override
       public Collection<String> get() {

@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.set;
 
-import com.continuuity.reactor.client.ReactorStreamClient;
+import com.continuuity.client.StreamClient;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.StreamIdCompleter;
@@ -32,11 +32,11 @@ import javax.inject.Inject;
  */
 public class SetStreamTTLCommand extends AbstractCommand implements Completable {
 
-  private final ReactorStreamClient streamClient;
+  private final StreamClient streamClient;
   private final StreamIdCompleter completer;
 
   @Inject
-  public SetStreamTTLCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
+  public SetStreamTTLCommand(StreamIdCompleter completer, StreamClient streamClient) {
     super("ttl", "<stream-id> <ttl-in-seconds>", "Sets the Time-to-Live (TTL) of a stream");
     this.completer = completer;
     this.streamClient = streamClient;

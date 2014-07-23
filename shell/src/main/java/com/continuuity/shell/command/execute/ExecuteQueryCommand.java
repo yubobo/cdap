@@ -16,11 +16,11 @@
 
 package com.continuuity.shell.command.execute;
 
-import com.continuuity.reactor.client.ReactorQueryClient;
-import com.continuuity.reactor.metadata.ColumnDesc;
-import com.continuuity.reactor.metadata.QueryHandle;
-import com.continuuity.reactor.metadata.QueryResult;
-import com.continuuity.reactor.metadata.QueryStatus;
+import com.continuuity.client.QueryClient;
+import com.continuuity.proto.ColumnDesc;
+import com.continuuity.proto.QueryHandle;
+import com.continuuity.proto.QueryResult;
+import com.continuuity.proto.QueryStatus;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;
@@ -35,12 +35,12 @@ import java.util.List;
  */
 public class ExecuteQueryCommand extends AbstractCommand {
 
-  private final ReactorQueryClient reactorQueryClient;
+  private final QueryClient queryClient;
 
   @Inject
-  public ExecuteQueryCommand(ReactorQueryClient reactorQueryClient) {
+  public ExecuteQueryCommand(QueryClient queryClient) {
     super("execute", "<query>", "Executes a dataset query");
-    this.reactorQueryClient = reactorQueryClient;
+    this.queryClient = queryClient;
   }
 
   @Override
@@ -48,7 +48,7 @@ public class ExecuteQueryCommand extends AbstractCommand {
     super.process(args, output);
 
     String query = Joiner.on(" ").join(args);
-    QueryHandle queryHandle = reactorQueryClient.execute(query);
+    QueryHandle queryHandle = queryClient.execute(query);
     QueryStatus status = new QueryStatus(null, false);
 
     long startTime = System.currentTimeMillis();
@@ -57,11 +57,11 @@ public class ExecuteQueryCommand extends AbstractCommand {
       QueryStatus.OpStatus.PENDING == status.getStatus()) {
 
       Thread.sleep(1000);
-      status = reactorQueryClient.getStatus(queryHandle);
+      status = queryClient.getStatus(queryHandle);
     }
 
     if (status.hasResults()) {
-      List<ColumnDesc> schema = reactorQueryClient.getSchema(queryHandle);
+      List<ColumnDesc> schema = queryClient.getSchema(queryHandle);
       String[] header = new String[schema.size()];
       for (int i = 0; i < header.length; i++) {
         ColumnDesc column = schema.get(i);
@@ -69,7 +69,7 @@ public class ExecuteQueryCommand extends AbstractCommand {
         int index = column.getPosition() - 1;
         header[index] = column.getName() + ": " + column.getType();
       }
-      List<QueryResult> results = reactorQueryClient.getResults(queryHandle, 20);
+      List<QueryResult> results = queryClient.getResults(queryHandle, 20);
 
       new AsciiTable<QueryResult>(header, results, new RowMaker<QueryResult>() {
         @Override
@@ -78,7 +78,7 @@ public class ExecuteQueryCommand extends AbstractCommand {
         }
       }).print(output);
 
-      reactorQueryClient.delete(queryHandle);
+      queryClient.delete(queryHandle);
     } else {
       output.println("Couldn't obtain results after " + (System.currentTimeMillis() - startTime) + "ms. " +
                        "Try querying manually with handle " + queryHandle.getHandle());

@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.describe;
 
-import com.continuuity.reactor.client.ReactorDatasetModuleClient;
+import com.continuuity.client.DatasetModuleClient;
 import com.continuuity.reactor.metadata.DatasetModuleMeta;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -36,12 +36,12 @@ import javax.inject.Inject;
  */
 public class DescribeDatasetModuleCommand extends AbstractCommand implements Completable {
 
-  private final ReactorDatasetModuleClient datasetModuleClient;
+  private final DatasetModuleClient datasetModuleClient;
   private final DatasetModuleNameCompleter completer;
 
   @Inject
   public DescribeDatasetModuleCommand(DatasetModuleNameCompleter completer,
-                                      ReactorDatasetModuleClient datasetModuleClient) {
+                                      DatasetModuleClient datasetModuleClient) {
     super("module", "<module-name>", "Shows information about a dataset module");
     this.completer = completer;
     this.datasetModuleClient = datasetModuleClient;

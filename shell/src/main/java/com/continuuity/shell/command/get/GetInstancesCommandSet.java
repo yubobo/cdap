@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.get;
 
-import com.continuuity.reactor.client.ReactorProgramClient;
+import com.continuuity.client.ProgramClient;
 import com.continuuity.shell.ProgramElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.Command;
@@ -33,12 +33,12 @@ public class GetInstancesCommandSet extends CommandSet {
 
   @Inject
   public GetInstancesCommandSet(ProgramIdCompleterFactory programIdCompleterFactory,
-                                ReactorProgramClient programClient) {
+                                ProgramClient programClient) {
     super("instances", generateCommands(programIdCompleterFactory, programClient));
   }
 
   private static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
-                                                ReactorProgramClient programClient) {
+                                                ProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.canScale()) {

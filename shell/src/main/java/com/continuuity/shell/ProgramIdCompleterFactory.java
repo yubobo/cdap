@@ -16,7 +16,7 @@
 
 package com.continuuity.shell;
 
-import com.continuuity.reactor.client.ReactorAppClient;
+import com.continuuity.client.ApplicationClient;
 import com.continuuity.shell.completer.reactor.ProgramIdCompleter;
 import com.google.common.collect.ImmutableMap;
 import jline.console.completer.Completer;
@@ -32,7 +32,7 @@ public class ProgramIdCompleterFactory {
   private final Map<ProgramElementType, ProgramIdCompleter> programIdCompleters;
 
   @Inject
-  public ProgramIdCompleterFactory(ReactorAppClient appClient) {
+  public ProgramIdCompleterFactory(ApplicationClient appClient) {
     this.programIdCompleters = ImmutableMap.<ProgramElementType, ProgramIdCompleter>builder()
       .put(ProgramElementType.FLOW,
            new ProgramIdCompleter(appClient, ProgramElementType.FLOW.getProgramType()))

@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.command.describe;
 
-import com.continuuity.reactor.client.ReactorDatasetTypeClient;
+import com.continuuity.client.DatasetTypeClient;
 import com.continuuity.reactor.metadata.DatasetTypeMeta;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -36,12 +36,12 @@ import javax.inject.Inject;
  */
 public class DescribeDatasetTypeCommand extends AbstractCommand implements Completable {
 
-  private final ReactorDatasetTypeClient datasetTypeClient;
+  private final DatasetTypeClient datasetTypeClient;
   private final DatasetTypeNameCompleter completer;
 
   @Inject
   public DescribeDatasetTypeCommand(DatasetTypeNameCompleter completer,
-                                    ReactorDatasetTypeClient datasetTypeClient) {
+                                    DatasetTypeClient datasetTypeClient) {
     super("type", "<type-name>", "Shows information about a dataset type");
     this.completer = completer;
     this.datasetTypeClient = datasetTypeClient;
