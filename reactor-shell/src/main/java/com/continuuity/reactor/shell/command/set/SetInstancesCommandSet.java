@@ -42,7 +42,7 @@ public class SetInstancesCommandSet extends CommandSet {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.canScale()) {
-        commands.add(new SetInstancesCommand(programElementType, programIdCompleterFactory, programClient));
+        commands.add(new SetProgramInstancesCommand(programElementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;

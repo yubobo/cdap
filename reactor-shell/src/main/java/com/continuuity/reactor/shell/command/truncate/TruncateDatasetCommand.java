@@ -25,6 +25,7 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Truncates a dataset.
@@ -34,7 +35,8 @@ public class TruncateDatasetCommand extends AbstractCommand implements Completab
   private final ReactorDatasetClient datasetClient;
   private final DatasetNameCompleter completer;
 
-  protected TruncateDatasetCommand(DatasetNameCompleter completer, ReactorDatasetClient datasetClient) {
+  @Inject
+  public TruncateDatasetCommand(DatasetNameCompleter completer, ReactorDatasetClient datasetClient) {
     super("dataset", null, "Truncates a dataset");
     this.completer = completer;
     this.datasetClient = datasetClient;

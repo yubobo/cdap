@@ -26,19 +26,21 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Sets the instances of a program.
  */
-public class SetInstancesCommand extends AbstractCommand implements Completable {
+public class SetProgramInstancesCommand extends AbstractCommand implements Completable {
 
   private final ReactorProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
   private final ProgramElementType programElementType;
 
-  protected SetInstancesCommand(ProgramElementType programElementType,
-                                ProgramIdCompleterFactory completerFactory,
-                                ReactorProgramClient programClient) {
+  @Inject
+  public SetProgramInstancesCommand(ProgramElementType programElementType,
+                                    ProgramIdCompleterFactory completerFactory,
+                                    ReactorProgramClient programClient) {
     super(programElementType.getName(), "<program-id> <num-instances>",
           "Sets the instances of a " + programElementType.getName());
     this.programElementType = programElementType;

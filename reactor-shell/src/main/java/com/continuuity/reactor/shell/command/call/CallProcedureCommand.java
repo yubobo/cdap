@@ -30,6 +30,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Inject;
 
 /**
  * Calls a procedure.
@@ -39,6 +40,7 @@ public class CallProcedureCommand extends AbstractCommand implements Completable
   private final ReactorProcedureClient reactorProcedureClient;
   private final ProgramIdCompleterFactory programIdCompleterFactory;
 
+  @Inject
   public CallProcedureCommand(ProgramIdCompleterFactory programIdCompleterFactory,
                               ReactorProcedureClient reactorProcedureClient) {
     super("procedure", "<app-id>.<procedure-id> <method-id> <parameters-map>", "Calls a procedure");

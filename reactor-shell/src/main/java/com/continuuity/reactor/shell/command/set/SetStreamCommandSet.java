@@ -14,19 +14,19 @@
  * the License.
  */
 
-package com.continuuity.reactor.shell.command.create;
+package com.continuuity.reactor.shell.command.set;
 
 import com.continuuity.reactor.shell.command.CommandSet;
 
 import javax.inject.Inject;
 
 /**
- * Contains commands for creating stuff.
+ * Contains commands related to setting stream properties.
  */
-public class CreateCommandSet extends CommandSet {
+public class SetStreamCommandSet extends CommandSet {
 
   @Inject
-  public CreateCommandSet(CreateStreamCommand createStreamCommand, CreateDatasetCommand createDatasetCommand) {
-    super("create", createStreamCommand, createDatasetCommand);
+  public SetStreamCommandSet(SetStreamTTLCommand setStreamTTLCommand) {
+    super("instances", setStreamTTLCommand);
   }
 }

@@ -25,6 +25,7 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Deletes a dataset module.
@@ -34,8 +35,9 @@ public class DeleteDatasetModuleCommand extends AbstractCommand implements Compl
   private final ReactorDatasetModuleClient datasetClient;
   private final DatasetModuleNameCompleter completer;
 
-  protected DeleteDatasetModuleCommand(DatasetModuleNameCompleter completer, ReactorDatasetModuleClient datasetClient) {
-    // TODO: dataset module
+  @Inject
+  public DeleteDatasetModuleCommand(DatasetModuleNameCompleter completer,
+                                    ReactorDatasetModuleClient datasetClient) {
     super("module", "<module-name>", "Deletes a dataset module");
     this.completer = completer;
     this.datasetClient = datasetClient;

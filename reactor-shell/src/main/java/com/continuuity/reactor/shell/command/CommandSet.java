@@ -48,6 +48,12 @@ public class CommandSet implements Command, Completable {
     this.commandsMap = map(this.commands);
   }
 
+  public CommandSet(String name, Command... commands) {
+    this.name = name;
+    this.commands = ImmutableList.copyOf(commands);
+    this.commandsMap = map(this.commands);
+  }
+
   private Trie<String, Command> map(List<Command> commands) {
     Trie<String, Command> result = new PatriciaTrie<String, Command>(StringKeyAnalyzer.CHAR);
     for (Command command : commands) {

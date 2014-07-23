@@ -29,6 +29,7 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Shows information about a dataset type.
@@ -38,8 +39,9 @@ public class DescribeDatasetTypeCommand extends AbstractCommand implements Compl
   private final ReactorDatasetTypeClient datasetTypeClient;
   private final DatasetTypeNameCompleter completer;
 
-  public DescribeDatasetTypeCommand(DatasetTypeNameCompleter completer, ReactorDatasetTypeClient datasetTypeClient) {
-    // TODO: dataset type
+  @Inject
+  public DescribeDatasetTypeCommand(DatasetTypeNameCompleter completer,
+                                    ReactorDatasetTypeClient datasetTypeClient) {
     super("type", "<type-name>", "Shows information about a dataset type");
     this.completer = completer;
     this.datasetTypeClient = datasetTypeClient;

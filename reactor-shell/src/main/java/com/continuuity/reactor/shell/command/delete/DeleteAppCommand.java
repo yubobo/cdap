@@ -25,6 +25,7 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Deletes an application.
@@ -34,7 +35,8 @@ public class DeleteAppCommand extends AbstractCommand implements Completable {
   private final ReactorAppClient appClient;
   private final AppIdCompleter completer;
 
-  protected DeleteAppCommand(AppIdCompleter completer, ReactorAppClient appClient) {
+  @Inject
+  public DeleteAppCommand(AppIdCompleter completer, ReactorAppClient appClient) {
     super("app", "<app-id>", "Deletes an application");
     this.completer = completer;
     this.appClient = appClient;

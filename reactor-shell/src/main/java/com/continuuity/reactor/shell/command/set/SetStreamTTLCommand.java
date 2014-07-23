@@ -25,6 +25,7 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Sets the Time-to-Live (TTL) of a stream.
@@ -34,8 +35,9 @@ public class SetStreamTTLCommand extends AbstractCommand implements Completable 
   private final ReactorStreamClient streamClient;
   private final StreamIdCompleter completer;
 
-  protected SetStreamTTLCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
-    super("stream ttl", "<stream-id> <ttl-in-seconds>", "Sets the Time-to-Live (TTL) of a stream");
+  @Inject
+  public SetStreamTTLCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
+    super("ttl", "<stream-id> <ttl-in-seconds>", "Sets the Time-to-Live (TTL) of a stream");
     this.completer = completer;
     this.streamClient = streamClient;
   }

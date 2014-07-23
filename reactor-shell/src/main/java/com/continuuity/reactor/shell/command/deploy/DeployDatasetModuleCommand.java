@@ -27,6 +27,7 @@ import jline.console.completer.FileNameCompleter;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Deploys a dataset module.
@@ -35,8 +36,8 @@ public class DeployDatasetModuleCommand extends AbstractCommand implements Compl
 
   private final ReactorDatasetModuleClient datasetModuleClient;
 
+  @Inject
   public DeployDatasetModuleCommand(ReactorDatasetModuleClient datasetModuleClient) {
-    // TODO: dataset module
     super("module", "<module-jar-file> <module-name> <module-jar-classname>", "Deploys a dataset module");
     this.datasetModuleClient = datasetModuleClient;
   }

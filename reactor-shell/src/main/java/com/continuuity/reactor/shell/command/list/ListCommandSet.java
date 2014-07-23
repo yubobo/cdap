@@ -38,7 +38,7 @@ public class ListCommandSet extends CommandSet {
                         ReactorStreamClient streamClient,
                         ReactorDatasetModuleClient datasetModuleClient,
                         ReactorDatasetTypeClient datasetTypeClient) {
-    super("list", Lists.<Command>newArrayList(
+    super("list",
       new ListAppsCommand(appClient),
       new ListAllProgramsCommand(appClient),
       new ListProgramsCommand(ProgramType.FLOW, appClient),
@@ -49,6 +49,6 @@ public class ListCommandSet extends CommandSet {
       new ListDatasetModulesCommand(datasetModuleClient),
       new ListDatasetTypesCommand(datasetTypeClient),
       new ListStreamsCommand(streamClient)
-    ));
+    );
   }
 }

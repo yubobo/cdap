@@ -30,6 +30,7 @@ import jline.console.completer.Completer;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Inject;
 
 /**
  * Shows detailed information about an application.
@@ -39,6 +40,7 @@ public class DescribeAppCommand extends AbstractCommand implements Completable {
   private final ReactorAppClient reactorAppClient;
   private final AppIdCompleter completer;
 
+  @Inject
   public DescribeAppCommand(AppIdCompleter completer, ReactorAppClient reactorAppClient) {
     super("app", "<app-id>", "Shows detailed information about an application");
     this.completer = completer;

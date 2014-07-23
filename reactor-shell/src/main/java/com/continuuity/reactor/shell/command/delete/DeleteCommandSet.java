@@ -16,15 +16,7 @@
 
 package com.continuuity.reactor.shell.command.delete;
 
-import com.continuuity.reactor.client.ReactorAppClient;
-import com.continuuity.reactor.client.ReactorDatasetClient;
-import com.continuuity.reactor.client.ReactorDatasetModuleClient;
-import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.continuuity.reactor.shell.completer.reactor.AppIdCompleter;
-import com.continuuity.reactor.shell.completer.reactor.DatasetModuleNameCompleter;
-import com.continuuity.reactor.shell.completer.reactor.DatasetNameCompleter;
-import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
 
@@ -34,14 +26,7 @@ import javax.inject.Inject;
 public class DeleteCommandSet extends CommandSet {
 
   @Inject
-  public DeleteCommandSet(AppIdCompleter appIdCompleter, DatasetNameCompleter datasetNameCompleter,
-                          DatasetModuleNameCompleter datasetModuleNameCompleter,
-                          ReactorAppClient appClient, ReactorDatasetClient datasetClient,
-                          ReactorDatasetModuleClient datasetModuleClient) {
-    super("delete", Lists.<Command>newArrayList(
-      new DeleteAppCommand(appIdCompleter, appClient),
-      new DeleteDatasetCommand(datasetNameCompleter, datasetClient),
-      new DeleteDatasetModuleCommand(datasetModuleNameCompleter, datasetModuleClient)
-    ));
+  public DeleteCommandSet(DeleteAppCommand deleteAppCommand, DeleteDatasetCommandSet deleteDatasetCommandSet) {
+    super("delete", deleteAppCommand, deleteDatasetCommandSet);
   }
 }

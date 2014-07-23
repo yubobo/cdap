@@ -14,19 +14,24 @@
  * the License.
  */
 
-package com.continuuity.reactor.shell.command.create;
+package com.continuuity.reactor.shell.command.deploy;
 
+import com.continuuity.reactor.client.ReactorDatasetModuleClient;
+import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
+import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
 
 /**
- * Contains commands for creating stuff.
+ * Contains commands for deploying dataset stuff.
  */
-public class CreateCommandSet extends CommandSet {
+public class DeployDatasetCommandSet extends CommandSet {
 
   @Inject
-  public CreateCommandSet(CreateStreamCommand createStreamCommand, CreateDatasetCommand createDatasetCommand) {
-    super("create", createStreamCommand, createDatasetCommand);
+  public DeployDatasetCommandSet(ReactorDatasetModuleClient datasetModuleClient) {
+    super("dataset", Lists.<Command>newArrayList(
+      new DeployDatasetModuleCommand(datasetModuleClient)
+    ));
   }
 }

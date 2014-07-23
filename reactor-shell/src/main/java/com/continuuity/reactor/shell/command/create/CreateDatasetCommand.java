@@ -25,6 +25,7 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Creates a dataset.
@@ -34,7 +35,8 @@ public class CreateDatasetCommand extends AbstractCommand implements Completable
   private final ReactorDatasetClient datasetClient;
   private final Completer completer;
 
-  protected CreateDatasetCommand(DatasetTypeNameCompleter completer, ReactorDatasetClient datasetClient) {
+  @Inject
+  public CreateDatasetCommand(DatasetTypeNameCompleter completer, ReactorDatasetClient datasetClient) {
     super("dataset", "<type-name> <new-dataset-name>", "Creates a dataset");
     this.completer = completer;
     this.datasetClient = datasetClient;

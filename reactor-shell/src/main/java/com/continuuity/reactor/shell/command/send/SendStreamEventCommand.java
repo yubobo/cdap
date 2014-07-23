@@ -27,6 +27,7 @@ import jline.console.completer.Completer;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Sends an event to a stream.
@@ -36,7 +37,8 @@ public class SendStreamEventCommand extends AbstractCommand implements Completab
   private final ReactorStreamClient streamClient;
   private final StreamIdCompleter completer;
 
-  protected SendStreamEventCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
+  @Inject
+  public SendStreamEventCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
     super("stream", "<stream-id> <stream-event>", "Sends an event to a stream");
     this.completer = completer;
     this.streamClient = streamClient;

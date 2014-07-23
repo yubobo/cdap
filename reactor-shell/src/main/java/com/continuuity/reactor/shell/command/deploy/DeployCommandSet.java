@@ -16,11 +16,7 @@
 
 package com.continuuity.reactor.shell.command.deploy;
 
-import com.continuuity.reactor.client.ReactorAppClient;
-import com.continuuity.reactor.client.ReactorDatasetModuleClient;
-import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
 
@@ -30,10 +26,7 @@ import javax.inject.Inject;
 public class DeployCommandSet extends CommandSet {
 
   @Inject
-  public DeployCommandSet(ReactorAppClient appClient, ReactorDatasetModuleClient datasetModuleClient) {
-    super("deploy", Lists.<Command>newArrayList(
-      new DeployAppCommand(appClient),
-      new DeployDatasetModuleCommand(datasetModuleClient)
-    ));
+  public DeployCommandSet(DeployAppCommand deployAppCommand, DeployDatasetCommandSet deployDatasetCommandSet) {
+    super("deploy", deployAppCommand, deployDatasetCommandSet);
   }
 }

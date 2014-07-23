@@ -16,11 +16,7 @@
 
 package com.continuuity.reactor.shell.command.set;
 
-import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
-import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
 
@@ -30,9 +26,7 @@ import javax.inject.Inject;
 public class SetCommandSet extends CommandSet {
 
   @Inject
-  public SetCommandSet(ProgramIdCompleterFactory programIdCompleterFactory, ReactorProgramClient programClient) {
-    super("set", Lists.<Command>newArrayList(
-      new SetInstancesCommandSet(programIdCompleterFactory, programClient)
-    ));
+  public SetCommandSet(SetInstancesCommandSet setInstancesCommandSet, SetStreamCommandSet setStreamCommandSet) {
+    super("set", setInstancesCommandSet, setStreamCommandSet);
   }
 }

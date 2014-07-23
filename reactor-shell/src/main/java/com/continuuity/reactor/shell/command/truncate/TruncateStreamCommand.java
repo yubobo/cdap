@@ -25,6 +25,7 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Truncates a stream.
@@ -34,7 +35,8 @@ public class TruncateStreamCommand extends AbstractCommand implements Completabl
   private final ReactorStreamClient streamClient;
   private final StreamIdCompleter completer;
 
-  protected TruncateStreamCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
+  @Inject
+  public TruncateStreamCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
     super("stream", null, "Truncates a stream");
     this.completer = completer;
     this.streamClient = streamClient;

@@ -27,6 +27,7 @@ import jline.console.completer.FileNameCompleter;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Deploys an application.
@@ -35,6 +36,7 @@ public class DeployAppCommand extends AbstractCommand implements Completable {
 
   private final ReactorAppClient reactorAppClient;
 
+  @Inject
   public DeployAppCommand(ReactorAppClient reactorAppClient) {
     super("app", "<app-jar-file>", "Deploys an application");
     this.reactorAppClient = reactorAppClient;

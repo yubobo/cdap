@@ -14,19 +14,20 @@
  * the License.
  */
 
-package com.continuuity.reactor.shell.command.create;
+package com.continuuity.reactor.shell.command.delete;
 
 import com.continuuity.reactor.shell.command.CommandSet;
 
 import javax.inject.Inject;
 
 /**
- * Contains commands for creating stuff.
+ * Contains commands for deleting stuff.
  */
-public class CreateCommandSet extends CommandSet {
+public class DeleteDatasetCommandSet extends CommandSet {
 
   @Inject
-  public CreateCommandSet(CreateStreamCommand createStreamCommand, CreateDatasetCommand createDatasetCommand) {
-    super("create", createStreamCommand, createDatasetCommand);
+  public DeleteDatasetCommandSet(DeleteDatasetInstanceCommand deleteDatasetInstanceCommand,
+                                 DeleteDatasetModuleCommand deleteDatasetModuleCommand) {
+    super("delete", deleteDatasetInstanceCommand, deleteDatasetModuleCommand);
   }
 }

@@ -16,11 +16,7 @@
 
 package com.continuuity.reactor.shell.command.get;
 
-import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
-import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
 
@@ -30,13 +26,12 @@ import javax.inject.Inject;
 public class GetCommandSet extends CommandSet {
 
   @Inject
-  public GetCommandSet(ProgramIdCompleterFactory programIdCompleterFactory, ReactorProgramClient programClient) {
-    super("get", Lists.<Command>newArrayList(
-      new GetHistoryCommandSet(programIdCompleterFactory, programClient),
-      new GetInstancesCommandSet(programIdCompleterFactory, programClient),
-      new GetLiveInfoCommandSet(programIdCompleterFactory, programClient),
-      new GetLogsCommandSet(programIdCompleterFactory, programClient),
-      new GetStatusCommandSet(programIdCompleterFactory, programClient)
-    ));
+  public GetCommandSet(GetHistoryCommandSet getHistoryCommandSet,
+                       GetInstancesCommandSet getInstancesCommandSet,
+                       GetLiveInfoCommandSet getLiveInfoCommandSet,
+                       GetLogsCommandSet getLogsCommandSet,
+                       GetStatusCommandSet getStatusCommandSet) {
+    super("get", getHistoryCommandSet, getInstancesCommandSet, getLiveInfoCommandSet,
+          getLogsCommandSet, getStatusCommandSet);
   }
 }

@@ -29,6 +29,7 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Shows information about a dataset module.
@@ -38,9 +39,9 @@ public class DescribeDatasetModuleCommand extends AbstractCommand implements Com
   private final ReactorDatasetModuleClient datasetModuleClient;
   private final DatasetModuleNameCompleter completer;
 
+  @Inject
   public DescribeDatasetModuleCommand(DatasetModuleNameCompleter completer,
                                       ReactorDatasetModuleClient datasetModuleClient) {
-    // TODO: dataset module
     super("module", "<module-name>", "Shows information about a dataset module");
     this.completer = completer;
     this.datasetModuleClient = datasetModuleClient;

@@ -16,11 +16,7 @@
 
 package com.continuuity.reactor.shell.command.send;
 
-import com.continuuity.reactor.client.ReactorStreamClient;
-import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.continuuity.reactor.shell.completer.reactor.StreamIdCompleter;
-import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
 
@@ -30,9 +26,7 @@ import javax.inject.Inject;
 public class SendCommandSet extends CommandSet {
 
   @Inject
-  public SendCommandSet(StreamIdCompleter streamIdCompleter, ReactorStreamClient streamClient) {
-    super("send", Lists.<Command>newArrayList(
-      new SendStreamEventCommand(streamIdCompleter, streamClient)
-    ));
+  public SendCommandSet(SendStreamEventCommand sendStreamEventCommand) {
+    super("send", sendStreamEventCommand);
   }
 }

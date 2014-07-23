@@ -16,14 +16,7 @@
 
 package com.continuuity.reactor.shell.command.truncate;
 
-import com.continuuity.reactor.client.ReactorDatasetClient;
-import com.continuuity.reactor.client.ReactorStreamClient;
-import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
-import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.continuuity.reactor.shell.completer.reactor.DatasetNameCompleter;
-import com.continuuity.reactor.shell.completer.reactor.StreamIdCompleter;
-import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
 
@@ -33,11 +26,8 @@ import javax.inject.Inject;
 public class TruncateCommandSet extends CommandSet {
 
   @Inject
-  public TruncateCommandSet(DatasetNameCompleter datasetNameCompleter, StreamIdCompleter streamIdCompleter,
-                            ReactorDatasetClient datasetClient, ReactorStreamClient streamClient) {
-    super("truncate", Lists.<Command>newArrayList(
-      new TruncateDatasetCommand(datasetNameCompleter, datasetClient),
-      new TruncateStreamCommand(streamIdCompleter, streamClient)
-    ));
+  public TruncateCommandSet(TruncateDatasetCommand truncateDatasetCommand,
+                            TruncateStreamCommand truncateStreamCommand) {
+    super("truncate", truncateDatasetCommand, truncateStreamCommand);
   }
 }

@@ -25,17 +25,20 @@ import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Deletes a dataset.
  */
-public class DeleteDatasetCommand extends AbstractCommand implements Completable {
+public class DeleteDatasetInstanceCommand extends AbstractCommand implements Completable {
 
   private final ReactorDatasetClient datasetClient;
   private final DatasetNameCompleter completer;
 
-  protected DeleteDatasetCommand(DatasetNameCompleter completer, ReactorDatasetClient datasetClient) {
-    super("dataset", "<dataset-name>", "Deletes a dataset");
+  @Inject
+  public DeleteDatasetInstanceCommand(DatasetNameCompleter completer,
+                                      ReactorDatasetClient datasetClient) {
+    super("instance", "<dataset-name>", "Deletes a dataset");
     this.completer = completer;
     this.datasetClient = datasetClient;
   }
