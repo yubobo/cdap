@@ -17,13 +17,7 @@
 package com.continuuity.reactor.shell;
 
 import com.continuuity.reactor.client.ReactorAppClient;
-import com.continuuity.reactor.shell.completer.reactor.AppIdCompleter;
-import com.continuuity.reactor.shell.completer.reactor.DatasetModuleNameCompleter;
-import com.continuuity.reactor.shell.completer.reactor.DatasetNameCompleter;
-import com.continuuity.reactor.shell.completer.reactor.DatasetTypeNameCompleter;
 import com.continuuity.reactor.shell.completer.reactor.ProgramIdCompleter;
-import com.continuuity.reactor.shell.completer.reactor.ProgramTypeCompleter;
-import com.continuuity.reactor.shell.completer.reactor.StreamIdCompleter;
 import com.google.common.collect.ImmutableMap;
 import jline.console.completer.Completer;
 

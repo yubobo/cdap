@@ -25,7 +25,20 @@ import java.util.List;
 /**
  * Utility class to print an ASCII table. e.g.
  *
- * @param <T>
+ * +-----------------------------------------------------------------------+
+ * | pid                                  | end status | start      | stop |
+ * +-----------------------------------------------------------------------+
+ * | 9bd22850-0017-4a10-972a-bc5ca8173584 | STOPPED    | 1405986408 | 0    |
+ * | 7f9f8054-a71f-48e3-965d-39e2aab16d5d | STOPPED    | 1405978322 | 0    |
+ * | e1a2d4a9-667c-40e0-86fa-32ea68cc25f6 | STOPPED    | 1405645401 | 0    |
+ * | 9276574a-cc2f-458c-973b-aed9669fc80e | STOPPED    | 1405644974 | 0    |
+ * | 1c5868d6-04c7-443b-b4db-aab1c3368be3 | STOPPED    | 1405457462 | 0    |
+ * | 4003fa1d-15bd-4a09-ad2b-f2c52b4dda54 | STOPPED    | 1405456719 | 0    |
+ * | 531dff0a-0441-424b-ae5b-023cc7383344 | STOPPED    | 1405454043 | 0    |
+ * | d9cae8f9-3fd3-45f4-b4e9-102ef38cf4e1 | STOPPED    | 1405371545 | 0    |
+ * +-----------------------------------------------------------------------+
+ *
+ * @param <T> type of object that the rows represent
  */
 public class AsciiTable<T> {
 
@@ -34,12 +47,22 @@ public class AsciiTable<T> {
   private final List<T> rows;
   private final RowMaker<T> rowMaker;
 
+  /**
+   * @param header strings representing the header of the table
+   * @param rows list of objects that represent the rows
+   * @param rowMaker makes Object arrays from a row object
+   */
   public AsciiTable(@Nullable String[] header, List<T> rows, RowMaker<T> rowMaker) {
     this.header = header;
     this.rows = rows;
     this.rowMaker = rowMaker;
   }
 
+  /**
+   * Prints the ASCII table to the {@link PrintStream} output.
+   *
+   * @param output {@link PrintStream} to print to
+   */
   public void print(PrintStream output) {
     Object[][] contents = new Object[rows.size()][];
     for (int i = 0; i < rows.size(); i++) {

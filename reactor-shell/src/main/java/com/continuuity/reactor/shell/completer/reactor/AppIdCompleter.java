@@ -21,8 +21,6 @@ import com.continuuity.reactor.metadata.ApplicationRecord;
 import com.continuuity.reactor.shell.completer.StringsCompleter;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -33,8 +31,6 @@ import javax.inject.Inject;
  * Completer for application IDs.
  */
 public class AppIdCompleter extends StringsCompleter {
-
-  private static final Logger LOG = LoggerFactory.getLogger(AppIdCompleter.class);
 
   @Inject
   public AppIdCompleter(final ReactorAppClient reactorAppClient) {
@@ -49,7 +45,6 @@ public class AppIdCompleter extends StringsCompleter {
           }
           return appIds;
         } catch (IOException e) {
-//          LOG.error("Error retrieving list of apps for autocompletion", e);
           return Lists.newArrayList();
         }
       }

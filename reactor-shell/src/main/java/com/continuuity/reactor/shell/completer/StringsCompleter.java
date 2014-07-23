@@ -16,7 +16,6 @@
 
 package com.continuuity.reactor.shell.completer;
 
-import com.continuuity.reactor.shell.util.AsyncSupplier;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import jline.console.completer.Completer;
@@ -28,6 +27,8 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
+
 import static jline.internal.Preconditions.checkNotNull;
 
 /**
@@ -35,13 +36,11 @@ import static jline.internal.Preconditions.checkNotNull;
  */
 public class StringsCompleter implements Completer {
 
-  private static final Logger LOG = LoggerFactory.getLogger(StringsCompleter.class);
-
   private final Supplier<Collection<String>> strings;
 
   public StringsCompleter(Supplier<Collection<String>> strings) {
     checkNotNull(strings);
-    this.strings = Suppliers.memoizeWithExpiration(AsyncSupplier.of(strings), 3, TimeUnit.SECONDS);
+    this.strings = strings;
   }
 
   public StringsCompleter(Collection<String> strings) {
@@ -53,14 +52,8 @@ public class StringsCompleter implements Completer {
     return new TreeSet<String>(strings.get());
   }
 
-  public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
-    int result = doComplete(buffer, cursor, candidates);
-//    LOG.debug("complete(" + buffer + ", " + cursor + ", [" + Joiner.on(" ").join(candidates) + "]) = " + result);
-    return result;
-  }
-
-  public int doComplete(final String buffer, final int cursor, final List<CharSequence> candidates) {
-    // buffer could be null
+  @Override
+  public int complete(@Nullable final String buffer, final int cursor, final List<CharSequence> candidates) {
     checkNotNull(candidates);
 
     TreeSet<String> strings = getStrings();

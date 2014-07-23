@@ -23,8 +23,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -35,8 +33,6 @@ import javax.inject.Inject;
  * Completer for dataset types.
  */
 public class DatasetTypeNameCompleter extends StringsCompleter {
-
-  private static final Logger LOG = LoggerFactory.getLogger(DatasetTypeNameCompleter.class);
 
   @Inject
   public DatasetTypeNameCompleter(final ReactorDatasetTypeClient reactorDatasetTypeClient) {
@@ -54,7 +50,6 @@ public class DatasetTypeNameCompleter extends StringsCompleter {
             })
           );
         } catch (IOException e) {
-//          LOG.error("Error retrieving dataset type name list for autocompletion", e);
           return Lists.newArrayList();
         }
       }
