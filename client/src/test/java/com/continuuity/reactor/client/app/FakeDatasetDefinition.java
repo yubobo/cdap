@@ -16,12 +16,12 @@
 
 package com.continuuity.reactor.client.app;
 
+import com.continuuity.api.DatasetSpecification;
 import com.continuuity.api.dataset.DatasetAdmin;
 import com.continuuity.api.dataset.DatasetDefinition;
 import com.continuuity.api.dataset.DatasetProperties;
 import com.continuuity.api.dataset.lib.AbstractDatasetDefinition;
 import com.continuuity.api.dataset.lib.KeyValueTable;
-import com.continuuity.proto.DatasetSpecification;
 import com.google.common.base.Preconditions;
 
 import java.io.IOException;
