@@ -138,7 +138,7 @@ public class SingleNodeMain {
   /**
    * Start the service.
    */
-  protected void startUp(String[] args) throws Exception {
+  public void startUp() throws Exception {
     logAppenderInitializer.initialize();
 
     // Start all the services.
@@ -244,14 +244,7 @@ public class SingleNodeMain {
     }
   }
 
-  /**
-   * The root of all goodness!
-   *
-   * @param args Our cmdline arguments
-   */
   public static void main(String[] args) {
-    CConfiguration configuration = CConfiguration.create();
-
     // Single node use persistent data fabric by default
     boolean inMemory = false;
     String webAppPath = WebCloudAppService.WEB_APP;
@@ -269,6 +262,34 @@ public class SingleNodeMain {
       }
     }
 
+    SingleNodeMain main = null;
+
+    try {
+      main = createSingleNodeMain(inMemory, webAppPath);
+      main.startUp();
+    } catch (Throwable e) {
+      System.err.println("Failed to start server. " + e.getMessage());
+      LOG.error("Failed to start server", e);
+      if (main != null) {
+        main.shutDown();
+      }
+      System.exit(-2);
+    }
+  }
+
+
+  public static SingleNodeMain createSingleNodeMain(boolean inMemory) {
+    return createSingleNodeMain(inMemory, WebCloudAppService.WEB_APP);
+  }
+
+  /**
+   * The root of all goodness!
+   *
+   * @param inMemory
+   * @param webAppPath
+   */
+  public static SingleNodeMain createSingleNodeMain(boolean inMemory, String webAppPath) {
+    CConfiguration configuration = CConfiguration.create();
 
     // This is needed to use LocalJobRunner with fixes (we have it in app-fabric).
     // For the modified local job runner
@@ -296,20 +317,9 @@ public class SingleNodeMain {
 
     //Run dataset service on random port
     List<Module> modules = inMemory ? createInMemoryModules(configuration, hConf)
-                                    : createPersistentModules(configuration, hConf);
+      : createPersistentModules(configuration, hConf);
 
-    SingleNodeMain main = null;
-    try {
-      main = new SingleNodeMain(modules, configuration, webAppPath);
-      main.startUp(args);
-    } catch (Throwable e) {
-      System.err.println("Failed to start server. " + e.getMessage());
-      LOG.error("Failed to start server", e);
-      if (main != null) {
-        main.shutDown();
-      }
-      System.exit(-2);
-    }
+    return new SingleNodeMain(modules, configuration, webAppPath);
   }
 
   private static List<Module> createInMemoryModules(CConfiguration configuration, Configuration hConf) {
@@ -352,7 +362,7 @@ public class SingleNodeMain {
 
     String passportUri = configuration.get(Constants.Gateway.CFG_PASSPORT_SERVER_URI);
     final PassportClient client = passportUri == null || passportUri.isEmpty() ? new PassportClient()
-                                                                               : PassportClient.create(passportUri);
+      : PassportClient.create(passportUri);
 
     return ImmutableList.of(
       new AbstractModule() {
