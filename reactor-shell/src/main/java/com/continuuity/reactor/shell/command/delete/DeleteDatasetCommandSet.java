@@ -28,6 +28,6 @@ public class DeleteDatasetCommandSet extends CommandSet {
   @Inject
   public DeleteDatasetCommandSet(DeleteDatasetInstanceCommand deleteDatasetInstanceCommand,
                                  DeleteDatasetModuleCommand deleteDatasetModuleCommand) {
-    super("delete", deleteDatasetInstanceCommand, deleteDatasetModuleCommand);
+    super("dataset", deleteDatasetInstanceCommand, deleteDatasetModuleCommand);
   }
 }

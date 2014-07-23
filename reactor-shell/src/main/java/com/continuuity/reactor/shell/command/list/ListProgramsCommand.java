@@ -34,7 +34,7 @@ public class ListProgramsCommand extends AbstractCommand {
   private final ReactorAppClient appClient;
   private final ProgramType programType;
 
-  protected ListProgramsCommand(ProgramType programType, ReactorAppClient appClient) {
+  public ListProgramsCommand(ProgramType programType, ReactorAppClient appClient) {
     super(programType.getCategoryName(), null, "Lists " + programType.getCategoryName());
     this.programType = programType;
     this.appClient = appClient;

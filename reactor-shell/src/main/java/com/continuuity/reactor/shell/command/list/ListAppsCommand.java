@@ -23,6 +23,7 @@ import com.continuuity.reactor.shell.util.AsciiTable;
 import com.continuuity.reactor.shell.util.RowMaker;
 
 import java.io.PrintStream;
+import javax.inject.Inject;
 
 /**
  * Lists all applications.
@@ -31,7 +32,8 @@ public class ListAppsCommand extends AbstractCommand {
 
   private final ReactorAppClient appClient;
 
-  protected ListAppsCommand(ReactorAppClient appClient) {
+  @Inject
+  public ListAppsCommand(ReactorAppClient appClient) {
     super("apps", null, "Lists all applications");
     this.appClient = appClient;
   }

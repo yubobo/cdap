@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Lists dataset types.
@@ -35,8 +36,8 @@ public class ListDatasetTypesCommand extends AbstractCommand {
 
   private final ReactorDatasetTypeClient datasetTypeClient;
 
-  protected ListDatasetTypesCommand(ReactorDatasetTypeClient datasetTypeClient) {
-    // TODO: dataset types
+  @Inject
+  public ListDatasetTypesCommand(ReactorDatasetTypeClient datasetTypeClient) {
     super("types", null, "Lists dataset types");
     this.datasetTypeClient = datasetTypeClient;
   }

@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Inject;
 
 /**
  * Lists all programs.
@@ -35,7 +36,8 @@ public class ListAllProgramsCommand extends AbstractCommand {
 
   private final ReactorAppClient appClient;
 
-  protected ListAllProgramsCommand(ReactorAppClient appClient) {
+  @Inject
+  public ListAllProgramsCommand(ReactorAppClient appClient) {
     super("programs", null, "Lists all programs");
     this.appClient = appClient;
   }

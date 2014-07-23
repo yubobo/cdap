@@ -22,9 +22,7 @@ import com.continuuity.reactor.client.ReactorDatasetModuleClient;
 import com.continuuity.reactor.client.ReactorDatasetTypeClient;
 import com.continuuity.reactor.client.ReactorStreamClient;
 import com.continuuity.reactor.metadata.ProgramType;
-import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
 
@@ -34,21 +32,21 @@ import javax.inject.Inject;
 public class ListCommandSet extends CommandSet {
 
   @Inject
-  public ListCommandSet(ReactorAppClient appClient, ReactorDatasetClient datasetClient,
-                        ReactorStreamClient streamClient,
-                        ReactorDatasetModuleClient datasetModuleClient,
-                        ReactorDatasetTypeClient datasetTypeClient) {
-    super("list",
-      new ListAppsCommand(appClient),
-      new ListAllProgramsCommand(appClient),
+  public ListCommandSet(ReactorAppClient appClient,
+                        ListAppsCommand listAppsCommand,
+                        ListAllProgramsCommand listAllProgramsCommand,
+                        ListDatasetCommandSet listDatasetCommandSet,
+                        ListStreamsCommand listStreamsCommand) {
+    super(
+      "list",
+      listAppsCommand,
+      listAllProgramsCommand,
       new ListProgramsCommand(ProgramType.FLOW, appClient),
       new ListProgramsCommand(ProgramType.MAPREDUCE, appClient),
       new ListProgramsCommand(ProgramType.PROCEDURE, appClient),
       new ListProgramsCommand(ProgramType.WORKFLOW, appClient),
-      new ListDatasetsCommand(datasetClient),
-      new ListDatasetModulesCommand(datasetModuleClient),
-      new ListDatasetTypesCommand(datasetTypeClient),
-      new ListStreamsCommand(streamClient)
+      listDatasetCommandSet,
+      listStreamsCommand
     );
   }
 }

@@ -37,8 +37,8 @@ public class GetHistoryCommandSet extends CommandSet {
     super("history", generateCommands(programIdCompleterFactory, programClient));
   }
 
-  public static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
-                                               ReactorProgramClient programClient) {
+  private static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
+                                                ReactorProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.hasHistory()) {

@@ -14,20 +14,21 @@
  * the License.
  */
 
-package com.continuuity.reactor.shell.command.truncate;
+package com.continuuity.reactor.shell.command.list;
 
 import com.continuuity.reactor.shell.command.CommandSet;
 
 import javax.inject.Inject;
 
 /**
- * Contains commands for truncating stuff.
+ * Contains commands for listing stuff.
  */
-public class TruncateCommandSet extends CommandSet {
+public class ListDatasetCommandSet extends CommandSet {
 
   @Inject
-  public TruncateCommandSet(TruncateDatasetCommandSet truncateDatasetCommandSet,
-                            TruncateStreamCommand truncateStreamCommand) {
-    super("truncate", truncateDatasetCommandSet, truncateStreamCommand);
+  public ListDatasetCommandSet(ListDatasetInstancesCommand listDatasetInstancesCommand,
+                               ListDatasetModulesCommand listDatasetModulesCommand,
+                               ListDatasetTypesCommand listDatasetTypesCommand) {
+    super("dataset", listDatasetInstancesCommand, listDatasetModulesCommand, listDatasetTypesCommand);
   }
 }

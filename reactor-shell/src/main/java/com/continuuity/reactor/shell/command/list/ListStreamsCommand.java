@@ -23,6 +23,7 @@ import com.continuuity.reactor.shell.util.AsciiTable;
 import com.continuuity.reactor.shell.util.RowMaker;
 
 import java.io.PrintStream;
+import javax.inject.Inject;
 
 /**
  * Lists streams.
@@ -31,7 +32,8 @@ public class ListStreamsCommand extends AbstractCommand {
 
   private final ReactorStreamClient streamClient;
 
-  protected ListStreamsCommand(ReactorStreamClient streamClient) {
+  @Inject
+  public ListStreamsCommand(ReactorStreamClient streamClient) {
     super("streams", null, "Lists streams");
     this.streamClient = streamClient;
   }

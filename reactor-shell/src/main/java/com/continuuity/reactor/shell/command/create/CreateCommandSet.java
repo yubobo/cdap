@@ -26,7 +26,7 @@ import javax.inject.Inject;
 public class CreateCommandSet extends CommandSet {
 
   @Inject
-  public CreateCommandSet(CreateStreamCommand createStreamCommand, CreateDatasetCommand createDatasetCommand) {
-    super("create", createStreamCommand, createDatasetCommand);
+  public CreateCommandSet(CreateStreamCommand createStreamCommand, CreateDatasetCommandSet createDatasetCommandSet) {
+    super("create", createStreamCommand, createDatasetCommandSet);
   }
 }

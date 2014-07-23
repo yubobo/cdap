@@ -24,16 +24,18 @@ import com.continuuity.reactor.shell.util.RowMaker;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Lists datasets.
  */
-public class ListDatasetsCommand extends AbstractCommand {
+public class ListDatasetInstancesCommand extends AbstractCommand {
 
   private final ReactorDatasetClient datasetClient;
 
-  protected ListDatasetsCommand(ReactorDatasetClient datasetClient) {
-    super("datasets", null, "Lists all datasets");
+  @Inject
+  public ListDatasetInstancesCommand(ReactorDatasetClient datasetClient) {
+    super("instances", null, "Lists all datasets");
     this.datasetClient = datasetClient;
   }
 

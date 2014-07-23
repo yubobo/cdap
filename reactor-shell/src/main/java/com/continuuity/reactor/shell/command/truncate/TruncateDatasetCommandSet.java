@@ -21,13 +21,12 @@ import com.continuuity.reactor.shell.command.CommandSet;
 import javax.inject.Inject;
 
 /**
- * Contains commands for truncating stuff.
+ * Contains commands for truncating dataset stuff.
  */
-public class TruncateCommandSet extends CommandSet {
+public class TruncateDatasetCommandSet extends CommandSet {
 
   @Inject
-  public TruncateCommandSet(TruncateDatasetCommandSet truncateDatasetCommandSet,
-                            TruncateStreamCommand truncateStreamCommand) {
-    super("truncate", truncateDatasetCommandSet, truncateStreamCommand);
+  public TruncateDatasetCommandSet(TruncateDatasetInstanceCommand truncateDatasetInstanceCommand) {
+    super("dataset", truncateDatasetInstanceCommand, truncateDatasetInstanceCommand);
   }
 }

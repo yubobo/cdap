@@ -24,6 +24,7 @@ import com.continuuity.reactor.shell.util.RowMaker;
 
 import java.io.PrintStream;
 import java.util.List;
+import javax.inject.Inject;
 
 /**
  * Lists all dataset modules.
@@ -32,8 +33,8 @@ public class ListDatasetModulesCommand extends AbstractCommand {
 
   private final ReactorDatasetModuleClient client;
 
-  protected ListDatasetModulesCommand(ReactorDatasetModuleClient client) {
-    // TODO: dataset modules
+  @Inject
+  public ListDatasetModulesCommand(ReactorDatasetModuleClient client) {
     super("modules", null, "Lists dataset modules");
     this.client = client;
   }

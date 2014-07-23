@@ -14,12 +14,12 @@
  * the License.
  */
 
-package com.continuuity.reactor.shell.command.truncate;
+package com.continuuity.reactor.shell.command.create;
 
 import com.continuuity.reactor.client.ReactorDatasetClient;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
-import com.continuuity.reactor.shell.completer.reactor.DatasetNameCompleter;
+import com.continuuity.reactor.shell.completer.reactor.DatasetTypeNameCompleter;
 import com.google.common.collect.Lists;
 import jline.console.completer.Completer;
 
@@ -28,16 +28,16 @@ import java.util.List;
 import javax.inject.Inject;
 
 /**
- * Truncates a dataset.
+ * Creates a dataset.
  */
-public class TruncateDatasetCommand extends AbstractCommand implements Completable {
+public class CreateDatasetInstanceCommand extends AbstractCommand implements Completable {
 
   private final ReactorDatasetClient datasetClient;
-  private final DatasetNameCompleter completer;
+  private final Completer completer;
 
   @Inject
-  public TruncateDatasetCommand(DatasetNameCompleter completer, ReactorDatasetClient datasetClient) {
-    super("dataset", null, "Truncates a dataset");
+  public CreateDatasetInstanceCommand(DatasetTypeNameCompleter completer, ReactorDatasetClient datasetClient) {
+    super("instance", "<type-name> <new-dataset-name>", "Creates a dataset");
     this.completer = completer;
     this.datasetClient = datasetClient;
   }
@@ -46,8 +46,9 @@ public class TruncateDatasetCommand extends AbstractCommand implements Completab
   public void process(String[] args, PrintStream output) throws Exception {
     super.process(args, output);
 
-    String datasetName = args[0];
-    datasetClient.truncate(datasetName);
+    String datasetType = args[0];
+    String datasetName = args[1];
+    datasetClient.create(datasetName, datasetType);
   }
 
   @Override
