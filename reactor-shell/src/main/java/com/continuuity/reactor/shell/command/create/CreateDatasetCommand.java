@@ -17,9 +17,9 @@
 package com.continuuity.reactor.shell.command.create;
 
 import com.continuuity.reactor.client.ReactorDatasetClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
+import com.continuuity.reactor.shell.completer.reactor.DatasetTypeNameCompleter;
 import com.google.common.collect.Lists;
 import jline.console.completer.Completer;
 
@@ -32,11 +32,11 @@ import java.util.List;
 public class CreateDatasetCommand extends AbstractCommand implements Completable {
 
   private final ReactorDatasetClient datasetClient;
-  private final CompleterFactory completerFactory;
+  private final Completer completer;
 
-  protected CreateDatasetCommand(CompleterFactory completerFactory, ReactorDatasetClient datasetClient) {
+  protected CreateDatasetCommand(DatasetTypeNameCompleter completer, ReactorDatasetClient datasetClient) {
     super("dataset", "<type-name> <new-dataset-name>", "Creates a dataset");
-    this.completerFactory = completerFactory;
+    this.completer = completer;
     this.datasetClient = datasetClient;
   }
 
@@ -51,6 +51,6 @@ public class CreateDatasetCommand extends AbstractCommand implements Completable
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getDatasetTypeNameCompleter()));
+    return Lists.newArrayList(prefixCompleter(prefix, completer));
   }
 }

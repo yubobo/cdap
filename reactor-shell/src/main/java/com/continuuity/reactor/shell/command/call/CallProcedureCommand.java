@@ -17,16 +17,13 @@
 package com.continuuity.reactor.shell.command.call;
 
 import com.continuuity.reactor.client.ReactorProcedureClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
 import com.continuuity.reactor.shell.exception.CommandInputError;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 import jline.console.completer.Completer;
 
 import java.io.PrintStream;
@@ -39,14 +36,13 @@ import java.util.Map;
  */
 public class CallProcedureCommand extends AbstractCommand implements Completable {
 
-  private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-
   private final ReactorProcedureClient reactorProcedureClient;
-  private final CompleterFactory completerFactory;
+  private final ProgramIdCompleterFactory programIdCompleterFactory;
 
-  public CallProcedureCommand(CompleterFactory completerFactory, ReactorProcedureClient reactorProcedureClient) {
+  public CallProcedureCommand(ProgramIdCompleterFactory programIdCompleterFactory,
+                              ReactorProcedureClient reactorProcedureClient) {
     super("procedure", "<app-id>.<procedure-id> <method-id> <parameters-map>", "Calls a procedure");
-    this.completerFactory = completerFactory;
+    this.programIdCompleterFactory = programIdCompleterFactory;
     this.reactorProcedureClient = reactorProcedureClient;
   }
 
@@ -76,6 +72,6 @@ public class CallProcedureCommand extends AbstractCommand implements Completable
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
     return Lists.newArrayList(
-      prefixCompleter(prefix, completerFactory.getProgramIdCompleter(ProgramElementType.PROCEDURE)));
+      prefixCompleter(prefix, programIdCompleterFactory.getProgramIdCompleter(ProgramElementType.PROCEDURE)));
   }
 }

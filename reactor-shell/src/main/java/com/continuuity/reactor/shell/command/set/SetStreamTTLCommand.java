@@ -17,9 +17,9 @@
 package com.continuuity.reactor.shell.command.set;
 
 import com.continuuity.reactor.client.ReactorStreamClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
+import com.continuuity.reactor.shell.completer.reactor.StreamIdCompleter;
 import com.google.common.collect.Lists;
 import jline.console.completer.Completer;
 
@@ -32,11 +32,11 @@ import java.util.List;
 public class SetStreamTTLCommand extends AbstractCommand implements Completable {
 
   private final ReactorStreamClient streamClient;
-  private final CompleterFactory completerFactory;
+  private final StreamIdCompleter completer;
 
-  protected SetStreamTTLCommand(CompleterFactory completerFactory, ReactorStreamClient streamClient) {
+  protected SetStreamTTLCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
     super("stream ttl", "<stream-id> <ttl-in-seconds>", "Sets the Time-to-Live (TTL) of a stream");
-    this.completerFactory = completerFactory;
+    this.completer = completer;
     this.streamClient = streamClient;
   }
 
@@ -51,6 +51,6 @@ public class SetStreamTTLCommand extends AbstractCommand implements Completable 
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getStreamIdCompleter()));
+    return Lists.newArrayList(prefixCompleter(prefix, completer));
   }
 }

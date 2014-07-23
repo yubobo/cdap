@@ -19,9 +19,11 @@ package com.continuuity.reactor.shell.command.describe;
 import com.continuuity.reactor.client.ReactorAppClient;
 import com.continuuity.reactor.client.ReactorDatasetModuleClient;
 import com.continuuity.reactor.client.ReactorDatasetTypeClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
+import com.continuuity.reactor.shell.completer.reactor.AppIdCompleter;
+import com.continuuity.reactor.shell.completer.reactor.DatasetModuleNameCompleter;
+import com.continuuity.reactor.shell.completer.reactor.DatasetTypeNameCompleter;
 import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
@@ -32,14 +34,16 @@ import javax.inject.Inject;
 public class DescribeCommandSet extends CommandSet {
 
   @Inject
-  public DescribeCommandSet(CompleterFactory completerFactory,
+  public DescribeCommandSet(AppIdCompleter appIdCompleter,
+                            DatasetModuleNameCompleter datasetModuleNameCompleter,
+                            DatasetTypeNameCompleter datasetTypeNameCompleter,
                             ReactorAppClient appClient,
                             ReactorDatasetModuleClient datasetModuleClient,
                             ReactorDatasetTypeClient datasetTypeClient) {
     super("describe", Lists.<Command>newArrayList(
-      new DescribeAppCommand(completerFactory, appClient),
-      new DescribeDatasetModuleCommand(completerFactory, datasetModuleClient),
-      new DescribeDatasetTypeCommand(completerFactory, datasetTypeClient)
+      new DescribeAppCommand(appIdCompleter, appClient),
+      new DescribeDatasetModuleCommand(datasetModuleNameCompleter, datasetModuleClient),
+      new DescribeDatasetTypeCommand(datasetTypeNameCompleter, datasetTypeClient)
     ));
   }
 }

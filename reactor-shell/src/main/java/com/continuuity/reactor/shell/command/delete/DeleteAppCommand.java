@@ -17,9 +17,9 @@
 package com.continuuity.reactor.shell.command.delete;
 
 import com.continuuity.reactor.client.ReactorAppClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
+import com.continuuity.reactor.shell.completer.reactor.AppIdCompleter;
 import com.google.common.collect.Lists;
 import jline.console.completer.Completer;
 
@@ -32,11 +32,11 @@ import java.util.List;
 public class DeleteAppCommand extends AbstractCommand implements Completable {
 
   private final ReactorAppClient appClient;
-  private final CompleterFactory completerFactory;
+  private final AppIdCompleter completer;
 
-  protected DeleteAppCommand(CompleterFactory completerFactory, ReactorAppClient appClient) {
+  protected DeleteAppCommand(AppIdCompleter completer, ReactorAppClient appClient) {
     super("app", "<app-id>", "Deletes an application");
-    this.completerFactory = completerFactory;
+    this.completer = completer;
     this.appClient = appClient;
   }
 
@@ -50,6 +50,6 @@ public class DeleteAppCommand extends AbstractCommand implements Completable {
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getAppIdCompleter()));
+    return Lists.newArrayList(prefixCompleter(prefix, completer));
   }
 }

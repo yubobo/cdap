@@ -17,9 +17,9 @@
 package com.continuuity.reactor.shell.command.send;
 
 import com.continuuity.reactor.client.ReactorStreamClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
+import com.continuuity.reactor.shell.completer.reactor.StreamIdCompleter;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import jline.console.completer.Completer;
@@ -34,11 +34,11 @@ import java.util.List;
 public class SendStreamEventCommand extends AbstractCommand implements Completable {
 
   private final ReactorStreamClient streamClient;
-  private final CompleterFactory completerFactory;
+  private final StreamIdCompleter completer;
 
-  protected SendStreamEventCommand(CompleterFactory completerFactory, ReactorStreamClient streamClient) {
+  protected SendStreamEventCommand(StreamIdCompleter completer, ReactorStreamClient streamClient) {
     super("stream", "<stream-id> <stream-event>", "Sends an event to a stream");
-    this.completerFactory = completerFactory;
+    this.completer = completer;
     this.streamClient = streamClient;
   }
 
@@ -53,6 +53,6 @@ public class SendStreamEventCommand extends AbstractCommand implements Completab
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getStreamIdCompleter()));
+    return Lists.newArrayList(prefixCompleter(prefix, completer));
   }
 }

@@ -17,11 +17,10 @@
 package com.continuuity.reactor.shell.command.start;
 
 import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.continuuity.reactor.shell.command.get.GetProgramStatusCommand;
 import com.google.common.collect.Lists;
 
 import java.util.List;
@@ -33,15 +32,17 @@ import javax.inject.Inject;
 public class StartProgramCommandSet extends CommandSet {
 
   @Inject
-  public StartProgramCommandSet(CompleterFactory completerFactory, ReactorProgramClient programClient) {
-    super("start", generateCommands(completerFactory, programClient));
+  public StartProgramCommandSet(ProgramIdCompleterFactory programIdCompleterFactory,
+                                ReactorProgramClient programClient) {
+    super("start", generateCommands(programIdCompleterFactory, programClient));
   }
 
-  public static List<Command> generateCommands(CompleterFactory completerFactory, ReactorProgramClient programClient) {
+  public static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
+                                               ReactorProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.canStartStop()) {
-        commands.add(new StartProgramCommand(programElementType, completerFactory, programClient));
+        commands.add(new StartProgramCommand(programElementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;

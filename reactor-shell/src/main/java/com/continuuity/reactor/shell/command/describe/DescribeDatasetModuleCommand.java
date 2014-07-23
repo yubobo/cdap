@@ -18,7 +18,6 @@ package com.continuuity.reactor.shell.command.describe;
 
 import com.continuuity.reactor.client.ReactorDatasetModuleClient;
 import com.continuuity.reactor.metadata.DatasetModuleMeta;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
 import com.continuuity.reactor.shell.completer.reactor.DatasetModuleNameCompleter;
@@ -37,13 +36,13 @@ import java.util.List;
 public class DescribeDatasetModuleCommand extends AbstractCommand implements Completable {
 
   private final ReactorDatasetModuleClient datasetModuleClient;
-  private final CompleterFactory completerFactory;
+  private final DatasetModuleNameCompleter completer;
 
-  public DescribeDatasetModuleCommand(CompleterFactory completerFactory,
+  public DescribeDatasetModuleCommand(DatasetModuleNameCompleter completer,
                                       ReactorDatasetModuleClient datasetModuleClient) {
     // TODO: dataset module
     super("module", "<module-name>", "Shows information about a dataset module");
-    this.completerFactory = completerFactory;
+    this.completer = completer;
     this.datasetModuleClient = datasetModuleClient;
   }
 
@@ -71,6 +70,6 @@ public class DescribeDatasetModuleCommand extends AbstractCommand implements Com
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getDatasetModuleNameCompleter()));
+    return Lists.newArrayList(prefixCompleter(prefix, completer));
   }
 }

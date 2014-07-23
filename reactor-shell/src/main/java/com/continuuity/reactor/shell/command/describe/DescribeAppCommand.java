@@ -19,7 +19,6 @@ package com.continuuity.reactor.shell.command.describe;
 import com.continuuity.reactor.client.ReactorAppClient;
 import com.continuuity.reactor.metadata.ProgramRecord;
 import com.continuuity.reactor.metadata.ProgramType;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
 import com.continuuity.reactor.shell.completer.reactor.AppIdCompleter;
@@ -38,11 +37,11 @@ import java.util.Map;
 public class DescribeAppCommand extends AbstractCommand implements Completable {
 
   private final ReactorAppClient reactorAppClient;
-  private final CompleterFactory completerFactory;
+  private final AppIdCompleter completer;
 
-  public DescribeAppCommand(CompleterFactory completerFactory, ReactorAppClient reactorAppClient) {
+  public DescribeAppCommand(AppIdCompleter completer, ReactorAppClient reactorAppClient) {
     super("app", "<app-id>", "Shows detailed information about an application");
-    this.completerFactory = completerFactory;
+    this.completer = completer;
     this.reactorAppClient = reactorAppClient;
   }
 
@@ -72,6 +71,6 @@ public class DescribeAppCommand extends AbstractCommand implements Completable {
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getAppIdCompleter()));
+    return Lists.newArrayList(prefixCompleter(prefix, completer));
   }
 }

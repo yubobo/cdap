@@ -41,7 +41,6 @@ public class ProgramIdCompleter extends StringsCompleter {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProgramIdCompleter.class);
 
-  @Inject
   public ProgramIdCompleter(final ReactorAppClient appClient, final ProgramType programType) {
     super(new Supplier<Collection<String>>() {
       @Override

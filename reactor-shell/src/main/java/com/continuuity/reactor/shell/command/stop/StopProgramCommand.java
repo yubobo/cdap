@@ -17,17 +17,15 @@
 package com.continuuity.reactor.shell.command.stop;
 
 import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import jline.console.completer.Completer;
 
 import java.io.PrintStream;
 import java.util.List;
-import javax.inject.Inject;
 
 /**
  * Stops a program.
@@ -35,10 +33,10 @@ import javax.inject.Inject;
 public class StopProgramCommand extends AbstractCommand implements Completable {
 
   private final ReactorProgramClient programClient;
-  private final CompleterFactory completerFactory;
+  private final ProgramIdCompleterFactory completerFactory;
   private final ProgramElementType programElementType;
 
-  public StopProgramCommand(ProgramElementType programElementType, CompleterFactory completerFactory,
+  public StopProgramCommand(ProgramElementType programElementType, ProgramIdCompleterFactory completerFactory,
                             ReactorProgramClient programClient) {
     super(programElementType.getName(), "<program-id>", "Stops a " + programElementType.getName());
     this.programElementType = programElementType;

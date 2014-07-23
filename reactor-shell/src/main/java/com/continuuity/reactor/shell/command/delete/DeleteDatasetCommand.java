@@ -17,9 +17,9 @@
 package com.continuuity.reactor.shell.command.delete;
 
 import com.continuuity.reactor.client.ReactorDatasetClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
+import com.continuuity.reactor.shell.completer.reactor.DatasetNameCompleter;
 import com.google.common.collect.Lists;
 import jline.console.completer.Completer;
 
@@ -32,11 +32,11 @@ import java.util.List;
 public class DeleteDatasetCommand extends AbstractCommand implements Completable {
 
   private final ReactorDatasetClient datasetClient;
-  private final CompleterFactory completerFactory;
+  private final DatasetNameCompleter completer;
 
-  protected DeleteDatasetCommand(CompleterFactory completerFactory, ReactorDatasetClient datasetClient) {
+  protected DeleteDatasetCommand(DatasetNameCompleter completer, ReactorDatasetClient datasetClient) {
     super("dataset", "<dataset-name>", "Deletes a dataset");
-    this.completerFactory = completerFactory;
+    this.completer = completer;
     this.datasetClient = datasetClient;
   }
 
@@ -50,6 +50,6 @@ public class DeleteDatasetCommand extends AbstractCommand implements Completable
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getDatasetNameCompleter()));
+    return Lists.newArrayList(prefixCompleter(prefix, completer));
   }
 }

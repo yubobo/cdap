@@ -17,8 +17,8 @@
 package com.continuuity.reactor.shell.command.get;
 
 import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
 import com.google.common.collect.Lists;
@@ -32,15 +32,16 @@ import javax.inject.Inject;
 public class GetStatusCommandSet extends CommandSet {
 
   @Inject
-  public GetStatusCommandSet(CompleterFactory completerFactory, ReactorProgramClient programClient) {
-    super("status", generateCommands(completerFactory, programClient));
+  public GetStatusCommandSet(ProgramIdCompleterFactory programIdCompleterFactory, ReactorProgramClient programClient) {
+    super("status", generateCommands(programIdCompleterFactory, programClient));
   }
 
-  public static List<Command> generateCommands(CompleterFactory completerFactory, ReactorProgramClient programClient) {
+  public static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
+                                               ReactorProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.hasStatus()) {
-        commands.add(new GetProgramStatusCommand(programElementType, completerFactory, programClient));
+        commands.add(new GetProgramStatusCommand(programElementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;

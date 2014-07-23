@@ -17,7 +17,7 @@
 package com.continuuity.reactor.shell.command.call;
 
 import com.continuuity.reactor.client.ReactorProcedureClient;
-import com.continuuity.reactor.shell.CompleterFactory;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
 import com.google.common.collect.Lists;
@@ -30,9 +30,9 @@ import javax.inject.Inject;
 public class CallCommandSet extends CommandSet {
 
   @Inject
-  public CallCommandSet(CompleterFactory completerFactory, ReactorProcedureClient procedureClient) {
+  public CallCommandSet(ProgramIdCompleterFactory programIdCompleterFactory, ReactorProcedureClient procedureClient) {
     super("call", Lists.<Command>newArrayList(
-      new CallProcedureCommand(completerFactory, procedureClient)
+      new CallProcedureCommand(programIdCompleterFactory, procedureClient)
     ));
   }
 }

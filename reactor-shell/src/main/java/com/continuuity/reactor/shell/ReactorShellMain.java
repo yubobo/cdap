@@ -17,7 +17,6 @@
 package com.continuuity.reactor.shell;
 
 import com.continuuity.reactor.client.config.ReactorClientConfig;
-import com.continuuity.reactor.client.util.RestClient;
 import com.continuuity.reactor.shell.command.CommandSet;
 import com.continuuity.reactor.shell.command.ExitCommand;
 import com.continuuity.reactor.shell.command.HelpCommand;
@@ -52,33 +51,28 @@ import java.net.URISyntaxException;
 /**
  * Main class for Reactor shell.
  */
-// TODO: change program-related to "start/stop/status/history <element-type>.<app-id>.<element-id>"
-// TODO: describe flowlet <element-type>.<app-id>.<element-id> (gets the # of instances + other info)
-// TODO: show flowlet instances <..>
 public class ReactorShellMain {
 
-  private final PrintStream output;
   private final CommandSet commands;
   private final String reactorHost;
-  private final RestClient restClient;
 
   private final HelpCommand helpCommand;
-  private final ExitCommand exitCommand;
 
   private final ReactorClientConfig reactorConfig;
 
-  public ReactorShellMain(String reactorHost, PrintStream output) throws URISyntaxException {
+  /**
+   * @param reactorHost Hostname of the Reactor instance to interact with (e.g. "example.com")
+   * @throws URISyntaxException
+   */
+  public ReactorShellMain(String reactorHost) throws URISyntaxException {
     this.reactorHost = Objects.firstNonNull(reactorHost, "localhost");
     this.reactorConfig = new ReactorClientConfig(reactorHost);
-    this.restClient = RestClient.create(reactorConfig);
-    this.output = output;
     this.helpCommand = new HelpCommand(new Supplier<CommandSet>() {
       @Override
       public CommandSet get() {
         return getCommands();
       }
     });
-    this.exitCommand = new ExitCommand();
 
     Injector injector = Guice.createInjector(
       new AbstractModule() {
@@ -91,7 +85,7 @@ public class ReactorShellMain {
 
     this.commands = CommandSet.builder(null)
       .addCommand(helpCommand)
-      .addCommand(exitCommand)
+      .addCommand(injector.getInstance(ExitCommand.class))
       .addCommand(injector.getInstance(CallCommandSet.class))
       .addCommand(injector.getInstance(CreateCommandSet.class))
       .addCommand(injector.getInstance(DeleteCommandSet.class))
@@ -108,56 +102,61 @@ public class ReactorShellMain {
       .build();
   }
 
-  public void parse(String[] args) throws Exception {
-    if (args.length == 0) {
-      // reactor shell mode
-      final ConsoleReader reader = new ConsoleReader();
-      reader.setPrompt("reactor (" + reactorHost + ")> ");
-      reader.setHandleUserInterrupt(true);
+  /**
+   * Starts shell mode, which provides a shell to enter multiple commands and use autocompletion.
+   *
+   * @param output {@link PrintStream} to write to
+   * @throws Exception
+   */
+  public void startShellMode(PrintStream output) throws Exception {
+    final ConsoleReader reader = new ConsoleReader();
+    reader.setPrompt("reactor (" + reactorHost + ")> ");
+    reader.setHandleUserInterrupt(true);
 
-      for (Completer completer : commands.getCompleters(null)) {
-        reader.addCompleter(completer);
+    for (Completer completer : commands.getCompleters(null)) {
+      reader.addCompleter(completer);
+    }
+
+    while (true) {
+      String line;
+
+      try {
+        line = reader.readLine();
+      } catch (UserInterruptException e) {
+        continue;
       }
 
-      while (true) {
-        String line;
+      if (line == null) {
+        output.println();
+        break;
+      }
 
+      if (line.length() > 0) {
+        String[] commandArgs = Iterables.toArray(Splitter.on(" ").split(line.trim()), String.class);
         try {
-          line = reader.readLine();
-        } catch (UserInterruptException e) {
-          continue;
+          processArgs(commandArgs, output);
+        } catch (InvalidCommandException e) {
+          output.println(e.getMessage() + "\n");
+          helpCommand.process(null, output);
+        } catch (Exception e) {
+          e.printStackTrace();
         }
-
-        if (line == null) {
-          output.println();
-          break;
-        }
-
-        if (line.length() > 0) {
-          String[] commandArgs = Iterables.toArray(Splitter.on(" ").split(line.trim()), String.class);
-          try {
-            parseArgs(commandArgs);
-          } catch (InvalidCommandException e) {
-            output.println(e.getMessage() + "\n");
-            helpCommand.process(null, output);
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-          output.println();
-        }
+        output.println();
       }
-    } else {
-      // other mode
-      parseArgs(args);
     }
   }
 
-  public CommandSet getCommands() {
-    return commands;
+  /**
+   * Processes a command and writes to the provided output
+   * @param args the tokens of the command string (e.g. ["start", "flow", "SomeApp.SomeFlow"])
+   * @throws Exception
+   */
+  public void processArgs(String[] args, PrintStream output) throws Exception {
+    commands.process(args, output);
   }
 
-  private void parseArgs(String[] args) throws Exception {
-    commands.process(args, output);
+  private CommandSet getCommands() {
+    return commands;
   }
 
   public static void main(String[] args) throws Exception {
@@ -165,6 +164,13 @@ public class ReactorShellMain {
     if (reactorHost == null) {
       reactorHost = "localhost";
     }
-    new ReactorShellMain(reactorHost, System.out).parse(args);
+
+    ReactorShellMain shell = new ReactorShellMain(reactorHost);
+
+    if (args.length == 0) {
+      shell.startShellMode(System.out);
+    } else {
+      shell.processArgs(args, System.out);
+    }
   }
 }

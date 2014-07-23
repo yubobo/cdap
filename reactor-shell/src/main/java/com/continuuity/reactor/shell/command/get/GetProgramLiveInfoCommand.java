@@ -18,13 +18,12 @@ package com.continuuity.reactor.shell.command.get;
 
 import com.continuuity.reactor.client.ReactorProgramClient;
 import com.continuuity.reactor.metadata.ProgramLiveInfo;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
 import com.continuuity.reactor.shell.util.AsciiTable;
 import com.continuuity.reactor.shell.util.RowMaker;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import jline.console.completer.Completer;
 
@@ -37,10 +36,11 @@ import java.util.List;
 public class GetProgramLiveInfoCommand extends AbstractCommand implements Completable {
 
   private final ReactorProgramClient programClient;
-  private final CompleterFactory completerFactory;
+  private final ProgramIdCompleterFactory completerFactory;
   private final ProgramElementType programElementType;
 
-  protected GetProgramLiveInfoCommand(ProgramElementType programElementType, CompleterFactory completerFactory,
+  protected GetProgramLiveInfoCommand(ProgramElementType programElementType,
+                                      ProgramIdCompleterFactory completerFactory,
                                       ReactorProgramClient programClient) {
     super(programElementType.getName(), "<app-id>.<program-id>",
           "Gets the live info of a " + programElementType.getName());

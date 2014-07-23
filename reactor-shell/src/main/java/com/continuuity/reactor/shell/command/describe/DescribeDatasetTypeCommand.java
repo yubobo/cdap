@@ -18,7 +18,6 @@ package com.continuuity.reactor.shell.command.describe;
 
 import com.continuuity.reactor.client.ReactorDatasetTypeClient;
 import com.continuuity.reactor.metadata.DatasetTypeMeta;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.AbstractCommand;
 import com.continuuity.reactor.shell.completer.Completable;
 import com.continuuity.reactor.shell.completer.reactor.DatasetTypeNameCompleter;
@@ -37,12 +36,12 @@ import java.util.List;
 public class DescribeDatasetTypeCommand extends AbstractCommand implements Completable {
 
   private final ReactorDatasetTypeClient datasetTypeClient;
-  private final CompleterFactory completerFactory;
+  private final DatasetTypeNameCompleter completer;
 
-  public DescribeDatasetTypeCommand(CompleterFactory completerFactory, ReactorDatasetTypeClient datasetTypeClient) {
+  public DescribeDatasetTypeCommand(DatasetTypeNameCompleter completer, ReactorDatasetTypeClient datasetTypeClient) {
     // TODO: dataset type
     super("type", "<type-name>", "Shows information about a dataset type");
-    this.completerFactory = completerFactory;
+    this.completer = completer;
     this.datasetTypeClient = datasetTypeClient;
   }
 
@@ -65,6 +64,6 @@ public class DescribeDatasetTypeCommand extends AbstractCommand implements Compl
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getDatasetTypeNameCompleter()));
+    return Lists.newArrayList(prefixCompleter(prefix, completer));
   }
 }

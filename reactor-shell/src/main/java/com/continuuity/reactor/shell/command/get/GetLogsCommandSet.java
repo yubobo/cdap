@@ -17,8 +17,8 @@
 package com.continuuity.reactor.shell.command.get;
 
 import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
 import com.google.common.collect.Lists;
@@ -32,15 +32,16 @@ import javax.inject.Inject;
 public class GetLogsCommandSet extends CommandSet {
 
   @Inject
-  public GetLogsCommandSet(CompleterFactory completerFactory, ReactorProgramClient programClient) {
-    super("logs", generateCommands(completerFactory, programClient));
+  public GetLogsCommandSet(ProgramIdCompleterFactory programIdCompleterFactory, ReactorProgramClient programClient) {
+    super("logs", generateCommands(programIdCompleterFactory, programClient));
   }
 
-  public static List<Command> generateCommands(CompleterFactory completerFactory, ReactorProgramClient programClient) {
+  public static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
+                                               ReactorProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.hasLogs()) {
-        commands.add(new GetProgramLogsCommand(programElementType, completerFactory, programClient));
+        commands.add(new GetProgramLogsCommand(programElementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;

@@ -18,9 +18,9 @@ package com.continuuity.reactor.shell.command.create;
 
 import com.continuuity.reactor.client.ReactorDatasetClient;
 import com.continuuity.reactor.client.ReactorStreamClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
+import com.continuuity.reactor.shell.completer.reactor.DatasetTypeNameCompleter;
 import com.google.common.collect.Lists;
 
 import javax.inject.Inject;
@@ -31,11 +31,11 @@ import javax.inject.Inject;
 public class CreateCommandSet extends CommandSet {
 
   @Inject
-  public CreateCommandSet(CompleterFactory completerFactory,
+  public CreateCommandSet(DatasetTypeNameCompleter datasetTypeNameCompleter,
                           ReactorStreamClient streamClient, ReactorDatasetClient datasetClient) {
     super("create", Lists.<Command>newArrayList(
       new CreateStreamCommand(streamClient),
-      new CreateDatasetCommand(completerFactory, datasetClient)
+      new CreateDatasetCommand(datasetTypeNameCompleter, datasetClient)
     ));
   }
 }

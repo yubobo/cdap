@@ -17,8 +17,8 @@
 package com.continuuity.reactor.shell.command.get;
 
 import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
 import com.google.common.collect.Lists;
@@ -32,15 +32,17 @@ import javax.inject.Inject;
 public class GetHistoryCommandSet extends CommandSet {
 
   @Inject
-  public GetHistoryCommandSet(CompleterFactory completerFactory, ReactorProgramClient programClient) {
-    super("history", generateCommands(completerFactory, programClient));
+  public GetHistoryCommandSet(ProgramIdCompleterFactory programIdCompleterFactory,
+                              ReactorProgramClient programClient) {
+    super("history", generateCommands(programIdCompleterFactory, programClient));
   }
 
-  public static List<Command> generateCommands(CompleterFactory completerFactory, ReactorProgramClient programClient) {
+  public static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
+                                               ReactorProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.hasHistory()) {
-        commands.add(new GetProgramHistoryCommand(programElementType, completerFactory, programClient));
+        commands.add(new GetProgramHistoryCommand(programElementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;

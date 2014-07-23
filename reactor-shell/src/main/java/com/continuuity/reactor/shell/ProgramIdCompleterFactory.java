@@ -31,30 +31,14 @@ import java.util.Map;
 import javax.inject.Inject;
 
 /**
- * Provides {@link Completer} implementations.
+ * Provides {@link ProgramIdCompleter} implementations.
  */
-public class CompleterFactory {
+public class ProgramIdCompleterFactory {
 
-  private final AppIdCompleter appIdCompleter;
-  private final ProgramTypeCompleter programTypeCompleter;
-  private final StreamIdCompleter streamIdCompleter;
-  private final DatasetNameCompleter datasetNameCompleter;
-  private final DatasetTypeNameCompleter datasetTypeNameCompleter;
-  private final DatasetModuleNameCompleter datasetModuleNameCompleter;
   private final Map<ProgramElementType, ProgramIdCompleter> programIdCompleters;
 
   @Inject
-  public CompleterFactory(AppIdCompleter appIdCompleter, ProgramTypeCompleter programTypeCompleter,
-                          StreamIdCompleter streamIdCompleter, DatasetNameCompleter datasetNameCompleter,
-                          DatasetTypeNameCompleter datasetTypeNameCompleter,
-                          DatasetModuleNameCompleter datasetModuleNameCompleter,
-                          ReactorAppClient appClient) {
-    this.appIdCompleter = appIdCompleter;
-    this.programTypeCompleter = programTypeCompleter;
-    this.streamIdCompleter = streamIdCompleter;
-    this.datasetNameCompleter = datasetNameCompleter;
-    this.datasetTypeNameCompleter = datasetTypeNameCompleter;
-    this.datasetModuleNameCompleter = datasetModuleNameCompleter;
+  public ProgramIdCompleterFactory(ReactorAppClient appClient) {
     this.programIdCompleters = ImmutableMap.<ProgramElementType, ProgramIdCompleter>builder()
       .put(ProgramElementType.FLOW,
            new ProgramIdCompleter(appClient, ProgramElementType.FLOW.getProgramType()))
@@ -65,30 +49,6 @@ public class CompleterFactory {
       .put(ProgramElementType.WORKFLOW,
            new ProgramIdCompleter(appClient, ProgramElementType.WORKFLOW.getProgramType()))
       .build();
-  }
-
-  public Completer getAppIdCompleter() {
-    return appIdCompleter;
-  }
-
-  public Completer getProgramTypeCompleter() {
-    return programTypeCompleter;
-  }
-
-  public Completer getStreamIdCompleter() {
-    return streamIdCompleter;
-  }
-
-  public Completer getDatasetNameCompleter() {
-    return datasetNameCompleter;
-  }
-
-  public Completer getDatasetTypeNameCompleter() {
-    return datasetTypeNameCompleter;
-  }
-
-  public Completer getDatasetModuleNameCompleter() {
-    return datasetModuleNameCompleter;
   }
 
   public Completer getProgramIdCompleter(ProgramElementType programElementType) {

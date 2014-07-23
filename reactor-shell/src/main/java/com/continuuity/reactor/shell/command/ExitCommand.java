@@ -16,6 +16,8 @@
 
 package com.continuuity.reactor.shell.command;
 
+import com.google.inject.Inject;
+
 import java.io.PrintStream;
 
 /**
@@ -23,6 +25,7 @@ import java.io.PrintStream;
  */
 public class ExitCommand extends AbstractCommand {
 
+  @Inject
   public ExitCommand() {
     super("exit", null, "Exits the shell");
   }

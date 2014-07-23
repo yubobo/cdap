@@ -17,11 +17,10 @@
 package com.continuuity.reactor.shell.command.stop;
 
 import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.continuuity.reactor.shell.command.start.StartProgramCommand;
 import com.google.common.collect.Lists;
 
 import java.util.List;
@@ -33,15 +32,17 @@ import javax.inject.Inject;
 public class StopProgramCommandSet extends CommandSet {
 
   @Inject
-  public StopProgramCommandSet(CompleterFactory completerFactory, ReactorProgramClient programClient) {
-    super("stop", generateCommands(completerFactory, programClient));
+  public StopProgramCommandSet(ProgramIdCompleterFactory programIdCompleterFactory,
+                               ReactorProgramClient programClient) {
+    super("stop", generateCommands(programIdCompleterFactory, programClient));
   }
 
-  public static List<Command> generateCommands(CompleterFactory completerFactory, ReactorProgramClient programClient) {
+  public static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
+                                               ReactorProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.canStartStop()) {
-        commands.add(new StopProgramCommand(programElementType, completerFactory, programClient));
+        commands.add(new StopProgramCommand(programElementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;

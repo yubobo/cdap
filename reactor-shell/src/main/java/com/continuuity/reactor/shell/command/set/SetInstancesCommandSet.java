@@ -17,11 +17,10 @@
 package com.continuuity.reactor.shell.command.set;
 
 import com.continuuity.reactor.client.ReactorProgramClient;
-import com.continuuity.reactor.shell.CompleterFactory;
 import com.continuuity.reactor.shell.ProgramElementType;
+import com.continuuity.reactor.shell.ProgramIdCompleterFactory;
 import com.continuuity.reactor.shell.command.Command;
 import com.continuuity.reactor.shell.command.CommandSet;
-import com.continuuity.reactor.shell.command.start.StartProgramCommand;
 import com.google.common.collect.Lists;
 
 import java.util.List;
@@ -33,15 +32,17 @@ import javax.inject.Inject;
 public class SetInstancesCommandSet extends CommandSet {
 
   @Inject
-  public SetInstancesCommandSet(CompleterFactory completerFactory, ReactorProgramClient programClient) {
-    super("instances", generateCommands(completerFactory, programClient));
+  public SetInstancesCommandSet(ProgramIdCompleterFactory programIdCompleterFactory,
+                                ReactorProgramClient programClient) {
+    super("instances", generateCommands(programIdCompleterFactory, programClient));
   }
 
-  public static List<Command> generateCommands(CompleterFactory completerFactory, ReactorProgramClient programClient) {
+  public static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
+                                               ReactorProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
     for (ProgramElementType programElementType : ProgramElementType.values()) {
       if (programElementType.canScale()) {
-        commands.add(new SetInstancesCommand(programElementType, completerFactory, programClient));
+        commands.add(new SetInstancesCommand(programElementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;
