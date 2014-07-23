@@ -16,20 +16,34 @@
 
 package com.continuuity.jetstream.manager;
 
+import com.google.common.collect.Lists;
+import com.google.common.io.Closeables;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.commons.io.Charsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.InputStreamReader;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * ProcessInitiator is responsible for initiating all processes required by Streaming Engine
  */
 
 public class ProcessInitiator {
+  private static final Logger LOG = LoggerFactory.getLogger(ProcessInitiator.class);
   private final HubDataStore hubDataStore;
-  private final Runtime rt;
   private final List<Process> rtsProcessList;
   private final List<Process> hftaProcessList;
   private final List<Process> gsExitProcessList;
+  private final List<ExecutorService> rtsExecutor;
+  private final List<ExecutorService> hftaExecutor;
+  private final List<ExecutorService> gsExitExecutor;
+
 
   /**
    * Constructs ProcessInitiator object for the specified HubDataStore
@@ -37,10 +51,12 @@ public class ProcessInitiator {
    */
   public ProcessInitiator(HubDataStore ds) {
     this.hubDataStore = ds;
-    this.rt = Runtime.getRuntime();
-    this.rtsProcessList = new ArrayList<Process>();
-    this.hftaProcessList = new ArrayList<Process>();
-    this.gsExitProcessList = new ArrayList<Process>();
+    this.rtsProcessList = Lists.newArrayList();
+    this.hftaProcessList = Lists.newArrayList();
+    this.gsExitProcessList = Lists.newArrayList();
+    this.rtsExecutor = Lists.newArrayList();
+    this.hftaExecutor = Lists.newArrayList();
+    this.gsExitExecutor = Lists.newArrayList();
   }
 
   /**
@@ -48,17 +64,17 @@ public class ProcessInitiator {
    */
   public void init() {
     try {
-      this.startRTS();
+      startRTS();
     } catch (Exception e) {
       throw new IllegalArgumentException("Cannot initiate RTS. Missing or bad arguments");
     }
     try {
-      this.startHFTA();
+      startHFTA();
     } catch (Exception e) {
       throw new IllegalArgumentException("Cannot initiate HFTA processes. Missing or bad arguments");
     }
     try {
-      this.startGSEXIT();
+      startGSEXIT();
     } catch (Exception e) {
       throw new IllegalArgumentException("Cannot initiate GSEXIT processes. Missing or bad arguments");
     }
@@ -69,16 +85,22 @@ public class ProcessInitiator {
    * @throws IOException
    */
   public void startRTS() throws IOException {
-    List<HubDataSource> dataSources = this.hubDataStore.getHubDataSources();
-    String[] arguments = new String[dataSources.size() + 2];
-    arguments[0] = this.hubDataStore.getHubAddress().toString();
-    arguments[1] = this.hubDataStore.getInstanceName();
+    List<HubDataSource> dataSources = hubDataStore.getHubDataSources();
+    List<String> com = Lists.newArrayList();
+    com.add("rts");
+    com.add(hubDataStore.getHubAddress().toString());
+    com.add(hubDataStore.getInstanceName());
     for (int i = 0; i < dataSources.size(); i++) {
-      arguments[i + 2] = dataSources.get(i).getName();
+      com.add(dataSources.get(i).getName());
     }
-    Process p;
-    p = this.rt.exec("rts", arguments);
+    ProcessBuilder builder = new ProcessBuilder(com);
+    builder.redirectErrorStream(true);
+    Process p = builder.start();
     rtsProcessList.add(p);
+    ExecutorService executorService = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
+      .setDaemon(true).setNameFormat("process-rts-%d").build());
+    rtsExecutor.add(executorService);
+    executorService.execute(createLogRunnable(p, "rts"));
   }
 
   /**
@@ -87,10 +109,19 @@ public class ProcessInitiator {
    */
   public void startHFTA() throws IOException {
     int hftaCount = this.hubDataStore.getHFTACount();
-    String[] arguments = {this.hubDataStore.getHubAddress().toString(), this.hubDataStore.getInstanceName()};
     for (int i = 0; i < hftaCount; i++) {
-      Process p = this.rt.exec("hfta_" + i, arguments);
-      this.hftaProcessList.add(p);
+      List<String> com = Lists.newArrayList();
+      com.add("hfta_" + i);
+      com.add(hubDataStore.getHubAddress().toString());
+      com.add(hubDataStore.getInstanceName());
+      ProcessBuilder builder = new ProcessBuilder(com);
+      builder.redirectErrorStream(true);
+      Process p = builder.start();
+      hftaProcessList.add(p);
+      ExecutorService executorService = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
+        .setDaemon(true).setNameFormat("process-rts-%d").build());
+      hftaExecutor.add(executorService);
+      executorService.execute(createLogRunnable(p, "hfta_" + i));
     }
   }
 
@@ -100,14 +131,59 @@ public class ProcessInitiator {
    */
   public void startGSEXIT() throws IOException {
     List<HubDataSink> dataSinks = this.hubDataStore.getHubDataSinks();
-    String[] arguments = new String[4];
-    arguments[0] = this.hubDataStore.getHubAddress().toString();
-    arguments[1] = this.hubDataStore.getInstanceName();
     for (int i = 0; i < dataSinks.size(); i++) {
-      arguments[2] = dataSinks.get(i).getFTAName();
-      arguments[3] = dataSinks.get(i).getName();
-      Process p = this.rt.exec("GSEXIT", arguments);
+      List<String> com = Lists.newArrayList();
+      com.add("GSEXIT");
+      com.add(hubDataStore.getHubAddress().toString());
+      com.add(hubDataStore.getInstanceName());
+      com.add(dataSinks.get(i).getFTAName());
+      com.add(dataSinks.get(i).getName());
+      ProcessBuilder builder = new ProcessBuilder(com);
+      builder.redirectErrorStream(true);
+      Process p = builder.start();
       this.gsExitProcessList.add(p);
+      ExecutorService executorService = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
+        .setDaemon(true).setNameFormat("process-rts-%d").build());
+      gsExitExecutor.add(executorService);
+      executorService.execute(createLogRunnable(p, "GSEXIT(" + i + ")"));
+    }
+  }
+
+  private Runnable createLogRunnable(final Process process, final String processName) {
+    return new Runnable() {
+      @Override
+      public void run() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+        try {
+          String line = reader.readLine();
+          while (!Thread.currentThread().isInterrupted() && line != null) {
+            LOG.info("[" + processName + "]" + line);
+            line = reader.readLine();
+          }
+        } catch (IOException e) {
+          LOG.error("[" + processName + "]" + "Exception when reading stream output and error log for {}.", ProcessInitiator.this);
+        } finally {
+          Closeables.closeQuietly(reader);
+        }
+      }
+    };
+  }
+
+  public void waitForRTS() throws Exception {
+    for (Process p : rtsProcessList) {
+      p.waitFor();
+    }
+  }
+
+  public void waitForHFTA() throws Exception {
+    for (Process p : hftaProcessList) {
+      p.waitFor();
+    }
+  }
+
+  public void waitForGSEXIT() throws Exception {
+    for (Process p : gsExitProcessList) {
+      p.waitFor();
     }
   }
 }
