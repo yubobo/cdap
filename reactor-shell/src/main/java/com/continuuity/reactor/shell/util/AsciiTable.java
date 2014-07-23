@@ -91,7 +91,7 @@ public class AsciiTable<T> {
     Object[] row = header != null ? header : contents[0];
     int[] columnWidths = new int[row.length];
     for (int i = 0; i < row.length; i++) {
-      columnWidths[i] = Math.max(row.length, getMaxLength(contents, i));
+      columnWidths[i] = Math.max(row[i].toString().length(), getMaxLength(contents, i));
     }
     return columnWidths;
   }
