@@ -60,28 +60,17 @@ public class RestClient {
     return response;
   }
 
-  public HttpResponse upload(HttpRequest request, int... allowedErrorCodes) throws IOException {
-    HttpResponse response = HttpRequests.execute(request, uploadConfig);
-    if (!isSuccessful(response.getResponseCode())
-      && !ArrayUtils.contains(allowedErrorCodes, response.getResponseCode())) {
-      throw new IOException("Unexpected response code " + response.getResponseCode());
-    }
-    return response;
-  }
-
   public HttpResponse execute(HttpMethod httpMethod, URL url, int... allowedErrorCodes) throws IOException {
-    HttpResponse response = HttpRequests.execute(HttpRequest.builder(httpMethod, url).build(), defaultConfig);
-    if (!isSuccessful(response.getResponseCode())
-      && !ArrayUtils.contains(allowedErrorCodes, response.getResponseCode())) {
-      throw new IOException("Unexpected response code " + response.getResponseCode());
-    }
-    return response;
+    return execute(HttpRequest.builder(httpMethod, url).build(), allowedErrorCodes);
   }
 
   public HttpResponse execute(HttpMethod httpMethod, URL url, Map<String, String> headers,
                               int... allowedErrorCodes) throws IOException {
-    HttpRequest request = HttpRequest.builder(httpMethod, url).addHeaders(headers).build();
-    HttpResponse response = HttpRequests.execute(request, defaultConfig);
+    return execute(HttpRequest.builder(httpMethod, url).addHeaders(headers).build(), allowedErrorCodes);
+  }
+
+  public HttpResponse upload(HttpRequest request, int... allowedErrorCodes) throws IOException {
+    HttpResponse response = HttpRequests.execute(request, uploadConfig);
     if (!isSuccessful(response.getResponseCode())
       && !ArrayUtils.contains(allowedErrorCodes, response.getResponseCode())) {
       throw new IOException("Unexpected response code " + response.getResponseCode());
