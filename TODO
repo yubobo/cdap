@@ -1,2 +1,2 @@
 * completion from middle of a command (e.g. complete "app dep<cursor> /downloads/app.jar" to "app deploy /downloads/app.jar")
-* fix CommandSet.getHelperText()
+
