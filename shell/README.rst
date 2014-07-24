@@ -19,7 +19,7 @@ The shell executable is located at ``shell/target/reactor``.
 Usage
 =====
 
-The Shell Client may be used in two ways: interactive mode and non-interactive mode
+The Shell Client may be used in two ways: interactive mode and non-interactive mode.
 
 Interactive Mode
 ================
@@ -30,11 +30,11 @@ The executable should bring you into a shell, with this prompt::
   reactor (localhost:10000)>
 
 This indicates that the Shell Client is currently set to interact with the Reactor instance at ``localhost``.
-To interact with a different Reactor instance, modify the environment variable ``REACTOR_HOST``
+To interact with a different Reactor instance, set the environment variable ``REACTOR_HOST``
 and start the Shell Client again.
 
 For example, with ``REACTOR_HOST`` set to ``example.com``, the Shell Client would be interacting with
-a Reactor instance at ``example.com` port ``10000``::
+a Reactor instance at ``example.com``, port ``10000``::
 
   reactor (example.com:10000)>
 
@@ -45,7 +45,7 @@ To list all of the available commands, enter ``help``::
 Non-Interactive Mode
 ====================
 
-To run the Shell Client in executable mode, run the ``reactor`` executable, passing the command you want executed
+To run the Shell Client in non-interactive mode, run the ``reactor`` executable, passing the command you want executed
 as the argument. For example, to list all applications currently deployed to Reactor, execute this::
 
   reactor list apps
@@ -53,13 +53,12 @@ as the argument. For example, to list all applications currently deployed to Rea
 Available Commands
 ==================
 
-Here are all of the available commands::
+Here are all of the available commands:
 
 - ``help``: Prints this helper text
 - ``version``: Prints the version
 - ``exit``: Exits the shell
-- ``call procedure <app-id>.<procedure-id> <method-id> <parameters-map>``: Calls a Procedure, passing in
-the parameters as a JSON String map
+- ``call procedure <app-id>.<procedure-id> <method-id> <parameters-map>``: Calls a Procedure, passing in the parameters as a JSON String map
 - ``create stream <new-stream-id>``: Creates a Stream
 - ``create dataset instance <type-name> <new-dataset-name>``: Creates a Dataset
 - ``delete app <app-id>``: Deletes an application
