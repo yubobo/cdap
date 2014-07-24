@@ -16,7 +16,7 @@
 
 package com.continuuity.shell.completer.reactor;
 
-import com.continuuity.api.DatasetSpecification;
+import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.client.DatasetClient;
 import com.continuuity.shell.completer.StringsCompleter;
 import com.google.common.base.Function;
