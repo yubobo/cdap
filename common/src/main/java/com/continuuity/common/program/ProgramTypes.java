@@ -14,8 +14,9 @@
  * the License.
  */
 
-package com.continuuity.api;
+package com.continuuity.common.program;
 
+import com.continuuity.api.ProgramSpecification;
 import com.continuuity.api.flow.FlowSpecification;
 import com.continuuity.api.mapreduce.MapReduceSpecification;
 import com.continuuity.api.procedure.ProcedureSpecification;
@@ -25,8 +26,10 @@ import com.continuuity.api.workflow.WorkflowSpecification;
 import com.continuuity.proto.ProgramType;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.Map;
+
 /**
- * Provides mapping from {@link ProgramSpecification} to {@link ProgramType}.
+ * Provides mapping from {@link com.continuuity.api.ProgramSpecification} to {@link ProgramType}.
  */
 public class ProgramTypes {
 
@@ -47,12 +50,13 @@ public class ProgramTypes {
    * @return {@link ProgramType} of the {@link ProgramSpecification}
    */
   public static ProgramType fromSpecification(ProgramSpecification spec) {
-    ProgramType programType = specClassToProgramType.get(spec.getClass());
-    if (programType == null) {
-      throw new IllegalArgumentException("Unknown specification type: " + spec.getClass());
+    Class<? extends ProgramSpecification> specClass = spec.getClass();
+    for (Map.Entry<Class<? extends ProgramSpecification>, ProgramType> entry : specClassToProgramType.entrySet()) {
+      if (entry.getKey().isAssignableFrom(specClass)) {
+        return entry.getValue();
+      }
     }
-
-    return programType;
+    throw new IllegalArgumentException("Unknown specification type: " + specClass);
   }
 
 }
