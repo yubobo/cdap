@@ -38,8 +38,9 @@ public class HelpCommand extends AbstractCommand {
 
   @Override
   public void process(String[] args, PrintStream output) throws Exception {
+    output.println("Reactor shell version " + config.getVersion());
     output.println("REACTOR_HOST=" + config.getReactorHost());
-    output.println("Version: " + config.getVersion());
+    output.println();
     output.println("Available commands: \n" + getCommands.get().getHelperText(""));
   }
 }
