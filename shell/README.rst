@@ -1,42 +1,47 @@
-# Shell Client
+==============
+ Shell Client
+==============
 
-## Introduction
+Introduction
+============
 
 The Shell Client provides a way to interact with Reactor using a shell, similar to hbase shell or bash.
 
-## How to Build
+How to Build
+============
 
-```
-mvn clean package -DskipTests -pl shell -am
-```
+::
 
-The shell executable is located at `shell/target/reactor`.
+  mvn clean package -DskipTests -pl shell -am
 
-## Usage
+The shell executable is located at ``shell/target/reactor``.
+
+Usage
+=====
 
 The Shell Client may be used in two ways: 1) interactive mode and 2) non-interactive mode
 
-### Interactive Mode
+Interactive Mode
+================
 
-To run the Shell Client in interactive mode, run the `reactor` executable with no arguments from the terminal.
-The executable should bring you into a shell, with the following prompt:
+To run the Shell Client in interactive mode, run the ``reactor`` executable with no arguments from the terminal.
+The executable should bring you into a shell, with the following prompt::
 
-```
-reactor (localhost)>
-```
+  reactor (localhost)>
 
 This indicates that the Shell Client is currently set to interact with the Reactor instance at localhost.
-To interact with a different Reactor instance, you may modify the environment variable `REACTOR_HOST`.
-For example, with `REACTOR_HOST` set to `example.com`, the shell client would be interacting with
-a Reactor instance at `example.com` port `10000`.
+To interact with a different Reactor instance, you may modify the environment variable ``REACTOR_HOST``.
+For example, with ``REACTOR_HOST`` set to ``example.com``, the shell client would be interacting with
+a Reactor instance at ``example.com` port ``10000``.
 
-To list all of the available commands, you may enter `help`.
+To list all of the available commands, you may enter ``help``.
 
-### Non-Interactive Mode
+Non-Interactive Mode
+====================
 
-To run the shell in executable mode, run the `reactor` executable and provide the command you wish
+To run the shell in executable mode, run the ``reactor`` executable and provide the command you wish
 to execute as the argument. For example, to list all applications currently deployed to Reactor,
-you may run `reactor list apps`.
+you may run ``reactor list apps``.
 
 Available Commands
 ==================
