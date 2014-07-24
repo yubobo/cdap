@@ -27,6 +27,6 @@ public class TruncateDatasetCommandSet extends CommandSet {
 
   @Inject
   public TruncateDatasetCommandSet(TruncateDatasetInstanceCommand truncateDatasetInstanceCommand) {
-    super("dataset", truncateDatasetInstanceCommand, truncateDatasetInstanceCommand);
+    super("dataset", truncateDatasetInstanceCommand);
   }
 }

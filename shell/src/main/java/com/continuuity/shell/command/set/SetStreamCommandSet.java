@@ -27,6 +27,6 @@ public class SetStreamCommandSet extends CommandSet {
 
   @Inject
   public SetStreamCommandSet(SetStreamTTLCommand setStreamTTLCommand) {
-    super("instances", setStreamTTLCommand);
+    super("stream", setStreamTTLCommand);
   }
 }

@@ -18,28 +18,25 @@ package com.continuuity.shell.command;
 
 import com.continuuity.shell.ReactorShellConfig;
 import com.continuuity.shell.ReactorShellMain;
-import com.google.common.base.Supplier;
+import com.google.inject.Inject;
 
 import java.io.PrintStream;
 
 /**
- * Prints helper text for all commands.
+ * Prints the version.
  */
-public class HelpCommand extends AbstractCommand {
+public class VersionCommand extends AbstractCommand {
 
-  private final Supplier<CommandSet> getCommands;
-  private final ReactorShellConfig config;
+  private final ReactorShellConfig reactorShellConfig;
 
-  public HelpCommand(Supplier<CommandSet> getCommands, ReactorShellConfig config) {
-    super("help", null, "Prints this helper text");
-    this.getCommands = getCommands;
-    this.config = config;
+  @Inject
+  public VersionCommand(ReactorShellConfig reactorShellConfig) {
+    super("version", null, "Prints the version");
+    this.reactorShellConfig = reactorShellConfig;
   }
 
   @Override
   public void process(String[] args, PrintStream output) throws Exception {
-    output.println("REACTOR_HOST=" + config.getReactorHost());
-    output.println("Version: " + config.getVersion());
-    output.println("Available commands: \n" + getCommands.get().getHelperText(""));
+    output.println(reactorShellConfig.getVersion());
   }
 }

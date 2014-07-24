@@ -20,6 +20,7 @@ import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.shell.command.CommandSet;
 import com.continuuity.shell.command.ExitCommand;
 import com.continuuity.shell.command.HelpCommand;
+import com.continuuity.shell.command.VersionCommand;
 import com.continuuity.shell.command.call.CallCommandSet;
 import com.continuuity.shell.command.create.CreateCommandSet;
 import com.continuuity.shell.command.delete.DeleteCommandSet;
@@ -34,10 +35,14 @@ import com.continuuity.shell.command.start.StartProgramCommandSet;
 import com.continuuity.shell.command.stop.StopProgramCommandSet;
 import com.continuuity.shell.command.truncate.TruncateCommandSet;
 import com.continuuity.shell.exception.InvalidCommandException;
+import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
+import com.google.common.io.CharStreams;
+import com.google.common.io.InputSupplier;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -45,6 +50,8 @@ import jline.console.ConsoleReader;
 import jline.console.UserInterruptException;
 import jline.console.completer.Completer;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 
@@ -54,37 +61,31 @@ import java.net.URISyntaxException;
 public class ReactorShellMain {
 
   private final CommandSet commands;
-  private final String reactorHost;
-
+  private final ReactorShellConfig reactorShellConfig;
   private final HelpCommand helpCommand;
 
-  private final ReactorClientConfig reactorConfig;
-
-  /**
-   * @param reactorHost Hostname of the Reactor instance to interact with (e.g. "example.com")
-   * @throws URISyntaxException
-   */
-  public ReactorShellMain(String reactorHost) throws URISyntaxException {
-    this.reactorHost = Objects.firstNonNull(reactorHost, "localhost");
-    this.reactorConfig = new ReactorClientConfig(reactorHost);
+  public ReactorShellMain(final ReactorShellConfig reactorShellConfig) throws URISyntaxException {
+    this.reactorShellConfig = reactorShellConfig;
     this.helpCommand = new HelpCommand(new Supplier<CommandSet>() {
       @Override
       public CommandSet get() {
         return getCommands();
       }
-    });
+    }, reactorShellConfig);
 
     Injector injector = Guice.createInjector(
       new AbstractModule() {
         @Override
         protected void configure() {
-          bind(ReactorClientConfig.class).toInstance(reactorConfig);
+          bind(ReactorShellConfig.class).toInstance(reactorShellConfig);
+          bind(ReactorClientConfig.class).toInstance(reactorShellConfig.getReactorConfig());
         }
       }
     );
 
     this.commands = CommandSet.builder(null)
       .addCommand(helpCommand)
+      .addCommand(injector.getInstance(VersionCommand.class))
       .addCommand(injector.getInstance(ExitCommand.class))
       .addCommand(injector.getInstance(CallCommandSet.class))
       .addCommand(injector.getInstance(CreateCommandSet.class))
@@ -110,7 +111,7 @@ public class ReactorShellMain {
    */
   public void startShellMode(PrintStream output) throws Exception {
     final ConsoleReader reader = new ConsoleReader();
-    reader.setPrompt("reactor (" + reactorHost + ")> ");
+    reader.setPrompt("reactor (" + reactorShellConfig.getReactorHost() + ")> ");
     reader.setHandleUserInterrupt(true);
 
     for (Completer completer : commands.getCompleters(null)) {
@@ -165,7 +166,8 @@ public class ReactorShellMain {
       reactorHost = "localhost";
     }
 
-    ReactorShellMain shell = new ReactorShellMain(reactorHost);
+    ReactorShellConfig config = new ReactorShellConfig(reactorHost);
+    ReactorShellMain shell = new ReactorShellMain(config);
 
     if (args.length == 0) {
       shell.startShellMode(System.out);
