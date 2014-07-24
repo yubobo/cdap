@@ -5,12 +5,12 @@
 Introduction
 ============
 
-The Java Client API provides a way to interact with Reactor using Java code.
+The Java Client API provides methods for interacting with Reactor from Java applications.
 
 Maven Dependency
 ================
 
-To use the Java Client API in your project, add the following Maven dependency::
+To use the Java Client API in your project, add this Maven dependency::
 
   <dependency>
     <groupId>com.continuuity</groupId>
@@ -21,7 +21,7 @@ To use the Java Client API in your project, add the following Maven dependency::
 Components
 ==========
 
-The Java Client API allows you to interact with the following Reactor components:
+The Java Client API allows you to interact with these Reactor components:
 
 - **ApplicationClient:** interacting with applications
 - **DatasetClient:** interacting with Datasets
@@ -43,23 +43,23 @@ ApplicationClient
 
 ::
 
-  // interact with the Reactor instance located at example.com, port 10000
+  // Interact with the Reactor instance located at example.com, port 10000
   ReactorClientConfig clientConfig = new ReactorClientConfig("example.com", 10000);
 
-  // construct the client used to interact with Reactor
+  // Construct the client used to interact with Reactor
   ApplicationClient appClient = new ApplicationClient(clientConfig);
 
-  // fetch the list of applications
+  // Fetch the list of applications
   List<ApplicationRecord> apps = appClient.list();
 
-  // deploy an application
+  // Deploy an application
   File appJarFile = ...;
   appClient.deploy(appJarFile);
 
-  // delete an application
+  // Delete an application
   appClient.delete("Purchase");
 
-  // list programs belonging to an application
+  // List programs belonging to an application
   appClient.listPrograms("Purchase");
 
 DatasetClient
@@ -67,17 +67,17 @@ DatasetClient
 
 ::
 
-  // interact with the Reactor instance located at example.com, port 10000
+  // Interact with the Reactor instance located at example.com, port 10000
   ReactorClientConfig clientConfig = new ReactorClientConfig("example.com", 10000);
 
-  // construct the client used to interact with Reactor
+  // Construct the client used to interact with Reactor
   DatasetClient datasetClient = new DatasetClient(clientConfig);
 
-  // fetch list of datasets
+  // Fetch list of Datasets [common]
   List<DatasetSpecification> datasets = datasetClient.list();
 
-  // create a dataset
+  // Create a Dataset
   datasetClient.create("someDataset", "someDatasetType");
 
-  // delete a dataset
+  // Delete a Dataset
   datasetClient.delete("someDataset");

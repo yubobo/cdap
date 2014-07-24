@@ -28,7 +28,7 @@ import java.net.URL;
 import javax.inject.Inject;
 
 /**
- * Provides ways to interact with Reactor services.
+ * Provides ways to interact with Reactor User Services.
  */
 public class ServiceClient {
 

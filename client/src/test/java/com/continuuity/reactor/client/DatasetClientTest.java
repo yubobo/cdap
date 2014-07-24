@@ -59,13 +59,13 @@ public class DatasetClientTest extends ClientTestBase {
     int numBaseTypes = typeClient.list().size();
     Assert.assertEquals(0, datasetClient.list().size());
 
-    LOG.info("Adding dataset module");
+    LOG.info("Adding Dataset module");
     File moduleJarFile = createAppJarFile(FakeDatasetModule.class);
     moduleClient.add(FakeDatasetModule.NAME, FakeDatasetModule.class.getName(), moduleJarFile);
     Assert.assertEquals(numBaseModules + 1, moduleClient.list().size());
     Assert.assertEquals(numBaseTypes + 2, typeClient.list().size());
 
-    LOG.info("Checking new dataset type exists");
+    LOG.info("Checking that the new Dataset type exists");
     DatasetTypeMeta datasetTypeMeta = typeClient.get(FakeDataset.TYPE_NAME);
     Assert.assertNotNull(datasetTypeMeta);
     Assert.assertEquals(FakeDataset.TYPE_NAME, datasetTypeMeta.getName());
@@ -74,7 +74,7 @@ public class DatasetClientTest extends ClientTestBase {
     Assert.assertNotNull(datasetTypeMeta);
     Assert.assertEquals(FakeDataset.class.getName(), datasetTypeMeta.getName());
 
-    LOG.info("Creating, truncating, and deleting dataset of new dataset type");
+    LOG.info("Creating, truncating, and deleting dataset of new Dataset type");
     Assert.assertEquals(0, datasetClient.list().size());
     datasetClient.create("testDataset", FakeDataset.TYPE_NAME);
     Assert.assertEquals(1, datasetClient.list().size());
@@ -82,7 +82,7 @@ public class DatasetClientTest extends ClientTestBase {
     datasetClient.delete("testDataset");
     Assert.assertEquals(0, datasetClient.list().size());
 
-    LOG.info("Creating and deleting multiple datasets");
+    LOG.info("Creating and deleting multiple Datasets");
     datasetClient.create("testDataset1", FakeDataset.TYPE_NAME);
     datasetClient.create("testDataset2", FakeDataset.TYPE_NAME);
     datasetClient.create("testDataset3", FakeDataset.TYPE_NAME);
@@ -90,12 +90,12 @@ public class DatasetClientTest extends ClientTestBase {
     datasetClient.deleteAll();
     Assert.assertEquals(0, datasetClient.list().size());
 
-    LOG.info("Deleting dataset module");
+    LOG.info("Deleting Dataset module");
     moduleClient.delete(FakeDatasetModule.NAME);
     Assert.assertEquals(numBaseModules, moduleClient.list().size());
     Assert.assertEquals(numBaseTypes, typeClient.list().size());
 
-    LOG.info("Adding dataset module and then deleting all dataset modules");
+    LOG.info("Adding Dataset module and then deleting all Dataset modules");
     moduleClient.add("testModule1", FakeDatasetModule.class.getName(), moduleJarFile);
     Assert.assertEquals(numBaseModules + 1, moduleClient.list().size());
     Assert.assertEquals(numBaseTypes + 2, typeClient.list().size());
