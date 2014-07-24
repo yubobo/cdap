@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.get;
 
 import com.continuuity.client.ProgramClient;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -34,14 +34,14 @@ public class GetProgramStatusCommand extends AbstractCommand implements Completa
 
   private final ProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
-  private final ProgramElementType programElementType;
+  private final ElementType elementType;
 
-  protected GetProgramStatusCommand(ProgramElementType programElementType,
+  protected GetProgramStatusCommand(ElementType elementType,
                                     ProgramIdCompleterFactory completerFactory,
                                     ProgramClient programClient) {
-    super(programElementType.getName(), "<app-id>.<program-id>",
-          "Gets the status of a " + programElementType.getName());
-    this.programElementType = programElementType;
+    super(elementType.getName(), "<app-id>.<program-id>",
+          "Gets the status of a " + elementType.getPrettyName());
+    this.elementType = elementType;
     this.completerFactory = completerFactory;
     this.programClient = programClient;
   }
@@ -54,12 +54,12 @@ public class GetProgramStatusCommand extends AbstractCommand implements Completa
     String appId = programIdParts[0];
     String programId = programIdParts[1];
 
-    String status = programClient.getStatus(appId, programElementType.getProgramType(), programId);
+    String status = programClient.getStatus(appId, elementType.getProgramType(), programId);
     output.println(status);
   }
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(programElementType)));
+    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(elementType)));
   }
 }

@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.truncate;
 
 import com.continuuity.client.StreamClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.StreamIdCompleter;
@@ -37,7 +38,7 @@ public class TruncateStreamCommand extends AbstractCommand implements Completabl
 
   @Inject
   public TruncateStreamCommand(StreamIdCompleter completer, StreamClient streamClient) {
-    super("stream", null, "Truncates a stream");
+    super("stream", null, "Truncates a " + ElementType.STREAM.getPrettyName());
     this.completer = completer;
     this.streamClient = streamClient;
   }

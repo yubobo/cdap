@@ -21,6 +21,7 @@ import com.continuuity.proto.ColumnDesc;
 import com.continuuity.proto.QueryHandle;
 import com.continuuity.proto.QueryResult;
 import com.continuuity.proto.QueryStatus;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;
@@ -39,7 +40,7 @@ public class ExecuteQueryCommand extends AbstractCommand {
 
   @Inject
   public ExecuteQueryCommand(QueryClient queryClient) {
-    super("execute", "<query>", "Executes a dataset query");
+    super("execute", "<query>", "Executes a " + ElementType.QUERY.getPrettyName());
     this.queryClient = queryClient;
   }
 

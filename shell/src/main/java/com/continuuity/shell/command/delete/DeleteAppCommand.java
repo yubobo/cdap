@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.delete;
 
 import com.continuuity.client.ApplicationClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.AppIdCompleter;
@@ -37,7 +38,7 @@ public class DeleteAppCommand extends AbstractCommand implements Completable {
 
   @Inject
   public DeleteAppCommand(AppIdCompleter completer, ApplicationClient appClient) {
-    super("app", "<app-id>", "Deletes an application");
+    super("app", "<app-id>", "Deletes an " + ElementType.APP.getPrettyName());
     this.completer = completer;
     this.appClient = appClient;
   }

@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.send;
 
 import com.continuuity.client.StreamClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.StreamIdCompleter;
@@ -39,7 +40,7 @@ public class SendStreamEventCommand extends AbstractCommand implements Completab
 
   @Inject
   public SendStreamEventCommand(StreamIdCompleter completer, StreamClient streamClient) {
-    super("stream", "<stream-id> <stream-event>", "Sends an event to a stream");
+    super("stream", "<stream-id> <stream-event>", "Sends an event to a " + ElementType.STREAM.getPrettyName());
     this.completer = completer;
     this.streamClient = streamClient;
   }

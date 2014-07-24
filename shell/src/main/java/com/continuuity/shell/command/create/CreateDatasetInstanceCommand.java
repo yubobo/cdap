@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.create;
 
 import com.continuuity.client.DatasetClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.DatasetTypeNameCompleter;
@@ -37,7 +38,7 @@ public class CreateDatasetInstanceCommand extends AbstractCommand implements Com
 
   @Inject
   public CreateDatasetInstanceCommand(DatasetTypeNameCompleter completer, DatasetClient datasetClient) {
-    super("instance", "<type-name> <new-dataset-name>", "Creates a dataset");
+    super("instance", "<type-name> <new-dataset-name>", "Creates a " + ElementType.DATASET.getPrettyName());
     this.completer = completer;
     this.datasetClient = datasetClient;
   }

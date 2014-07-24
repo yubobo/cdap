@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.get;
 
 import com.continuuity.client.ProgramClient;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -34,14 +34,14 @@ public class GetProgramInstancesCommand extends AbstractCommand implements Compl
 
   private final ProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
-  private final ProgramElementType programElementType;
+  private final ElementType elementType;
 
-  protected GetProgramInstancesCommand(ProgramElementType programElementType,
+  protected GetProgramInstancesCommand(ElementType elementType,
                                        ProgramIdCompleterFactory completerFactory,
                                        ProgramClient programClient) {
-    super(programElementType.getName(), "<app-id>.<program-id>",
-          "Gets the instances of a " + programElementType.getName());
-    this.programElementType = programElementType;
+    super(elementType.getName(), "<app-id>.<program-id>",
+          "Gets the instances of a " + elementType.getPrettyName());
+    this.elementType = elementType;
     this.completerFactory = completerFactory;
     this.programClient = programClient;
   }
@@ -54,7 +54,7 @@ public class GetProgramInstancesCommand extends AbstractCommand implements Compl
     String appId = programIdParts[0];
 
     int instances;
-    switch (programElementType) {
+    switch (elementType) {
       case FLOWLET:
         String flowId = programIdParts[1];
         String flowletId = programIdParts[2];
@@ -71,7 +71,7 @@ public class GetProgramInstancesCommand extends AbstractCommand implements Compl
         break;
       default:
         // TODO: remove this
-        throw new IllegalArgumentException("Unrecognized program element type for scaling: " + programElementType);
+        throw new IllegalArgumentException("Unrecognized program element type for scaling: " + elementType);
     }
 
     output.println(instances);
@@ -79,6 +79,6 @@ public class GetProgramInstancesCommand extends AbstractCommand implements Compl
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(programElementType)));
+    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(elementType)));
   }
 }

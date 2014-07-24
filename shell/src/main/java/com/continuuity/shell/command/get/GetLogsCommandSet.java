@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.get;
 
 import com.continuuity.client.ProgramClient;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.Command;
 import com.continuuity.shell.command.CommandSet;
@@ -39,9 +39,9 @@ public class GetLogsCommandSet extends CommandSet {
   private static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
                                                 ProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
-    for (ProgramElementType programElementType : ProgramElementType.values()) {
-      if (programElementType.hasLogs()) {
-        commands.add(new GetProgramLogsCommand(programElementType, programIdCompleterFactory, programClient));
+    for (ElementType elementType : ElementType.values()) {
+      if (elementType.hasLogs()) {
+        commands.add(new GetProgramLogsCommand(elementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;

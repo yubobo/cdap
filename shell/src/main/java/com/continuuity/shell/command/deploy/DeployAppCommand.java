@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.deploy;
 
 import com.continuuity.client.ApplicationClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.google.common.base.Preconditions;
@@ -38,7 +39,7 @@ public class DeployAppCommand extends AbstractCommand implements Completable {
 
   @Inject
   public DeployAppCommand(ApplicationClient applicationClient) {
-    super("app", "<app-jar-file>", "Deploys an application");
+    super("app", "<app-jar-file>", "Deploys an " + ElementType.APP.getPrettyName());
     this.applicationClient = applicationClient;
   }
 

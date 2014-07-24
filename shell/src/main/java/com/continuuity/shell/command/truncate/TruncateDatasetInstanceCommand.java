@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.truncate;
 
 import com.continuuity.client.DatasetClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.DatasetNameCompleter;
@@ -37,7 +38,7 @@ public class TruncateDatasetInstanceCommand extends AbstractCommand implements C
 
   @Inject
   public TruncateDatasetInstanceCommand(DatasetNameCompleter completer, DatasetClient datasetClient) {
-    super("instance", null, "Truncates a dataset");
+    super("instance", null, "Truncates a " + ElementType.DATASET.getPrettyName());
     this.completer = completer;
     this.datasetClient = datasetClient;
   }

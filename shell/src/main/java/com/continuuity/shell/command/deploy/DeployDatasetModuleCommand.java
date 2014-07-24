@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.deploy;
 
 import com.continuuity.client.DatasetModuleClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.google.common.base.Preconditions;
@@ -38,7 +39,8 @@ public class DeployDatasetModuleCommand extends AbstractCommand implements Compl
 
   @Inject
   public DeployDatasetModuleCommand(DatasetModuleClient datasetModuleClient) {
-    super("module", "<module-jar-file> <module-name> <module-jar-classname>", "Deploys a dataset module");
+    super("module", "<module-jar-file> <module-name> <module-jar-classname>",
+          "Deploys a " + ElementType.DATASET_MODULE.getPrettyName());
     this.datasetModuleClient = datasetModuleClient;
   }
 

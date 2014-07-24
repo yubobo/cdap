@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.get;
 
 import com.continuuity.client.ProgramClient;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.Command;
 import com.continuuity.shell.command.CommandSet;
@@ -40,9 +40,9 @@ public class GetInstancesCommandSet extends CommandSet {
   private static List<Command> generateCommands(ProgramIdCompleterFactory programIdCompleterFactory,
                                                 ProgramClient programClient) {
     List<Command> commands = Lists.newArrayList();
-    for (ProgramElementType programElementType : ProgramElementType.values()) {
-      if (programElementType.canScale()) {
-        commands.add(new GetProgramInstancesCommand(programElementType, programIdCompleterFactory, programClient));
+    for (ElementType elementType : ElementType.values()) {
+      if (elementType.canScale()) {
+        commands.add(new GetProgramInstancesCommand(elementType, programIdCompleterFactory, programClient));
       }
     }
     return commands;

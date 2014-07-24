@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.create;
 
 import com.continuuity.client.StreamClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 
 import java.io.PrintStream;
@@ -31,7 +32,7 @@ public class CreateStreamCommand extends AbstractCommand {
 
   @Inject
   public CreateStreamCommand(StreamClient streamClient) {
-    super("stream", "<new-stream-id>", "Creates a stream");
+    super("stream", "<new-stream-id>", "Creates a " + ElementType.STREAM.getPrettyName());
     this.streamClient = streamClient;
   }
 

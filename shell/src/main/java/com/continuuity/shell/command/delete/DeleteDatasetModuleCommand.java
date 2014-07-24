@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.delete;
 
 import com.continuuity.client.DatasetModuleClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.DatasetModuleNameCompleter;
@@ -38,7 +39,7 @@ public class DeleteDatasetModuleCommand extends AbstractCommand implements Compl
   @Inject
   public DeleteDatasetModuleCommand(DatasetModuleNameCompleter completer,
                                     DatasetModuleClient datasetClient) {
-    super("module", "<module-name>", "Deletes a dataset module");
+    super("module", "<module-name>", "Deletes a " + ElementType.DATASET_MODULE.getPrettyName());
     this.completer = completer;
     this.datasetClient = datasetClient;
   }

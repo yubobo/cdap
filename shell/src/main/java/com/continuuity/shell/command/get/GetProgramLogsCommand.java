@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.get;
 
 import com.continuuity.client.ProgramClient;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -35,14 +35,14 @@ public class GetProgramLogsCommand extends AbstractCommand implements Completabl
 
   private final ProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
-  private final ProgramElementType programElementType;
+  private final ElementType elementType;
 
-  protected GetProgramLogsCommand(ProgramElementType programElementType,
+  protected GetProgramLogsCommand(ElementType elementType,
                                   ProgramIdCompleterFactory completerFactory,
                                   ProgramClient programClient) {
-    super(programElementType.getName(), "<app-id>.<program-id> [<start-time> <end-time>]",
-          "Gets the logs of a " + programElementType.getName());
-    this.programElementType = programElementType;
+    super(elementType.getName(), "<app-id>.<program-id> [<start-time> <end-time>]",
+          "Gets the logs of a " + elementType.getPrettyName());
+    this.elementType = elementType;
     this.completerFactory = completerFactory;
     this.programClient = programClient;
   }
@@ -66,15 +66,15 @@ public class GetProgramLogsCommand extends AbstractCommand implements Completabl
     }
 
     String logs;
-    if (programElementType == ProgramElementType.RUNNABLE) {
+    if (elementType == ElementType.RUNNABLE) {
       String serviceId = programIdParts[1];
       String runnableId = programIdParts[2];
       logs = programClient.getServiceRunnableLogs(appId, serviceId, runnableId, start, stop);
-    } else if (programElementType.getProgramType() != null) {
+    } else if (elementType.getProgramType() != null) {
       String programId = programIdParts[1];
-      logs = programClient.getProgramLogs(appId, programElementType.getProgramType(), programId, start, stop);
+      logs = programClient.getProgramLogs(appId, elementType.getProgramType(), programId, start, stop);
     } else {
-      throw new IllegalArgumentException("Cannot get logs for " + programElementType.getPluralName());
+      throw new IllegalArgumentException("Cannot get logs for " + elementType.getPluralName());
     }
 
     output.println(logs);
@@ -82,6 +82,6 @@ public class GetProgramLogsCommand extends AbstractCommand implements Completabl
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(programElementType)));
+    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(elementType)));
   }
 }

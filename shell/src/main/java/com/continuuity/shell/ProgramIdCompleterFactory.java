@@ -25,27 +25,27 @@ import java.util.Map;
 import javax.inject.Inject;
 
 /**
- * Provides {@link ProgramIdCompleter} implementations per {@link ProgramElementType}.
+ * Provides {@link ProgramIdCompleter} implementations per {@link ElementType}.
  */
 public class ProgramIdCompleterFactory {
 
-  private final Map<ProgramElementType, ProgramIdCompleter> programIdCompleters;
+  private final Map<ElementType, ProgramIdCompleter> programIdCompleters;
 
   @Inject
   public ProgramIdCompleterFactory(ApplicationClient appClient) {
-    this.programIdCompleters = ImmutableMap.<ProgramElementType, ProgramIdCompleter>builder()
-      .put(ProgramElementType.FLOW,
-           new ProgramIdCompleter(appClient, ProgramElementType.FLOW.getProgramType()))
-      .put(ProgramElementType.MAPREDUCE,
-           new ProgramIdCompleter(appClient, ProgramElementType.MAPREDUCE.getProgramType()))
-      .put(ProgramElementType.PROCEDURE,
-           new ProgramIdCompleter(appClient, ProgramElementType.PROCEDURE.getProgramType()))
-      .put(ProgramElementType.WORKFLOW,
-           new ProgramIdCompleter(appClient, ProgramElementType.WORKFLOW.getProgramType()))
+    this.programIdCompleters = ImmutableMap.<ElementType, ProgramIdCompleter>builder()
+      .put(ElementType.FLOW,
+           new ProgramIdCompleter(appClient, ElementType.FLOW.getProgramType()))
+      .put(ElementType.MAPREDUCE,
+           new ProgramIdCompleter(appClient, ElementType.MAPREDUCE.getProgramType()))
+      .put(ElementType.PROCEDURE,
+           new ProgramIdCompleter(appClient, ElementType.PROCEDURE.getProgramType()))
+      .put(ElementType.WORKFLOW,
+           new ProgramIdCompleter(appClient, ElementType.WORKFLOW.getProgramType()))
       .build();
   }
 
-  public Completer getProgramIdCompleter(ProgramElementType programElementType) {
-    return programIdCompleters.get(programElementType);
+  public Completer getProgramIdCompleter(ElementType elementType) {
+    return programIdCompleters.get(elementType);
   }
 }

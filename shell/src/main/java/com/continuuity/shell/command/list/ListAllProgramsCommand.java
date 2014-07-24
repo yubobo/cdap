@@ -19,6 +19,7 @@ package com.continuuity.shell.command.list;
 import com.continuuity.client.ApplicationClient;
 import com.continuuity.proto.ProgramRecord;
 import com.continuuity.proto.ProgramType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;
@@ -38,7 +39,7 @@ public class ListAllProgramsCommand extends AbstractCommand {
 
   @Inject
   public ListAllProgramsCommand(ApplicationClient appClient) {
-    super("programs", null, "Lists all programs");
+    super("programs", null, "Lists all " + ElementType.PROGRAM.getPluralPrettyName());
     this.appClient = appClient;
   }
 

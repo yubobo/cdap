@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.call;
 
 import com.continuuity.client.ProcedureClient;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -43,7 +43,8 @@ public class CallProcedureCommand extends AbstractCommand implements Completable
   @Inject
   public CallProcedureCommand(ProgramIdCompleterFactory programIdCompleterFactory,
                               ProcedureClient procedureClient) {
-    super("procedure", "<app-id>.<procedure-id> <method-id> <parameters-map>", "Calls a procedure");
+    super("procedure", "<app-id>.<procedure-id> <method-id> <parameters-map>",
+          "Calls a " + ElementType.PROCEDURE.getPrettyName());
     this.programIdCompleterFactory = programIdCompleterFactory;
     this.procedureClient = procedureClient;
   }
@@ -74,6 +75,6 @@ public class CallProcedureCommand extends AbstractCommand implements Completable
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
     return Lists.newArrayList(
-      prefixCompleter(prefix, programIdCompleterFactory.getProgramIdCompleter(ProgramElementType.PROCEDURE)));
+      prefixCompleter(prefix, programIdCompleterFactory.getProgramIdCompleter(ElementType.PROCEDURE)));
   }
 }

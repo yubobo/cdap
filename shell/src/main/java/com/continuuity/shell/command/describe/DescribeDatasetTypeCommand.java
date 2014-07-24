@@ -18,6 +18,7 @@ package com.continuuity.shell.command.describe;
 
 import com.continuuity.client.DatasetTypeClient;
 import com.continuuity.proto.DatasetTypeMeta;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.DatasetTypeNameCompleter;
@@ -42,7 +43,7 @@ public class DescribeDatasetTypeCommand extends AbstractCommand implements Compl
   @Inject
   public DescribeDatasetTypeCommand(DatasetTypeNameCompleter completer,
                                     DatasetTypeClient datasetTypeClient) {
-    super("type", "<type-name>", "Shows information about a dataset type");
+    super("type", "<type-name>", "Shows information about a " + ElementType.DATASET_TYPE.getPrettyName());
     this.completer = completer;
     this.datasetTypeClient = datasetTypeClient;
   }

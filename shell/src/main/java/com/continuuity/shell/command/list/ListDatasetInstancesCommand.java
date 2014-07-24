@@ -16,8 +16,9 @@
 
 package com.continuuity.shell.command.list;
 
-import com.continuuity.api.DatasetSpecification;
+import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.client.DatasetClient;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;
@@ -35,7 +36,7 @@ public class ListDatasetInstancesCommand extends AbstractCommand {
 
   @Inject
   public ListDatasetInstancesCommand(DatasetClient datasetClient) {
-    super("instances", null, "Lists all datasets");
+    super("instances", null, "Lists all " + ElementType.DATASET.getPluralPrettyName());
     this.datasetClient = datasetClient;
   }
 

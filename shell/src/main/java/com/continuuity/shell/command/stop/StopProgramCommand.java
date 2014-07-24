@@ -17,7 +17,7 @@
 package com.continuuity.shell.command.stop;
 
 import com.continuuity.client.ProgramClient;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -34,12 +34,12 @@ public class StopProgramCommand extends AbstractCommand implements Completable {
 
   private final ProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
-  private final ProgramElementType programElementType;
+  private final ElementType elementType;
 
-  public StopProgramCommand(ProgramElementType programElementType, ProgramIdCompleterFactory completerFactory,
+  public StopProgramCommand(ElementType elementType, ProgramIdCompleterFactory completerFactory,
                             ProgramClient programClient) {
-    super(programElementType.getName(), "<program-id>", "Stops a " + programElementType.getName());
-    this.programElementType = programElementType;
+    super(elementType.getName(), "<program-id>", "Stops a " + elementType.getPrettyName());
+    this.elementType = elementType;
     this.completerFactory = completerFactory;
     this.programClient = programClient;
   }
@@ -52,11 +52,11 @@ public class StopProgramCommand extends AbstractCommand implements Completable {
     String appId = programIdParts[0];
     String programId = programIdParts[1];
 
-    programClient.stop(appId, programElementType.getProgramType(), programId);
+    programClient.stop(appId, elementType.getProgramType(), programId);
   }
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(programElementType)));
+    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(elementType)));
   }
 }

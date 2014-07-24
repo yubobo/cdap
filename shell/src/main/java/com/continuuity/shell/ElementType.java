@@ -24,37 +24,52 @@ import java.util.Set;
 /**
  * Represents types of programs and their elements.
  */
-public enum ProgramElementType {
+public enum ElementType {
 
-  FLOW("flow", "flows", ProgramType.FLOW, null,
+  APP("application", "applications", "app", "apps", null, null),
+  DATASET("Dataset", "Datasets", "dataset", "datasets", null, null),
+  DATASET_MODULE("Dataset module", "Dataset modules", "dataset module", "dataset modules", null, null),
+  DATASET_TYPE("Dataset type", "Dataset types", "dataset type", "dataset types", null, null),
+  QUERY("Dataset query", "Dataset queries", "dataset query", "dataset queries", null, null),
+  STREAM("Stream", "Streams", "stream", "streams", null, null),
+  PROGRAM("program", "programs", "program", "programs", null, null),
+
+  FLOW("Flow", "Flows", "flow", "flows", ProgramType.FLOW, null,
        Capability.HISTORY, Capability.LOGS, Capability.LIVE_INFO, Capability.STATUS, Capability.START_STOP),
 
-  WORKFLOW("workflow", "workflows", ProgramType.WORKFLOW, null,
+  WORKFLOW("Workflow", "Workflows", "workflow", "workflows", ProgramType.WORKFLOW, null,
            Capability.HISTORY, Capability.STATUS, Capability.START_STOP),
 
-  FLOWLET("flowlet", "flowlets", null, ProgramType.FLOW,
+  FLOWLET("Flowlet", "Flowlets", "flowlet", "flowlets", null, ProgramType.FLOW,
           Capability.SCALE),
 
-  PROCEDURE("procedure", "procedures", ProgramType.PROCEDURE, null,
+  PROCEDURE("Procedure", "Procedures", "procedure", "procedures", ProgramType.PROCEDURE, null,
             Capability.HISTORY, Capability.SCALE, Capability.LOGS, Capability.LIVE_INFO, Capability.STATUS,
             Capability.START_STOP),
 
-  SERVICE("service", "services", ProgramType.SERVICE, null, Capability.START_STOP, Capability.STATUS),
+  SERVICE("Service", "Services", "service", "services", ProgramType.SERVICE, null,
+          Capability.START_STOP, Capability.STATUS),
 
-  RUNNABLE("runnable", "runnables", null, ProgramType.SERVICE,
+  RUNNABLE("Runnable", "Runnables", "runnable", "runnables", null, ProgramType.SERVICE,
            Capability.SCALE, Capability.HISTORY, Capability.LOGS),
 
-  MAPREDUCE("mapreduce", "mapreduce", ProgramType.MAPREDUCE, null,
+  MAPREDUCE("MapReduce job", "MapReduce jobs", "mapreduce", "mapreduce", ProgramType.MAPREDUCE, null,
             Capability.LOGS, Capability.HISTORY, Capability.STATUS, Capability.START_STOP);
 
-  private final String name;
   private final String pluralName;
+  private final String pluralPrettyName;
+  private final String name;
   private final ProgramType programType;
   private final ProgramType parentType;
   private final Set<Capability> capabilities;
+  private final String prettyName;
 
-  ProgramElementType(String name, String pluralName, ProgramType programType, ProgramType parentType,
-                     Capability... capabilities) {
+  ElementType(String prettyName, String pluralPrettyName,
+              String name, String pluralName,
+              ProgramType programType, ProgramType parentType,
+              Capability... capabilities) {
+    this.prettyName = prettyName;
+    this.pluralPrettyName = pluralPrettyName;
     this.name = name;
     this.pluralName = pluralName;
     this.programType = programType;
@@ -64,6 +79,10 @@ public enum ProgramElementType {
 
   public boolean isTopLevel() {
     return parentType == null;
+  }
+
+  public String getPrettyName() {
+    return prettyName;
   }
 
   public String getName() {
@@ -80,6 +99,10 @@ public enum ProgramElementType {
 
   public ProgramType getParentType() {
     return parentType;
+  }
+
+  public String getPluralPrettyName() {
+    return pluralPrettyName;
   }
 
   public boolean canScale() {
@@ -104,6 +127,15 @@ public enum ProgramElementType {
 
   public boolean canStartStop() {
     return capabilities.contains(Capability.START_STOP);
+  }
+
+  public static ElementType fromProgramType(ProgramType programType) {
+    for (ElementType elementType : ElementType.values()) {
+      if (elementType.getProgramType() == programType) {
+        return elementType;
+      }
+    }
+    throw new IllegalArgumentException("Invalid ElementType from ProgramType " + programType);
   }
 
   private enum Capability {

@@ -18,7 +18,7 @@ package com.continuuity.shell.command.get;
 
 import com.continuuity.client.ProgramClient;
 import com.continuuity.proto.RunRecord;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -37,14 +37,14 @@ public class GetProgramHistoryCommand extends AbstractCommand implements Complet
 
   private final ProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
-  private final ProgramElementType programElementType;
+  private final ElementType elementType;
 
-  protected GetProgramHistoryCommand(ProgramElementType programElementType,
+  protected GetProgramHistoryCommand(ElementType elementType,
                                      ProgramIdCompleterFactory completerFactory,
                                      ProgramClient programClient) {
-    super(programElementType.getName(), "<app-id>.<program-id>",
-          "Gets the run history of a " + programElementType.getName());
-    this.programElementType = programElementType;
+    super(elementType.getName(), "<app-id>.<program-id>",
+          "Gets the run history of a " + elementType.getPrettyName());
+    this.elementType = elementType;
     this.completerFactory = completerFactory;
     this.programClient = programClient;
   }
@@ -57,15 +57,15 @@ public class GetProgramHistoryCommand extends AbstractCommand implements Complet
     String appId = programIdParts[0];
 
     List<RunRecord> history;
-    if (programElementType == ProgramElementType.RUNNABLE) {
+    if (elementType == ElementType.RUNNABLE) {
       String serviceId = programIdParts[1];
       String runnableId = programIdParts[2];
       history = programClient.getServiceRunnableHistory(appId, serviceId, runnableId);
-    } else if (programElementType.getProgramType() != null) {
+    } else if (elementType.getProgramType() != null) {
       String programId = programIdParts[1];
-      history = programClient.getProgramHistory(appId, programElementType.getProgramType(), programId);
+      history = programClient.getProgramHistory(appId, elementType.getProgramType(), programId);
     } else {
-      throw new IllegalArgumentException("Unrecognized program element type for history: " + programElementType);
+      throw new IllegalArgumentException("Unrecognized program element type for history: " + elementType);
     }
 
     new AsciiTable<RunRecord>(
@@ -82,6 +82,6 @@ public class GetProgramHistoryCommand extends AbstractCommand implements Complet
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(programElementType)));
+    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(elementType)));
   }
 }

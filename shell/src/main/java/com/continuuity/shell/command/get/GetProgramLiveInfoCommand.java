@@ -18,7 +18,7 @@ package com.continuuity.shell.command.get;
 
 import com.continuuity.client.ProgramClient;
 import com.continuuity.proto.ProgramLiveInfo;
-import com.continuuity.shell.ProgramElementType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.ProgramIdCompleterFactory;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -37,14 +37,14 @@ public class GetProgramLiveInfoCommand extends AbstractCommand implements Comple
 
   private final ProgramClient programClient;
   private final ProgramIdCompleterFactory completerFactory;
-  private final ProgramElementType programElementType;
+  private final ElementType elementType;
 
-  protected GetProgramLiveInfoCommand(ProgramElementType programElementType,
+  protected GetProgramLiveInfoCommand(ElementType elementType,
                                       ProgramIdCompleterFactory completerFactory,
                                       ProgramClient programClient) {
-    super(programElementType.getName(), "<app-id>.<program-id>",
-          "Gets the live info of a " + programElementType.getName());
-    this.programElementType = programElementType;
+    super(elementType.getName(), "<app-id>.<program-id>",
+          "Gets the live info of a " + elementType.getPrettyName());
+    this.elementType = elementType;
     this.completerFactory = completerFactory;
     this.programClient = programClient;
   }
@@ -57,7 +57,7 @@ public class GetProgramLiveInfoCommand extends AbstractCommand implements Comple
     String appId = programIdParts[0];
     String programId = programIdParts[1];
 
-    ProgramLiveInfo liveInfo = programClient.getLiveInfo(appId, programElementType.getProgramType(), programId);
+    ProgramLiveInfo liveInfo = programClient.getLiveInfo(appId, elementType.getProgramType(), programId);
 
     new AsciiTable<ProgramLiveInfo>(
       new String[] { "app", "type", "id", "runtime" },
@@ -73,6 +73,6 @@ public class GetProgramLiveInfoCommand extends AbstractCommand implements Comple
 
   @Override
   public List<? extends Completer> getCompleters(String prefix) {
-    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(programElementType)));
+    return Lists.newArrayList(prefixCompleter(prefix, completerFactory.getProgramIdCompleter(elementType)));
   }
 }

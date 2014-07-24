@@ -18,6 +18,7 @@ package com.continuuity.shell.command.list;
 
 import com.continuuity.client.DatasetModuleClient;
 import com.continuuity.proto.DatasetModuleMeta;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;
@@ -35,7 +36,7 @@ public class ListDatasetModulesCommand extends AbstractCommand {
 
   @Inject
   public ListDatasetModulesCommand(DatasetModuleClient client) {
-    super("modules", null, "Lists dataset modules");
+    super("modules", null, "Lists " + ElementType.DATASET_MODULE.getPluralPrettyName());
     this.client = client;
   }
 

@@ -18,6 +18,7 @@ package com.continuuity.shell.command.list;
 
 import com.continuuity.client.StreamClient;
 import com.continuuity.proto.StreamRecord;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.AsciiTable;
 import com.continuuity.shell.util.RowMaker;
@@ -34,7 +35,7 @@ public class ListStreamsCommand extends AbstractCommand {
 
   @Inject
   public ListStreamsCommand(StreamClient streamClient) {
-    super("streams", null, "Lists streams");
+    super("streams", null, "Lists " + ElementType.STREAM.getPluralPrettyName());
     this.streamClient = streamClient;
   }
 

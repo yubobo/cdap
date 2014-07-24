@@ -18,6 +18,7 @@ package com.continuuity.shell.command.describe;
 
 import com.continuuity.client.DatasetModuleClient;
 import com.continuuity.proto.DatasetModuleMeta;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.DatasetModuleNameCompleter;
@@ -42,7 +43,7 @@ public class DescribeDatasetModuleCommand extends AbstractCommand implements Com
   @Inject
   public DescribeDatasetModuleCommand(DatasetModuleNameCompleter completer,
                                       DatasetModuleClient datasetModuleClient) {
-    super("module", "<module-name>", "Shows information about a dataset module");
+    super("module", "<module-name>", "Shows information about a " + ElementType.DATASET_MODULE.getPrettyName());
     this.completer = completer;
     this.datasetModuleClient = datasetModuleClient;
   }

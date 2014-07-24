@@ -19,6 +19,7 @@ package com.continuuity.shell.command.describe;
 import com.continuuity.client.ApplicationClient;
 import com.continuuity.proto.ProgramRecord;
 import com.continuuity.proto.ProgramType;
+import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
 import com.continuuity.shell.completer.reactor.AppIdCompleter;
@@ -42,7 +43,7 @@ public class DescribeAppCommand extends AbstractCommand implements Completable {
 
   @Inject
   public DescribeAppCommand(AppIdCompleter completer, ApplicationClient applicationClient) {
-    super("app", "<app-id>", "Shows detailed information about an application");
+    super("app", "<app-id>", "Shows detailed information about an " + ElementType.APP.getPrettyName());
     this.completer = completer;
     this.applicationClient = applicationClient;
   }
