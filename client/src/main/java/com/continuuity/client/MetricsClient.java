@@ -21,6 +21,7 @@ import com.continuuity.client.util.RestClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpResponse;
 import com.continuuity.common.http.ObjectResponse;
+import com.google.gson.JsonObject;
 
 import java.io.IOException;
 import java.net.URL;
@@ -50,10 +51,12 @@ public class MetricsClient {
    * @return value of the metric
    * @throws IOException if a network error occurred
    */
-  public int getMetric(String scope, String context, String metric, String timeRange) throws IOException {
+  // TODO: currently response from metrics endpoint is not "regular", so it's not easy to return an object from here
+  // (e.g. metrics endpoint sometimes returns {"data":0} and other times returns {"data":[..]})
+  public JsonObject getMetric(String scope, String context, String metric, String timeRange) throws IOException {
     URL url = config.resolveURL(String.format("metrics/%s/%s/%s?%s", scope, context, metric, timeRange));
     HttpResponse response = restClient.execute(HttpMethod.GET, url);
-    return ObjectResponse.fromJsonBody(response, Integer.class).getResponseObject();
+    return ObjectResponse.fromJsonBody(response, JsonObject.class).getResponseObject();
   }
 
 }

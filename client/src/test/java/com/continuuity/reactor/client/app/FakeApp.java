@@ -19,6 +19,7 @@ package com.continuuity.reactor.client.app;
 import com.continuuity.api.app.AbstractApplication;
 import com.continuuity.api.data.stream.Stream;
 import com.continuuity.api.flow.FlowSpecification;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.util.List;
@@ -37,6 +38,13 @@ public class FakeApp extends AbstractApplication {
   public static final List<String> MAPREDUCES = Lists.newArrayList();
   public static final List<String> WORKFLOWS = Lists.newArrayList();
   public static final List<String> SERVICES = Lists.newArrayList();
+  public static final List<String> ALL_PROGRAMS = ImmutableList.<String>builder()
+    .addAll(FLOWS)
+    .addAll(PROCEDURES)
+    .addAll(MAPREDUCES)
+    .addAll(WORKFLOWS)
+    .addAll(SERVICES)
+    .build();
 
   @Override
   public void configure() {

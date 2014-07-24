@@ -21,10 +21,12 @@ import com.continuuity.client.exception.NotFoundException;
 import com.continuuity.client.exception.ProgramNotFoundException;
 import com.continuuity.proto.ProgramRecord;
 import com.continuuity.proto.ProgramType;
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -36,6 +38,18 @@ public abstract class ClientTestBase extends SingleNodeTestBase {
     for (ProgramRecord actualProgramRecord : actual) {
       Assert.assertTrue(expected.contains(actualProgramRecord.getId()));
     }
+  }
+
+  protected void verifyProgramNames(List<String> expected, Map<ProgramType, List<ProgramRecord>> actual) {
+    verifyProgramNames(expected, convert(actual));
+  }
+
+  private List<ProgramRecord> convert(Map<ProgramType, List<ProgramRecord>> map) {
+    List<ProgramRecord> result = Lists.newArrayList();
+    for (List<ProgramRecord> subList : map.values()) {
+      result.addAll(subList);
+    }
+    return result;
   }
 
   protected void assertProcedureInstances(ProgramClient programClient, String appId, String procedureId,
