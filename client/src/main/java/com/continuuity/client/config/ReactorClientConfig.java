@@ -31,6 +31,7 @@ public class ReactorClientConfig {
   private String protocol = "http";
   private String version = "v2";
 
+  private final int port;
   private final HttpRequestConfig defaultConfig;
   private final HttpRequestConfig uploadConfig;
   private final URI baseURI;
@@ -46,6 +47,7 @@ public class ReactorClientConfig {
                              HttpRequestConfig uploadConfig) throws URISyntaxException {
     this.defaultConfig = defaultConfig;
     this.uploadConfig = uploadConfig;
+    this.port = port;
     this.baseURI = new URI(protocol + "://" + reactorHost + ":" + port);
   }
 
@@ -89,5 +91,12 @@ public class ReactorClientConfig {
    */
   public HttpRequestConfig getUploadConfig() {
     return uploadConfig;
+  }
+
+  /**
+   * @return port of Reactor
+   */
+  public int getPort() {
+    return port;
   }
 }
