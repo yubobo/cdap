@@ -16,7 +16,7 @@
 
 package com.continuuity.client;
 
-import com.continuuity.api.DatasetSpecification;
+import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.client.exception.DatasetAlreadyExistsException;
 import com.continuuity.client.exception.DatasetNotFoundException;
@@ -39,7 +39,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 /**
- * Provides ways to interact with Reactor datasets.
+ * Provides ways to interact with Reactor Datasets.
  */
 public class DatasetClient {
 

@@ -27,7 +27,7 @@ import java.net.URL;
 import javax.inject.Inject;
 
 /**
- * Provides ways to interact with Reactor metrics.
+ * Provides ways to interact with Reactor Metrics.
  */
 public class MetricsClient {
 

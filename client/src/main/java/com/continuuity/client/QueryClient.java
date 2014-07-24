@@ -39,7 +39,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 /**
- * Provides ways to query Reactor datasets.
+ * Provides ways to query Reactor Datasets.
  */
 public class QueryClient {
 

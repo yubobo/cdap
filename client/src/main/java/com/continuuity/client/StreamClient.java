@@ -36,7 +36,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 /**
- * Provides ways to interact with Reactor streams.
+ * Provides ways to interact with Reactor Streams.
  */
 public class StreamClient {
 

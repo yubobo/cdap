@@ -30,7 +30,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 /**
- * Provides ways to interact with Reactor dataset types.
+ * Provides ways to interact with Reactor Dataset types.
  */
 public class DatasetTypeClient {
 

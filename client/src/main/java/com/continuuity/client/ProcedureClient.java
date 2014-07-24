@@ -37,7 +37,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 /**
- * Provides ways to interact with Reactor procedures.
+ * Provides ways to interact with Reactor Procedures.
  */
 public class ProcedureClient {
 
