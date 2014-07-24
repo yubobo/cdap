@@ -73,7 +73,7 @@ DatasetClient
   // Construct the client used to interact with Reactor
   DatasetClient datasetClient = new DatasetClient(clientConfig);
 
-  // Fetch list of Datasets [common]
+  // Fetch list of Datasets
   List<DatasetSpecification> datasets = datasetClient.list();
 
   // Create a Dataset
