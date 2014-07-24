@@ -111,7 +111,9 @@ public class ReactorShellMain {
    */
   public void startShellMode(PrintStream output) throws Exception {
     final ConsoleReader reader = new ConsoleReader();
-    reader.setPrompt("reactor (" + reactorShellConfig.getReactorHost() + ")> ");
+    reader.setPrompt("reactor ("
+                       + reactorShellConfig.getReactorHost() + ":"
+                       + reactorShellConfig.getReactorConfig().getPort() + ")> ");
     reader.setHandleUserInterrupt(true);
 
     for (Completer completer : commands.getCompleters(null)) {
