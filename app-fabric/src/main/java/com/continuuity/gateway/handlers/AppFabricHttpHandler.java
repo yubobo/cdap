@@ -16,9 +16,7 @@
 
 package com.continuuity.gateway.handlers;
 
-import com.continuuity.api.DatasetSpecification;
 import com.continuuity.api.ProgramSpecification;
-import com.continuuity.api.ProgramTypes;
 import com.continuuity.api.common.Bytes;
 import com.continuuity.api.data.DataSet;
 import com.continuuity.api.data.DataSetInstantiationException;
@@ -26,6 +24,7 @@ import com.continuuity.api.data.DataSetSpecification;
 import com.continuuity.api.data.dataset.table.Row;
 import com.continuuity.api.data.dataset.table.Table;
 import com.continuuity.api.data.stream.StreamSpecification;
+import com.continuuity.api.dataset.DatasetSpecification;
 import com.continuuity.api.flow.FlowSpecification;
 import com.continuuity.api.flow.FlowletConnection;
 import com.continuuity.api.flow.FlowletDefinition;
@@ -48,6 +47,7 @@ import com.continuuity.common.conf.Constants;
 import com.continuuity.common.discovery.RandomEndpointStrategy;
 import com.continuuity.common.discovery.TimeLimitEndpointStrategy;
 import com.continuuity.common.metrics.MetricsScope;
+import com.continuuity.common.program.ProgramTypes;
 import com.continuuity.common.queue.QueueName;
 import com.continuuity.data.DataSetAccessor;
 import com.continuuity.data.operation.OperationContext;
