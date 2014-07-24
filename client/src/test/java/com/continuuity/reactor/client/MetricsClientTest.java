@@ -16,10 +16,12 @@
 
 package com.continuuity.reactor.client;
 
+import com.continuuity.client.MetricsClient;
 import com.continuuity.client.MonitorClient;
 import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.proto.SystemServiceMeta;
 import com.continuuity.reactor.client.common.ClientTestBase;
+import com.google.gson.JsonObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,32 +31,24 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * Test for {@link MonitorClient}.
+ * Test for {@link MetricsClient}.
  */
-public class MonitorClientTest extends ClientTestBase {
+public class MetricsClientTest extends ClientTestBase {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MonitorClientTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MetricsClientTest.class);
 
-  private MonitorClient monitorClient;
+  private MetricsClient metricsClient;
 
   @Before
   public void setUp() throws Throwable {
     super.setUp();
 
-    monitorClient = new MonitorClient(new ReactorClientConfig("localhost"));
+    metricsClient = new MetricsClient(new ReactorClientConfig("localhost"));
   }
 
   @Test
   public void testAll() throws Exception {
-    List<SystemServiceMeta> services = monitorClient.listSystemServices();
-    Assert.assertTrue(services.size() > 0);
-
-    String someService = services.get(0).getName();
-    String serviceStatus = monitorClient.getSystemServiceStatus(someService);
-    Assert.assertEquals("OK", serviceStatus);
-
-    int systemServiceInstances = monitorClient.getSystemServiceInstances(someService);
-    monitorClient.setSystemServiceInstances(someService, 3);
-    Assert.assertEquals(3, monitorClient.getSystemServiceInstances(someService));
+    JsonObject metric = metricsClient.getMetric("user", "/apps/FakeApp/flows", "process.events", "aggregate=true");
+    Assert.assertEquals(0, metric.get("data").getAsInt());
   }
 }

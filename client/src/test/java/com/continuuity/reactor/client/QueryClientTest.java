@@ -51,6 +51,7 @@ public class QueryClientTest extends ClientTestBase {
     queryClient = new QueryClient(config);
   }
 
+  // TODO: explore query in singlenode?
 //  @Test
   public void testAll() throws Exception {
     appClient.deploy(createAppJarFile(FakeApp.class));
@@ -60,8 +61,10 @@ public class QueryClientTest extends ClientTestBase {
 
     long startTime = System.currentTimeMillis();
     // TODO: refactor
-    while ("RUNNING".equals(status.getStatus()) || "INITIALIZED".equals(status.getStatus())
-      || "PENDING".equals(status.getStatus())) {
+    while (QueryStatus.OpStatus.RUNNING == status.getStatus() ||
+      QueryStatus.OpStatus.INITIALIZED == status.getStatus() ||
+      QueryStatus.OpStatus.PENDING == status.getStatus()) {
+
       Thread.sleep(1000);
       status = queryClient.getStatus(queryHandle);
     }

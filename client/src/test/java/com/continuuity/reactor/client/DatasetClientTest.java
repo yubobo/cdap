@@ -20,6 +20,7 @@ import com.continuuity.client.DatasetClient;
 import com.continuuity.client.DatasetModuleClient;
 import com.continuuity.client.DatasetTypeClient;
 import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.proto.DatasetModuleMeta;
 import com.continuuity.proto.DatasetTypeMeta;
 import com.continuuity.reactor.client.app.FakeDataset;
 import com.continuuity.reactor.client.app.FakeDatasetModule;
@@ -33,7 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 
 /**
- *
+ * Test for {@link DatasetClient}, {@link DatasetModuleClient}, and {@link DatasetTypeClient}.
  */
 public class DatasetClientTest extends ClientTestBase {
 
@@ -64,6 +65,15 @@ public class DatasetClientTest extends ClientTestBase {
     moduleClient.add(FakeDatasetModule.NAME, FakeDatasetModule.class.getName(), moduleJarFile);
     Assert.assertEquals(numBaseModules + 1, moduleClient.list().size());
     Assert.assertEquals(numBaseTypes + 2, typeClient.list().size());
+
+    LOG.info("Checking that the new Dataset module exists");
+    DatasetModuleMeta datasetModuleMeta = moduleClient.get(FakeDatasetModule.NAME);
+    Assert.assertNotNull(datasetModuleMeta);
+    Assert.assertEquals(FakeDatasetModule.NAME, datasetModuleMeta.getName());
+
+    datasetModuleMeta = moduleClient.get(FakeDatasetModule.class.getName());
+    Assert.assertNotNull(datasetModuleMeta);
+    Assert.assertEquals(FakeDatasetModule.NAME, datasetModuleMeta.getName());
 
     LOG.info("Checking that the new Dataset type exists");
     DatasetTypeMeta datasetTypeMeta = typeClient.get(FakeDataset.TYPE_NAME);

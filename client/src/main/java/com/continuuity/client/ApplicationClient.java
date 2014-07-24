@@ -26,6 +26,7 @@ import com.continuuity.common.http.ObjectResponse;
 import com.continuuity.proto.ApplicationRecord;
 import com.continuuity.proto.ProgramRecord;
 import com.continuuity.proto.ProgramType;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
@@ -116,6 +117,7 @@ public class ApplicationClient {
    * @throws IOException if a network error occurred
    */
   public List<ProgramRecord> listAllPrograms(ProgramType programType) throws IOException {
+    Preconditions.checkArgument(programType.isListable());
 
     URL url = config.resolveURL(programType.getCategoryName());
     HttpRequest request = HttpRequest.get(url).build();
@@ -147,7 +149,7 @@ public class ApplicationClient {
   
 
   /**
-   * Lists programs of some type beloing to an application.
+   * Lists programs of some type belonging to an application.
    *
    * @param appId ID of the application
    * @param programType type of the programs to list
@@ -157,6 +159,7 @@ public class ApplicationClient {
    */
   public List<ProgramRecord> listPrograms(String appId, ProgramType programType)
     throws ApplicationNotFoundException, IOException {
+    Preconditions.checkArgument(programType.isListable());
 
     URL url = config.resolveURL(String.format("apps/%s/%s", appId, programType.getCategoryName()));
     HttpRequest request = HttpRequest.get(url).build();
