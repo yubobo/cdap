@@ -21,21 +21,25 @@ import com.continuuity.shell.command.VersionCommand;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import com.google.common.io.InputSupplier;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * Configuration for Reactor shell.
  */
 public class ReactorShellConfig {
 
-  private final String reactorHost;
   private final ReactorClientConfig reactorConfig;
   private final String version;
+
+  private String reactorHost;
+  private List<ReactorHostChangeListener> reactorHostChangeListeners;
 
   /**
    * @param reactorHost Hostname of the Reactor instance to interact with (e.g. "example.com")
@@ -45,6 +49,7 @@ public class ReactorShellConfig {
     this.reactorHost = Objects.firstNonNull(reactorHost, "localhost");
     this.reactorConfig = new ReactorClientConfig(reactorHost);
     this.version = tryGetVersion();
+    this.reactorHostChangeListeners = Lists.newArrayList();
   }
 
   private static String tryGetVersion() {
@@ -71,5 +76,23 @@ public class ReactorShellConfig {
 
   public String getVersion() {
     return version;
+  }
+
+  public void setReactorHost(String reactorHost) {
+    this.reactorHost = reactorHost;
+    for (ReactorHostChangeListener listener : reactorHostChangeListeners) {
+      listener.onReactorHostChanged(reactorHost);
+    }
+  }
+
+  public void addReactorHostChangeListener(ReactorHostChangeListener listener) {
+    this.reactorHostChangeListeners.add(listener);
+  }
+
+  /**
+   * Listener for reactorHost changes.
+   */
+  public interface ReactorHostChangeListener {
+    void onReactorHostChanged(String newReactorHost);
   }
 }

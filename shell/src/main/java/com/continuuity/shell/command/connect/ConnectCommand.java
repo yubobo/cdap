@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Continuuity, Inc.
+ * Copyright 2012-2014 Continuuity, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -14,38 +14,40 @@
  * the License.
  */
 
-package com.continuuity.shell.command.create;
+package com.continuuity.shell.command.connect;
 
-import com.continuuity.client.StreamClient;
-import com.continuuity.client.exception.BadRequestException;
-import com.continuuity.shell.ElementType;
+import com.continuuity.shell.ReactorShellConfig;
 import com.continuuity.shell.command.AbstractCommand;
+import com.continuuity.shell.util.SocketUtil;
 
 import java.io.PrintStream;
 import javax.inject.Inject;
 
 /**
- * Creates a stream.
+ * Connects to a Reactor instance.
  */
-public class CreateStreamCommand extends AbstractCommand {
+public class ConnectCommand extends AbstractCommand {
 
-  private final StreamClient streamClient;
+  private final ReactorShellConfig shellConfig;
 
   @Inject
-  public CreateStreamCommand(StreamClient streamClient) {
-    super("stream", "<new-stream-id>", "Creates a " + ElementType.STREAM.getPrettyName());
-    this.streamClient = streamClient;
+  public ConnectCommand(ReactorShellConfig shellConfig) {
+    super("connect", "<reactor-hostname>", "Connects to a Reactor instance");
+    this.shellConfig = shellConfig;
   }
 
   @Override
   public void process(String[] args, PrintStream output) throws Exception {
     super.process(args, output);
 
-    String streamId = args[0];
-    try {
-      streamClient.create(streamId);
-    } catch (BadRequestException e) {
-      output.println(e.getMessage());
+    String hostname = args[0];
+    int port = shellConfig.getReactorConfig().getPort();
+
+    boolean available = SocketUtil.isAvailable(hostname, port);
+    if (available) {
+      shellConfig.setReactorHost(hostname);
+    } else {
+      output.println(String.format("Host %s on port %d could not be reached", hostname, port));
     }
   }
 }

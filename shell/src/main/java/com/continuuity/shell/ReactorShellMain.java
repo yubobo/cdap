@@ -22,6 +22,7 @@ import com.continuuity.shell.command.ExitCommand;
 import com.continuuity.shell.command.HelpCommand;
 import com.continuuity.shell.command.VersionCommand;
 import com.continuuity.shell.command.call.CallCommandSet;
+import com.continuuity.shell.command.connect.ConnectCommand;
 import com.continuuity.shell.command.create.CreateCommandSet;
 import com.continuuity.shell.command.delete.DeleteCommandSet;
 import com.continuuity.shell.command.deploy.DeployCommandSet;
@@ -63,9 +64,19 @@ public class ReactorShellMain {
   private final CommandSet commands;
   private final ReactorShellConfig reactorShellConfig;
   private final HelpCommand helpCommand;
+  private final ConsoleReader reader;
 
-  public ReactorShellMain(final ReactorShellConfig reactorShellConfig) throws URISyntaxException {
+  public ReactorShellMain(final ReactorShellConfig reactorShellConfig) throws URISyntaxException, IOException {
+    this.reader = new ConsoleReader();
     this.reactorShellConfig = reactorShellConfig;
+    this.reactorShellConfig.addReactorHostChangeListener(new ReactorShellConfig.ReactorHostChangeListener() {
+      @Override
+      public void onReactorHostChanged(String newReactorHost) {
+        reader.setPrompt(
+          "reactor (" + reactorShellConfig.getReactorHost() + ":"
+            + reactorShellConfig.getReactorConfig().getPort() + ")> ");
+      }
+    });
     this.helpCommand = new HelpCommand(new Supplier<CommandSet>() {
       @Override
       public CommandSet get() {
@@ -85,6 +96,7 @@ public class ReactorShellMain {
 
     this.commands = CommandSet.builder(null)
       .addCommand(helpCommand)
+      .addCommand(injector.getInstance(ConnectCommand.class))
       .addCommand(injector.getInstance(VersionCommand.class))
       .addCommand(injector.getInstance(ExitCommand.class))
       .addCommand(injector.getInstance(CallCommandSet.class))
@@ -110,11 +122,10 @@ public class ReactorShellMain {
    * @throws Exception
    */
   public void startShellMode(PrintStream output) throws Exception {
-    final ConsoleReader reader = new ConsoleReader();
-    reader.setPrompt("reactor ("
-                       + reactorShellConfig.getReactorHost() + ":"
-                       + reactorShellConfig.getReactorConfig().getPort() + ")> ");
-    reader.setHandleUserInterrupt(true);
+    this.reader.setPrompt("reactor ("
+                            + reactorShellConfig.getReactorHost() + ":"
+                            + reactorShellConfig.getReactorConfig().getPort() + ")> ");
+    this.reader.setHandleUserInterrupt(true);
 
     for (Completer completer : commands.getCompleters(null)) {
       reader.addCompleter(completer);
@@ -142,7 +153,7 @@ public class ReactorShellMain {
           output.println(e.getMessage() + "\n");
           helpCommand.process(null, output);
         } catch (Exception e) {
-          e.printStackTrace();
+          output.println("Error: " + e.getMessage());
         }
         output.println();
       }

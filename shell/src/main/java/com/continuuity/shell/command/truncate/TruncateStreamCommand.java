@@ -38,7 +38,7 @@ public class TruncateStreamCommand extends AbstractCommand implements Completabl
 
   @Inject
   public TruncateStreamCommand(StreamIdCompleter completer, StreamClient streamClient) {
-    super("stream", null, "Truncates a " + ElementType.STREAM.getPrettyName());
+    super("stream", "<stream-id>", "Truncates a " + ElementType.STREAM.getPrettyName());
     this.completer = completer;
     this.streamClient = streamClient;
   }

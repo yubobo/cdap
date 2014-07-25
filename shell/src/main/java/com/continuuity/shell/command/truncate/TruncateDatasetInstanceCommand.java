@@ -38,7 +38,7 @@ public class TruncateDatasetInstanceCommand extends AbstractCommand implements C
 
   @Inject
   public TruncateDatasetInstanceCommand(DatasetNameCompleter completer, DatasetClient datasetClient) {
-    super("instance", null, "Truncates a " + ElementType.DATASET.getPrettyName());
+    super("instance", "<dataset-name>", "Truncates a " + ElementType.DATASET.getPrettyName());
     this.completer = completer;
     this.datasetClient = datasetClient;
   }
