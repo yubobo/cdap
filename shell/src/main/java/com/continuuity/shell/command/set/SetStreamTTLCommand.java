@@ -51,6 +51,7 @@ public class SetStreamTTLCommand extends AbstractCommand implements Completable 
     String streamId = args[0];
     long ttlInSeconds = Long.parseLong(args[1]);
     streamClient.setTTL(streamId, ttlInSeconds);
+    output.printf("Successfully set TTL of stream '%s' to %d\n", streamId, ttlInSeconds);
   }
 
   @Override

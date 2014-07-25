@@ -53,6 +53,7 @@ public class StopProgramCommand extends AbstractCommand implements Completable {
     String programId = programIdParts[1];
 
     programClient.stop(appId, elementType.getProgramType(), programId);
+    output.printf("Successfully stopped %s '%s' of application '%s'\n", elementType.getPrettyName(), programId, appId);
   }
 
   @Override

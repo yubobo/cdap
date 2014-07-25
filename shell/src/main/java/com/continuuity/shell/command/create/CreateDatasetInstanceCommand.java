@@ -49,7 +49,9 @@ public class CreateDatasetInstanceCommand extends AbstractCommand implements Com
 
     String datasetType = args[0];
     String datasetName = args[1];
+
     datasetClient.create(datasetName, datasetType);
+    output.printf("Successfully created dataset named '%s' with type '%s'\n", datasetName, datasetType);
   }
 
   @Override

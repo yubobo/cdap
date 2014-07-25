@@ -52,6 +52,7 @@ public class SendStreamEventCommand extends AbstractCommand implements Completab
     String streamId = args[0];
     String streamEvent = Joiner.on(" ").join(Arrays.copyOfRange(args, 1, args.length));
     streamClient.sendEvent(streamId, streamEvent);
+    output.printf("Successfully send stream event to stream '%s'\n", streamId);
   }
 
   @Override

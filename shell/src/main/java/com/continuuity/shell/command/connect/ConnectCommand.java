@@ -20,6 +20,7 @@ import com.continuuity.shell.ReactorShellConfig;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.util.SocketUtil;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import javax.inject.Inject;
 
@@ -43,11 +44,11 @@ public class ConnectCommand extends AbstractCommand {
     String hostname = args[0];
     int port = shellConfig.getReactorConfig().getPort();
 
-    boolean available = SocketUtil.isAvailable(hostname, port);
-    if (available) {
-      shellConfig.setReactorHost(hostname);
-    } else {
-      output.println(String.format("Host %s on port %d could not be reached", hostname, port));
+    if (!SocketUtil.isAvailable(hostname, port)) {
+      throw new IOException(String.format("Host %s on port %d could not be reached", hostname, port));
     }
+
+    shellConfig.setReactorHost(hostname);
+    output.printf("Successfully connected Reactor host at %s:%d\n", hostname, port);
   }
 }

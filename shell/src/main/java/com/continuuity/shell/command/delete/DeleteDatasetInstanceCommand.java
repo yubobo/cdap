@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.delete;
 
 import com.continuuity.client.DatasetClient;
+import com.continuuity.client.exception.DatasetNotFoundException;
 import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -49,7 +50,9 @@ public class DeleteDatasetInstanceCommand extends AbstractCommand implements Com
     super.process(args, output);
 
     String datasetName = args[0];
+
     datasetClient.delete(datasetName);
+    output.printf("Successfully deleted dataset named '%s'\n", datasetName);
   }
 
   @Override

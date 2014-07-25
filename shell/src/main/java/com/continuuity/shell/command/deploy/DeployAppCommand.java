@@ -51,6 +51,7 @@ public class DeployAppCommand extends AbstractCommand implements Completable {
     Preconditions.checkArgument(file.exists(), "File " + file.getAbsolutePath() + " does not exist");
     Preconditions.checkArgument(file.canRead(), "File " + file.getAbsolutePath() + " is not readable");
     applicationClient.deploy(file);
+    output.println("Successfully deployed application");
   }
 
   @Override

@@ -17,6 +17,7 @@
 package com.continuuity.shell.command.delete;
 
 import com.continuuity.client.ApplicationClient;
+import com.continuuity.client.exception.ApplicationNotFoundException;
 import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -48,7 +49,9 @@ public class DeleteAppCommand extends AbstractCommand implements Completable {
     super.process(args, output);
 
     String appId = args[0];
+
     appClient.delete(appId);
+    output.printf("Successfully deleted application '%s'\n", appId);
   }
 
   @Override

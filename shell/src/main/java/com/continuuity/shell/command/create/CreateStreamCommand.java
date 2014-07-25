@@ -42,10 +42,8 @@ public class CreateStreamCommand extends AbstractCommand {
     super.process(args, output);
 
     String streamId = args[0];
-    try {
-      streamClient.create(streamId);
-    } catch (BadRequestException e) {
-      output.println(e.getMessage());
-    }
+
+    streamClient.create(streamId);
+    output.printf("Successfully created stream with ID '%s'\n", streamId);
   }
 }

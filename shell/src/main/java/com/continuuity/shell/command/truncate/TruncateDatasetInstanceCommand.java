@@ -49,6 +49,7 @@ public class TruncateDatasetInstanceCommand extends AbstractCommand implements C
 
     String datasetName = args[0];
     datasetClient.truncate(datasetName);
+    output.printf("Successfully truncated dataset '%s'\n", datasetName);
   }
 
   @Override

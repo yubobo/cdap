@@ -49,6 +49,7 @@ public class TruncateStreamCommand extends AbstractCommand implements Completabl
 
     String streamId = args[0];
     streamClient.truncate(streamId);
+    output.printf("Successfully truncated stream '%s'\n", streamId);
   }
 
   @Override

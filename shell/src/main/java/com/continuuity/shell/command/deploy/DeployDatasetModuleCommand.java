@@ -17,6 +17,8 @@
 package com.continuuity.shell.command.deploy;
 
 import com.continuuity.client.DatasetModuleClient;
+import com.continuuity.client.exception.AlreadyExistsException;
+import com.continuuity.client.exception.BadRequestException;
 import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -56,6 +58,7 @@ public class DeployDatasetModuleCommand extends AbstractCommand implements Compl
     String moduleJarClassname = args[2];
 
     datasetModuleClient.add(moduleName, moduleJarClassname, moduleJarFile);
+    output.printf("Successfully deployed dataset module '%s'\n", moduleName);
   }
 
   @Override

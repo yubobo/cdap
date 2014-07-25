@@ -17,6 +17,8 @@
 package com.continuuity.shell.command.delete;
 
 import com.continuuity.client.DatasetModuleClient;
+import com.continuuity.client.exception.DatasetModuleCannotBeDeletedException;
+import com.continuuity.client.exception.DatasetModuleNotFoundException;
 import com.continuuity.shell.ElementType;
 import com.continuuity.shell.command.AbstractCommand;
 import com.continuuity.shell.completer.Completable;
@@ -49,7 +51,9 @@ public class DeleteDatasetModuleCommand extends AbstractCommand implements Compl
     super.process(args, output);
 
     String datasetModuleName = args[0];
+
     datasetClient.delete(datasetModuleName);
+    output.printf("Successfully deleted dataset module '%s'\n", datasetModuleName);
   }
 
   @Override

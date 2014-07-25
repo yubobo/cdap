@@ -53,6 +53,7 @@ public class StartProgramCommand extends AbstractCommand implements Completable 
     String programId = programIdParts[1];
 
     programClient.start(appId, elementType.getProgramType(), programId);
+    output.printf("Successfully started %s '%s' of application '%s'\n", elementType.getPrettyName(), programId, appId);
   }
 
   @Override
