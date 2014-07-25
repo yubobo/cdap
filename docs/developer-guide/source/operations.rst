@@ -506,7 +506,8 @@ Here are all of the available commands:
 - ``help``: Prints this helper text
 - ``version``: Prints the version
 - ``exit``: Exits the shell
-- ``call procedure <app-id>.<procedure-id> <method-id> <parameters-map>``: Calls a Procedure, passing in the parameters as a JSON String map
+- ``call procedure <app-id>.<procedure-id> <method-id> <parameters-map>``: Calls a Procedure,
+  passing in the parameters as a JSON String map
 - ``create stream <new-stream-id>``: Creates a Stream
 - ``create dataset instance <type-name> <new-dataset-name>``: Creates a Dataset
 - ``delete app <app-id>``: Deletes an application
