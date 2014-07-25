@@ -55,7 +55,7 @@ public class RestClient {
     HttpResponse response = HttpRequests.execute(request, defaultConfig);
     if (!isSuccessful(response.getResponseCode())
       && !ArrayUtils.contains(allowedErrorCodes, response.getResponseCode())) {
-      throw new IOException("Unexpected response code " + response.getResponseCode());
+      throw new IOException(response.getResponseBodyAsString());
     }
     return response;
   }
@@ -73,7 +73,7 @@ public class RestClient {
     HttpResponse response = HttpRequests.execute(request, uploadConfig);
     if (!isSuccessful(response.getResponseCode())
       && !ArrayUtils.contains(allowedErrorCodes, response.getResponseCode())) {
-      throw new IOException("Unexpected response code " + response.getResponseCode());
+      throw new IOException(response.getResponseBodyAsString());
     }
     return response;
   }

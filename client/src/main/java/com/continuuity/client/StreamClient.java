@@ -17,6 +17,7 @@
 package com.continuuity.client;
 
 import com.continuuity.client.config.ReactorClientConfig;
+import com.continuuity.client.exception.BadRequestException;
 import com.continuuity.client.exception.StreamNotFoundException;
 import com.continuuity.client.util.RestClient;
 import com.continuuity.common.http.HttpMethod;
@@ -56,10 +57,14 @@ public class StreamClient {
    *
    * @param newStreamId ID of the new stream to create
    * @throws IOException if a network error occurred
+   * @throws BadRequestException if the provided stream ID was invalid
    */
-  public void create(String newStreamId) throws IOException {
+  public void create(String newStreamId) throws IOException, BadRequestException {
     URL url = config.resolveURL(String.format("streams/%s", newStreamId));
-    restClient.execute(HttpMethod.PUT, url);
+    HttpResponse response = restClient.execute(HttpMethod.PUT, url, HttpURLConnection.HTTP_BAD_REQUEST);
+    if (response.getResponseCode() == HttpURLConnection.HTTP_BAD_REQUEST) {
+      throw new BadRequestException("Bad request: " + response.getResponseBodyAsString());
+    }
   }
 
   /**
