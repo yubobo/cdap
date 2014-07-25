@@ -31,10 +31,11 @@ public class ReactorClientConfig {
   private String protocol = "http";
   private String version = "v2";
 
-  private final int port;
   private final HttpRequestConfig defaultConfig;
   private final HttpRequestConfig uploadConfig;
-  private final URI baseURI;
+
+  private URI baseURI;
+  private int port;
 
   /**
    * @param reactorHost Hostname of Reactor (i.e. example.com)
@@ -98,5 +99,15 @@ public class ReactorClientConfig {
    */
   public int getPort() {
     return port;
+  }
+
+  /**
+   * @param reactorHost Hostname of Reactor (i.e. example.com)
+   * @param port Port of Reactor (i.e. 10000)
+   * @throws URISyntaxException
+   */
+  public void setReactorHost(String reactorHost, int port) throws URISyntaxException {
+    this.port = port;
+    this.baseURI = new URI(protocol + "://" + reactorHost + ":" + port);
   }
 }
