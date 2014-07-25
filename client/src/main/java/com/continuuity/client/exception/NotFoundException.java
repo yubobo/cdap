@@ -25,7 +25,7 @@ public class NotFoundException extends Exception {
   private final String elementId;
 
   public NotFoundException(String elementType, String elementId) {
-    super(String.format("Element '%s' of type '%s' was not found", elementId, elementType));
+    super(String.format("%s '%s' was not found", elementType, elementId));
     this.elementType = elementType;
     this.elementId = elementId;
   }
