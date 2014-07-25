@@ -54,7 +54,6 @@ public class MonitorClientTest extends ClientTestBase {
     Assert.assertEquals("OK", serviceStatus);
 
     int systemServiceInstances = monitorClient.getSystemServiceInstances(someService);
-    monitorClient.setSystemServiceInstances(someService, 3);
-    Assert.assertEquals(3, monitorClient.getSystemServiceInstances(someService));
+    monitorClient.setSystemServiceInstances(someService, 1);
   }
 }

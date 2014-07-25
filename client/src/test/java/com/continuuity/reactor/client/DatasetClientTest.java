@@ -71,10 +71,6 @@ public class DatasetClientTest extends ClientTestBase {
     Assert.assertNotNull(datasetModuleMeta);
     Assert.assertEquals(FakeDatasetModule.NAME, datasetModuleMeta.getName());
 
-    datasetModuleMeta = moduleClient.get(FakeDatasetModule.class.getName());
-    Assert.assertNotNull(datasetModuleMeta);
-    Assert.assertEquals(FakeDatasetModule.NAME, datasetModuleMeta.getName());
-
     LOG.info("Checking that the new Dataset type exists");
     DatasetTypeMeta datasetTypeMeta = typeClient.get(FakeDataset.TYPE_NAME);
     Assert.assertNotNull(datasetTypeMeta);
