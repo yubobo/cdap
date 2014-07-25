@@ -66,8 +66,7 @@ public class CommandSet implements Command, Completable {
   public void process(String[] args, PrintStream output) throws Exception {
     if (args.length == 0) {
       // TODO: print help message
-      output.println("Invalid command");
-      return;
+      throw new InvalidCommandException();
     }
 
     String commandName = args[0];
@@ -82,7 +81,7 @@ public class CommandSet implements Command, Completable {
     }
 
     if (command == null) {
-      throw new InvalidCommandException(args[0]);
+      throw new InvalidCommandException();
     }
 
     command.process(Arrays.copyOfRange(args, 1, args.length), output);

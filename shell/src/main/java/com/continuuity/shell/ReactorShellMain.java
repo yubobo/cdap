@@ -146,12 +146,12 @@ public class ReactorShellMain {
       }
 
       if (line.length() > 0) {
-        String[] commandArgs = Iterables.toArray(Splitter.on(" ").split(line.trim()), String.class);
+        String command = line.trim();
+        String[] commandArgs = Iterables.toArray(Splitter.on(" ").split(command), String.class);
         try {
           processArgs(commandArgs, output);
         } catch (InvalidCommandException e) {
-          output.println(e.getMessage() + "\n");
-          helpCommand.process(null, output);
+          output.println("Invalid command: " + command + " (enter 'help' to list all available commands)");
         } catch (Exception e) {
           output.println("Error: " + e.getMessage());
         }

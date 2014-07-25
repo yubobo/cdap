@@ -35,6 +35,8 @@ import java.util.List;
  */
 public class ReactorShellConfig {
 
+  public static final int PORT = 10000;
+
   private final ReactorClientConfig reactorConfig;
   private final String version;
 
@@ -47,7 +49,7 @@ public class ReactorShellConfig {
    */
   public ReactorShellConfig(String reactorHost) throws URISyntaxException {
     this.reactorHost = Objects.firstNonNull(reactorHost, "localhost");
-    this.reactorConfig = new ReactorClientConfig(reactorHost);
+    this.reactorConfig = new ReactorClientConfig(reactorHost, PORT);
     this.version = tryGetVersion();
     this.reactorHostChangeListeners = Lists.newArrayList();
   }
@@ -78,8 +80,9 @@ public class ReactorShellConfig {
     return version;
   }
 
-  public void setReactorHost(String reactorHost) {
+  public void setReactorHost(String reactorHost) throws URISyntaxException {
     this.reactorHost = reactorHost;
+    this.reactorConfig.setReactorHost(reactorHost, PORT);
     for (ReactorHostChangeListener listener : reactorHostChangeListeners) {
       listener.onReactorHostChanged(reactorHost);
     }
