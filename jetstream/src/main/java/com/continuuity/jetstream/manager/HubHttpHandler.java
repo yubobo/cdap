@@ -25,7 +25,6 @@ import org.apache.commons.io.Charsets;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -43,37 +42,41 @@ public class HubHttpHandler extends AbstractHttpHandler {
   private HubDataStore hubDataStore;
 
   public HubHttpHandler(HubDataStore ds) {
-    this.hubDataStore = ds;
+    hubDataStore = ds;
   }
 
-  private String getStringContent(HttpRequest request) throws IOException {
+  private String getStringContent(HttpRequest request) {
     return request.getContent().toString(Charsets.UTF_8);
   }
 
- public void updateHubDataStore(HubDataStore hubDataStore) {
-   this.hubDataStore = hubDataStore;
- }
+  public void updateHubDataStore(HubDataStore hubDataStore) {
+    this.hubDataStore = hubDataStore;
+  }
 
   @Path("/AnnounceInstance")
   @POST
   public void announceInstance(HttpRequest request, HttpResponder responder) {
     String req;
+    JsonObject requestData;
     try {
       req = getStringContent(request);
     } catch (Exception e) {
       throw new RuntimeException("Cannot read HTTP request");
     }
-    JsonParser jsonParser = new JsonParser();
-    JsonObject requestData;
     try {
-      requestData = (JsonObject) jsonParser.parse(req);
+      JsonParser jsonParser = new JsonParser();
+      JsonReader jsonReader = new JsonReader(new StringReader(req));
+      jsonReader.setLenient(true);
+      requestData = (JsonObject) jsonParser.parse(jsonReader);
     } catch (Exception e) {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       return;
     }
-    updateHubDataStore(HubDataStoreFactory.setInstanceName(hubDataStore, requestData.get("name").getAsString()));
-    updateHubDataStore(HubDataStoreFactory.setClearingHouseAddress(hubDataStore,
-                new InetSocketAddress(requestData.get("ip").getAsString(), requestData.get("port").getAsInt())));
+    updateHubDataStore(new HubDataStore.Builder().copy(hubDataStore)
+                         .setInstanceName(requestData.get("name").getAsString()).build());
+    updateHubDataStore(new HubDataStore.Builder().copy(hubDataStore)
+                         .setClearingHouseAddress(new InetSocketAddress(requestData.get("ip").getAsString(),
+                                                                        requestData.get("port").getAsInt())).build());
     responder.sendStatus(HttpResponseStatus.OK);
   }
 
@@ -81,11 +84,11 @@ public class HubHttpHandler extends AbstractHttpHandler {
   @GET
   public void discoverInstance(HttpRequest request, HttpResponder responder,
                                @PathParam("instance") String instance) {
-    if (!instance.equals(this.hubDataStore.getInstanceName())) {
+    if (!instance.equals(hubDataStore.getInstanceName())) {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       return;
     }
-    InetSocketAddress address = this.hubDataStore.getClearingHouseAddress();
+    InetSocketAddress address = hubDataStore.getClearingHouseAddress();
     if (address == null) {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       return;
@@ -116,8 +119,8 @@ public class HubHttpHandler extends AbstractHttpHandler {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       throw new RuntimeException("Cannot parse JSON");
     }
-    if (this.hubDataStore.getInstanceName().equals(requestData.get("name").getAsString())) {
-      updateHubDataStore(HubDataStoreFactory.initialize(hubDataStore));
+    if (hubDataStore.getInstanceName().equals(requestData.get("name").getAsString())) {
+      updateHubDataStore(new HubDataStore.Builder().copy(hubDataStore).initialize().build());
       responder.sendStatus(HttpResponseStatus.OK);
       return;
     }
@@ -128,7 +131,7 @@ public class HubHttpHandler extends AbstractHttpHandler {
   @GET
   public void discoverInitializedInstance(HttpRequest request, HttpResponder responder,
                                           @PathParam("instance") String instance) {
-    if ((!this.hubDataStore.isInitialized()) || (!instance.equals(this.hubDataStore.getInstanceName()))) {
+    if ((!hubDataStore.isInitialized()) || (!instance.equals(hubDataStore.getInstanceName()))) {
       responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
       return;
     }
@@ -147,7 +150,7 @@ public class HubHttpHandler extends AbstractHttpHandler {
   @GET
   public void discoverSource(HttpRequest request, HttpResponder responder,
                              @PathParam("dataSourceName") String dataSourceName) {
-    List<HubDataSource> dataSources = this.hubDataStore.getHubDataSources();
+    List<HubDataSource> dataSources = hubDataStore.getHubDataSources();
     HubDataSource ds = null;
     for (HubDataSource hds : dataSources) {
       if (dataSourceName.equals(hds.getName())) {
@@ -169,7 +172,7 @@ public class HubHttpHandler extends AbstractHttpHandler {
   @GET
   public void discoverSink(HttpRequest request, HttpResponder responder,
                            @PathParam("dataSinkName") String dataSinkName) {
-    List<HubDataSink> dataSink = this.hubDataStore.getHubDataSinks();
+    List<HubDataSink> dataSink = hubDataStore.getHubDataSinks();
     HubDataSink ds = null;
     for (HubDataSink hds : dataSink) {
       if (dataSinkName.equals(hds.getName())) {

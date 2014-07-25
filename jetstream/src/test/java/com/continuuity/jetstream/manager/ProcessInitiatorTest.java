@@ -31,7 +31,6 @@ import java.util.List;
 
 public class ProcessInitiatorTest {
 
-  private static HubDataStore hubDataStore;
   private static ProcessInitiator processInitiator;
 
   @BeforeClass
@@ -42,8 +41,14 @@ public class ProcessInitiatorTest {
     List<HubDataSink> sinkList = Lists.newArrayList();
     sinkList.add(new HubDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",7081)));
     sinkList.add(new HubDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1", 7082)));
-    hubDataStore = new HubDataStore("test", false, sourceList, sinkList, 5, new InetSocketAddress("127.0.0.1",2222),
-                                    new InetSocketAddress("127.0.0.1",1111));
+    HubDataStore hubDataStore = new HubDataStore.Builder()
+      .setInstanceName("test")
+      .addDataSource(sourceList)
+      .addDataSink(sinkList)
+      .setHFTACount(5)
+      .setHubAddress(new InetSocketAddress("127.0.0.1",2222))
+      .setClearingHouseAddress(new InetSocketAddress("127.0.0.1",1111))
+      .build();
     processInitiator = new ProcessInitiator(hubDataStore);
   }
 

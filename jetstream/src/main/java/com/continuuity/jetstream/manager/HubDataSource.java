@@ -22,8 +22,8 @@ import java.net.InetSocketAddress;
  * Class to store HubDataSource Information
  */
 class HubDataSource {
-  protected String name;
-  protected InetSocketAddress address;
+  private final String name;
+  private final InetSocketAddress address;
 
   public HubDataSource(String name, InetSocketAddress address) {
     this.name = name;

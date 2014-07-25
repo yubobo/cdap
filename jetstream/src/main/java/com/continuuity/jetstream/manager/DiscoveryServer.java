@@ -16,13 +16,11 @@
 
 package com.continuuity.jetstream.manager;
 
-import com.continuuity.http.HttpHandler;
 import com.continuuity.http.NettyHttpService;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
 /**
  * DiscoveryServer
@@ -30,21 +28,19 @@ import java.util.List;
 
 class DiscoveryServer extends AbstractIdleService {
   private NettyHttpService service;
-  private HubDataStore hubDataStore;
+  private final HubDataStore hubDataStore;
   private InetSocketAddress serviceAddress;
 
   @Override
   public void startUp() {
-    List<HttpHandler> handlers = Lists.newArrayList();
-    HubHttpHandler handler = new HubHttpHandler(this.hubDataStore);
-    handlers.add(handler);
+    HubHttpHandler handler = new HubHttpHandler(hubDataStore);
     NettyHttpService.Builder builder = NettyHttpService.builder();
-    builder.addHttpHandlers(handlers);
+    builder.addHttpHandlers(ImmutableList.of(handler));
     builder.setHttpChunkLimit(75 * 1024);
     service = builder.build();
     service.startAndWait();
     serviceAddress = new InetSocketAddress(service.getBindAddress().getAddress().getHostAddress(), service.getBindAddress().getPort());
-    handler.updateHubDataStore(HubDataStoreFactory.setHubAddress(hubDataStore, this.serviceAddress));
+    handler.updateHubDataStore(new HubDataStore.Builder().copy(hubDataStore).setHubAddress(serviceAddress).build());
   }
 
   @Override
@@ -53,7 +49,7 @@ class DiscoveryServer extends AbstractIdleService {
   }
 
   public DiscoveryServer(HubDataStore ds) {
-    this.hubDataStore = ds;
+    hubDataStore = ds;
   }
 
   protected void finalize() throws Throwable {
@@ -62,6 +58,6 @@ class DiscoveryServer extends AbstractIdleService {
   }
 
   public InetSocketAddress getHubAddress() {
-    return this.serviceAddress;
+    return serviceAddress;
   }
 }

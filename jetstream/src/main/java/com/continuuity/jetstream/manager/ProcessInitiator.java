@@ -50,13 +50,13 @@ public class ProcessInitiator {
    * @param ds associated HubDataStore
    */
   public ProcessInitiator(HubDataStore ds) {
-    this.hubDataStore = ds;
-    this.rtsProcessList = Lists.newArrayList();
-    this.hftaProcessList = Lists.newArrayList();
-    this.gsExitProcessList = Lists.newArrayList();
-    this.rtsExecutor = Lists.newArrayList();
-    this.hftaExecutor = Lists.newArrayList();
-    this.gsExitExecutor = Lists.newArrayList();
+    hubDataStore = ds;
+    rtsProcessList = Lists.newArrayList();
+    hftaProcessList = Lists.newArrayList();
+    gsExitProcessList = Lists.newArrayList();
+    rtsExecutor = Lists.newArrayList();
+    hftaExecutor = Lists.newArrayList();
+    gsExitExecutor = Lists.newArrayList();
   }
 
   /**
@@ -90,8 +90,8 @@ public class ProcessInitiator {
     com.add("rts");
     com.add(hubDataStore.getHubAddress().toString());
     com.add(hubDataStore.getInstanceName());
-    for (int i = 0; i < dataSources.size(); i++) {
-      com.add(dataSources.get(i).getName());
+    for (HubDataSource source : dataSources) {
+      com.add(source.getName());
     }
     ProcessBuilder builder = new ProcessBuilder(com);
     builder.redirectErrorStream(true);
@@ -108,7 +108,7 @@ public class ProcessInitiator {
    * @throws IOException
    */
   public void startHFTA() throws IOException {
-    int hftaCount = this.hubDataStore.getHFTACount();
+    int hftaCount = hubDataStore.getHFTACount();
     for (int i = 0; i < hftaCount; i++) {
       List<String> com = Lists.newArrayList();
       com.add("hfta_" + i);
@@ -130,7 +130,7 @@ public class ProcessInitiator {
    * @throws IOException
    */
   public void startGSEXIT() throws IOException {
-    List<HubDataSink> dataSinks = this.hubDataStore.getHubDataSinks();
+    List<HubDataSink> dataSinks = hubDataStore.getHubDataSinks();
     for (int i = 0; i < dataSinks.size(); i++) {
       List<String> com = Lists.newArrayList();
       com.add("GSEXIT");
@@ -141,7 +141,7 @@ public class ProcessInitiator {
       ProcessBuilder builder = new ProcessBuilder(com);
       builder.redirectErrorStream(true);
       Process p = builder.start();
-      this.gsExitProcessList.add(p);
+      gsExitProcessList.add(p);
       ExecutorService executorService = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
         .setDaemon(true).setNameFormat("process-rts-%d").build());
       gsExitExecutor.add(executorService);

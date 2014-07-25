@@ -43,7 +43,6 @@ import java.util.List;
 public class DiscoveryServerTest {
 
   private static URI baseURI;
-  private static HubDataStore hubDataStore;
   private static DiscoveryServer discoveryServer;
 
   @BeforeClass
@@ -54,8 +53,13 @@ public class DiscoveryServerTest {
     List<HubDataSink> sinkList = Lists.newArrayList();
     sinkList.add(new HubDataSink("sink1", "query1", new InetSocketAddress("127.0.0.1",7081)));
     sinkList.add(new HubDataSink("sink2", "query2", new InetSocketAddress("127.0.0.1", 7082)));
-    hubDataStore = new HubDataStore("test", false, sourceList, sinkList, 5, null,
-                                    new InetSocketAddress("127.0.0.1",1111));
+    HubDataStore hubDataStore = new HubDataStore.Builder()
+      .setInstanceName("test")
+      .addDataSource(sourceList)
+      .addDataSink(sinkList)
+      .setHFTACount(5)
+      .setClearingHouseAddress(new InetSocketAddress("127.0.0.1",1111))
+      .build();
     discoveryServer = new DiscoveryServer(hubDataStore);
     discoveryServer.startAndWait();
     baseURI = URI.create(String.format("http://" + discoveryServer.getHubAddress().getAddress().getHostAddress() +

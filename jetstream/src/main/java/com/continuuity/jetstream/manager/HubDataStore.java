@@ -16,6 +16,8 @@
 
 package com.continuuity.jetstream.manager;
 
+import com.google.common.collect.Lists;
+
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -24,8 +26,6 @@ import java.util.List;
  */
 
 public class HubDataStore {
-
-
   private final String instanceName;
   private final boolean isInitialized;
   private final List<HubDataSource> hubDataSources;
@@ -34,15 +34,22 @@ public class HubDataStore {
   private final InetSocketAddress hubAddress;
   private final InetSocketAddress clearingHouseAddress;
 
-  public HubDataStore(String name, boolean initialized, List<HubDataSource> sourceList, List<HubDataSink> sinkList,
-                      int count, InetSocketAddress hubAddress, InetSocketAddress clearingHouseAddress) {
-    this.instanceName = name;
-    this.isInitialized = initialized;
-    this.hubDataSources = sourceList;
-    this.hubDataSinks = sinkList;
-    this.hftaCount = count;
-    this.hubAddress = hubAddress;
-    this.clearingHouseAddress = clearingHouseAddress;
+  private HubDataStore(Builder builder) {
+    this.instanceName = builder.instanceName;
+    this.isInitialized = builder.isInitialized;
+    this.hftaCount = builder.hftaCount;
+    this.hubAddress = builder.hubAddress;
+    this.clearingHouseAddress = builder.clearingHouseAddress;
+    if (builder.hubDataSources != null) {
+      this.hubDataSources = Lists.newArrayList(builder.hubDataSources);
+    } else {
+      this.hubDataSources = null;
+    }
+    if (builder.hubDataSinks != null) {
+      this.hubDataSinks = Lists.newArrayList(builder.hubDataSinks);
+    } else {
+      this.hubDataSinks = null;
+    }
   }
 
   /**
@@ -89,6 +96,74 @@ public class HubDataStore {
 
   public InetSocketAddress getClearingHouseAddress() {
     return clearingHouseAddress;
+  }
+
+  /**
+   * Builder to build immutable HubDataStoreObjects
+   */
+  public static class Builder {
+    private String instanceName;
+    private boolean isInitialized;
+    private List<HubDataSource> hubDataSources;
+    private List<HubDataSink> hubDataSinks;
+    private int hftaCount;
+    private InetSocketAddress hubAddress;
+    private InetSocketAddress clearingHouseAddress;
+
+    public Builder() {
+      this.isInitialized = false;
+    }
+
+    public Builder setInstanceName(String name) {
+      this.instanceName = name;
+      return this;
+    }
+
+    public Builder initialize() {
+      this.isInitialized = true;
+      return this;
+    }
+
+    public Builder setHFTACount(int n) {
+      this.hftaCount = n;
+      return this;
+    }
+
+    public Builder setHubAddress(InetSocketAddress address) {
+      this.hubAddress = address;
+      return this;
+    }
+
+    public Builder setClearingHouseAddress(InetSocketAddress address) {
+      this.clearingHouseAddress = address;
+      return this;
+    }
+
+    public Builder addDataSource(List<HubDataSource> sourceList) {
+      this.hubDataSources = sourceList;
+      return this;
+    }
+
+    public Builder addDataSink(List<HubDataSink> sinkList) {
+      this.hubDataSinks = sinkList;
+      return this;
+    }
+
+    public HubDataStore build() {
+      return new HubDataStore(this);
+    }
+
+    public Builder copy(HubDataStore hubDataStore) {
+      this.instanceName = hubDataStore.instanceName;
+      this.isInitialized = hubDataStore.isInitialized;
+      this.hubDataSources = hubDataStore.hubDataSources;
+      this.hubDataSinks = hubDataStore.hubDataSinks;
+      this.hftaCount = hubDataStore.hftaCount;
+      this.hubAddress = hubDataStore.hubAddress;
+      this.clearingHouseAddress = hubDataStore.clearingHouseAddress;
+      return this;
+    }
+
   }
 }
 

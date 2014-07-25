@@ -22,9 +22,9 @@ import java.net.InetSocketAddress;
  * Class to store HubDataSink Information
  */
 class HubDataSink {
-  private String name;
-  private InetSocketAddress address;
-  private String ftaName;
+  private final String name;
+  private final InetSocketAddress address;
+  private final String ftaName;
 
   public HubDataSink(String name, String ftaName, InetSocketAddress address) {
     this.name = name;
