@@ -30,6 +30,7 @@ import com.continuuity.api.flow.FlowletConnection;
 import com.continuuity.api.flow.FlowletDefinition;
 import com.continuuity.api.mapreduce.MapReduceSpecification;
 import com.continuuity.api.procedure.ProcedureSpecification;
+import com.continuuity.api.service.ServiceSpecification;
 import com.continuuity.api.workflow.WorkflowSpecification;
 import com.continuuity.app.ApplicationSpecification;
 import com.continuuity.app.deploy.Manager;
@@ -82,15 +83,14 @@ import com.continuuity.internal.app.runtime.schedule.Scheduler;
 import com.continuuity.internal.filesystem.LocationCodec;
 import com.continuuity.logging.LoggingConfiguration;
 import com.continuuity.metrics.MetricsConstants;
-import com.continuuity.proto.ApplicationRecord;
-import com.continuuity.proto.DatasetRecord;
+import com.continuuity.proto.Containers;
 import com.continuuity.proto.Id;
 import com.continuuity.proto.Instances;
-import com.continuuity.proto.ProgramRecord;
+import com.continuuity.proto.NotRunningProgramLiveInfo;
+import com.continuuity.proto.ProgramLiveInfo;
 import com.continuuity.proto.ProgramStatus;
 import com.continuuity.proto.ProgramType;
 import com.continuuity.proto.ProgramTypes;
-import com.continuuity.proto.StreamRecord;
 import com.continuuity.tephra.TransactionContext;
 import com.continuuity.tephra.TransactionSystemClient;
 import com.google.common.base.Charsets;
@@ -124,6 +124,7 @@ import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
 import org.apache.commons.io.IOUtils;
 import org.apache.twill.api.RunId;
+import org.apache.twill.api.RuntimeSpecification;
 import org.apache.twill.common.Threads;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryServiceClient;
@@ -151,6 +152,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -188,6 +190,26 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
   private static final long METRICS_SERVER_RESPONSE_TIMEOUT = TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
 
   private static final String ARCHIVE_NAME_HEADER = "X-Archive-Name";
+
+  /**
+   * Used for getting the app id in batch endpoints
+   */
+  private static final String APP_ID_ARG = "appId";
+
+  /**
+   * Used for getting the program type in batch endpoints
+   */
+  private static final String PROGRAM_TYPE_ARG = "programType";
+
+  /**
+   * Used for getting the program id in batch endpoints
+   */
+  private static final String PROGRAM_ID_ARG = "programId";
+
+  /**
+   * Used for getting the runnable id in batch endpoints
+   */
+  private static final String RUNNABLE_ID_ARG = "runnableId";
 
   /**
    * Timeout to upload to remote app fabric.
@@ -433,7 +455,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
   }
 
   /**
-   * Returns status of a runnable specified by the type{flows,workflows,mapreduce,procedures}.
+   * Returns status of a runnable specified by the type{flows,workflows,mapreduce,procedures,services}.
    */
   @GET
   @Path("/apps/{app-id}/{runnable-type}/{runnable-id}/status")
@@ -446,40 +468,73 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
       String accountId = getAuthenticatedAccountId(request);
       final Id.Program id = Id.Program.from(accountId, appId, runnableId);
       final ProgramType type = RUNNABLE_TYPE_MAP.get(runnableType);
-
-      if (type == ProgramType.MAPREDUCE) {
-        String workflowName = getWorkflowName(id.getId());
-        if (workflowName != null) {
-          //mapreduce is part of a workflow
-          workflowClient.getWorkflowStatus(id.getAccountId(), id.getApplicationId(),
-                                           workflowName, new WorkflowClient.Callback() {
-              @Override
-              public void handle(WorkflowClient.Status status) {
-                JsonObject reply = new JsonObject();
-                if (status.getCode().equals(WorkflowClient.Status.Code.OK)) {
-                  reply.addProperty("status", "RUNNING");
-                  responder.sendJson(HttpResponseStatus.OK, reply);
-                } else {
-                  //mapreduce name might follow the same format even when its not part of the workflow.
-                  runnableStatus(responder, id, type);
-                }
-              }
-            }
-          );
-        } else {
-          //mapreduce is not part of a workflow
-          runnableStatus(responder, id, type);
-        }
-      } else if (type == null) {
+      final Map<Id.Program, String> statusMap = new HashMap<Id.Program, String>();
+      // getStatus has a callback for mapreduce jobs that run in workflows
+      getStatus(id, type, statusMap);
+      // wait for statuses to come back in case we are polling mapreduce status in workflow
+      while (statusMap.isEmpty()) {
+        Thread.sleep(1);
+      }
+      // this is null only when mapreduce status cannot be retrieved
+      if (statusMap.get(id) == null) {
+        throw new Throwable("Exception occurred while retrieving status of " + runnableId);
+      }
+      if (statusMap.get(id).equals("NOT_FOUND")) {
         responder.sendStatus(HttpResponseStatus.NOT_FOUND);
       } else {
-        runnableStatus(responder, id, type);
+        JsonObject reply = new JsonObject();
+        reply.addProperty("status", statusMap.get(id));
+        responder.sendJson(HttpResponseStatus.OK, reply);
       }
     } catch (SecurityException e) {
       responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (Throwable e) {
       LOG.error("Got exception:", e);
       responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private void getStatus(final Id.Program id, final ProgramType type, final Map<Id.Program, String> statusMap)
+    throws Throwable {
+    // must do it this way to allow anon function in workflow to modify status
+    if (type == ProgramType.MAPREDUCE) {
+      String workflowName = getWorkflowName(id.getId());
+      if (workflowName != null) {
+        // check that mapreduce exists
+        ApplicationSpecification appSpec = store.getApplication(id.getApplication());
+        if (appSpec == null || !appSpec.getMapReduce().containsKey(id.getId())) {
+          statusMap.put(id, "NOT_FOUND");
+        }
+
+        //mapreduce is part of a workflow
+        workflowClient.getWorkflowStatus(id.getAccountId(), id.getApplicationId(),
+                                         workflowName, new WorkflowClient.Callback() {
+            @Override
+            public void handle(WorkflowClient.Status status) {
+              if (status.getCode().equals(WorkflowClient.Status.Code.OK)) {
+                statusMap.put(id, "RUNNING");
+              } else {
+                //mapreduce name might follow the same format even when its not part of the workflow.
+                try {
+                  statusMap.put(id, getProgramStatus(id, type).getStatus());
+                } catch (Exception e) {
+                  LOG.error("Got exception: ", e);
+                  // null means that there was an error getting the status code
+                  statusMap.put(id, null);
+                }
+              }
+            }
+          }
+        );
+      } else {
+        //mapreduce is not part of a workflow
+        statusMap.put(id, getProgramStatus(id, type).getStatus());
+      }
+    } else if (type == null) {
+      // invalid type does not exist
+      statusMap.put(id, "NOT_FOUND");
+    } else {
+      statusMap.put(id, getProgramStatus(id, type).getStatus());
     }
   }
 
@@ -938,6 +993,273 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     } catch (Throwable e) {
       LOG.error("Got exception:", e);
       responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * Returns the instances for all programs that are passed into the data. The data is an array of Json objects
+   * where each object must contain the following three elements: appId, programType, and programId
+   * (flow name/service name/etc.) Furthermore, If one of these object's programType parameter is flow or service,
+   * the object must also have another paramter, runnableId (flowlet name/twill runnable name). The runnableId
+   * parameter does not apply to Procedures.
+   *
+   * @param request
+   * @param responder
+   */
+  @POST
+  @Path("/instances")
+  public void getInstances(HttpRequest request, HttpResponder responder) {
+    try {
+      String accountId = getAuthenticatedAccountId(request);
+      List<JsonObject> args = decodeArrayArguments(request);
+      if (args == null) {
+        respondAndLog(responder, HttpResponseStatus.BAD_REQUEST, "No data provided");
+        return;
+      }
+      for (int i = 0; i < args.size(); ++i) {
+        JsonObject requestedObj = args.get(i);
+        String appId, programTypeStr, programId, runnableId;
+        try {
+          appId = requestedObj.getAsJsonPrimitive(APP_ID_ARG).getAsString();
+          programTypeStr = requestedObj.getAsJsonPrimitive(PROGRAM_TYPE_ARG).getAsString();
+          programId = requestedObj.getAsJsonPrimitive(PROGRAM_ID_ARG).getAsString();
+        } catch (NullPointerException e) {
+          respondAndLog(responder, HttpResponseStatus.BAD_REQUEST,
+                        "Must provide appId, programType, and programId");
+          return;
+        } catch (ClassCastException e) {
+          respondAndLog(responder, HttpResponseStatus.BAD_REQUEST,
+                        "appId, programType, and programId must be strings");
+          return;
+        }
+        ProgramType programType;
+        try {
+          programType = ProgramType.valueOfPrettyName(programTypeStr);
+        } catch (IllegalArgumentException e) {
+          // invalid type
+          respondAndLog(responder, HttpResponseStatus.BAD_REQUEST, programTypeStr + " is not a valid program type");
+          return;
+        }
+        if (programType == null) {
+          respondAndLog(responder, HttpResponseStatus.BAD_REQUEST, programTypeStr + " is not a valid program type");
+          return;
+        }
+        // these values will be overwritten later
+        int requested, provisioned;
+        ApplicationSpecification spec = store.getApplication(Id.Application.from(accountId, appId));
+        if (spec == null) {
+          respondAndLog(responder, HttpResponseStatus.NOT_FOUND, "App " + appId + " not found");
+          return;
+        }
+        if (programType == ProgramType.PROCEDURE) {
+          // the "runnable" for procedures has the same id as the procedure name
+          runnableId = programId;
+          if (spec.getProcedures().containsKey(programId)) {
+            requested = store.getProcedureInstances(Id.Program.from(accountId, appId, programId));
+          } else {
+            respondAndLog(responder, HttpResponseStatus.NOT_FOUND, "Procedure: " + programId + " not found");
+            return;
+          }
+        } else {
+          // cant get instances for things that are not flows, services, or procedures
+          if (programType != ProgramType.FLOW && programType != ProgramType.SERVICE) {
+            respondAndLog(responder, HttpResponseStatus.BAD_REQUEST,
+                          "Cannot get instances for Program type: " + programTypeStr);
+            return;
+          }
+          // services and flows must have runnable id
+          try {
+            runnableId = requestedObj.getAsJsonPrimitive(RUNNABLE_ID_ARG).getAsString();
+          } catch (NullPointerException e) {
+            respondAndLog(responder, HttpResponseStatus.BAD_REQUEST,
+                          "Must provide runnableId for flows/services");
+            return;
+          }
+          if (programType == ProgramType.FLOW) {
+            FlowSpecification flowSpec = spec.getFlows().get(programId);
+            if (flowSpec != null) {
+              Map<String, FlowletDefinition> flowletSpecs = flowSpec.getFlowlets();
+              if (flowletSpecs != null && flowletSpecs.containsKey(runnableId)) {
+                requested = flowletSpecs.get(runnableId).getInstances();
+              } else {
+                respondAndLog(responder, HttpResponseStatus.NOT_FOUND, "Flowlet: " + runnableId + " not found");
+                return;
+              }
+            } else {
+              respondAndLog(responder, HttpResponseStatus.NOT_FOUND, "Flow: " + programId + " not found");
+              return;
+            }
+
+          } else {
+            // Service
+            ServiceSpecification serviceSpec = spec.getServices().get(programId);
+            if (serviceSpec != null) {
+              Map<String, RuntimeSpecification> runtimeSpecs = serviceSpec.getRunnables();
+              if (runtimeSpecs != null && runtimeSpecs.containsKey(runnableId)) {
+                requested = runtimeSpecs.get(runnableId).getResourceSpecification().getInstances();
+              } else {
+                respondAndLog(responder, HttpResponseStatus.NOT_FOUND, "Runnable: " + runnableId + " not found");
+                return;
+              }
+            } else {
+              respondAndLog(responder, HttpResponseStatus.NOT_FOUND, "Service: " + programId + " not found");
+              return;
+            }
+          }
+        }
+        provisioned = getRunnableCount(accountId, appId, programType, programId, runnableId);
+        requestedObj.addProperty("requested", requested);
+        requestedObj.addProperty("provisioned", provisioned);
+        args.set(i, requestedObj);
+      }
+      responder.sendJson(HttpResponseStatus.OK, args);
+    } catch (SecurityException e) {
+      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
+    } catch (JsonSyntaxException e) {
+      responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
+    } catch (Throwable e) {
+      LOG.error("Got exception:", e);
+      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * Returns the status for all programs that are passed into the data. The data is an array of Json objects
+   * where each object must contain the following three elements: appId, programType, and programId
+   * (flow name, service name, etc.).
+   *
+   * @param request
+   * @param responder
+   */
+  @POST
+  @Path("/status")
+  public void getStatuses(HttpRequest request, HttpResponder responder) {
+    try {
+      String accountId = getAuthenticatedAccountId(request);
+      List<JsonObject> args = decodeArrayArguments(request);
+      // empty args is okay. it will return a 200 with no data
+      if (args == null) {
+        respondAndLog(responder, HttpResponseStatus.BAD_REQUEST, "No data provided");
+        return;
+      }
+      final Map<Id.Program, String> statusMap = new HashMap<Id.Program, String>();
+      for (int i = 0; i < args.size(); ++i) {
+        JsonObject requestedObj = args.get(i);
+        String appId, programTypeStr, programId;
+        try {
+          appId = requestedObj.getAsJsonPrimitive(APP_ID_ARG).getAsString();
+          programTypeStr = requestedObj.getAsJsonPrimitive(PROGRAM_TYPE_ARG).getAsString();
+          programId = requestedObj.getAsJsonPrimitive(PROGRAM_ID_ARG).getAsString();
+        } catch (NullPointerException e) {
+          respondAndLog(responder, HttpResponseStatus.BAD_REQUEST, "Must provide appId, programType, and programId");
+          return;
+        } catch (ClassCastException e) {
+          respondAndLog(responder, HttpResponseStatus.BAD_REQUEST,
+                        "appId, programType, and programId must be strings");
+          return;
+        }
+        Id.Program progId = Id.Program.from(accountId, appId, programId);
+        ProgramType programType;
+        try {
+          programType = ProgramType.valueOfPrettyName(programTypeStr);
+        } catch (IllegalArgumentException e) {
+          // invalid type
+          respondAndLog(responder, HttpResponseStatus.BAD_REQUEST, programTypeStr + " is not a valid program type");
+          return;
+        }
+        if (programType == null) {
+          respondAndLog(responder, HttpResponseStatus.BAD_REQUEST, programTypeStr + " is not a valid program type");
+          return;
+        }
+        // getStatus has a callback for mapreduce jobs that run in workflows
+        getStatus(progId, programType, statusMap);
+      }
+      // wait for statuses to come back in case we are polling mapreduce status in workflow
+      while (statusMap.size() != args.size()) {
+        Thread.sleep(1);
+      }
+      for (int i = 0; i < args.size(); ++i) {
+        JsonObject requestedObj = args.get(i);
+        for (Id.Program id : statusMap.keySet()) {
+          String status = statusMap.get(id);
+          if (status == null) {
+            // could not get status
+            throw new Throwable("Could not retrieve status of " + id.getId());
+          } else if (status.equals("NOT_FOUND")) {
+            respondAndLog(responder, HttpResponseStatus.NOT_FOUND, "Could not find app, program type or program");
+            return;
+          }
+          if (id.getId().equals(requestedObj.getAsJsonPrimitive(PROGRAM_ID_ARG).getAsString()) &&
+            id.getApplicationId().equals(requestedObj.getAsJsonPrimitive(APP_ID_ARG).getAsString())) {
+            requestedObj.addProperty("status", status);
+          }
+        }
+      }
+      responder.sendJson(HttpResponseStatus.OK, args);
+    } catch (SecurityException e) {
+      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
+    } catch (JsonSyntaxException e) {
+      responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
+    } catch (Throwable e) {
+      LOG.error("Got exception:", e);
+      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * Convenience method for logging errors and sending the same error message with the corresponding status
+   * @param responder The HttpResponder
+   * @param status The status of the Http response
+   * @param message The error message to log and send
+   */
+  private void respondAndLog(HttpResponder responder, HttpResponseStatus status, String message) {
+    LOG.error(message);
+    responder.sendJson(status, message);
+  }
+
+  private int getRunnableCount(String accountId, String appId, ProgramType programType, String programId, String runnableId) {
+    ProgramLiveInfo info = runtimeService.getLiveInfo(Id.Program.from(accountId, appId, programId), programType);
+    int count = 0;
+    if (info instanceof NotRunningProgramLiveInfo) {
+      return count;
+    } else if (info instanceof Containers) {
+      Containers containers = (Containers) info;
+      for (Containers.ContainerInfo container : containers.getContainers()) {
+        System.err.println(container.getName());
+        if (container.getName().equals(runnableId)) {
+          count++;
+        }
+      }
+      return count;
+    } else {
+      // Not running on YARN default 1
+      return 1;
+    }
+  }
+
+  /**
+   * Deserializes the HttpRequest data into a list of JsonObjects. Throws a JsonSyntaxException if the data is
+   * malformed JSON.
+   *
+   * @param request
+   * @return List of JsonObjects from the request data
+   * @throws IOException Thrown in case of Exceptions when reading the http request data
+   * @throws JsonSyntaxException Thrown in case of Malformed JSON
+   */
+  @Nullable
+  protected List<JsonObject> decodeArrayArguments(HttpRequest request) throws IOException, JsonSyntaxException {
+    ChannelBuffer content = request.getContent();
+    if (!content.readable()) {
+      return null;
+    }
+    Reader reader = new InputStreamReader(new ChannelBufferInputStream(content), Charsets.UTF_8);
+    try {
+      return  GSON.fromJson(reader, new TypeToken<List<JsonObject>>() { }.getType());
+    } catch (JsonSyntaxException e) {
+      LOG.info("Failed to parse arguments on {}", request.getUri(), e);
+      throw e;
+    } finally {
+      reader.close();
     }
   }
 
@@ -1970,8 +2292,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     // Delete webapp
     // TODO: this will go away once webapp gets a spec
     try {
-      Id.Program programId = Id.Program.from(appId.getAccountId(), appId.getId(),
-                                             ProgramType.WEBAPP.name().toLowerCase());
+      Id.Program programId = Id.Program.from(appId.getAccountId(), appId.getId(), ProgramType.WEBAPP.name().toLowerCase());
       Location location = Programs.programLocation(locationFactory, appFabricDir, programId, ProgramType.WEBAPP);
       location.delete();
     } catch (FileNotFoundException e) {
@@ -2329,7 +2650,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     try {
       String accountId = getAuthenticatedAccountId(request);
       Id.Account accId = Id.Account.from(accountId);
-      List<ApplicationRecord> result = Lists.newArrayList();
+      List<Map<String, String>> result = Lists.newArrayList();
       List<ApplicationSpecification> specList;
       if (appid == null) {
         specList = new ArrayList<ApplicationSpecification>(store.getAllApplications(accId));
@@ -2426,7 +2747,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
   }
 
   private String listPrograms(Collection<ApplicationSpecification> appSpecs, ProgramType type) throws Exception {
-    List<ProgramRecord> result = Lists.newArrayList();
+    List<Map<String, String>> result = Lists.newArrayList();
     for (ApplicationSpecification appSpec : appSpecs) {
       if (type == ProgramType.FLOW) {
         for (FlowSpecification flowSpec : appSpec.getFlows().values()) {
@@ -2957,7 +3278,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     try {
       if (type == Data.DATASET) {
         Collection<DataSetSpecification> specs = store.getAllDataSets(new Id.Account(programId.getAccountId()));
-        List<DatasetRecord> result = Lists.newArrayListWithExpectedSize(specs.size());
+        List<Map<String, String>> result = Lists.newArrayListWithExpectedSize(specs.size());
         for (DataSetSpecification spec : specs) {
           result.add(makeDataSetRecord(spec.getName(), spec.getType(), null));
         }
@@ -2969,7 +3290,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
         return GSON.toJson(result);
       } else if (type == Data.STREAM) {
         Collection<StreamSpecification> specs = store.getAllStreams(new Id.Account(programId.getAccountId()));
-        List<StreamRecord> result = Lists.newArrayListWithExpectedSize(specs.size());
+        List<Map<String, String>> result = Lists.newArrayListWithExpectedSize(specs.size());
         for (StreamSpecification spec : specs) {
           result.add(makeStreamRecord(spec.getName(), null));
         }
@@ -2989,7 +3310,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
         account, programId.getApplicationId()));
       if (type == Data.DATASET) {
         Set<String> dataSetsUsed = dataSetsUsedBy(appSpec);
-        List<DatasetRecord> result = Lists.newArrayListWithExpectedSize(dataSetsUsed.size());
+        List<Map<String, String>> result = Lists.newArrayListWithExpectedSize(dataSetsUsed.size());
         for (String dsName : dataSetsUsed) {
           DataSetSpecification spec = appSpec.getDataSets().get(dsName);
           String typeName = null;
@@ -3013,7 +3334,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
       }
       if (type == Data.STREAM) {
         Set<String> streamsUsed = streamsUsedBy(appSpec);
-        List<StreamRecord> result = Lists.newArrayListWithExpectedSize(streamsUsed.size());
+        List<Map<String, String>> result = Lists.newArrayListWithExpectedSize(streamsUsed.size());
         for (String streamName : streamsUsed) {
           result.add(makeStreamRecord(streamName, null));
         }
@@ -3122,10 +3443,10 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     }
   }
 
-  private String listProgramsByDataAccess(Id.Program programId, ProgramType type, Data data,
-                                          String name) throws Exception {
+  private String listProgramsByDataAccess(Id.Program programId, ProgramType type, Data data, String name)
+    throws Exception {
     try {
-      List<ProgramRecord> result = Lists.newArrayList();
+      List<Map<String, String>> result = Lists.newArrayList();
       Collection<ApplicationSpecification> appSpecs = store.getAllApplications(
         new Id.Account(programId.getAccountId()));
       if (appSpecs != null) {
@@ -3180,20 +3501,53 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
 
    /* -----------------  helpers to return Json consistently -------------- */
 
-  private static ApplicationRecord makeAppRecord(ApplicationSpecification appSpec) {
-    return new ApplicationRecord("App", appSpec.getName(), appSpec.getName(), appSpec.getDescription());
+  private static Map<String, String> makeAppRecord(ApplicationSpecification appSpec) {
+    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    builder.put("type", "App");
+    builder.put("id", appSpec.getName());
+    builder.put("name", appSpec.getName());
+    if (appSpec.getDescription() != null) {
+      builder.put("description", appSpec.getDescription());
+    }
+    return builder.build();
   }
 
-  private static ProgramRecord makeProgramRecord (String appId, ProgramSpecification spec, ProgramType type) {
-    return new ProgramRecord(type, appId, spec.getName(), spec.getName(), spec.getDescription());
+  private static Map<String, String> makeProgramRecord (String appId, ProgramSpecification spec, ProgramType type) {
+    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    builder.put("type", type.getPrettyName());
+    builder.put("app", appId);
+    builder.put("id", spec.getName());
+    builder.put("name", spec.getName());
+    if (spec.getDescription() != null) {
+      builder.put("description", spec.getDescription());
+    }
+    return builder.build();
   }
 
-  private static DatasetRecord makeDataSetRecord(String name, String classname, DataSetSpecification specification) {
-    return new DatasetRecord("Dataset", name, name, classname, GSON.toJson(specification));
+  private static Map<String, String> makeDataSetRecord(String name, String classname,
+                                                       DataSetSpecification specification) {
+    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    builder.put("type", "Dataset");
+    builder.put("id", name);
+    builder.put("name", name);
+    if (classname != null) {
+      builder.put("classname", classname);
+    }
+    if (specification != null) {
+      builder.put("specification", GSON.toJson(specification));
+    }
+    return builder.build();
   }
 
-  private static StreamRecord makeStreamRecord(String name, StreamSpecification specification) {
-    return new StreamRecord("Stream", name, name, GSON.toJson(specification));
+  private static Map<String, String> makeStreamRecord(String name, StreamSpecification specification) {
+    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    builder.put("type", "Stream");
+    builder.put("id", name);
+    builder.put("name", name);
+    if (specification != null) {
+      builder.put("specification", GSON.toJson(specification));
+    }
+    return builder.build();
   }
 
   /**
