@@ -276,7 +276,6 @@ public class SingleNodeMain {
       }
     }
 
-
     // This is needed to use LocalJobRunner with fixes (we have it in app-fabric).
     // For the modified local job runner
     Configuration hConf = new Configuration();

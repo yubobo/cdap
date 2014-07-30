@@ -16,6 +16,14 @@
 
 package com.continuuity.common.conf;
 
+import com.google.common.collect.Lists;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Id;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -436,6 +444,23 @@ public final class Constants {
     public static final String SSL_KEYSTORE_PASSWORD = "security.server.ssl.keystore.password";
     /** Realm file for Basic Authentication */
     public static final String BASIC_REALM_FILE = "security.authentication.basic.realmfile";
+    /** Path to the keytab file for Reactor */
+    public static final String CFG_REACTOR_KEYTAB = "security.kerberos.keytab.reactor";
+
+    /**
+     * ZooKeeper security-related configuration
+     */
+    public static final class ZooKeeper {
+
+      /**
+       * Preset ACLs
+       */
+      public static final class Ids {
+        public static final Id REACTOR_ID = new Id("sasl", "reactor@CONTINUUITY.NET");
+
+        public static final List<ACL> REACTOR_ALL_ACL = Lists.newArrayList(new ACL(ZooDefs.Perms.ALL, REACTOR_ID));
+      }
+    }
   }
 
   /**

@@ -66,7 +66,8 @@ public class DistributedKeyManager extends AbstractKeyManager implements Resourc
     this.keyExpirationPeriod = conf.getLong(Constants.Security.TOKEN_DIGEST_KEY_EXPIRATION);
     this.tokenExpiration = conf.getLong(Constants.Security.TOKEN_EXPIRATION);
     this.zookeeper = ZKClients.namespace(zookeeper, parentZNode);
-    this.keyCache = new SharedResourceCache<KeyIdentifier>(zookeeper, codec, "/keys");
+    this.keyCache = new SharedResourceCache<KeyIdentifier>(zookeeper, codec, "/keys",
+                                                           Constants.Security.ZooKeeper.Ids.REACTOR_ALL_ACL);
   }
 
   @Override
