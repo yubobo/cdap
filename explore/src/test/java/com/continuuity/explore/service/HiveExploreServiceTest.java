@@ -16,6 +16,7 @@
 
 package com.continuuity.explore.service;
 
+import com.continuuity.api.dataset.DatasetDefinition;
 import com.continuuity.api.dataset.DatasetProperties;
 import com.continuuity.common.conf.CConfiguration;
 import com.continuuity.common.conf.Constants;
@@ -26,7 +27,6 @@ import com.continuuity.proto.ColumnDesc;
 import com.continuuity.proto.QueryResult;
 import com.continuuity.tephra.Transaction;
 import com.continuuity.test.SlowTests;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -43,6 +43,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 
@@ -63,7 +64,8 @@ public class HiveExploreServiceTest extends BaseHiveExploreServiceTest {
     datasetFramework.addInstance("keyStructValueTable", "my_table", DatasetProperties.EMPTY);
 
     // Accessing dataset instance to perform data operations
-    KeyStructValueTableDefinition.KeyStructValueTable table = datasetFramework.getDataset("my_table", null);
+    KeyStructValueTableDefinition.KeyStructValueTable table =
+      datasetFramework.getDataset("my_table", DatasetDefinition.NO_ARGUMENTS, null);
     Assert.assertNotNull(table);
 
     Transaction tx1 = transactionManager.startShort(100);
@@ -108,7 +110,8 @@ public class HiveExploreServiceTest extends BaseHiveExploreServiceTest {
 
   @Test
   public void testTable() throws Exception {
-    KeyStructValueTableDefinition.KeyStructValueTable table = datasetFramework.getDataset("my_table", null);
+    KeyStructValueTableDefinition.KeyStructValueTable table =
+      datasetFramework.getDataset("my_table", DatasetDefinition.NO_ARGUMENTS, null);
     Assert.assertNotNull(table);
     Transaction tx = transactionManager.startShort(100);
     table.startTx(tx);
@@ -174,6 +177,15 @@ public class HiveExploreServiceTest extends BaseHiveExploreServiceTest {
                  new QueryResult(Lists.<Object>newArrayList("2", "{\"name\":\"two\",\"ints\":[10,11,12,13,14]}"))
                )
     );
+
+    List<QueryInfo> result = exploreService.getQueries();
+    Assert.assertTrue(result.size() > 0);
+    for (QueryInfo queryInfo : result) {
+      Assert.assertNotNull(queryInfo.getStatement());
+      Assert.assertNotNull(queryInfo.getQueryHandle());
+      Assert.assertFalse(queryInfo.isActive());
+      Assert.assertEquals("FINISHED", queryInfo.getStatus().toString());
+    }
   }
 
   @Test
@@ -228,7 +240,8 @@ public class HiveExploreServiceTest extends BaseHiveExploreServiceTest {
       Transaction tx1 = transactionManager.startShort(100);
 
       // Accessing dataset instance to perform data operations
-      KeyStructValueTableDefinition.KeyStructValueTable table = datasetFramework.getDataset("my_table_1", null);
+      KeyStructValueTableDefinition.KeyStructValueTable table =
+        datasetFramework.getDataset("my_table_1", DatasetDefinition.NO_ARGUMENTS, null);
       Assert.assertNotNull(table);
       table.startTx(tx1);
 
