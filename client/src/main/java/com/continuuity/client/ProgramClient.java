@@ -19,7 +19,7 @@ package com.continuuity.client;
 import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.client.exception.NotFoundException;
 import com.continuuity.client.exception.ProgramNotFoundException;
-import com.continuuity.client.util.RestClient;
+import com.continuuity.client.util.RESTClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpResponse;
@@ -47,13 +47,13 @@ public class ProgramClient {
 
   private static final Gson GSON = new Gson();
 
-  private final RestClient restClient;
+  private final RESTClient restClient;
   private final ReactorClientConfig config;
 
   @Inject
   public ProgramClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClient.create(config);
+    this.restClient = RESTClient.create(config);
   }
 
   /**

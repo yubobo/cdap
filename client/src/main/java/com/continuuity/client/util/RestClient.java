@@ -31,24 +31,24 @@ import java.util.Map;
 /**
  * Wrapper around the HTTP client implementation.
  */
-public class RestClient {
+public class RESTClient {
 
   private final HttpRequestConfig defaultConfig;
   private final HttpRequestConfig uploadConfig;
 
-  public RestClient(HttpRequestConfig defaultConfig, HttpRequestConfig uploadConfig) {
+  public RESTClient(HttpRequestConfig defaultConfig, HttpRequestConfig uploadConfig) {
     this.defaultConfig = defaultConfig;
     this.uploadConfig = uploadConfig;
   }
 
   /**
-   * Creates a default {@link RestClient}.
+   * Creates a default {@link RESTClient}.
    *
    * @param config {@link ReactorClientConfig} that provides information about the Reactor host and timeouts
-   * @return {@link RestClient} instance
+   * @return {@link RESTClient} instance
    */
-  public static RestClient create(ReactorClientConfig config) {
-    return new RestClient(config.getDefaultConfig(), config.getUploadConfig());
+  public static RESTClient create(ReactorClientConfig config) {
+    return new RESTClient(config.getDefaultConfig(), config.getUploadConfig());
   }
 
   public HttpResponse execute(HttpRequest request, int... allowedErrorCodes) throws IOException {

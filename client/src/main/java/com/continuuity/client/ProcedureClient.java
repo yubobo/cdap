@@ -19,7 +19,7 @@ package com.continuuity.client;
 import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.client.exception.BadRequestException;
 import com.continuuity.client.exception.NotFoundException;
-import com.continuuity.client.util.RestClient;
+import com.continuuity.client.util.RESTClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpResponse;
@@ -43,13 +43,13 @@ public class ProcedureClient {
 
   private static final Gson GSON = new Gson();
 
-  private final RestClient restClient;
+  private final RESTClient restClient;
   private final ReactorClientConfig config;
 
   @Inject
   public ProcedureClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClient.create(config);
+    this.restClient = RESTClient.create(config);
   }
 
   /**
