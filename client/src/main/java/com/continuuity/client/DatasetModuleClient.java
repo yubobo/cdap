@@ -22,7 +22,7 @@ import com.continuuity.client.exception.BadRequestException;
 import com.continuuity.client.exception.DatasetModuleAlreadyExistsException;
 import com.continuuity.client.exception.DatasetModuleCannotBeDeletedException;
 import com.continuuity.client.exception.DatasetModuleNotFoundException;
-import com.continuuity.client.util.RestClient;
+import com.continuuity.client.util.RESTClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpResponse;
@@ -44,13 +44,13 @@ import javax.inject.Inject;
  */
 public class DatasetModuleClient {
 
-  private final RestClient restClient;
+  private final RESTClient restClient;
   private final ReactorClientConfig config;
 
   @Inject
   public DatasetModuleClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClient.create(config);
+    this.restClient = RESTClient.create(config);
   }
 
   /**

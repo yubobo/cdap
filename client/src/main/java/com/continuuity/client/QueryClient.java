@@ -19,7 +19,7 @@ package com.continuuity.client;
 import com.continuuity.client.config.ReactorClientConfig;
 import com.continuuity.client.exception.BadRequestException;
 import com.continuuity.client.exception.QueryNotFoundException;
-import com.continuuity.client.util.RestClient;
+import com.continuuity.client.util.RESTClient;
 import com.continuuity.common.http.HttpMethod;
 import com.continuuity.common.http.HttpRequest;
 import com.continuuity.common.http.HttpResponse;
@@ -45,13 +45,13 @@ public class QueryClient {
 
   private static final Gson GSON = new Gson();
 
-  private final RestClient restClient;
+  private final RESTClient restClient;
   private final ReactorClientConfig config;
 
   @Inject
   public QueryClient(ReactorClientConfig config) {
     this.config = config;
-    this.restClient = RestClient.create(config);
+    this.restClient = RESTClient.create(config);
   }
 
   /**
@@ -64,7 +64,7 @@ public class QueryClient {
    * @throws BadRequestException if the query was malformed
    */
   public QueryHandle execute(String query) throws IOException, BadRequestException {
-    URL url = config.resolveURL("data/queries");
+    URL url = config.resolveURL("data/explore/queries");
     HttpRequest request = HttpRequest.post(url).withBody(GSON.toJson(ImmutableMap.of("query", query))).build();
 
     HttpResponse response = restClient.execute(request, HttpURLConnection.HTTP_BAD_REQUEST);
@@ -85,7 +85,7 @@ public class QueryClient {
    * @throws QueryNotFoundException if the query with the specified handle was not found
    */
   public QueryStatus getStatus(QueryHandle queryHandle) throws IOException, QueryNotFoundException {
-    URL url = config.resolveURL(String.format("data/queries/%s/status", queryHandle.getHandle()));
+    URL url = config.resolveURL(String.format("data/explore/queries/%s/status", queryHandle.getHandle()));
     HttpResponse response = restClient.execute(HttpMethod.GET, url, HttpURLConnection.HTTP_NOT_FOUND);
     if (response.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
       throw new QueryNotFoundException(queryHandle.getHandle());
@@ -105,7 +105,7 @@ public class QueryClient {
   public List<ColumnDesc> getSchema(QueryHandle queryHandle)
     throws IOException, QueryNotFoundException {
 
-    URL url = config.resolveURL(String.format("data/queries/%s/schema", queryHandle.getHandle()));
+    URL url = config.resolveURL(String.format("data/explore/queries/%s/schema", queryHandle.getHandle()));
     HttpResponse response = restClient.execute(HttpMethod.GET, url, HttpURLConnection.HTTP_NOT_FOUND);
     if (response.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
       throw new QueryNotFoundException(queryHandle.getHandle());
@@ -127,7 +127,7 @@ public class QueryClient {
   public List<QueryResult> getResults(QueryHandle queryHandle, int batchSize)
     throws IOException, QueryNotFoundException {
 
-    URL url = config.resolveURL(String.format("data/queries/%s/next", queryHandle.getHandle()));
+    URL url = config.resolveURL(String.format("data/explore/queries/%s/next", queryHandle.getHandle()));
     HttpRequest request = HttpRequest.post(url).withBody(GSON.toJson(ImmutableMap.of("size", batchSize))).build();
 
     HttpResponse response = restClient.execute(request, HttpURLConnection.HTTP_NOT_FOUND);
@@ -147,7 +147,7 @@ public class QueryClient {
    * @throws BadRequestException if the query could not be deleted at the moment
    */
   public void delete(QueryHandle queryHandle) throws IOException, QueryNotFoundException, BadRequestException {
-    URL url = config.resolveURL(String.format("data/queries/%s", queryHandle.getHandle()));
+    URL url = config.resolveURL(String.format("data/explore/queries/%s", queryHandle.getHandle()));
     HttpResponse response = restClient.execute(HttpMethod.DELETE, url,
                                                HttpURLConnection.HTTP_NOT_FOUND,
                                                HttpURLConnection.HTTP_BAD_REQUEST);
@@ -168,7 +168,7 @@ public class QueryClient {
    * @throws BadRequestException if the query was not in a state that could be canceled
    */
   public void cancel(QueryHandle queryHandle) throws IOException, QueryNotFoundException, BadRequestException {
-    URL url = config.resolveURL(String.format("data/queries/%s/cancel", queryHandle.getHandle()));
+    URL url = config.resolveURL(String.format("data/explore/queries/%s/cancel", queryHandle.getHandle()));
     HttpResponse response = restClient.execute(HttpMethod.POST, url,
                                                HttpURLConnection.HTTP_NOT_FOUND,
                                                HttpURLConnection.HTTP_BAD_REQUEST);

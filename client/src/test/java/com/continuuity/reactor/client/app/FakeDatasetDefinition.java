@@ -25,6 +25,7 @@ import com.continuuity.api.dataset.lib.KeyValueTable;
 import com.google.common.base.Preconditions;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  *
@@ -53,9 +54,10 @@ public class FakeDatasetDefinition extends AbstractDatasetDefinition<FakeDataset
   }
 
   @Override
-  public FakeDataset getDataset(DatasetSpecification spec, ClassLoader classLoader) throws IOException {
+  public FakeDataset getDataset(DatasetSpecification spec, Map<String, String> arguments,
+                                ClassLoader classLoader) throws IOException {
     DatasetSpecification kvTableSpec = spec.getSpecification("objects");
-    KeyValueTable table = tableDef.getDataset(kvTableSpec, classLoader);
+    KeyValueTable table = tableDef.getDataset(kvTableSpec, arguments, classLoader);
 
     return new FakeDataset(spec.getName(), table);
   }
