@@ -16,7 +16,6 @@
 
 package com.continuuity.shell.completer;
 
-import com.continuuity.shell.util.AsyncCachingSupplier;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import jline.console.completer.Completer;
@@ -24,6 +23,7 @@ import jline.console.completer.Completer;
 import java.util.Collection;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 
@@ -38,7 +38,7 @@ public class StringsCompleter implements Completer {
 
   public StringsCompleter(Supplier<Collection<String>> strings) {
     checkNotNull(strings);
-    this.strings = AsyncCachingSupplier.of(strings, 5000);
+    this.strings = Suppliers.memoizeWithExpiration(strings, 5000, TimeUnit.MILLISECONDS);
   }
 
   public StringsCompleter(Collection<String> strings) {
