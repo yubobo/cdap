@@ -4,25 +4,35 @@
 
 define([], function () {
 
-  var ERROR_TXT = 'Instance count out of bounds.';
+  var ERROR_TXT = 'Requested Instance count out of bounds.';
 
   var Controller = Em.Controller.extend({
 
     load: function () {
       var self = this;
-      self.set('services', []);
+      self.set('systemServices', []);
+
       self.resetServices();
+
+      this.interval = setInterval(function () {
+        self.resetServices();
+      }, C.POLLING_INTERVAL)
     },
 
     resetServices: function () {
       var self = this;
+      var systemServices = [];
+
       self.HTTP.rest('system/services', function (services) {
-        var servicesArr = [];
         services.map(function(service) {
-          servicesArr.push(C.Service.create({
+          var imgSrc = service.status === 'OK' ? 'complete' : 'loading';
+          var logSrc = service.status === 'OK' ? 'complete' : 'loading';
+          systemServices.push(C.Service.create({
             modelId: service.name,
+            description: service.description,
             id: service.name,
             name: service.name,
+            description: service.description,
             status: service.status,
             min: service.min,
             max: service.max,
@@ -31,62 +41,59 @@ define([], function () {
             logs: service.logs,
             requested: service.requested,
             provisioned: service.provisioned,
-            statusOk: !!(service.status === 'OK'),
-            statusNotOk: !!(service.status === 'NOT OK'),
             logsStatusOk: !!(service.logs === 'OK'),
-            logsStatusNotOk: !!(service.logs === 'NOT OK'),
+            logsStatusNotOk: !!(service.logs === 'NOTOK'),
             metricEndpoint: C.Util.getMetricEndpoint(service.name),
-            metricName: C.Util.getMetricName(service.name)
+            metricName: C.Util.getMetricName(service.name),
+            imgClass: imgSrc,
+            logClass: logSrc
           }));
         });
-        self.set('services', servicesArr);
+        self.set('systemServices', systemServices);
+
+        // Bind all the tooltips after UI has rendered after call has returned.
+        setTimeout(function () {
+          $("[data-toggle='tooltip']").tooltip();
+        }, 1000);
       });
     },
 
-    increaseInstance: function (serviceName, instanceCount) {
-      if (confirm("Increase instances for " + serviceName + "?")) {
-        var self = this;
-        var payload = {data: {instances: ++instanceCount}};
-        var services = self.get('services');
-        for (var i = 0; i < services.length; i++) {
-          var service = services[i];
-          if (service.name === serviceName) {
-            if (instanceCount > service.max || instanceCount < service.min) {
-              C.Util.showWarning(ERROR_TXT);
-              return;
-            }
-          }
-        }
-        self.executeInstanceCall(serviceName, payload);        
-      }      
+
+    increaseInstance: function (service, instanceCount) {
+      this.verifyInstanceBounds(service, ++instanceCount, "Increase");
     },
 
-    decreaseInstance: function (serviceName, instanceCount) {
-      if (confirm("Decrease instances for " + serviceName + "?")) {
-        var self = this;
-        var payload = {data: {instances: --instanceCount}};
-        var services = self.get('services');
-        for (var i = 0; i < services.length; i++) {
-          var service = services[i];
-          if (service.name === serviceName) {
-            if (instanceCount > service.max || instanceCount < service.min) {
-              C.Util.showWarning(ERROR_TXT);
-              return;
-            }
-          }
-        }
-        self.executeInstanceCall(serviceName, payload);
-      }      
+    decreaseInstance: function (service, instanceCount) {
+      this.verifyInstanceBounds(service, --instanceCount, "Decrease");
     },
 
-    executeInstanceCall: function(serviceName, payload) {
+    verifyInstanceBounds: function(service, numRequested, direction) {
       var self = this;
-      this.HTTP.put('rest/system/services/' + serviceName + '/instances', payload,
+      if (numRequested > service.max || numRequested < service.min) {
+        C.Modal.show("Instances Error", ERROR_TXT);
+        return;
+      }
+      C.Modal.show(
+        direction + " instances",
+        direction + " instances for " + service.name + "?",
+        function () {
+          var callback = function(){ self.resetServices() };
+          self.executeInstanceCall('rest/system/services/' + service.name + '/instances', numRequested, callback);
+        }
+      );
+    },
+
+    executeInstanceCall: function (url, numRequested, callback) {
+      var self = this;
+      var payload = {data: {instances: numRequested}};
+      this.HTTP.put(url, payload,
         function(resp, status) {
         if (status === 'error') {
           C.Util.showWarning(resp);
         } else {
-          self.resetServices();
+          if (typeof(callback) == "function") {
+            callback();
+          }
         }
       });
     },

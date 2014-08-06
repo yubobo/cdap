@@ -2,16 +2,15 @@
  * Service Model
  */
 
-define(['core/models/element'], function (Element) {
+define(['core/models/program'], function (Program) {
 
-  var Model = Element.extend({
+  var Model = Program.extend({
     type: 'Service',
     plural: 'Services',
 
     init: function() {
       this._super();
       this.set('id', this.get('modelId'));
-      this.set('description', this.get('meta') || 'Service');
     },
     
     context: function () {

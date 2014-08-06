@@ -54,6 +54,9 @@ define(['helpers/plumber'], function (Plumber) {
       this.interval = setInterval(function () {
         self.updateStats();
       }, C.POLLING_INTERVAL);
+      this.intervalUpdateTimeRemaining = setInterval(function () {
+        self.updateTimeRemaining();
+      }, 1000);
 
       /*
        * Give the chart Embeddables 100ms to configure
@@ -115,6 +118,7 @@ define(['helpers/plumber'], function (Plumber) {
     unload: function () {
 
       clearInterval(this.interval);
+      clearInterval(this.intervalUpdateTimeRemaining);
       this.set('elements.Action.content', []);
 
     },
@@ -156,8 +160,8 @@ define(['helpers/plumber'], function (Plumber) {
       var model = this.get('model');
       if (model.get('currentState') === 'RUNNING') {
 
-        this.HTTP.rest(model.get('context') + '/current', function (run) {
-
+        // Hax for not showing warning message when call fails.
+        $.get(model.get('context') + '/current').done(function (run) {
           var activeAction = run.currentStep;
           self.get('elements.Action').forEach(function (action, index) {
             if (index === activeAction) {
@@ -166,7 +170,10 @@ define(['helpers/plumber'], function (Plumber) {
               action.set('currentState', 'STOPPED');
             }
           });
-
+        }).fail(function () {
+          self.get('elements.Action').forEach(function (action, index) {
+            action.set('currentState', 'STOPPED');
+          });
         });
 
         this.set('__previousState', 'RUNNING');
@@ -201,6 +208,13 @@ define(['helpers/plumber'], function (Plumber) {
       });
 
       var next = this.get('nextRun');
+      self.updateTimeRemaining();
+
+    },
+
+    updateTimeRemaining: function () {
+      var self = this;
+      var next = this.get('nextRun');
 
       if (next !== -1) {
 
@@ -232,7 +246,6 @@ define(['helpers/plumber'], function (Plumber) {
         }
 
       }
-
     },
 
     /**

@@ -1,32 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright 2012-2014 Continuuity, Inc.
- 
- Licensed under the Apache License, Version 2.0 (the "License"); you may not
- use this file except in compliance with the License. You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software distributed under the 
- License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- either express or implied. See the License for the specific language governing permissions
- and limitations under the License.
- 
--->
+  Copyright 2014 Cask, Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+  use this file except in compliance with the License. You may obtain a copy of
+  the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations under
+  the License.
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.continuuity</groupId>
-    <artifactId>reactor</artifactId>
+    <groupId>co.cask.cdap</groupId>
+    <artifactId>cdap</artifactId>
     <version>2.4.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>examples</artifactId>
   <packaging>pom</packaging>
-  <name>Continuuity Examples</name>
+  <name>Cask CDAP Examples</name>
 
   <modules>
     <module>CountAndFilterWords</module>
@@ -37,7 +38,6 @@
     <module>HelloWorld</module>
     <module>PageViewAnalytics</module>
     <module>Purchase</module>
-    <module>PurchaseAnalytics</module>
     <module>ResourceSpammer</module>
     <module>ResponseCodeAnalytics</module>
     <!-- Sentiment analysis showcases running external processes in flowlets -->
@@ -58,10 +58,76 @@
 
   <properties>
     <hadoop.version>2.3.0</hadoop.version>
-    <power.pack.version>[1.0.0,)</power.pack.version>
+    <power.pack.version>[2.0.0,)</power.pack.version>
   </properties>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>0.10</version>
+          <executions>
+            <execution>
+              <id>rat-check</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+              <configuration>
+                <excludes>
+                  <exclude>build-number.txt</exclude>
+                  <exclude>LICENSE*.txt</exclude>
+                  <exclude>README.md</exclude>
+                  <exclude>logs/**</exclude>
+                  <exclude>docs/**</exclude>
+                  <exclude>conf/**</exclude>
+                  <exclude>**/data/**</exclude>
+                  <exclude>**/Apache-LICENSE-2.0</exclude>
+                  <exclude>**/VERSION</exclude>
+                  <exlcude>**/*.patch</exlcude>
+                  <exclude>**/logrotate.d/**</exclude>
+                  <exclude>**/limits.d/**</exclude>
+                  <exclude>**/resources/**/*.txt</exclude>
+                  <exclude>**/resources/**/*.accesslog</exclude>
+                  <exclude>**/resources/**/*.css</exclude>
+                  <exclude>**/resources/**/*.scss</exclude>
+                  <exclude>**/resources/**/*.js</exclude>
+                  <exclude>**/resources/**/*.svg</exclude>
+                </excludes>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <version>2.3.7</version>
+          <extensions>true</extensions>
+          <configuration>
+            <archive>
+              <manifest>
+                <mainClass>${app.main.class}</mainClass>
+              </manifest>
+            </archive>
+            <instructions>
+              <Embed-Dependency>*;inline=false;scope=compile</Embed-Dependency>
+              <Embed-Transitive>true</Embed-Transitive>
+              <Embed-Directory>lib</Embed-Directory>
+            </instructions>
+          </configuration>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>bundle</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -69,35 +135,17 @@
         <version>2.14.1</version>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>2.1</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <manifestEntries>
-                    <Main-Class>${app.main.class}</Main-Class>
-                  </manifestEntries>
-                </transformer>
-              </transformers>
-            </configuration>
-          </execution>
-        </executions>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.3.7</version>
       </plugin>
     </plugins>
   </build>
 
   <dependencies>
     <dependency>
-      <groupId>com.continuuity</groupId>
-      <artifactId>continuuity-api</artifactId>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>api</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -122,8 +170,8 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
-      <artifactId>continuuity-test</artifactId>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>unit-test</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
@@ -136,9 +184,9 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>com.continuuity</groupId>
-        <artifactId>http</artifactId>
-        <version>0.2.0</version>
+        <groupId>co.cask.http</groupId>
+        <artifactId>netty-http</artifactId>
+        <version>0.4.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
@@ -146,7 +194,7 @@
         <version>1.3.2</version>
       </dependency>
       <dependency>
-        <groupId>com.continuuity</groupId>
+        <groupId>co.cask.cdap</groupId>
         <artifactId>power-pack</artifactId>
         <version>${power.pack.version}</version>
         <exclusions>
@@ -159,12 +207,6 @@
             <artifactId>logback-classic</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>1.7.2</version>
-        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
@@ -184,6 +226,10 @@
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <dependency>
@@ -199,6 +245,10 @@
           <exclusion>
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -310,4 +360,16 @@
     </dependencies>
   </dependencyManagement>
 
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>

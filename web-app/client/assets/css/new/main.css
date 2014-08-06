@@ -394,6 +394,20 @@ a, a:visited {
 	text-decoration: underline;
 }
 
+#nav-collect {
+}
+
+#nav-collect span.left-nav-icon {
+	width: 38px;
+	height: 38px;
+	background-image: url('/assets/img/icn-nav.png');
+	background-repeat: no-repeat;
+	display: block;
+	background-size: 38px;
+	background-position: 0px -38px;
+	margin: 0 auto;
+}
+
 .nav-dash {
 	background-position: 0 0;
 }
@@ -463,7 +477,7 @@ a, a:visited {
 }
 
 #content {
-	min-width: 1056px;
+	min-width: 1150px;
 	background-color: #E0E1E6;
 	position: relative;
 	min-height: 100%;
@@ -471,10 +485,9 @@ a, a:visited {
 
 #content-body {
 	padding: 16px 0 0;
-	float: left;
 	padding-left: 120px;
 	padding-top: 80px;
-	width: 100%;
+	background: #E0E1E6;
 }
 
 #header {
@@ -482,8 +495,9 @@ a, a:visited {
 	background-color: #ffffff;
 	color: #0A234B;
 	position: fixed;
+	min-width: 600px;
 	width: 100%;
-	z-index: 1;
+	z-index: 51;
 	border-bottom: 1px solid #CECED0;
 }
 
@@ -535,6 +549,10 @@ a, a:visited {
 	background-image: url('/assets/img/v2/signout_icon.png');
 }
 
+#global .services-link {
+	position: relative;
+}
+
 #global .services-link:hover {
 	background-image: url('/assets/img/v2/services_active_icon.png');
 }
@@ -564,9 +582,17 @@ a, a:visited {
 	background-position: 8px 0;
 	background-repeat: no-repeat;
 	padding-left: 50px;
-  padding-top: 3px;
+  	padding-top: 3px;
 	white-space: nowrap;
 	border-right: 1px solid #ccc;
+}
+
+#global .my-account {
+	cursor: pointer;
+}
+
+#global .my-account:hover ul.dropdown-menu{
+	display: block !important;
 }
 
 #global .user-link.small-pad {
@@ -574,16 +600,31 @@ a, a:visited {
 	color: black;
 }
 
+#global #failed-services-container {
+  background-color: red;
+  border-radius: 100%;
+  color: white;
+  height: 18px;
+  width: 18px;
+  text-align: center;
+  display: none;
+  position: absolute;
+  top: -4px;
+  left: 0px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
 ul.top-dropdown-listholder {
 
 }
 
 ul.top-dropdown-listholder li {
-	
+
 }
 
-#global ul.top-dropdown-listholder li a { 
-	margin-left: 0px;
+#global ul.top-dropdown-listholder li a {
+	margin-left: 0;
 	float: none;
 	text-align: center;
 	height: 30px;
@@ -686,16 +727,16 @@ ul.top-dropdown-listholder li {
 
 h1 {
 	margin: 0;
-	font-size: 22px;
+	font-size: 20px;
 	font-weight: lighter;
 	color: #4D5268;
 	line-height: 32px;
 	padding-bottom: 4px;
 	height: 36px;
-	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
-h1 span {
+h1 span:first-child {
 	color: #aaa;
 	margin-left: 4px;
 }
@@ -891,7 +932,7 @@ h1 span {
 
 .sparkline-list-value {
 	float: right;
-	width: 78px;
+	width: 90px;
 	border-left: 0;
 	background-color: white;
 	color: #555;
@@ -912,7 +953,7 @@ h1 span {
 }
 .sparkline-list-container {
 	height: 34px;
-	margin-right: 78px;
+	margin-right: 90px;
 	overflow: hidden;
 }
 
@@ -1434,16 +1475,28 @@ span.service-icon {
   width: 32px;
   background-repeat: no-repeat;
   border: none !important;
-  float: right;
   display: inline-block;
 }
 
 span.service-icon.loading {
-  background-image: url('/assets/img/services-loading-darkBg.gif');
+  background-image: url('/assets/img/services-loading-blue.gif');
 }
 
 span.service-icon.complete {
   background-image: url('/assets/img/ok-icon.png');
+}
+
+span.log-icon.loading {
+  display: none;
+}
+
+span.log-icon.complete {
+  background-image: url('/assets/img/log-icon.png');
+  height: 30px;
+  width: 30px;
+  background-repeat: no-repeat;
+  border: none !important;
+  display: inline-block;
 }
 
 #services-loading {
@@ -1565,9 +1618,22 @@ span.service-icon.complete {
 	text-align: center;
 }
 
-img[src="assets/img/minus.png"] {
-	margin-right: -5px;
+.instance-col span.minus-icon, .instance-col span.plus-icon {
+  height: 30px;
+  width: 30px;
+  background-repeat: no-repeat;
+  border: none !important;
+  display: inline-block;
 }
+
+.instance-col span.minus-icon {
+  background-image: url('/assets/img/minus.png');
+}
+
+.instance-col span.plus-icon {
+  background-image: url('/assets/img/plus.png');
+}
+
 
 /*
  * Bootstrap Overrides
@@ -2012,7 +2078,6 @@ a strong {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background-color: rgba(240, 241, 241, 0.8);
 	z-index: 50;
 }
 
@@ -2163,6 +2228,30 @@ a strong {
 	width: 616px;
 	max-width: 616px;
 	height: 100px;
+}
+
+#query-injector-input {
+	width: 100%;
+	height: 150px;
+	background: #575F74;
+	color: white;
+	margin-top: 10px;
+	margin-bottom: 5px;
+	font-family: inherit;
+	padding: 10px;
+	box-sizing: border-box;
+}
+
+#execute-explore-query {
+	margin: 10px;
+	float: right;
+}
+
+.bordered-dataset-table {
+}
+
+.bordered-dataset-table > td {
+	padding: 0;
 }
 
 textarea {
@@ -3285,12 +3374,6 @@ only screen and (min-device-pixel-ratio: 1.5) {
 div.tooltip {
 	position: absolute;
 	text-align: center;
-	padding: 5px;
-	font: 16px sans-serif;
-	color: black;
-	border: 2px solid #ccc;
-	box-shadow: 0 0 5px #ccc;
-	background: white;
 	pointer-events: none;
 }
 
@@ -3356,6 +3439,7 @@ div.tooltip {
 	display: none;
 	height: 15px;
 	margin-right: 5px;
+	width: 24px;
 }
 
 .dropdown-menu>li>a:hover, .dropdown-menu>li>a:focus, .dropdown-submenu:hover>a, .dropdown-submenu:focus>a {
@@ -3416,16 +3500,187 @@ div.tooltip {
 	background: white;
 }
 
-
 path {
 	stroke: steelblue;
 	stroke-width: 2;
 	fill: none;
 }
+
+.btn-custom {
+	color: #4B88E7 !important;
+	letter-spacing: 0.1em;
+	line-height: 25px;
+	font-size: 14px !important;
+	border-radius: 5px;
+	background-image: -webkit-linear-gradient(top, white, #f5f5f5);
+	display: inline-block;
+	background: white;
+	border: 1px solid #CACBCF;
+	text-transform: none;
+	min-height: 35px;
+	padding-right: 10px;
+}
+
+#explore-button {
+	margin-top: 3px;
+	margin-right: 10px;
+	background-image: url('/assets/img/v2/explore_icon.png');
+	padding-left: 30px;
+	background-repeat: no-repeat;
+	background-position: 5px 5px;
+	line-height: 2.5;
+}
+
+#explore-button {
+	text-decoration: none;
+}
+
+#explore-button:hover {
+	text-decoration: none;
+}
+
+#explore-button:visited {
+	text-decoration: none;
+}
+
+#query-display {
+	background: #666666;
+	max-height: 600px;
+	overflow: auto;
+}
+
+#query-tables {
+	width: 350px;
+	background: white;
+}
+
+#query-schema {
+	margin-left: 350px;
+	color: white;
+}
+
+#schema-table th {
+	background: #535353;
+	color: white;
+}
+
+#schema-table th, #schema-table td {
+	border-color: #515151;
+}
+
+.table-name:hover {
+	color: white;
+	background: #1751A3;
+}
+
+.table-name:hover .app-list-name a {
+	color: white;
+}
+
+.table-name.selected {
+	color: white;
+	background: #1751A3;
+}
+
+.table-name.selected .app-list-name a {
+	color: white;
+}
+
+.arrow-right {
+	width: 0;
+	height: 0;
+	border-top: 8px solid transparent;
+	border-bottom: 8px solid transparent;
+	border-left: 8px solid white;
+	float: right;
+	margin-top: -20px;
+}
+
+#query-list-table {
+	font-size: 14px;
+}
+
+.lighter-color {
+	color: #ABAFBE;
+}
+
+.query-status {
+	color: #ABAFBE;
+	font-weight: bold;
+}
+
+.query-status.FINISHED {
+	color: #3EC173; 
+}
+
+.query-status.RUNNING {
+	color: #2D65C9; 
+}
+
+.query-status.ERROR {
+	color: #E34F6A; 
+}
+
+.query-table-entry {
+	font-size: 14px;
+}
+
+.query-table-entry.selected {
+	background: #4A4A4A;
+	color: white;
+}
+
+.query-table-entry:hover {
+	background: #4A4A4A;
+	color: white;
+}
+
+.query-results-table-entry {
+	color: white !important;
+}
+
+.query-results-table-entry > thead > tr > th {
+	background: #6D6D6D;
+	color: white;
+}
+
+.query-results-table-entry > tbody > tr > td {
+	background: #888888;
+	color: white;
+	border-right: 1px solid #929292;
+	border-bottom: 1px solid #929292;
+}
+
+.query-results-table-entry > tbody > tr > td:last-child {
+	border-right: 0;
+}
+
+.query-results-table-entry > tbody > tr:last-child > td:last-child {
+	border-bottom: 0;
+}
+
+
 /**
  *Login form
  */
 .panel table td, .panel table th {
   border-top: 0;
   border-bottom: 1px solid #EEE;
+}
+/**
+ *User Services stop-start
+ */
+.userServices-start {
+  background: black;
+	background-image: url('/assets/img/v2/play_active_icon.png');
+	background-size: contain;
+	width: 20px;
+	height: 20px
+}
+.userServices-stop {
+  background: black;
+	background-image: url('/assets/img/v2/stop_active_icon.png');
+	background-size: contain;
+	width: 20px;
+	height: 20px
 }

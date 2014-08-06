@@ -124,6 +124,7 @@ define([], function () {
 			APP_NAME: 'ResponseCodeAnalytics',
 			FLOW_NAME: 'LogAnalyticsFlow',
 			STREAM_NAME: 'logEventStream',
+			PROCEDURE_NAME: 'StatusCodeProcedure',
 			TITLES: [
 				'Welcome!',
 				'Flows',
@@ -267,7 +268,8 @@ define([], function () {
 							Ember.run.next(function () {
 
 								controller.set('injectValue', '165.225.156.91 - - [09/Jan/2014:21:28:53 -0400] ' +
-									'"GET /index.html HTTP/1.1" 200 225 "http://continuuity.com" "Mozilla/4.08 [en] (Win98; I ;Nav)"');
+									'"GET /index.html HTTP/1.1" 200 225 "http://continuuity.com" "Mozilla/4.08 [en]' +
+									' (Win98; I ;Nav)"');
 
 								$('.popup-inject-wrapper button').one('click', function () {
 									if (self.skipped) {
@@ -280,29 +282,33 @@ define([], function () {
 						}
 					break;
 					case 'controller:FlowLog':
-						self.popover('[href="#/apps/' + self.APP_NAME + '"]',
-							'bottom', self.TITLES[5], self.STRINGS[5]);
+						if (id === (self.APP_NAME + ':' + self.FLOW_NAME)) {
+							self.popover('[href="#/apps/' + self.APP_NAME + '"]',
+								'bottom', self.TITLES[5], self.STRINGS[5]);
+						}						
 					break;
 					case 'controller:ProcedureStatus':
-						if (!self.COMPLETE['Procedure']) {
-							self.popover('#method-name', 'top', self.TITLES[7], self.STRINGS[7]);
-							self.COMPLETE['Procedure'] = true;
+						if (id === (self.APP_NAME + ':' + self.PROCEDURE_NAME)) {
+							if (!self.COMPLETE['Procedure']) {
+								self.popover('#method-name', 'top', self.TITLES[7], self.STRINGS[7]);
+								self.COMPLETE['Procedure'] = true;
 
-							Ember.run.next(function () {
-								$('#method-name').one('click', function () {
-									$(this).val('getCounts');
-								});
+								Ember.run.next(function () {
+									$('#method-name').one('click', function () {
+										$(this).val('getCounts');
+									});
 
-								$('#execute-button').one('click', function () {
-									if (self.skipped) {
-										return;
-									}
-									setTimeout(function () {
-										$('#nux-completed-modal').fadeIn();
-										self.completed();
-									}, 1000);
+									$('#execute-button').one('click', function () {
+										if (self.skipped) {
+											return;
+										}
+										setTimeout(function () {
+											$('#nux-completed-modal').fadeIn();
+											self.completed();
+										}, 1000);
+									});
 								});
-							});
+							}
 						}
 				}
 			}
@@ -414,7 +420,13 @@ define([], function () {
 							checkDeployStatus();
 
 						} else {
-							C.Modal.show("Deployment Error", xhr.responseText);
+							C.EventModal.show({
+								title: 'Deployment Error',
+								body: xhr.responseText,
+								onHideCallback: function () {
+									window.location.reload();
+								}
+							});
 							$('#drop-hover').fadeOut(function () {
 								$('#drop-label').show();
 								$('#drop-loading').hide();
@@ -584,7 +596,7 @@ define([], function () {
 						path = metric.path + '?start=' + start + '&end=' + end + '&count=' + count;
 
 						if (metric.interpolate) {
-							path += '&interpolate=step';
+							path += '&interpolate=' + metric.interpolate;
 						}
 
 						queries.push(path);
@@ -950,6 +962,21 @@ define([], function () {
 
     capitaliseFirstLetter: function (string) {
       return string.charAt(0).toUpperCase() + string.slice(1);
+    },
+
+    /**
+     * Gets the function name by calling toString.
+     */
+    getFnName: function(fn) {
+    	if (typeof fn === 'function') {
+    		var ret = fn.toString();
+			  ret = ret.substr('function '.length);
+			  ret = ret.substr(0, ret.indexOf('('));
+			  return ret;	
+    	} else {
+    		throw 'Invalid call getFnName.';
+    	}
+    	
     },
 
 		reset: function () {

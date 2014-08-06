@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2014 Cask, Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+  use this file except in compliance with the License. You may obtain a copy of
+  the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations under
+  the License.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -6,67 +22,79 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.continuuity</groupId>
-    <artifactId>parent</artifactId>
+    <groupId>co.cask.cdap</groupId>
+    <artifactId>cdap</artifactId>
     <version>2.4.0-SNAPSHOT</version>
-    <relativePath>../parent/pom.xml</relativePath>
   </parent>
 
 
   <artifactId>singlenode</artifactId>
-  <name>Continuuity Singlenode</name>
+  <name>Cask CDAP Singlenode</name>
   <packaging>jar</packaging>
 
   <dependencies>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+    </dependency>
+
     <!-- Added to override the embedded guava class in hive-exec -->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
-      <artifactId>continuuity-api</artifactId>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>data-fabric</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>watchdog-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>watchdog</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>security</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>app-fabric</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>gateway</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.continuuity</groupId>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>explore</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.continuuity.tephra</groupId>
+      <artifactId>tephra-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.twill</groupId>
@@ -76,20 +104,34 @@
       <groupId>org.apache.twill</groupId>
       <artifactId>twill-discovery-core</artifactId>
     </dependency>
-
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <excludes>
+            <exclude>*.xml</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
   <profiles>
     <profile>
       <id>dist</id>
       <properties>
         <sdk.dir>${project.build.directory}/sdk</sdk.dir>
-        <stage.opt.dir>${sdk.dir}/continuuity-sdk-${project.version}</stage.opt.dir>
+        <stage.opt.dir>${sdk.dir}/cdap-sdk-${project.version}</stage.opt.dir>
         <stage.lib.dir>${stage.opt.dir}/lib</stage.lib.dir>
       </properties>
       <dependencies>
         <dependency>
-          <groupId>com.continuuity</groupId>
+          <groupId>co.cask.cdap</groupId>
           <artifactId>web-app</artifactId>
           <version>${project.version}</version>
         </dependency>
@@ -117,8 +159,9 @@
                   <overWriteReleases>false</overWriteReleases>
                   <overWriteSnapshots>false</overWriteSnapshots>
                   <overWriteIfNewer>true</overWriteIfNewer>
-                  <excludeGroupIds>org.apache.hbase,com.google.protobuf,asm,org.apache.zookeeper,org.apache.kafka,org.scala-lang</excludeGroupIds>
+                  <excludeGroupIds>org.apache.hbase,asm,org.apache.zookeeper,org.apache.kafka,org.scala-lang</excludeGroupIds>
                   <excludeArtifactIds>hadoop-hdfs,zkclient</excludeArtifactIds>
+                  <prependGroupId>true</prependGroupId>
                   <silent>true</silent>
                   <includeScope>compile</includeScope>
                 </configuration>
@@ -129,9 +172,6 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-resources-plugin</artifactId>
             <version>2.6</version>
-            <configuration>
-              <outputDirectory>${stage.opt.dir}/conf</outputDirectory>
-            </configuration>
             <executions>
               <execution>
                 <id>copy-opt</id>
@@ -143,6 +183,10 @@
                   <outputDirectory>${stage.opt.dir}</outputDirectory>
                   <resources>
                     <resource>
+                      <directory>${project.basedir}/src/main/resources</directory>
+                      <targetPath>conf</targetPath>
+                    </resource>
+                    <resource>
                       <directory>${project.basedir}/src/dist</directory>
                       <includes>
                         <include>README</include>
@@ -150,14 +194,15 @@
                       <filtering>true</filtering>
                     </resource>
                     <resource>
-                      <directory>${project.basedir}/src/dist</directory>
-                      <excludes>
-                        <!-- Exclude README as it needs filtering and is done above -->
-                        <exclude>README</exclude>
-                      </excludes>
+                      <directory>${project.basedir}/src/dist/LICENSES</directory>
+                      <targetPath>LICENSES</targetPath>
                     </resource>
                     <resource>
-                      <directory>${project.parent.parent.basedir}/distributions</directory>
+                      <directory>${project.parent.basedir}/docs/developer-guide/build-pdf</directory>
+                      <targetPath>docs</targetPath>
+                    </resource>
+                    <resource>
+                      <directory>${project.parent.basedir}/distributions</directory>
                       <includes>
                         <include>VERSION</include>
                       </includes>
@@ -168,17 +213,24 @@
                       <targetPath>bin</targetPath>
                     </resource>
                     <resource>
-                      <directory>${project.parent.parent.basedir}/gateway/bin</directory>
+                      <directory>${project.parent.basedir}/gateway/bin</directory>
                       <targetPath>bin</targetPath>
                       <excludes>
                         <exclude>flume-client</exclude>
                       </excludes>
                     </resource>
                     <resource>
-                      <directory>${project.parent.parent.basedir}/data-fabric/bin</directory>
+                      <directory>${project.parent.basedir}/data-fabric/bin</directory>
                       <targetPath>bin</targetPath>
                       <includes>
                         <include>tx-debugger*</include>
+                      </includes>
+                    </resource>
+                    <resource>
+                      <directory>${project.parent.basedir}/explore/bin</directory>
+                      <targetPath>bin</targetPath>
+                      <includes>
+                        <include>send-query*</include>
                       </includes>
                     </resource>
                     <!-- Copy binaries for Windows -->
@@ -187,50 +239,51 @@
                       <targetPath>libexec</targetPath>
                     </resource>
                     <resource>
-                      <directory>${project.parent.parent.basedir}/continuuity-test/src/main/resources</directory>
+                      <directory>${project.parent.basedir}/unit-test/src/main/resources</directory>
                       <targetPath>libexec/bin</targetPath>
                       <includes>
                         <include>*.exe</include>
                       </includes>
                     </resource>
                     <resource>
-                      <directory>${project.parent.parent.basedir}/continuuity-test/src/main/resources</directory>
+                      <directory>${project.parent.basedir}/unit-test/src/main/resources</directory>
                       <targetPath>lib/native</targetPath>
                       <includes>
                         <include>*.dll</include>
                       </includes>
                     </resource>
-                    <!-- Copy continuuity-api jars -->
+                    <!-- Copy api jars -->
                     <resource>
-                      <directory>${project.parent.parent.basedir}/continuuity-api/target</directory>
+                      <directory>${project.parent.basedir}/api/target</directory>
                       <includes>
-                        <include>continuuity-api-${project.version}*.jar</include>
+                        <include>api-${project.version}*.jar</include>
                       </includes>
                     </resource>
                     <!-- Copy web-app -->
                     <resource>
-                      <directory>${project.parent.parent.basedir}/web-app/target/local</directory>
+                      <directory>${project.parent.basedir}/web-app/target/local</directory>
                       <targetPath>web-app/local</targetPath>
                     </resource>
-                    <!-- Copy continuuity-api javadocs -->
+                    <!-- Copy api javadocs -->
                     <resource>
-                      <directory>${project.parent.parent.basedir}/continuuity-api/target/apidocs</directory>
+                      <directory>${project.parent.basedir}/api/target/apidocs</directory>
                       <targetPath>javadocs</targetPath>
                     </resource>
                     <!-- Copy examples. The assume the example is already built -->
                     <resource>
-                      <directory>${project.parent.parent.basedir}/examples</directory>
+                      <directory>${project.parent.basedir}/examples</directory>
                       <targetPath>examples</targetPath>
                       <includes>
+                        <include>README*</include>
                         <include>**/src/**</include>
-                        <include>**/bin/*</include>
+                        <include>**/bin/**</include>
+                        <include>**/resources/**</include>
                         <include>**/pom.xml</include>
                         <include>**/target/*.jar</include>
                       </includes>
                       <excludes>
                         <exclude>pom.xml</exclude>
                         <exclude>build.gradle</exclude>
-                        <exclude>README.rst</exclude>
                         <exclude>**/target/original*.jar</exclude>
                       </excludes>
                     </resource>
@@ -252,7 +305,7 @@
                   <useDefaultDelimiters>false</useDefaultDelimiters>
                   <resources>
                     <resource>
-                      <directory>${project.parent.parent.basedir}/examples</directory>
+                      <directory>${project.parent.basedir}/examples</directory>
                       <includes>
                         <include>deploy_pom.xml</include>
                       </includes>
@@ -276,6 +329,11 @@
                 <configuration>
                   <target>
                     <chmod file="${stage.opt.dir}/bin/**" perm="755"/>
+                    <chmod perm="755">
+                      <fileset dir="${stage.opt.dir}/examples">
+                        <include name="**/bin/**"/>
+                      </fileset>
+                    </chmod>
                   </target>
                 </configuration>
                 <goals>
@@ -295,6 +353,39 @@
                   </target>
                 </configuration>
               </execution>
+              <execution>
+                <id>rename-rest-api-docs</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <move file="${stage.opt.dir}/docs/rest.pdf" tofile="${stage.opt.dir}/docs/REST-API-Reference-v${project.version}.pdf"/>
+                  </target>
+                </configuration>
+              </execution>
+              <!-- Skip the unrelated one when rpm/deb profiles are on -->
+              <execution>
+                <id>rpm-bin-permission</id>
+                <phase>prepare-package</phase>
+                <configuration combine.self="override">
+                  <skip>true</skip>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>deb-bin-permission</id>
+                <phase>prepare-package</phase>
+                <configuration combine.self="override">
+                  <skip>true</skip>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
             </executions>
           </plugin>
           <plugin>
@@ -303,8 +394,16 @@
             <version>2.4</version>
             <executions>
               <execution>
-                <!-- Override the one in parent as singlenode build zip, not tgz -->
                 <id>tgz-package</id>
+                <configuration combine.self="override">
+                  <skipAssembly>true</skipAssembly>
+                </configuration>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>sdk-package</id>
                 <phase>package</phase>
                 <goals>
                   <goal>single</goal>
@@ -315,7 +414,7 @@
                   </descriptors>
                   <appendAssemblyId>false</appendAssemblyId>
                   <attach>false</attach>
-                  <finalName>continuuity-sdk-${project.version}</finalName>
+                  <finalName>cdap-sdk-${project.version}</finalName>
                 </configuration>
               </execution>
             </executions>
@@ -336,10 +435,10 @@
                 <configuration>
                   <version>${project.version}</version>
                   <groupId>${project.groupId}</groupId>
-                  <artifactId>continuuity-sdk</artifactId>
+                  <artifactId>cdap-sdk</artifactId>
                   <packaging>zip</packaging>
                   <generatePom>false</generatePom>
-                  <file>${project.build.directory}/continuuity-sdk-${project.version}.zip</file>
+                  <file>${project.build.directory}/cdap-sdk-${project.version}.zip</file>
                   <repositoryId>continuuity</repositoryId>
                   <url>${deploy.url}</url>
                 </configuration>
