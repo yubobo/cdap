@@ -26,6 +26,7 @@ import co.cask.cdap.common.logging.LoggingContext;
 import co.cask.cdap.common.metrics.MetricsCollectionService;
 import co.cask.cdap.common.metrics.MetricsCollector;
 import co.cask.cdap.common.metrics.MetricsScope;
+import co.cask.cdap.data.dataset.DataSetInstantiator;
 import co.cask.cdap.internal.app.runtime.AbstractContext;
 import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
 import co.cask.cdap.logging.context.ProcedureLoggingContext;
@@ -33,7 +34,6 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.twill.api.RunId;
 import org.apache.twill.discovery.ServiceDiscovered;
 
-import java.io.Closeable;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -54,11 +54,27 @@ final class BasicProcedureContext extends AbstractContext implements ProcedureCo
   private final Arguments runtimeArguments;
   private final ProgramServiceDiscovery serviceDiscovery;
 
+  /**
+   * Generate the metrics context for a procedure, given its app id, procedure id, and instance id.
+   * TODO: this should be in a common metrics utility
+   */
+  private static String formatMetricsContext(Program program, int instanceId) {
+    return String.format("%s.p.%s.%d", program.getApplicationId(), program.getName(), instanceId);
+  }
+
+  /**
+   * Get a metrics collector for a procedure, given its program, and instance id.
+   */
+  public static MetricsCollector getSystemMetrics(MetricsCollectionService collectionService,
+                                                  Program program, int instanceId) {
+    return getMetricsCollector(MetricsScope.REACTOR, collectionService, formatMetricsContext(program, instanceId));
+  }
+
   BasicProcedureContext(Program program, RunId runId, int instanceId, int instanceCount,
-                        Map<String, Closeable> datasets, Arguments runtimeArguments,
+                        DataSetInstantiator datasetInstantiator, Arguments runtimeArguments,
                         ProcedureSpecification procedureSpec, MetricsCollectionService collectionService,
                         ProgramServiceDiscovery serviceDiscovery) {
-    super(program, runId, datasets);
+    super(program, runId, datasetInstantiator);
     this.accountId = program.getAccountId();
     this.procedureId = program.getName();
     this.instanceId = instanceId;
@@ -67,7 +83,7 @@ final class BasicProcedureContext extends AbstractContext implements ProcedureCo
     this.procedureMetrics = new ProcedureMetrics(collectionService, getApplicationId(), getProcedureId());
     this.runtimeArguments = runtimeArguments;
     this.procedureLoggingContext = new ProcedureLoggingContext(getAccountId(), getApplicationId(), getProcedureId());
-    this.systemMetrics = getMetricsCollector(MetricsScope.REACTOR, collectionService, getMetricsContext());
+    this.systemMetrics = getSystemMetrics(collectionService, program, instanceId);
     this.serviceDiscovery = serviceDiscovery;
   }
 
@@ -105,10 +121,6 @@ final class BasicProcedureContext extends AbstractContext implements ProcedureCo
 
   public LoggingContext getLoggingContext() {
     return procedureLoggingContext;
-  }
-
-  private String getMetricsContext() {
-    return String.format("%s.p.%s.%d", getApplicationId(), getProcedureId(), getInstanceId());
   }
 
   public void setInstanceCount(int count) {

@@ -67,7 +67,6 @@ import co.cask.cdap.internal.app.queue.SimpleQueueSpecificationGenerator;
 import co.cask.cdap.internal.app.runtime.DataFabricFacade;
 import co.cask.cdap.internal.app.runtime.DataFabricFacadeFactory;
 import co.cask.cdap.internal.app.runtime.DataSetFieldSetter;
-import co.cask.cdap.internal.app.runtime.DataSets;
 import co.cask.cdap.internal.app.runtime.MetricsFieldSetter;
 import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
 import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
@@ -205,8 +204,7 @@ public final class FlowletProgramRunner implements ProgramRunner {
 
       // Creates flowlet context
       flowletContext = new BasicFlowletContext(program, flowletName, instanceId,
-                                               runId, instanceCount,
-                                               DataSets.createDataSets(dataSetContext, flowletDef.getDatasets()),
+                                               runId, instanceCount, dataSetContext,
                                                options.getUserArguments(), flowletDef.getFlowletSpec(),
                                                metricsCollectionService, serviceDiscovery);
 

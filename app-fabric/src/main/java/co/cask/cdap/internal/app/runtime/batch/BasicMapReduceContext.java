@@ -27,18 +27,16 @@ import co.cask.cdap.common.logging.LoggingContext;
 import co.cask.cdap.common.metrics.MetricsCollectionService;
 import co.cask.cdap.common.metrics.MetricsCollector;
 import co.cask.cdap.common.metrics.MetricsScope;
+import co.cask.cdap.data.dataset.DataSetInstantiator;
 import co.cask.cdap.internal.app.runtime.AbstractContext;
 import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
 import co.cask.cdap.logging.context.MapReduceLoggingContext;
-import com.continuuity.tephra.TransactionAware;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.twill.api.RunId;
 import org.apache.twill.discovery.ServiceDiscovered;
 
-import java.io.Closeable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -67,36 +65,17 @@ public class BasicMapReduceContext extends AbstractContext implements MapReduceC
   private String outputDatasetName;
   private Job job;
 
-  // todo: having it here seems like a hack will be fixed with further post-integration refactoring
-  private final Iterable<TransactionAware> txAwares;
-
   public BasicMapReduceContext(Program program,
                                MapReduceMetrics.TaskType type,
                                RunId runId,
                                Arguments runtimeArguments,
-                               Map<String, Closeable> datasets,
+                               DataSetInstantiator dataSetInstantiator,
                                MapReduceSpecification spec,
-                               Iterable<TransactionAware> txAwares,
-                               long logicalStartTime,
-                               String workflowBatch,
-                               ProgramServiceDiscovery serviceDiscovery) {
-    this(program, type, runId, runtimeArguments, datasets,
-         spec, txAwares, logicalStartTime, workflowBatch, serviceDiscovery, null);
-  }
-
-
-  public BasicMapReduceContext(Program program,
-                               MapReduceMetrics.TaskType type,
-                               RunId runId,
-                               Arguments runtimeArguments,
-                               Map<String, Closeable> datasets,
-                               MapReduceSpecification spec,
-                               Iterable<TransactionAware> txAwares,
                                long logicalStartTime,
                                String workflowBatch,
                                ProgramServiceDiscovery serviceDiscovery,
                                MetricsCollectionService metricsCollectionService) {
-    super(program, runId, datasets);
+    super(program, runId, dataSetInstantiator);
     this.accountId = program.getAccountId();
     this.runtimeArguments = runtimeArguments;
     this.logicalStartTime = logicalStartTime;
@@ -128,7 +107,6 @@ public class BasicMapReduceContext extends AbstractContext implements MapReduceC
     }
     this.loggingContext = new MapReduceLoggingContext(getAccountId(), getApplicationId(), getProgramName());
     this.spec = spec;
-    this.txAwares = txAwares;
   }
 
   @Override
@@ -248,9 +226,8 @@ public class BasicMapReduceContext extends AbstractContext implements MapReduceC
   @Override
   public Map<String, String> getRuntimeArguments() {
     ImmutableMap.Builder<String, String> arguments = ImmutableMap.builder();
-    Iterator<Map.Entry<String, String>> it = runtimeArguments.iterator();
-    while (it.hasNext()) {
-      arguments.put(it.next());
+    for (Map.Entry<String, String> runtimeArgument : runtimeArguments) {
+      arguments.put(runtimeArgument);
     }
     return arguments.build();
   }
@@ -258,11 +235,5 @@ public class BasicMapReduceContext extends AbstractContext implements MapReduceC
   @Override
   public ServiceDiscovered discover(String appId, String serviceId, String serviceName) {
     return serviceDiscovery.discover(accountId, appId, serviceId, serviceName);
-  }
-
-  public void flushOperations() throws Exception {
-    for (TransactionAware txAware : txAwares) {
-      txAware.commitTx();
-    }
   }
 }

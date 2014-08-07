@@ -16,8 +16,8 @@
 
 package co.cask.cdap.internal.app.runtime;
 
-import co.cask.cdap.api.data.DataSetContext;
 import co.cask.cdap.common.queue.QueueName;
+import co.cask.cdap.data.dataset.DataSetInstantiator;
 import co.cask.cdap.data2.queue.ConsumerConfig;
 import co.cask.cdap.data2.queue.QueueClientFactory;
 import co.cask.cdap.data2.transaction.stream.StreamConsumer;
@@ -31,9 +31,9 @@ import java.io.IOException;
  */
 public interface DataFabricFacade extends QueueClientFactory {
 
-  DataSetContext getDataSetContext();
+  DataSetInstantiator getDataSetInstantiator();
 
-  TransactionContext createTransactionManager();
+  TransactionContext createTransactionContext();
 
   TransactionExecutor createTransactionExecutor();
 

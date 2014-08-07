@@ -17,12 +17,12 @@
 package co.cask.cdap.internal.app.runtime.batch;
 
 import co.cask.cdap.api.common.Bytes;
+import co.cask.cdap.api.dataset.DatasetDefinition;
 import co.cask.cdap.api.dataset.lib.KeyValueTable;
 import co.cask.cdap.api.dataset.lib.ObjectStore;
 import co.cask.cdap.api.dataset.lib.TimeseriesTable;
 import co.cask.cdap.api.dataset.table.Get;
 import co.cask.cdap.api.dataset.table.Table;
-import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.program.Program;
 import co.cask.cdap.app.runtime.ProgramController;
 import co.cask.cdap.app.runtime.ProgramRunner;
@@ -32,7 +32,6 @@ import co.cask.cdap.data.dataset.DataSetInstantiator;
 import co.cask.cdap.data2.datafabric.ReactorDatasetNamespace;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.NamespacedDatasetFramework;
-import co.cask.cdap.internal.app.Specifications;
 import co.cask.cdap.internal.app.deploy.pipeline.ApplicationWithPrograms;
 import co.cask.cdap.internal.app.runtime.BasicArguments;
 import co.cask.cdap.internal.app.runtime.ProgramRunnerFactory;
@@ -48,7 +47,6 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.inject.Injector;
-import org.apache.twill.filesystem.LocationFactory;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -108,7 +106,6 @@ public class MapReduceProgramRunnerTest {
     dsFramework = new NamespacedDatasetFramework(injector.getInstance(DatasetFramework.class),
                                                  new ReactorDatasetNamespace(conf, Namespace.USER));
 
-    LocationFactory locationFactory = injector.getInstance(LocationFactory.class);
     DatasetFramework datasetFramework = injector.getInstance(DatasetFramework.class);
     dataSetInstantiator =
       new DataSetInstantiator(datasetFramework, injector.getInstance(CConfiguration.class),
@@ -133,9 +130,7 @@ public class MapReduceProgramRunnerTest {
     final ApplicationWithPrograms app =
       AppFabricTestHelper.deployApplicationWithManager(AppWithMapReduceUsingObjectStore.class, TEMP_FOLDER_SUPPLIER);
 
-    ApplicationSpecification spec = Specifications.from(new AppWithMapReduceUsingObjectStore());
-    dataSetInstantiator.setDataSets(spec.getDatasets().values());
-    final ObjectStore<String> input = dataSetInstantiator.getDataSet("keys");
+    final ObjectStore<String> input = dataSetInstantiator.getDataSet("keys", DatasetDefinition.NO_ARGUMENTS, null);
 
     //Populate some input
     txExecutorFactory.createExecutor(dataSetInstantiator.getTransactionAware()).execute(
@@ -149,7 +144,7 @@ public class MapReduceProgramRunnerTest {
 
     runProgram(app, AppWithMapReduceUsingObjectStore.ComputeCounts.class, false);
 
-    final KeyValueTable output = dataSetInstantiator.getDataSet("count");
+    final KeyValueTable output = dataSetInstantiator.getDataSet("count", DatasetDefinition.NO_ARGUMENTS, null);
     //read output and verify result
     txExecutorFactory.createExecutor(dataSetInstantiator.getTransactionAware()).execute(
       new TransactionExecutor.Subroutine() {
@@ -175,9 +170,7 @@ public class MapReduceProgramRunnerTest {
     final String inputPath = createInput();
     final File outputDir = new File(tmpFolder.newFolder(), "output");
 
-    ApplicationSpecification spec = Specifications.from(new AppWithMapReduce());
-    dataSetInstantiator.setDataSets(spec.getDatasets().values());
-    final KeyValueTable jobConfigTable = dataSetInstantiator.getDataSet("jobConfig");
+    final KeyValueTable jobConfigTable = dataSetInstantiator.getDataSet("jobConfig", DatasetDefinition.NO_ARGUMENTS, null);
 
     // write config into dataset
     txExecutorFactory.createExecutor(dataSetInstantiator.getTransactionAware()).execute(
@@ -228,15 +221,13 @@ public class MapReduceProgramRunnerTest {
   private void testSuccess(boolean frequentFlushing) throws Exception {
     final ApplicationWithPrograms app = AppFabricTestHelper.deployApplicationWithManager(AppWithMapReduce.class,
                                                                                          TEMP_FOLDER_SUPPLIER);
-    ApplicationSpecification spec = Specifications.from(new AppWithMapReduce());
-    dataSetInstantiator.setDataSets(spec.getDatasets().values());
 
     // we need to do a "get" on all datasets we use so that they are in dataSetInstantiator.getTransactionAware()
-    final TimeseriesTable table = (TimeseriesTable) dataSetInstantiator.getDataSet("timeSeries");
-    final KeyValueTable beforeSubmitTable = dataSetInstantiator.getDataSet("beforeSubmit");
-    final KeyValueTable onFinishTable = dataSetInstantiator.getDataSet("onFinish");
-    final Table counters = dataSetInstantiator.getDataSet("counters");
-    final Table countersFromContext = dataSetInstantiator.getDataSet("countersFromContext");
+    final TimeseriesTable table = dataSetInstantiator.getDataSet("timeSeries", DatasetDefinition.NO_ARGUMENTS, null);
+    final KeyValueTable beforeSubmitTable = dataSetInstantiator.getDataSet("beforeSubmit", DatasetDefinition.NO_ARGUMENTS, null);
+    final KeyValueTable onFinishTable = dataSetInstantiator.getDataSet("onFinish", DatasetDefinition.NO_ARGUMENTS, null);
+    final Table counters = dataSetInstantiator.getDataSet("counters", DatasetDefinition.NO_ARGUMENTS, null);
+    final Table countersFromContext = dataSetInstantiator.getDataSet("countersFromContext", DatasetDefinition.NO_ARGUMENTS, null);
 
     // 1) fill test data
     fillTestInputData(txExecutorFactory, dataSetInstantiator, table, false);
@@ -299,15 +290,13 @@ public class MapReduceProgramRunnerTest {
 
     final ApplicationWithPrograms app = AppFabricTestHelper.deployApplicationWithManager(AppWithMapReduce.class,
                                                                                          TEMP_FOLDER_SUPPLIER);
-    ApplicationSpecification spec = Specifications.from(new AppWithMapReduce());
-    dataSetInstantiator.setDataSets(spec.getDatasets().values());
 
     // we need to do a "get" on all datasets we use so that they are in dataSetInstantiator.getTransactionAware()
-    final TimeseriesTable table = (TimeseriesTable) dataSetInstantiator.getDataSet("timeSeries");
-    final KeyValueTable beforeSubmitTable = dataSetInstantiator.getDataSet("beforeSubmit");
-    final KeyValueTable onFinishTable = dataSetInstantiator.getDataSet("onFinish");
-    final Table counters = dataSetInstantiator.getDataSet("counters");
-    final Table countersFromContext = dataSetInstantiator.getDataSet("countersFromContext");
+    final TimeseriesTable table = dataSetInstantiator.getDataSet("timeSeries", DatasetDefinition.NO_ARGUMENTS, null);
+    final KeyValueTable beforeSubmitTable = dataSetInstantiator.getDataSet("beforeSubmit", DatasetDefinition.NO_ARGUMENTS, null);
+    final KeyValueTable onFinishTable = dataSetInstantiator.getDataSet("onFinish", DatasetDefinition.NO_ARGUMENTS, null);
+    final Table counters = dataSetInstantiator.getDataSet("counters", DatasetDefinition.NO_ARGUMENTS, null);
+    final Table countersFromContext = dataSetInstantiator.getDataSet("countersFromContext", DatasetDefinition.NO_ARGUMENTS, null);
 
     // 1) fill test data
     fillTestInputData(txExecutorFactory, dataSetInstantiator, table, true);

@@ -26,6 +26,7 @@ import co.cask.cdap.common.logging.LoggingContext;
 import co.cask.cdap.common.metrics.MetricsCollectionService;
 import co.cask.cdap.common.metrics.MetricsCollector;
 import co.cask.cdap.common.metrics.MetricsScope;
+import co.cask.cdap.data.dataset.DataSetInstantiator;
 import co.cask.cdap.internal.app.runtime.AbstractContext;
 import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
 import co.cask.cdap.logging.context.FlowletLoggingContext;
@@ -33,7 +34,6 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.twill.api.RunId;
 import org.apache.twill.discovery.ServiceDiscovered;
 
-import java.io.Closeable;
 import java.util.Map;
 
 /**
@@ -56,10 +56,10 @@ final class BasicFlowletContext extends AbstractContext implements FlowletContex
   private final MetricsCollector systemMetricsCollector;
 
   BasicFlowletContext(Program program, String flowletId, int instanceId, RunId runId, int instanceCount,
-                      Map<String, Closeable> datasets, Arguments runtimeArguments,
+                      DataSetInstantiator datasetInstantiator, Arguments runtimeArguments,
                       FlowletSpecification flowletSpec, MetricsCollectionService metricsCollectionService,
                       ProgramServiceDiscovery serviceDiscovery) {
-    super(program, runId, datasets);
+    super(program, runId, datasetContext);
     this.accountId = program.getAccountId();
     this.flowId = program.getName();
     this.flowletId = flowletId;

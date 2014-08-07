@@ -16,15 +16,14 @@
 
 package co.cask.cdap.runtime;
 
+import co.cask.cdap.api.dataset.DatasetDefinition;
 import co.cask.cdap.api.dataset.lib.KeyValueTable;
-import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.program.Program;
 import co.cask.cdap.app.runtime.ProgramController;
 import co.cask.cdap.app.runtime.ProgramRunner;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.data.dataset.DataSetInstantiator;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
-import co.cask.cdap.internal.app.Specifications;
 import co.cask.cdap.internal.app.deploy.pipeline.ApplicationWithPrograms;
 import co.cask.cdap.internal.app.runtime.ProgramRunnerFactory;
 import co.cask.cdap.internal.app.runtime.SimpleProgramOptions;
@@ -37,7 +36,6 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Longs;
-import org.apache.twill.filesystem.LocationFactory;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -81,16 +79,13 @@ public class MultiConsumerTest {
       controllers.add(runner.run(program, new SimpleProgramOptions(program)));
     }
 
-    LocationFactory locationFactory = AppFabricTestHelper.getInjector().getInstance(LocationFactory.class);
     DatasetFramework datasetFramework = AppFabricTestHelper.getInjector().getInstance(DatasetFramework.class);
 
     DataSetInstantiator dataSetInstantiator =
       new DataSetInstantiator(datasetFramework, CConfiguration.create(),
                               getClass().getClassLoader());
-    ApplicationSpecification spec = Specifications.from(new MultiApp());
-    dataSetInstantiator.setDataSets(spec.getDatasets().values());
 
-    final KeyValueTable accumulated = dataSetInstantiator.getDataSet("accumulated");
+    final KeyValueTable accumulated = dataSetInstantiator.getDataSet("accumulated", DatasetDefinition.NO_ARGUMENTS, null);
     TransactionExecutorFactory txExecutorFactory =
       AppFabricTestHelper.getInjector().getInstance(TransactionExecutorFactory.class);
 
@@ -104,6 +99,7 @@ public class MultiConsumerTest {
             public void apply() throws Exception {
               byte[] value = accumulated.read(MultiApp.KEY);
               // Sum(1..100) * 3
+              Assert.assertNotNull(value);
               Assert.assertEquals(((1 + 99) * 99 / 2) * 3, Longs.fromByteArray(value));
             }
           });

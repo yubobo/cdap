@@ -110,7 +110,7 @@ final class ConsumerSupplier<T> implements Supplier<T>, Closeable {
       if (consumer != null && consumer instanceof Closeable) {
         // Call close in a new transaction.
         // TODO (terence): Actually need to coordinates with other flowlets to drain the queue.
-        TransactionContext txContext = dataFabricFacade.createTransactionManager();
+        TransactionContext txContext = dataFabricFacade.createTransactionContext();
         txContext.start();
         try {
           ((Closeable) consumer).close();

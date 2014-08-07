@@ -23,25 +23,17 @@ import co.cask.cdap.internal.app.runtime.batch.inmemory.InMemoryMapReduceContext
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.mapreduce.MRConfig;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provides access to MapReduceContext for mapreduce job tasks.
  */
 public final class MapReduceContextProvider {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MapReduceContextProvider.class);
-
   private final TaskAttemptContext taskContext;
   private final MapReduceMetrics.TaskType type;
   private final MapReduceContextConfig contextConfig;
   private BasicMapReduceContext context;
   private AbstractMapReduceContextBuilder contextBuilder;
-
-  public MapReduceContextProvider(TaskAttemptContext context) {
-    this(context, null);
-  }
 
   public MapReduceContextProvider(TaskAttemptContext context, MapReduceMetrics.TaskType type) {
     this.taskContext = context;

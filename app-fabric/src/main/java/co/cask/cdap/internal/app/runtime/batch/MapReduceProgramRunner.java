@@ -35,7 +35,6 @@ import co.cask.cdap.common.logging.common.LogWriter;
 import co.cask.cdap.common.logging.logback.CAppender;
 import co.cask.cdap.common.metrics.MetricsCollectionService;
 import co.cask.cdap.data.dataset.DataSetInstantiator;
-import co.cask.cdap.data.dataset.DatasetCreationSpec;
 import co.cask.cdap.data.stream.StreamUtils;
 import co.cask.cdap.data.stream.TextStreamInputFormat;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
@@ -44,7 +43,6 @@ import co.cask.cdap.data2.transaction.stream.StreamConfig;
 import co.cask.cdap.data2.util.hbase.HBaseTableUtilFactory;
 import co.cask.cdap.internal.app.runtime.AbstractListener;
 import co.cask.cdap.internal.app.runtime.DataSetFieldSetter;
-import co.cask.cdap.internal.app.runtime.DataSets;
 import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
 import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
 import co.cask.cdap.internal.app.runtime.batch.dataset.DataSetInputFormat;
@@ -53,8 +51,7 @@ import co.cask.cdap.internal.lang.Reflections;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.ProgramType;
 import com.continuuity.tephra.Transaction;
-import com.continuuity.tephra.TransactionExecutor;
-import com.continuuity.tephra.TransactionExecutorFactory;
+import com.continuuity.tephra.TransactionContext;
 import com.continuuity.tephra.TransactionFailureException;
 import com.continuuity.tephra.TransactionSystemClient;
 import com.google.common.base.Objects;
@@ -86,12 +83,10 @@ import org.apache.twill.internal.RunIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -110,7 +105,6 @@ public class MapReduceProgramRunner implements ProgramRunner {
   private final DatasetFramework datasetFramework;
 
   private final TransactionSystemClient txSystemClient;
-  private final TransactionExecutorFactory txExecutorFactory;
   private final ProgramServiceDiscovery serviceDiscovery;
 
   private Job jobConf;
@@ -123,7 +117,6 @@ public class MapReduceProgramRunner implements ProgramRunner {
                                 DatasetFramework datasetFramework,
                                 TransactionSystemClient txSystemClient,
                                 MetricsCollectionService metricsCollectionService,
-                                TransactionExecutorFactory txExecutorFactory,
                                 ProgramServiceDiscovery serviceDiscovery) {
     this.cConf = cConf;
     this.hConf = hConf;
@@ -132,7 +125,6 @@ public class MapReduceProgramRunner implements ProgramRunner {
     this.metricsCollectionService = metricsCollectionService;
     this.datasetFramework = datasetFramework;
     this.txSystemClient = txSystemClient;
-    this.txExecutorFactory = txExecutorFactory;
     this.serviceDiscovery = serviceDiscovery;
   }
 
@@ -171,17 +163,12 @@ public class MapReduceProgramRunner implements ProgramRunner {
 
     DataSetInstantiator dataSetInstantiator = new DataSetInstantiator(datasetFramework,
                                                                       cConf, program.getClassLoader());
-    Map<String, DatasetCreationSpec> datasetSpecs = program.getSpecification().getDatasets();
-    dataSetInstantiator.setDataSets(datasetSpecs.values());
 
-    Map<String, Closeable> dataSets = DataSets.createDataSets(dataSetInstantiator, datasetSpecs.keySet());
-
-    final BasicMapReduceContext context =
-      new BasicMapReduceContext(program, null, runId, options.getUserArguments(),
-                                dataSets, spec,
-                                dataSetInstantiator.getTransactionAware(),
-                                logicalStartTime,
-                                workflowBatch, serviceDiscovery, metricsCollectionService);
+    final TransactionalMapReduceContext context =
+      new TransactionalMapReduceContext(program, null, runId, options.getUserArguments(),
+                                        dataSetInstantiator, spec, logicalStartTime,
+                                        workflowBatch, serviceDiscovery,
+                                        metricsCollectionService, txSystemClient);
 
     try {
       MapReduce job = program.<MapReduce>getMainClass().newInstance();
@@ -196,7 +183,7 @@ public class MapReduceProgramRunner implements ProgramRunner {
       controller = new MapReduceProgramController(context);
 
       LOG.info("Starting MapReduce Job: {}", context.toString());
-      submit(job, spec, program.getJarLocation(), context, dataSetInstantiator);
+      submit(job, spec, program.getJarLocation(), context);
 
     } catch (Throwable e) {
       // failed before job even started - release all resources of the context
@@ -224,8 +211,7 @@ public class MapReduceProgramRunner implements ProgramRunner {
   }
 
   private void submit(final MapReduce job, MapReduceSpecification mapredSpec, Location jobJarLocation,
-                      final BasicMapReduceContext context,
-                      final DataSetInstantiator dataSetInstantiator) throws Exception {
+                      final TransactionalMapReduceContext context) throws Exception {
     Configuration mapredConf = new Configuration(hConf);
 
     if (UserGroupInformation.isSecurityEnabled()) {
@@ -261,7 +247,7 @@ public class MapReduceProgramRunner implements ProgramRunner {
     context.setJob(jobConf);
 
     // additional mapreduce job initialization at run-time
-    beforeSubmit(job, context, dataSetInstantiator);
+    beforeSubmit(job, context);
 
     // replace user's Mapper & Reducer's with our wrappers in job config
     wrapMapperClassIfNeeded(jobConf);
@@ -320,15 +306,14 @@ public class MapReduceProgramRunner implements ProgramRunner {
               // short) ;)
               TimeUnit.MILLISECONDS.sleep(1000);
             }
-
-            LOG.info("MapReduce Job is complete, status: {}, success: {}, job: {}" + jobConf.getStatus(), success, 
+            success = jobConf.isSuccessful();
+            LOG.info("MapReduce Job is complete, status: {}, success: {}, job: {}" + jobConf.getStatus(), success,
                      context.toString());
             // NOTE: we want to report the final stats (they may change since last report and before job completed)
             metricsWriter.reportStats();
             // If we don't sleep, the final stats may not get sent before shutdown.
             TimeUnit.SECONDS.sleep(2L);
 
-            success = jobConf.isSuccessful();
           } catch (InterruptedException e) {
             // nothing we can do now: we simply stopped watching for job completion...
             throw Throwables.propagate(e);
@@ -341,7 +326,7 @@ public class MapReduceProgramRunner implements ProgramRunner {
           throw Throwables.propagate(e);
         } finally {
           // stopping controller when mapreduce job is finished
-          stopController(success, context, job, tx, dataSetInstantiator);
+          stopController(success, context, job, tx);
           try {
             jobJar.delete();
           } catch (IOException e) {
@@ -360,38 +345,48 @@ public class MapReduceProgramRunner implements ProgramRunner {
   }
 
   private void beforeSubmit(final MapReduce job,
-                            final BasicMapReduceContext context,
-                            final DataSetInstantiator dataSetInstantiator)
+                            final TransactionalMapReduceContext context)
     throws TransactionFailureException, InterruptedException {
-    TransactionExecutor txExecutor = txExecutorFactory.createExecutor(dataSetInstantiator.getTransactionAware());
-    // TODO: retry on txFailure or txConflict? Implement retrying TransactionExecutor
-    txExecutor.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
-        ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(job.getClass().getClassLoader());
-        try {
-          job.beforeSubmit(context);
-        } finally {
-          Thread.currentThread().setContextClassLoader(oldClassLoader);
-        }
+
+    // TODO: retry on txFailure or txConflict? Implement retry logic
+    TransactionContext txContext = context.createTransactionContext();
+    // temporarily use the job's class loader
+    ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(job.getClass().getClassLoader());
+    try {
+      txContext.start();
+      try {
+        job.beforeSubmit(context);
+      } catch (Throwable e) {
+        txContext.abort(new TransactionFailureException("beforeSubmit function failure inside transaction. ", e));
       }
-    });
+      txContext.finish();
+    } finally {
+      Thread.currentThread().setContextClassLoader(oldClassLoader);
+    }
   }
 
   private void onFinish(final MapReduce job,
-                        final BasicMapReduceContext context,
-                        final DataSetInstantiator dataSetInstantiator,
+                        final TransactionalMapReduceContext context,
                         final boolean succeeded)
     throws TransactionFailureException, InterruptedException {
-    TransactionExecutor txExecutor = txExecutorFactory.createExecutor(dataSetInstantiator.getTransactionAware());
-    // TODO: retry on txFailure or txConflict? Implement retrying TransactionExecutor
-    txExecutor.execute(new TransactionExecutor.Subroutine() {
-      @Override
-      public void apply() throws Exception {
+
+    // TODO: retry on txFailure or txConflict? Implement retry logic
+    TransactionContext txContext = context.createTransactionContext();
+    // temporarily use the job's class loader
+    ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(job.getClass().getClassLoader());
+    try {
+      txContext.start();
+      try {
         job.onFinish(succeeded, context);
+      } catch (Throwable e) {
+        txContext.abort(new TransactionFailureException("beforeSubmit function failure inside transaction. ", e));
       }
-    });
+      txContext.finish();
+    } finally {
+      Thread.currentThread().setContextClassLoader(oldClassLoader);
+    }
   }
 
   private Location createJobJarTempCopy(Location jobJarLocation, BasicMapReduceContext context) throws IOException {
@@ -439,11 +434,8 @@ public class MapReduceProgramRunner implements ProgramRunner {
     }
   }
 
-  private void stopController(boolean success,
-                              BasicMapReduceContext context,
-                              MapReduce job,
-                              Transaction tx,
-                              DataSetInstantiator dataSetInstantiator) {
+  private void stopController(boolean success, TransactionalMapReduceContext context,
+                              MapReduce job, Transaction tx) {
     try {
       try {
         controller.stop().get();
@@ -467,7 +459,7 @@ public class MapReduceProgramRunner implements ProgramRunner {
           }
         } finally {
           // whatever happens we want to call this
-          onFinish(job, context, dataSetInstantiator, success);
+          onFinish(job, context, success);
         }
       } catch (Exception e) {
         throw Throwables.propagate(e);

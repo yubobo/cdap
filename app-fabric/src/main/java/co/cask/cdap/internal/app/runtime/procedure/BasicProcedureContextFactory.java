@@ -16,7 +16,6 @@
 
 package co.cask.cdap.internal.app.runtime.procedure;
 
-import co.cask.cdap.api.data.DataSetContext;
 import co.cask.cdap.api.procedure.ProcedureContext;
 import co.cask.cdap.api.procedure.ProcedureSpecification;
 import co.cask.cdap.app.program.Program;
@@ -24,12 +23,8 @@ import co.cask.cdap.app.runtime.Arguments;
 import co.cask.cdap.common.metrics.MetricsCollectionService;
 import co.cask.cdap.data.dataset.DataSetInstantiator;
 import co.cask.cdap.internal.app.runtime.DataFabricFacade;
-import co.cask.cdap.internal.app.runtime.DataSets;
 import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
 import org.apache.twill.api.RunId;
-
-import java.io.Closeable;
-import java.util.Map;
 
 /**
  * Private interface to help creating {@link ProcedureContext}.
@@ -59,17 +54,13 @@ final class BasicProcedureContextFactory {
   }
 
   BasicProcedureContext create(DataFabricFacade dataFabricFacade) {
-    DataSetContext dataSetContext = dataFabricFacade.getDataSetContext();
-    Map<String, Closeable> dataSets = DataSets.createDataSets(dataSetContext,
-                                                            procedureSpec.getDataSets());
+    DataSetInstantiator dataSetInstantiator = dataFabricFacade.getDataSetInstantiator();
     BasicProcedureContext context = new BasicProcedureContext(program, runId, instanceId, instanceCount,
-                                                              dataSets, userArguments, procedureSpec,
+                                                              dataSetInstantiator, userArguments, procedureSpec,
                                                               collectionService, serviceDiscovery);
 
     // hack for propagating metrics collector to datasets
-    if (dataSetContext instanceof DataSetInstantiator) {
-      ((DataSetInstantiator) dataSetContext).setMetricsCollector(collectionService, context.getSystemMetrics());
-    }
+    dataSetInstantiator.setMetricsCollector(collectionService, context.getSystemMetrics());
     return context;
   }
 }

@@ -16,10 +16,10 @@
 package co.cask.cdap.stream;
 
 import co.cask.cdap.api.common.Bytes;
+import co.cask.cdap.api.dataset.DatasetDefinition;
 import co.cask.cdap.api.dataset.lib.KeyValueTable;
 import co.cask.cdap.api.flow.flowlet.StreamEvent;
 import co.cask.cdap.api.stream.StreamEventData;
-import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.program.Program;
 import co.cask.cdap.app.runtime.ProgramController;
 import co.cask.cdap.app.runtime.ProgramRunner;
@@ -37,7 +37,6 @@ import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.queue.QueueClientFactory;
 import co.cask.cdap.data2.queue.QueueEntry;
 import co.cask.cdap.data2.queue.QueueProducer;
-import co.cask.cdap.internal.app.Specifications;
 import co.cask.cdap.internal.app.deploy.pipeline.ApplicationWithPrograms;
 import co.cask.cdap.internal.app.runtime.ProgramRunnerFactory;
 import co.cask.cdap.internal.app.runtime.SimpleProgramOptions;
@@ -61,7 +60,6 @@ import com.google.inject.Key;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
-import org.apache.twill.filesystem.LocationFactory;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -113,16 +111,13 @@ public class StreamCompatibilityTest {
     writer.write("New stream event", newEncoder);
 
     // Read the data from dataset
-    LocationFactory locationFactory = AppFabricTestHelper.getInjector().getInstance(LocationFactory.class);
     DatasetFramework datasetFramework = AppFabricTestHelper.getInjector().getInstance(DatasetFramework.class);
 
     DataSetInstantiator dataSetInstantiator =
       new DataSetInstantiator(datasetFramework, CConfiguration.create(),
                               getClass().getClassLoader());
-    ApplicationSpecification spec = Specifications.from(new StreamApp());
-    dataSetInstantiator.setDataSets(spec.getDatasets().values());
 
-    final KeyValueTable streamOut = dataSetInstantiator.getDataSet("streamout");
+    final KeyValueTable streamOut = dataSetInstantiator.getDataSet("streamout", DatasetDefinition.NO_ARGUMENTS, null);
     TransactionExecutorFactory txExecutorFactory =
       AppFabricTestHelper.getInjector().getInstance(TransactionExecutorFactory.class);
 

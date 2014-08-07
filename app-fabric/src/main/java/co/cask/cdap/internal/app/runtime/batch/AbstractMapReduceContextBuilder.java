@@ -18,7 +18,6 @@ package co.cask.cdap.internal.app.runtime.batch;
 
 import co.cask.cdap.api.data.batch.Split;
 import co.cask.cdap.api.mapreduce.MapReduceSpecification;
-import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.metrics.MapReduceMetrics;
 import co.cask.cdap.app.program.Program;
 import co.cask.cdap.app.program.Programs;
@@ -27,11 +26,9 @@ import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.metrics.MetricsCollectionService;
 import co.cask.cdap.data.dataset.DataSetInstantiator;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
-import co.cask.cdap.internal.app.runtime.DataSets;
 import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
 import co.cask.cdap.internal.app.runtime.workflow.WorkflowMapReduceProgram;
 import com.continuuity.tephra.Transaction;
-import com.continuuity.tephra.TransactionAware;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.inject.Injector;
@@ -40,11 +37,9 @@ import org.apache.twill.internal.RunIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
@@ -76,7 +71,7 @@ public abstract class AbstractMapReduceContextBuilder {
                                      long logicalStartTime,
                                      String workflowBatch,
                                      Arguments runtimeArguments,
-                                     Transaction tx,
+                                     final Transaction tx,
                                      ClassLoader classLoader,
                                      URI programLocation,
                                      @Nullable String inputDataSetName,
@@ -105,41 +100,27 @@ public abstract class AbstractMapReduceContextBuilder {
     DatasetFramework datasetFramework = injector.getInstance(DatasetFramework.class);
     CConfiguration configuration = injector.getInstance(CConfiguration.class);
 
-    DataSetInstantiator dataSetContext = new DataSetInstantiator(datasetFramework, configuration, classLoader);
-    ApplicationSpecification programSpec = program.getSpecification();
-    dataSetContext.setDataSets(programSpec.getDatasets().values());
+    DataSetInstantiator datasetInstantiator = new DataSetInstantiator(datasetFramework, configuration, classLoader);
+
 
     // if this is not for a mapper or a reducer, we don't need the metrics collection service
     MetricsCollectionService metricsCollectionService =
       (type == null) ? null : injector.getInstance(MetricsCollectionService.class);
-
-    // creating dataset instances earlier so that we can pass them to txAgent
-    // NOTE: we are initializing all datasets of application, so that user is not required
-    //       to define all datasets used in Mapper and Reducer classes on MapReduceJob
-    //       class level
-    Map<String, Closeable> dataSets = DataSets.createDataSets(
-      dataSetContext, programSpec.getDatasets().keySet());
 
     ProgramServiceDiscovery serviceDiscovery = injector.getInstance(ProgramServiceDiscovery.class);
 
     // Creating mapreduce job context
     MapReduceSpecification spec = program.getSpecification().getMapReduce().get(program.getName());
     BasicMapReduceContext context =
-      new BasicMapReduceContext(program, type, RunIds.fromString(runId),
-                                runtimeArguments, dataSets, spec,
-                                dataSetContext.getTransactionAware(), logicalStartTime,
-                                workflowBatch, serviceDiscovery, metricsCollectionService);
+      new FixedTransactionMapReduceContext(program, type, RunIds.fromString(runId),
+                                           runtimeArguments, datasetInstantiator, spec,
+                                           logicalStartTime, workflowBatch, serviceDiscovery,
+                                           metricsCollectionService, tx);
 
     if (type == MapReduceMetrics.TaskType.Mapper) {
-      dataSetContext.setMetricsCollector(metricsCollectionService, context.getSystemMapperMetrics());
+      datasetInstantiator.setMetricsCollector(metricsCollectionService, context.getSystemMapperMetrics());
     } else if (type == MapReduceMetrics.TaskType.Reducer) {
-      dataSetContext.setMetricsCollector(metricsCollectionService, context.getSystemReducerMetrics());
-    }
-
-    // propagating tx to all txAware guys
-    // NOTE: tx will be committed by client code
-    for (TransactionAware txAware : dataSetContext.getTransactionAware()) {
-      txAware.startTx(tx);
+      datasetInstantiator.setMetricsCollector(metricsCollectionService, context.getSystemReducerMetrics());
     }
 
     // Setting extra context's configuration: mapreduce input and output

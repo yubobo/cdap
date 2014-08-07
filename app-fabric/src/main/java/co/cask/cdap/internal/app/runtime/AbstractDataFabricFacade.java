@@ -16,7 +16,6 @@
 
 package co.cask.cdap.internal.app.runtime;
 
-import co.cask.cdap.api.data.DataSetContext;
 import co.cask.cdap.app.program.Program;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.queue.QueueName;
@@ -46,7 +45,7 @@ import java.io.IOException;
  */
 public abstract class AbstractDataFabricFacade implements DataFabricFacade {
 
-  private final DataSetInstantiator dataSetContext;
+  private final DataSetInstantiator datasetInstantiator;
   private final QueueClientFactory queueClientFactory;
   private final StreamConsumerFactory streamConsumerFactory;
   private final TransactionExecutorFactory txExecutorFactory;
@@ -62,24 +61,24 @@ public abstract class AbstractDataFabricFacade implements DataFabricFacade {
     this.queueClientFactory = queueClientFactory;
     this.streamConsumerFactory = streamConsumerFactory;
     this.txExecutorFactory = txExecutorFactory;
-    this.dataSetContext = createDataSetContext(program, locationFactory,
+    this.datasetInstantiator = createDataSetContext(program, locationFactory,
                                                datasetFramework, configuration);
     this.programId = program.getId();
   }
 
   @Override
-  public DataSetContext getDataSetContext() {
-    return dataSetContext;
+  public DataSetInstantiator getDataSetInstantiator() {
+    return datasetInstantiator;
   }
 
   @Override
-  public TransactionContext createTransactionManager() {
-    return new TransactionContext(txSystemClient, dataSetContext.getTransactionAware());
+  public TransactionContext createTransactionContext() {
+    return new TransactionContext(txSystemClient, datasetInstantiator.getTransactionAware());
   }
 
   @Override
   public TransactionExecutor createTransactionExecutor() {
-    return txExecutorFactory.createExecutor(dataSetContext.getTransactionAware());
+    return txExecutorFactory.createExecutor(datasetInstantiator.getTransactionAware());
   }
 
   @Override
@@ -92,8 +91,8 @@ public abstract class AbstractDataFabricFacade implements DataFabricFacade {
                                        ConsumerConfig consumerConfig, int numGroups) throws IOException {
     QueueConsumer consumer = queueClientFactory.createConsumer(queueName, consumerConfig, numGroups);
     if (consumer instanceof TransactionAware) {
-      consumer = new CloseableQueueConsumer(dataSetContext, consumer);
-      dataSetContext.addTransactionAware((TransactionAware) consumer);
+      consumer = new CloseableQueueConsumer(datasetInstantiator, consumer);
+      datasetInstantiator.addTransactionAware((TransactionAware) consumer);
     }
     return consumer;
   }
@@ -102,7 +101,7 @@ public abstract class AbstractDataFabricFacade implements DataFabricFacade {
   public QueueProducer createProducer(QueueName queueName, QueueMetrics queueMetrics) throws IOException {
     QueueProducer producer = queueClientFactory.createProducer(queueName, queueMetrics);
     if (producer instanceof TransactionAware) {
-      dataSetContext.addTransactionAware((TransactionAware) producer);
+      datasetInstantiator.addTransactionAware((TransactionAware) producer);
     }
     return producer;
   }
@@ -112,12 +111,12 @@ public abstract class AbstractDataFabricFacade implements DataFabricFacade {
     String namespace = String.format("%s.%s", programId.getApplicationId(), programId.getId());
     final StreamConsumer consumer = streamConsumerFactory.create(streamName, namespace, consumerConfig);
 
-    dataSetContext.addTransactionAware(consumer);
+    datasetInstantiator.addTransactionAware(consumer);
     return new ForwardingStreamConsumer(consumer) {
       @Override
       public void close() throws IOException {
         super.close();
-        dataSetContext.removeTransactionAware(consumer);
+        datasetInstantiator.removeTransactionAware(consumer);
       }
     };
   }
@@ -129,7 +128,6 @@ public abstract class AbstractDataFabricFacade implements DataFabricFacade {
     try {
       DataSetInstantiator dataSetInstantiator = new DataSetInstantiator(datasetFramework, configuration,
                                                                         program.getClassLoader());
-      dataSetInstantiator.setDataSets(program.getSpecification().getDatasets().values());
       return dataSetInstantiator;
     } catch (Exception e) {
       throw Throwables.propagate(e);

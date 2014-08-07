@@ -52,7 +52,7 @@ final class ReflectionHandlerMethod implements HandlerMethod {
 
   @Override
   public void handle(ProcedureRequest request, ProcedureResponder responder) {
-    TransactionContext txContext = dataFabricFacade.createTransactionManager();
+    TransactionContext txContext = dataFabricFacade.createTransactionContext();
 
     try {
       txContext.start();

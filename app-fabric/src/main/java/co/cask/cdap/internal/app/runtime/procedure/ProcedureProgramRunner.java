@@ -35,7 +35,6 @@ import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
 import co.cask.cdap.proto.ProgramType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -53,7 +52,6 @@ import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
@@ -137,11 +135,11 @@ public final class ProcedureProgramRunner implements ProgramRunner {
                                                                          options.getUserArguments(), procedureSpec,
                                                                          serviceDiscovery);
 
-      // TODO: A dummy context for getting the cmetrics. We should initialize the dataset here and pass it to
-      // HandlerMethodFactory.
-      procedureContext = new BasicProcedureContext(program, runId, instanceId, instanceCount,
-                                                   ImmutableMap.<String, Closeable>of(),
-                                                   options.getUserArguments(), procedureSpec, metricsCollectionService,
+      // TODO: A dummy context for getting the cmetrics. We pass in null for the dataset instantiator because we will
+      // never get a dataset from this context.
+      procedureContext = new BasicProcedureContext(program, runId, instanceId, instanceCount, null,
+                                                   options.getUserArguments(), procedureSpec,
+                                                   metricsCollectionService,
                                                    serviceDiscovery);
 
       handlerMethodFactory = new ProcedureHandlerMethodFactory(program, dataFabricFacadeFactory, contextFactory);

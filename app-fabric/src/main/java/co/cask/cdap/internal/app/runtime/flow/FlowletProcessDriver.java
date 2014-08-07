@@ -257,7 +257,7 @@ final class FlowletProcessDriver extends AbstractExecutionThreadService {
     }
 
     // Begin transaction and dequeue
-    TransactionContext txContext = dataFabricFacade.createTransactionManager();
+    TransactionContext txContext = dataFabricFacade.createTransactionContext();
     try {
       txContext.start();
 
@@ -361,7 +361,7 @@ final class FlowletProcessDriver extends AbstractExecutionThreadService {
     return new InputAcknowledger() {
       @Override
       public void ack() throws TransactionFailureException {
-        TransactionContext txContext = dataFabricFacade.createTransactionManager();
+        TransactionContext txContext = dataFabricFacade.createTransactionContext();
         txContext.start();
         input.reclaim();
         txContext.finish();

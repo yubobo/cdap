@@ -16,7 +16,7 @@
 
 package co.cask.cdap.test.internal;
 
-import co.cask.cdap.app.ApplicationSpecification;
+import co.cask.cdap.api.dataset.DatasetDefinition;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.lang.jar.JarClassLoader;
 import co.cask.cdap.common.queue.QueueName;
@@ -83,8 +83,7 @@ public class DefaultApplicationManager implements ApplicationManager {
                                    AppFabricHttpHandler httpHandler,
                                    @Assisted("accountId") String accountId,
                                    @Assisted("applicationId") String applicationId,
-                                   @Assisted Location deployedJar,
-                                   @Assisted ApplicationSpecification appSpec) {
+                                   @Assisted Location deployedJar) {
     this.accountId = accountId;
     this.applicationId = applicationId;
     this.streamWriterFactory = streamWriterFactory;
@@ -101,7 +100,6 @@ public class DefaultApplicationManager implements ApplicationManager {
     } catch (IOException e) {
       throw Throwables.propagate(e);
     }
-    this.dataSetInstantiator.setDataSets(appSpec.getDatasets().values());
   }
 
   @Override
@@ -349,7 +347,7 @@ public class DefaultApplicationManager implements ApplicationManager {
   @Override
   public <T> DataSetManager<T> getDataSet(String dataSetName) {
     @SuppressWarnings("unchecked")
-    final T dataSet = (T) dataSetInstantiator.getDataSet(dataSetName);
+    final T dataSet = (T) dataSetInstantiator.getDataSet(dataSetName, DatasetDefinition.NO_ARGUMENTS, null);
 
     try {
       final TransactionContext txContext =

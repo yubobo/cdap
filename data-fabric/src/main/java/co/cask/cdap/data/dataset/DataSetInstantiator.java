@@ -16,10 +16,8 @@
 
 package co.cask.cdap.data.dataset;
 
-import co.cask.cdap.api.data.DataSetContext;
 import co.cask.cdap.api.data.DataSetInstantiationException;
 import co.cask.cdap.api.dataset.Dataset;
-import co.cask.cdap.api.dataset.DatasetDefinition;
 import co.cask.cdap.api.dataset.metrics.MeteredDataset;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
@@ -31,13 +29,14 @@ import co.cask.cdap.data2.datafabric.ReactorDatasetNamespace;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.NamespacedDatasetFramework;
 import com.continuuity.tephra.TransactionAware;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -54,15 +53,13 @@ import javax.annotation.Nullable;
  * to pass in data fabric runtime, no exposure of the developer to the raw
  * data fabric, he only interacts with data sets).
  */
-public class DataSetInstantiator implements DataSetContext {
+public class DataSetInstantiator {
 
   private static final Logger LOG = LoggerFactory.getLogger(DataSetInstantiator.class);
   private final DatasetFramework datasetFramework;
   // the class loader to use for data set classes
   private final ClassLoader classLoader;
-  // the known data set specifications
-  private final Map<String, DatasetCreationSpec> datasetsV2 = Maps.newHashMap();
-  private final Set<TransactionAware> txAware = Sets.newIdentityHashSet();
+  private final Set<TransactionAware> txAwares = Sets.newIdentityHashSet();
   // in this collection we have only datasets initialized with getDataSet() which is OK for now...
   private final Map<TransactionAware, String> txAwareToMetricNames = Maps.newIdentityHashMap();
 
@@ -79,24 +76,9 @@ public class DataSetInstantiator implements DataSetContext {
                                      new ReactorDatasetNamespace(configuration, Namespace.USER));
   }
 
-  @Override
-  public <T extends Closeable> T getDataSet(String dataSetName)
-    throws DataSetInstantiationException {
-    return getDataSet(dataSetName, DatasetDefinition.NO_ARGUMENTS);
-  }
-
-  @Override
-  public <T extends Closeable> T getDataSet(String name, Map<String, String> arguments)
+  public <T extends Closeable> T instantiateDataSet(String name, Map<String, String> arguments)
     throws DataSetInstantiationException {
     return (T) getDataSet(name, arguments, this.datasetFramework);
-  }
-
-  public void setDataSets(Iterable<DatasetCreationSpec> creationSpec) {
-    for (DatasetCreationSpec spec : creationSpec) {
-      if (spec != null) {
-        this.datasetsV2.put(spec.getInstanceName(), spec);
-      }
-    }
   }
 
   /**
@@ -142,7 +124,7 @@ public class DataSetInstantiator implements DataSetContext {
     }
 
     if (dataset instanceof TransactionAware) {
-      txAware.add((TransactionAware) dataset);
+      txAwares.add((TransactionAware) dataset);
       txAwareToMetricNames.put((TransactionAware) dataset, datasetName);
     }
 
@@ -150,19 +132,33 @@ public class DataSetInstantiator implements DataSetContext {
   }
 
   /**
-   * Returns an immutable life Iterable of {@link com.continuuity.tephra.TransactionAware} objects.
+   * Flush all writes made by datasets created by this instantiator.
    */
-  // NOTE: this is needed for now to minimize destruction of early integration of txds2
+  public synchronized void flushOperations() throws Exception {
+    for (TransactionAware txAware : txAwares) {
+      txAware.commitTx();
+    }
+  }
+
+  /**
+   * Returns an immutable live Iterable of {@link com.continuuity.tephra.TransactionAware} objects. This
+   * iterable will reflect changes every time a new iterator is obtained.
+   */
   public Iterable<TransactionAware> getTransactionAware() {
-    return Iterables.unmodifiableIterable(txAware);
+    return new Iterable<TransactionAware>() {
+      @Override
+      public Iterator<TransactionAware> iterator() {
+        return Iterators.unmodifiableIterator(txAwares.iterator());
+      }
+    };
   }
 
   public void addTransactionAware(TransactionAware transactionAware) {
-    txAware.add(transactionAware);
+    txAwares.add(transactionAware);
   }
 
   public void removeTransactionAware(TransactionAware transactionAware) {
-    txAware.remove(transactionAware);
+    txAwares.remove(transactionAware);
   }
 
   /**
