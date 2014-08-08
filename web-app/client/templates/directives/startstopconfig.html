@@ -4,11 +4,6 @@
       <span class="caret"></span>
     </button>
     <ul class="dropdown-menu">
-      <li ng-repeat="flow in flows" style="min-width:200px; padding:4px 16px 2px;">
-
-          <strong><!--{{k}}--></strong><!--: {{v}}-->
-
-      </li>
     </ul>
 
     <button class="btn btn-blank start-stop" style="width:64px;">
@@ -16,7 +11,7 @@
       </span>
       <span>Start<!--{{model.defaultAction}}--></span>
     </button>
-    <button class="btn btn-blank btn-icon" style="border-right:0;"><span class="btn-config"></span></button>
+    <button class="btn btn-blank btn-icon" style="border-right:0;" ng-click="redirectToConfig()"><span class="btn-config"></span></button>
   </div>
-  <status status-endpoint="{{flow.getStatusEndpoint()}}" displaytype="large"></status>
+  <status status-endpoint="{{entity.getStatusEndpoint()}}" displaytype="large"></status>
 </div>

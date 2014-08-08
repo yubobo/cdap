@@ -1,5 +1,5 @@
 <div id="info">
-
+  <startstopconfig entity="flow"></startstopconfig>
   <div class="info-box sparkline-box app-processed">
     <div class="sparkline-box-value" style="display: block;">
       <delay-counter metric-endpoint="{{flow.getEventsProcessedEndpoint()}}"></delay-counter>
@@ -9,7 +9,6 @@
     <div class="sparkline-box-container">
       <sparkline data="processingRate"></sparkline>
     </div>
-    <!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.events.processed" title="Processing Rate"}}-->
   </div>
   <div class="info-box sparkline-box app-busyness">
     <div class="sparkline-box-value" style="display: block;">
@@ -37,9 +36,8 @@
                 <li><a>Flowlet Processed</a></li> <!--{{action "setFlowletLabel" "aggregate"}}-->
             </ul>
         </div>
-        <div id="flowfiz" class="clearfix" style="width: 678px;">
-        </div>
-      <!--{{view C.Embed.Visualizer viewName="visualizer"}}-->
+        <flowviz data="flow" type="rate"></flowviz>
     </div>
   </div>
 </div>
+<div ui-view></div>

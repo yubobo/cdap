@@ -1,6 +1,6 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   /* Items */
 
@@ -245,7 +245,9 @@ define(function () {
        */
       getFlowByAppNameAndId: function (appId, flowId, callback) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/flows/' + flowId).success(function (data) {
+          data = helpers.transformFlowModel(data);
           var flow = new Flow(data);
+          flow.app = appId;
           callback(flow);
         });
       },

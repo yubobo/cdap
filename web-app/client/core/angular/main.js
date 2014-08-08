@@ -81,6 +81,8 @@ require([
   './directives/delay-counter',
   './directives/status',
   './directives/bytes-counter',
+  './directives/startstopconfig',
+  './directives/flowviz',
 
   // Filters.
   './filters',
@@ -137,7 +139,9 @@ require([
     Sparkline,
     DelayCounter,
     Status,
-    BytesCounter) {
+    BytesCounter,
+    StartStopConfig,
+    FlowViz) {
 
     // Instantiate Reactor webapp module.
     var reactorWebapp = angular.module('ReactorWebapp', [
@@ -217,19 +221,25 @@ require([
 
           .state('flowsDetail.status', {
             url: '/status',
-            templateUrl: '/templates/partials/flowStatus.html',
+            templateUrl: '/templates/partials/flowstatus.html',
             controller: FlowCtrl
           })
 
+            .state('flowsDetail.status.config', {
+              url: '/config',
+              templateUrl: '/templates/partials/flowstatusconfig.html',
+              controller: FlowCtrl
+            })
+
           .state('flowsDetail.log', {
             url: '/log',
-            templateUrl: '/templates/partials/flowLog.html',
+            templateUrl: '/templates/partials/flowlog.html',
             controller: FlowCtrl
           })
 
           .state('flowsDetail.history', {
             url: '/history',
-            templateUrl: '/templates/partials/flowHistory.html',
+            templateUrl: '/templates/partials/flowhistory.html',
             controller: FlowCtrl
           })
 
@@ -364,6 +374,8 @@ require([
     reactorWebapp.directive('delayCounter', DelayCounter);
     reactorWebapp.directive('status', Status);
     reactorWebapp.directive('bytesCounter', BytesCounter);
+    reactorWebapp.directive('startstopconfig', StartStopConfig);
+    reactorWebapp.directive('flowviz', FlowViz);
 
 
     // Manually bootstrap the application since we are bootstrapping with requirejs.

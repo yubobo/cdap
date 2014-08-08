@@ -21,7 +21,6 @@ define(['helpers'], function (helpers) {
 
     dataFactory.getFlowByAppNameAndId(appId, flowId, function (flow) {
       $scope.flow = flow;
-      $scope.flow.app = appId;
     });
 
     $scope.$on("$destroy", function(){
