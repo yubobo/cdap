@@ -4,8 +4,8 @@ define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'POLLING_INTERVAL',
-    function($scope, $interval, $routeParams, dataFactory, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', '$stateParams', 'dataFactory', 'POLLING_INTERVAL',
+    function($scope, $interval, $stateParams, dataFactory, POLLING_INTERVAL) {
 
     var intervals = [];
 
@@ -14,8 +14,8 @@ define(['helpers'], function (helpers) {
      */
     $scope.workflow = {};
 
-    var appId = $routeParams.appId;
-    var workflowId = $routeParams.workflowId;
+    var appId = $stateParams.appId;
+    var workflowId = $stateParams.workflowId;
 
 
     dataFactory.getWorkflowByAppNameAndId(appId, workflowId, function (workflow) {

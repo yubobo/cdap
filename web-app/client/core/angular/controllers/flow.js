@@ -4,8 +4,8 @@ define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'POLLING_INTERVAL',
-    function($scope, $interval, $routeParams, dataFactory, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', '$stateParams', 'dataFactory', 'POLLING_INTERVAL',
+    function($scope, $interval, $stateParams, dataFactory, POLLING_INTERVAL) {
 
     /**
      * @type {Flow}
@@ -15,17 +15,14 @@ define(['helpers'], function (helpers) {
     var statusEndpoints = [];
     var intervals = [];
 
-    var appId = $routeParams.appId;
-    var flowId = $routeParams.flowId;
+    var appId = $stateParams.appId;
+    var flowId = $stateParams.flowId;
 
 
     dataFactory.getFlowByAppNameAndId(appId, flowId, function (flow) {
       $scope.flow = flow;
+      $scope.flow.app = appId;
     });
-
-    /*$scope.getStatusEndpoint = function (entity) {
-      return helpers.getStatusEndpoint(entity);
-    };*/
 
     $scope.$on("$destroy", function(){
 

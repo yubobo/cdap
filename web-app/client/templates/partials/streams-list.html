@@ -2,6 +2,17 @@
     <a href="#/apps/{{stream.name}}/streams/{{stream.id}}">{{stream.name}}</a><br />
     <span class="app-list-status">{{stream.type}}</span>
 </td>
-<td class="app-list-count"><span></span></td>
-<td class="app-list-count"></td>
-<td style="max-width:262px;"></td>
+<td class="app-list-count">
+  <bytes-counter metric-endpoint="{{stream.getStorageEndpoint()}}"></bytes-counter>
+</td>
+<td class="app-list-count">
+  <div class="center-align">
+    <delay-counter metric-endpoint="{{stream.getArrivalRateEndpoint()}}" countertype="nograph"></delay-counter>
+  </div>
+</td>
+<td style="max-width:262px;">
+    <delay-counter metric-endpoint="{{stream.getArrivalRateEndpoint()}}"></delay-counter>
+    <div class="sparkline-list-container">
+      <sparkline metric-endpoint="{{stream.getArrivalRateEndpoint()}}"></sparkline>
+    </div>
+</td>

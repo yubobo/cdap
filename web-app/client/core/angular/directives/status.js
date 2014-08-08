@@ -30,7 +30,7 @@ define(function() {
         statusEndpoint: '@'
       },
       link: function (scope, elm, attrs) {
-
+        var ival;
         scope.$watch('statusEndpoint', function (newVal, oldVal) {
           if (newVal) {
             elm.html(getTemplate(scope.displaytype)).show();
@@ -42,7 +42,7 @@ define(function() {
             }
 
             statusService.trackStatus(scope.statusEndpoint);
-            var ival = $interval(function () {
+            ival = $interval(function () {
               scope.status = statusService.getStatusByEndpoint(scope.statusEndpoint);
             }, POLLING_INTERVAL);
             

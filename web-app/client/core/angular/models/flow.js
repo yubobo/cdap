@@ -22,6 +22,10 @@ define(['helpers'], function (helpers) {
       return helpers.getBusynessEndpoint(this);
     },
 
+    getEventsProcessedEndpoint: function () {
+      return helpers.getEventsProcessedEndpoint(this);
+    },
+
     getStatusEndpoint: function () {
       return helpers.getStatusEndpoint(this);
     },

@@ -5,15 +5,35 @@
 <div id="info">
   <div class="info-box" style="float: right; border: 0;padding: 0px 14px 0px 0px;">
     <div class="app-level-buttons">
-        <button class="btn btn-blue force-margin-right-20" {{action "promotePrompt"}}><img class="inbtn-img" src="/assets/img/v2/push_icon.png" />Push</button>
-      <button class="btn btn-blank" {{action "delete" on="click"}}><img class="inbtn-img" src="/assets/img/v2/delete_icon.png" />Delete</button>
+        <button class="btn btn-blue force-margin-right-20"><img class="inbtn-img" src="/assets/img/v2/push_icon.png" />Push</button>
+      <button class="btn btn-blank"><img class="inbtn-img" src="/assets/img/v2/delete_icon.png" />Delete</button>
     </div>
   </div>
-  <div class="info-box sparkline-box app-processed"></div>
-  <div class="info-box sparkline-box app-busyness"></div>
+  <div class="info-box sparkline-box app-processed">
+    <div class="sparkline-box-title">Processed</div>
+    <div class="sparkline-box-value" style="display: block;">
+      <delay-counter metric-endpoint="{{app.getEventsProcessedEndpoint()}}"></delay-counter>
+      <span>EPS</span>
+    </div>
+    <div class="sparkline-box-container">
+      <sparkline metric-endpoint="{{app.getEventsProcessedEndpoint()}}"></sparkline>
+    </div>
+  </div>
+  <div class="info-box sparkline-box app-busyness">
+    <div class="sparkline-box-title">Busyness</div>
+    <div class="sparkline-box-value" style="display: block;">
+      <delay-counter metric-endpoint="{{app.getBusynessEndpoint()}}" percent="true"></delay-counter>
+    </div>
+    <div class="sparkline-box-container">
+      <sparkline metric-endpoint="{{app.getBusynessEndpoint()}}"></sparkline>
+    </div>
+  </div>
   <div class="info-box app-storage" style="text-align: center;">
     <div class="sparkline-box-title">Storage</div>
-    <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 100px;">{{model.storageLabel}}<span>{{model.storageUnits}}</span></div>
+    <div class="sparkline-box-value" style="padding-left: 0;padding-top: 23px;width: 
+    100px;">
+      <bytes-counter metric-endpoint="{{app.getStorageEndpoint()}}"></bytes-counter>
+    </div>
   </div>
 </div>
 

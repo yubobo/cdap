@@ -1,0 +1,67 @@
+<div id="info">
+  <div class="info-box" style="float: right; border: 0;padding-right: 14px;padding-left: 0px;">
+    <div id="action-buttons" class="btn-group pull-right">
+      <button class="btn btn-blank dropdown-toggle" data-toggle="dropdown">
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li ng-repeat="flow in flows" style="min-width:200px; padding:4px 16px 2px;">
+
+            <div><strong><!--{{k}}--></strong><!--: {{v}}-->
+
+        </li>
+      </ul>
+
+      <button class="btn btn-blank start-stop" style="width:64px;">
+        <span class="btn-start"><!-- this is a commented-out attribute for the preceding span -> {{bindAttr class="model.actionIcon"}}-->
+        </span>
+        <span>Start<!--{{model.defaultAction}}--></span>
+      </button>
+      <button class="btn btn-blank btn-icon" style="border-right:0;"><span class="btn-config"></span></button>
+    </div>
+    <status status-endpoint="{{flow.getStatusEndpoint()}}" displaytype="large"></status>
+  </div>
+
+  <div class="info-box sparkline-box app-processed">
+    <div class="sparkline-box-value" style="display: block;">
+      <delay-counter metric-endpoint="{{flow.getEventsProcessedEndpoint()}}"></delay-counter>
+      <span>EPS</span>
+    </div>
+    <div class="sparkline-box-title">Processing Rate</div>
+    <div class="sparkline-box-container">
+      <sparkline data="processingRate"></sparkline>
+    </div>
+    <!--{{view C.Embed.Chart metrics="/reactor/apps/{parent}/flows/{id}/process.events.processed" title="Processing Rate"}}-->
+  </div>
+  <div class="info-box sparkline-box app-busyness">
+    <div class="sparkline-box-value" style="display: block;">
+      <delay-counter metric-endpoint="{{flow.getBusynessEndpoint()}}" percent="true"></delay-counter>
+    </div>
+    <div class="sparkline-box-title">Busyness</div>
+    <div class="sparkline-box-container">
+      <sparkline data="busyness"></sparkline>
+    </div>
+
+  </div>
+
+</div>
+<div id="panels">
+    <div id="informer"></div>
+    <div class="panel">
+    <div id="flowviz-container">
+        {{flow}}
+        <div class="btn-group" style="float: left;">
+            <button class="btn btn-blank dropdown-toggle" data-toggle="dropdown" style="padding-left:14px;float: right;"><!--{{flowletLabelName}}--> <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a>Flowlet Rate</a></li> <!--{{action "setFlowletLabel" "rate"}}-->
+                <li><a>Flowlet Pending</a></li> <!--{{action "setFlowletLabel" "pending"}}-->
+                <li><a>Flowlet Processed</a></li> <!--{{action "setFlowletLabel" "aggregate"}}-->
+            </ul>
+        </div>
+        <div id="flowfiz" class="clearfix" style="width: 678px;">
+        </div>
+      <!--{{view C.Embed.Visualizer viewName="visualizer"}}-->
+    </div>
+  </div>
+</div>

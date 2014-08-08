@@ -1,0 +1,38 @@
+<div id="panels">
+  <div id="informer"></div>
+  <div class="panel">
+    <div id="object-list">
+      {{#if runs.length}}
+        <table class="table table-condensed">
+        <thead>
+          <tr><th style="width: 300px;">Started</th>
+          <th>Ended</th>
+          <th style="width:250px;">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{#each runs}}
+          <tr class="run-list" {{action "loadRun" runid}}>
+            <td>{{started}}<div class="flow-run-date"> {{startDate}} </div></td>
+            <td>{{ended}} <div class="flow-run-date"> {{endDate}}</div></td>
+            <td>{{detail}}</td>
+          </tr>
+        {{/each}}
+        </tbody>
+        </table>
+      {{else}}
+        <div class="object-list-empty">
+        <div class="object-list-empty-content">
+        <div>No History.</div>
+        <span>This Flow has not completed a run yet.</span>
+        </div>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+  <div class="panel">
+    <div id="flowviz-container" class="flowviz-fade">
+      {{view C.Embed.Visualizer viewName="visualizer"}}
+    </div>
+  </div>
+</div>

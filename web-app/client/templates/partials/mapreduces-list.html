@@ -4,15 +4,15 @@
 </td>
 
 <td style="max-width:262px;">
-    <delay-counter metric-endpoint="{{mapreduce.getMappingStatus()}}"></delay-counter>
+    <delay-counter metric-endpoint="{{mapreduce.getMappingStatusEndpoint()}}"></delay-counter>
     <div class="sparkline-list-container">
-      <sparkline metric-endpoint="{{mapreduce.getMappingStatus()}}"></sparkline>
+      <sparkline metric-endpoint="{{mapreduce.getMappingStatusEndpoint()}}"></sparkline>
     </div>
 </td>
 
 <td style="max-width:262px;">
-    <delay-counter metric-endpoint="{{mapreduce.getReducingStatus()}}"></delay-counter>
+    <delay-counter metric-endpoint="{{mapreduce.getReducingStatusEndpoint()}}" percent="true"></delay-counter>
     <div class="sparkline-list-container">
-      <sparkline metric-endpoint="{{mapreduce.getReducingStatus()}}"></sparkline>
+      <sparkline metric-endpoint="{{mapreduce.getReducingStatusEndpoint()}}"></sparkline>
     </div>
 </td>

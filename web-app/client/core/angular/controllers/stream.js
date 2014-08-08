@@ -4,14 +4,14 @@ define(function () {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'statusService', 'metricsService', 'helpers', 'POLLING_INTERVAL',
-    function($scope, $interval, $routeParams, dataFactory, statusService, metricsService, helpers, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', '$stateParams', 'dataFactory', 'statusService', 'metricsService', 'helpers', 'POLLING_INTERVAL',
+    function($scope, $interval, $stateParams, dataFactory, statusService, metricsService, helpers, POLLING_INTERVAL) {
 
     var statusEndpoints = [];
     var intervals = [];
 
-    var appId = $routeParams.appId;
-    var streamId = $routeParams.streamId;
+    var appId = $stateParams.appId;
+    var streamId = $stateParams.streamId;
 
     $scope.arrivalRate = [];
 

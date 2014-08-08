@@ -4,9 +4,9 @@ define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'actionService',
+  var Ctrl = ['$scope', '$interval', '$stateParams', 'dataFactory', 'actionService',
     'POLLING_INTERVAL', 'NOTIFICATION_CATEGORIES', 'DEFAULT_DISPLAY_TIME',
-    function ($scope, $interval, $routeParams, dataFactory, actionService,
+    function ($scope, $interval, $stateParams, dataFactory, actionService,
       POLLING_INTERVAL, NOTIFICATION_CATEGORIES, DEFAULT_DISPLAY_TIME) {
 
     /**
@@ -17,7 +17,7 @@ define(['helpers'], function (helpers) {
     var intervals = [];
     var statusEndpoints = [];
 
-    dataFactory.getApp($routeParams.appId, function (app) {
+    dataFactory.getApp($stateParams.appId, function (app) {
       $scope.app = app;
 
       dataFactory.getStreamsByApp($scope.app.id, function (streams) {
@@ -67,7 +67,7 @@ define(['helpers'], function (helpers) {
       } else if (entityType.toLowerCase() === 'procedure') {
         
         $scope.app.procedures.forEach(function (procedure) {
-          actionService.startFlow(procedure, function success (data, status) {
+          actionService.startProcedure(procedure, function success (data, status) {
             var msg = procedure.name + ' started';
             helpers.displayNotification(
               msg, NOTIFICATION_CATEGORIES.SUCCESS, DEFAULT_DISPLAY_TIME);

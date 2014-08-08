@@ -1,6 +1,6 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   var Model = Class.create({
     initialize: function (data) {
@@ -15,6 +15,14 @@ define(function () {
           this[index] = data[index];
         }
       }
+    },
+
+    getWriteRateEndpoint: function () {
+      return helpers.getWriteRateEndpoint(this);
+    },
+
+    getStorageEndpoint: function () {
+      return helpers.getStorageEndpoint(this);
     }
 
   });

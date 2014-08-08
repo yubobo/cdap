@@ -4,13 +4,13 @@ define(function () {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'statusService', 'metricsService', 'helpers', 'POLLING_INTERVAL',
-    function($scope, $interval, $routeParams, dataFactory, statusService, metricsService, helpers, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', '$stateParams', 'dataFactory', 'statusService', 'metricsService', 'helpers', 'POLLING_INTERVAL',
+    function($scope, $interval, $stateParams, dataFactory, statusService, metricsService, helpers, POLLING_INTERVAL) {
 
     var statusEndpoints = [];
     var intervals = [];
 
-    var datasetId = $routeParams.datasetId;
+    var datasetId = $stateParams.datasetId;
 
     $scope.writeRateBytes = [];
     $scope.writeRateOps = [];

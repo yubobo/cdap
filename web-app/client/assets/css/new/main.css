@@ -944,6 +944,20 @@ h1 span:first-child {
 	line-height: normal !important;
 }
 
+.sparkline-display-value {
+	width: 90px;
+	border-left: 0;
+	background-color: white;
+	color: #555;
+	font-weight: 400;
+	overflow: hidden;
+	font-size: 24px;
+	padding-left: 5px;
+	text-align: left;
+	line-height: normal !important;
+	text-align: center;
+}
+
 .tree-chart .sparkline-list-value {
 	width: 92px;
 }

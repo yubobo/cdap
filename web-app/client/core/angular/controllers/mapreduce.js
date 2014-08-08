@@ -4,16 +4,16 @@ define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$routeParams', 'dataFactory', 'POLLING_INTERVAL',
-    function($scope, $interval, $routeParams, dataFactory, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', '$stateParams', 'dataFactory', 'POLLING_INTERVAL',
+    function($scope, $interval, $stateParams, dataFactory, POLLING_INTERVAL) {
 
     /**
      * @type {Mapreduce}
      */
     $scope.mapreduce = {};
 
-    var appId = $routeParams.appId;
-    var mapreduceId = $routeParams.mapreduceId;
+    var appId = $stateParams.appId;
+    var mapreduceId = $stateParams.mapreduceId;
 
 
     dataFactory.getMapreduceByAppNameAndId(appId, mapreduceId, function (mapreduce) {

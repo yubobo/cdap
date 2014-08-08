@@ -52,6 +52,90 @@ define(function () {
         }
       },
 
+      number: function (value) {
+
+        value = Math.abs(value);
+
+        if (value > 1000000000) {
+          var digits = 3 - (Math.round(value / 1000000000) + '').length;
+          digits = digits < 0 ? 2 : digits;
+          value = value / 1000000000;
+          var rounded = Math.round(value * Math.pow(10, digits)) / Math.pow(10, digits);
+          return [rounded, 'B'];
+
+        } else if (value > 1000000) {
+          var digits = 3 - (Math.round(value / 1000000) + '').length;
+          digits = digits < 0 ? 2 : digits;
+          value = value / 1000000;
+          var rounded = Math.round(value * Math.pow(10, digits)) / Math.pow(10, digits);
+          return [rounded, 'M'];
+
+        } else if (value > 1000) {
+          var digits = 3 - (Math.round(value / 1000) + '').length;
+          digits = digits < 0 ? 2 : digits;
+          value = value / 1000;
+          var rounded = Math.round(value * Math.pow(10, digits)) / Math.pow(10, digits);
+          return [rounded, 'K'];
+
+        }
+
+        var digits = 3 - (value + '').length;
+        digits = digits < 0 ? 2 : digits;
+        var rounded = Math.round(value * Math.pow(10, digits)) / Math.pow(10, digits);
+
+        return [rounded, ''];
+
+      },
+
+      numberArrayToString: function(value) {
+        return this.number(value).join('');
+      },
+
+      bytes: function (value) {
+
+        if (value >= 1073741824) {
+          value /= 1073741824;
+          return [((Math.round(value * 100) / 100)), 'GB'];
+        } else if (value >= 1048576) {
+          value /= 1048576;
+          return [((Math.round(value * 100) / 100)), 'MB'];
+        } else if (value >= 1024) {
+          value /= 1024;
+          return [((Math.round(value * 10) / 10)), 'KB'];
+        }
+
+        return [value, 'B'];
+      },
+
+      interrupt: function () {
+
+        $('#drop-border').addClass('hidden');
+
+        $('#drop-label').hide();
+        $('#drop-loading').show();
+        $('#drop-hover').show();
+
+      },
+
+      proceed: function (done) {
+
+        $('#drop-hover').fadeOut(function () {
+
+          $('#drop-border').removeClass('hidden');
+
+          $('#drop-label').show();
+          $('#drop-loading').hide();
+          if (typeof done === 'function') {
+            done();
+          }
+        });
+
+      },
+
+      generateUid: function () {
+        return Math.random().toString(36).substr(2,9);
+      },
+
       getLastValue: function (metricData) {
         return metricData[metricData.length - 1].value;
       },
@@ -93,6 +177,22 @@ define(function () {
         }
       },
 
+      getStorageEndpoint: function (entity) {
+        switch(entity.type.toLowerCase()) {
+
+          case 'app':
+            return '/reactor/apps/' + entity.name + '/store.bytes?aggregate=true';
+
+          case 'stream':
+            return '/reactor/streams/' + entity.name + '/store.bytes?aggregate=true';
+
+          case 'dataset':
+            return '/reactor/datasets/' + entity.name + '/store.bytes?aggregate=true';
+
+          default:
+            break;
+        }        
+      },
 
       getBusynessEndpoint: function (entity, optionalAppName) {
 
@@ -111,17 +211,17 @@ define(function () {
         }
       },
 
-      getEventsProcessedEndpoint: function (entity) {
-
+      getEventsProcessedEndpoint: function (entity, optionalAppName) {
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
         switch(entity.type.toLowerCase()) {
 
           case 'app':
             return ('/reactor/apps/' + entity.name
-              + '/process.events.processed?start=now-60s&end=now-0s&count=60"');
+              + '/process.events.processed?start=now-60s&end=now-0s&count=60');
 
           case 'flow':
-            return ('/reactor/apps/' + entity.app + '/flows/' + entity.name
-              + '/process.events.processed?start=now-60s&end=now-0s&count=60"');
+            return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.name
+              + '/process.events.processed?start=now-60s&end=now-0s&count=60');
 
           default:
             break;
@@ -131,7 +231,7 @@ define(function () {
 
 
       getRequestRateEndpoint: function (entity, optionalAppName) {
-
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
         switch(entity.type.toLowerCase()) {
 
           case 'procedure':
@@ -143,7 +243,7 @@ define(function () {
       },
 
       getErrorRateEndpoint: function (entity, optionalAppName) {
-
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
         switch(entity.type.toLowerCase()) {
 
           case 'procedure':
@@ -155,11 +255,11 @@ define(function () {
       },
 
       getMappingStatusEndpoint: function (entity, optionalAppName) {
-
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
         switch(entity.type.toLowerCase()) {
 
           case 'mapreduce':
-            return ('/reactor/apps/' + optionalAppName + '/mapreduces/' + entity.name + '/mappers/process.completion?start=now-60s&end=now-0s&count=60');
+            return ('/reactor/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/mappers/process.completion?start=now-60s&end=now-0s&count=60');
             break;
 
           default:
@@ -168,11 +268,11 @@ define(function () {
       },
 
       getReducingStatusEndpoint: function (entity, optionalAppName) {
-
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
         switch(entity.type.toLowerCase()) {
 
           case 'mapreduce':
-            return ('/reactor/apps/' + optionalAppName + '/mapreduces/' + entity.name + '/reducers/process.completion?start=now-60s&end=now-0s&count=60');
+            return ('/reactor/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/reducers/process.completion?start=now-60s&end=now-0s&count=60');
             break;
 
           default:
@@ -199,6 +299,25 @@ define(function () {
           default:
             break;
         }
+      },
+
+      getArrivalRateEndpoint: function (entity) {
+        switch(entity.type.toLowerCase()) {
+          case 'stream':
+            return '/reactor/streams/' + entity.name + '/collect.events?start=now-60s&end=now-0s&count=60';
+
+          default:
+            break;
+        }
+      },
+
+      getWriteRateEndpoint: function (entity) {
+        switch(entity.type.toLowerCase()) {
+          case 'dataset':
+            return '/reactor/datasets/' + entity.name + '/dataset.store.bytes?start=now-60s&end=now-0s&count=60';
+          default:
+            break;
+        }      
       },
 
       getStartEndpoint: function (entity) {

@@ -4,8 +4,8 @@ define(function () {
 
   /* Items */
 
-  var Ctrl = ['$rootScope', '$scope', '$http', '$routeParams', '$interval',
-    function($rootScope, $scope, $http, $routeParams, $interval) {
+  var Ctrl = ['$rootScope', '$scope', '$http', '$stateParams', '$interval',
+    function($rootScope, $scope, $http, $stateParams, $interval) {
 
     $scope.message = "apps";
 

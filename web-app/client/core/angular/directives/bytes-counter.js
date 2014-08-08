@@ -1,16 +1,14 @@
 
 'use strict';
 
-define(function() {
+define(['helpers'], function (helpers) {
 
   var Directive = ['$interval', '$timeout', '$compile', 'metricsService', 'POLLING_INTERVAL',
     function($interval, $timeout, $compile, metricsService, POLLING_INTERVAL) {
 
-    var inlineTemplate = ('<div class="sparkline-list-value" style="display: block;">{{curValue}}'
+    var inlineTemplate = ('<div class="sparkline-list-value" style="display: block;">{{curValue}}{{curLabel}}'
       + '<div class="inline-display" ng-if="percent">%</div></div>');
-    var noGraphTemplate = ('<div class="sparkline-display-value" style="display: block;">{{curValue}}'
-      + '<div class="inline-display" ng-if="percent">%</div></div>');
-    var dashTemplate = ('<span class="value-number">{{curValue}}</span>'
+    var dashTemplate = ('<span class="value-number">{{curValue}}{{curLabel}}</span>'
       + '<span ng-if="percent">%</span></div>');
 
     var getTemplate = function (type) {
@@ -18,9 +16,6 @@ define(function() {
       switch(type) {
         case 'dash':
           template = dashTemplate;
-          break;
-        case 'nograph':
-          template = noGraphTemplate;
           break;
         default:
          template = inlineTemplate;
@@ -34,27 +29,22 @@ define(function() {
       restrict: 'AE',
       replace: true,
       scope: {
-        percent: '@',
         countertype: '@',
         metricEndpoint: '@'
       },
       link: function (scope, elm, attrs) {
-
-        var percent = Boolean(scope.percent);
-        var intervals = [];
         var updatePending = false;
         var ival;
 
         scope.$watch('metricEndpoint', function (newVal, oldVal) {
           if (newVal) {
-            elm.html(getTemplate(scope.countertype)).show();
-            $compile(elm.contents())(scope);
-
             if (!scope.metricEndpoint) {
               console.error('no metric specified for chart in div', elm);
               return;
             }
-
+            
+            elm.html(getTemplate(scope.countertype)).show();
+            $compile(elm.contents())(scope);
             metricsService.trackMetric(scope.metricEndpoint);
             ival = $interval(function () {
               scope.data = metricsService.getMetricByEndpoint(scope.metricEndpoint);
@@ -62,25 +52,12 @@ define(function() {
           }
         });
 
+        var bytesData = [];
         scope.$watch('data', function (newVal, oldVal) {
-          if (newVal && angular.isArray(newVal.data) && newVal.data.length) {
-            if (!updatePending) {
-              updatePending = true;
-              var timesToRepeat = (POLLING_INTERVAL / 1000) + 1;
-              scope.curValue = newVal.data[newVal.data.length - timesToRepeat].value;
-              for (var i = 1; i < timesToRepeat; i++) {
-                (function(i) {
-                  $timeout(function () {
-                    var curIndex = newVal.data.length - (timesToRepeat - i);
-                    scope.curValue = newVal.data[curIndex].value;
-                    if (i >= 3) {
-                      updatePending = false;
-                    }
-                  }, i * 1000);
-                })(i);
-
-              }
-            }
+          if (angular.isObject(newVal) && newVal.hasOwnProperty('data')) {
+            bytesData = helpers.bytes(newVal.data);
+            scope.curValue = bytesData[0];
+            scope.curLabel = bytesData[1];
           }
         });
 

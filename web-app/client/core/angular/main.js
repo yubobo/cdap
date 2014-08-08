@@ -6,6 +6,7 @@ requirejs.config({
   paths: {
     'angular': ['/third_party/angular-1.2.16/angular'],
     'angular-route': ['/third_party/angular-1.2.16/angular-route'],
+    'ui-router': ['/third_party/angular-ui-router'],
     'angular-sanitize': ['/third_party/angular-1.2.16/angular-sanitize'],
     'jQuery': ['/third_party/jquery-1.11.1.min'],
     'bootstrap': ['/third_party/bootstrap/bootstrap.min'],
@@ -14,6 +15,9 @@ requirejs.config({
   shim: {
     'angular': {
       exports : 'angular'
+    },
+    'ui-router': {
+      deps: ['angular']
     },
     'angular-route': {
       deps: ['angular'],
@@ -76,11 +80,13 @@ require([
   './directives/sparkline',
   './directives/delay-counter',
   './directives/status',
+  './directives/bytes-counter',
 
   // Filters.
   './filters',
 
   'angular-route',
+  'ui-router',
   'jQuery',
   'bootstrap'],
   function (
@@ -130,102 +136,168 @@ require([
     // Directives
     Sparkline,
     DelayCounter,
-    Status) {
+    Status,
+    BytesCounter) {
 
     // Instantiate Reactor webapp module.
     var reactorWebapp = angular.module('ReactorWebapp', [
       'ReactorWebapp.filters',
-      'ngRoute'
+      'ngRoute',
+      'ui.router'
     ]);
 
     // Configure routes.
-    reactorWebapp.config(['$routeProvider', function ($routeProvider) {
+    reactorWebapp.config(['$routeProvider', '$stateProvider', '$urlRouterProvider', 
+      function ($routeProvider, $stateProvider, $urlRouterProvider) {
 
-      $routeProvider.when('/overview', {
-        templateUrl: '/templates/overview.html', controller: OverviewCtrl
-      });
+      $urlRouterProvider.otherwise('/pagenotfound');
+      $urlRouterProvider.when('', '/overview');
+      $urlRouterProvider.when('/apps/:appId/flows/:flowId', '/apps/:appId/flows/:flowId/status');
 
-      $routeProvider.when('/resources', {
-        templateUrl: '/templates/resources.html', controller: ResourcesCtrl
-      });
+      $stateProvider
+        .state('overview', {
+          url: '/overview',
+          templateUrl: '/templates/overview.html',
+          controller: OverviewCtrl
+        })
 
-      $routeProvider.when('/apps', {
-        templateUrl: '/templates/apps.html', controller: AppsCtrl
-      });
+        .state('resources', {
+          url: '/resources',
+          templateUrl: '/templates/resources.html',
+          controller: ResourcesCtrl
+        })        
 
-      $routeProvider.when('/streams', {
-        templateUrl: '/templates/streams.html', controller: StreamsCtrl
-      });
+        .state('apps', {
+          url: '/apps',
+          templateUrl: '/templates/apps.html',
+          controller: AppsCtrl
+        })
 
-      $routeProvider.when('/flows', {
-        templateUrl: '/templates/flows.html', controller: FlowsCtrl
-      });
+        .state('streams', {
+          url: '/streams',
+          templateUrl: '/templates/streams.html',
+          controller: StreamsCtrl
+        })
 
-      $routeProvider.when('/datasets', {
-        templateUrl: '/templates/datasets.html', controller: DatasetsCtrl
-      });
+        .state('flows', {
+          url: '/flows',
+          templateUrl: '/templates/flows.html',
+          controller: FlowsCtrl
+        })
 
-      $routeProvider.when('/procedures', {
-        templateUrl: '/templates/procedures.html', controller: ProceduresCtrl
-      });
+        .state('datasets', {
+          url: '/datasets',
+          templateUrl: '/templates/datasets.html',
+          controller: DatasetsCtrl
+        })
 
-      $routeProvider.when('/services', {
-        templateUrl: '/templates/services.html', controller: ServicesCtrl
-      });
+        .state('procedures', {
+          url: '/procedures',
+          templateUrl: '/templates/procedures.html',
+          controller: ProceduresCtrl
+        })
 
-      $routeProvider.when('/apps/:appId', {
-        templateUrl: '/templates/app.html', controller: AppCtrl
-      });
+        .state('services', {
+          url: '/services',
+          templateUrl: '/templates/services.html',
+          controller: ServicesCtrl
+        })
 
-      $routeProvider.when('/apps/:appId/flows/:flowId', {
-        templateUrl: '/templates/flow.html', controller: FlowCtrl
-      });
+        .state('appsDetail', {
+          url: '/apps/:appId',
+          templateUrl: '/templates/app.html',
+          controller: AppCtrl
+        })
 
-      $routeProvider.when('/apps/:appId/streams/:streamId', {
-        templateUrl: '/templates/stream.html', controller: StreamCtrl
-      });
+        .state('flowsDetail', {
+          url: '/apps/:appId/flows/:flowId',
+          templateUrl: '/templates/flow.html',
+          controller: FlowCtrl
+        })
 
-      $routeProvider.when('/apps/:appId/datasets/:datasetId', {
-        templateUrl: '/templates/dataset.html', controller: DatasetCtrl
-      });
+          .state('flowsDetail.status', {
+            url: '/status',
+            templateUrl: '/templates/partials/flowStatus.html',
+            controller: FlowCtrl
+          })
 
-      $routeProvider.when('/apps/:appId/procedures/:procedureId', {
-        templateUrl: '/templates/procedure.html', controller: ProcedureCtrl
-      });
+          .state('flowsDetail.log', {
+            url: '/log',
+            templateUrl: '/templates/partials/flowLog.html',
+            controller: FlowCtrl
+          })
 
-      $routeProvider.when('/apps/:appId/mapreduces/:mapreduceId', {
-        templateUrl: '/templates/mapreduce.html', controller: MapreduceCtrl
-      });
+          .state('flowsDetail.history', {
+            url: '/history',
+            templateUrl: '/templates/partials/flowHistory.html',
+            controller: FlowCtrl
+          })
 
-      $routeProvider.when('/apps/:appId/workflows/:workflowId', {
-        templateUrl: '/templates/workflow.html', controller: WorkflowCtrl
-      });
+        .state('streamsDetail', {
+          url: '/apps/:appId/streams/:streamId',
+          templateUrl: '/templates/stream.html',
+          controller: StreamCtrl
+        })
 
-      $routeProvider.when('/services/:serviceId', {
-        templateUrl: '/templates/service.html', controller: ServiceCtrl
-      });
+        .state('datasetsDetail', {
+          url: '/apps/:appId/datasets/:datasetId',
+          templateUrl: '/templates/dataset.html',
+          controller: DatasetCtrl
+        })
 
-      $routeProvider.when('/loading', {
-        templateUrl: '/templates/loading.html', controller: LoadingCtrl
-      });
+        .state('proceduresDetail', {
+          url: '/apps/:appId/procedures/:procedureId',
+          templateUrl: '/templates/procedure.html',
+          controller: ProcedureCtrl
+        })
 
-      $routeProvider.when('/login', {
-        templateUrl: '/templates/login.html', controller: LoginCtrl
-      });
+        .state('mapreducesDetail', {
+          url: '/apps/:appId/mapreduces/:mapreduceId',
+          templateUrl: '/templates/procedure.html',
+          controller: MapreduceCtrl
+        })
 
-      $routeProvider.when('/pagenotfound', {
-        templateUrl: '/templates/pagenotfound.html', controller: PageNotFoundCtrl
-      });
+        .state('workflowsDetail', {
+          url: '/apps/:appId/workflows/:workflowId',
+          templateUrl: '/templates/workflow.html',
+          controller: WorkflowCtrl
+        })
 
-      $routeProvider.when('/connectionerror', {
-        templateUrl: '/templates/connectionerror.html', controller: ConnectionErrorCtrl
-      });
+        .state('servicesDetail', {
+          url: '/services/:serviceId',
+          templateUrl: '/templates/service.html',
+          controller: ServiceCtrl
+        })
 
-      $routeProvider.when('/analyze', {
-        templateUrl: '/templates/analyze.html', controller: AnalyzeCtrl
-      });
+        .state('loading', {
+          url: '/loading',
+          templateUrl: '/templates/loading.html',
+          controller: LoadingCtrl
+        })
 
-      $routeProvider.otherwise({redirectTo: '/overview'});
+        .state('login', {
+          url: '/login',
+          templateUrl: '/templates/login.html',
+          controller: LoginCtrl
+        })
+
+        .state('pagenotfound', {
+          url: '/pagenotfound',
+          templateUrl: '/templates/pagenotfound.html',
+          controller: PageNotFoundCtrl
+        })
+
+        .state('connectionerror', {
+          url: '/connectionerror',
+          templateUrl: '/templates/connectionerror.html',
+          controller: ConnectionErrorCtrl
+        })
+
+        .state('analyze', {
+          url: '/analyze',
+          templateUrl: '/templates/analyze.html',
+          controller: AnalyzeCtrl
+        })
 
     }]);
 
@@ -291,6 +363,7 @@ require([
     reactorWebapp.directive('sparkline', Sparkline);
     reactorWebapp.directive('delayCounter', DelayCounter);
     reactorWebapp.directive('status', Status);
+    reactorWebapp.directive('bytesCounter', BytesCounter);
 
 
     // Manually bootstrap the application since we are bootstrapping with requirejs.

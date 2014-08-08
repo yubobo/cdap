@@ -191,19 +191,16 @@ define(function() {
         metricEndpoint: '@'
       },
       link: function (scope, elm, attrs) {
-        if (!scope.metricEndpoint) {
-          console.error('no metric specified for chart in div', elm);
-          return;
-        }
+        var ival;
 
         scope.$watch('metricEndpoint', function (newVal, oldVal) {
           if (newVal) {
             metricsService.trackMetric(scope.metricEndpoint);
 
-            var ival = $interval(function () {
+            ival = $interval(function () {
               scope.data = metricsService.getMetricByEndpoint(scope.metricEndpoint);
             }, POLLING_INTERVAL);  
-          }          
+          }
         });
         
 

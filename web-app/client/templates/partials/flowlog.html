@@ -1,0 +1,13 @@
+<div id="panels">
+  <div class="panel" style="padding: 10px;">
+    <ul class="nav nav-tabs">
+      <li {{bindAttr class="logMetrics.ALL.active"}}><a {{ action showLogsByType "ALL" }}>ALL({{logMetrics.ALL.count}})</a></li>
+      <li {{bindAttr class="logMetrics.INFO.active"}}><a {{ action showLogsByType "INFO" }}>INFO({{logMetrics.INFO.count}})</a></li>
+      <li {{bindAttr class="logMetrics.WARN.active"}}><a {{ action showLogsByType "WARN" }}>WARN({{logMetrics.WARN.count}})</a></li>
+      <li {{bindAttr class="logMetrics.ERROR.active"}}><a id="log-error-tab" {{ action showLogsByType "ERROR" }}>ERROR({{logMetrics.ERROR.count}})</a></li>
+      <li {{bindAttr class="logMetrics.DEBUG.active"}}><a {{ action showLogsByType "DEBUG" }}>DEBUG({{logMetrics.DEBUG.count}})</a></li>
+      <li {{bindAttr class="logMetrics.OTHER.active"}}><a {{ action showLogsByType "OTHER" }}>OTHER({{logMetrics.OTHER.count}})</a></li>
+    </ul>
+    <pre id="logView" class="well query-response"></pre>
+  </div>
+</div>

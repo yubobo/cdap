@@ -23,6 +23,14 @@ define(['helpers'], function (helpers) {
 
     getBusynessEndpoint: function () {
       return helpers.getBusynessEndpoint(this);
+    },
+
+    getEventsProcessedEndpoint: function () {
+      return helpers.getEventsProcessedEndpoint(this);
+    },
+
+    getStorageEndpoint: function () {
+      return helpers.getStorageEndpoint(this);
     }
 
   });
