@@ -1374,7 +1374,7 @@ HTTP Responses
      - The query handle does not match any current query
 
 List of Queries
---------------
+---------------
 To return a list of queries, use::
 
    GET <base-url>/data/explore/queries?limit=<limit>&cursor=<cursor>&offset=<offset>
@@ -1609,6 +1609,45 @@ jobs, Workflows, and Custom Services, and query for their status using HTTP POST
    * - ``<operation>``
      - One of ``start`` or ``stop``
 
+You can also retrieve the status of multiple elements from different applications and different element
+types using an HTTP POST method::
+
+  POST <base-url>/status
+
+with a JSON array in the request body consisting of multiple JSON objects with the following parameters:
+
+.. list-table::
+   :widths: 20 80
+   :header-rows: 1
+
+   * - Parameter
+     - Description
+   * - ``"appId"``
+     - Name of the Application being called
+   * - ``"programType"``
+     - One of ``flow``, ``procedure``, ``mapreduce``, ``workflow`` or ``service``
+   * - ``"programId"``
+     - Name of the element (*Flow*, *Procedure*, *MapReduce*, *Workflow*, or *Custom Service*)
+       being called
+
+and the response will be the same JSON array with some additional parameters for each of the underlying JSON objects:
+
+.. list-table::
+   :widths: 20 80
+   :header-rows: 1
+
+   * - Parameter
+     - Description
+   * - ``"status"``
+     - This will map to an individual JSON object's queried element's status if the query is valid and the element is found.
+   * - ``"statusCode"``
+     - The status code for retrieving the status of an individual JSON object
+   * - ``"error"``
+     - An error describing why the status was not retrieved (for example: the specified element was not found,
+       the requested JSON object was missing a parameter, etc.)
+
+Note that if the ``"status"`` field exists then the ``"error"`` field will not and vice versa.
+
 Examples
 ........
 
@@ -1623,6 +1662,8 @@ Examples
    , Stop the Procedure *GetCounts* in the Application *Count*
    **HTTP Method**, ``GET <base-url>/apps/HelloWorld/flows/WhoFlow/status``
    , Get the status of the Flow *WhoFlow* in the Application *HelloWorld*
+   **HTTP Method**, ``POST <base-url>/status`` with the following request body: ``[{"appId":"TestApp" "programType":"flow" "programId":"TestFlow1"} {"appId":"MyApp2" "programType":"service" "programId":"MyService1"}]``
+   , Get the status of the Flow *TestFlow1* in the Application *TestApp* and the status of the Custom User Service *MyService1* in the Application *MyApp2*
 
 .. commas above are creating spacers in the table
 
