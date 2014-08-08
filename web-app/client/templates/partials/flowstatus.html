@@ -1,26 +1,4 @@
 <div id="info">
-  <div class="info-box" style="float: right; border: 0;padding-right: 14px;padding-left: 0px;">
-    <div id="action-buttons" class="btn-group pull-right">
-      <button class="btn btn-blank dropdown-toggle" data-toggle="dropdown">
-        <span class="caret"></span>
-      </button>
-      <ul class="dropdown-menu">
-        <li ng-repeat="flow in flows" style="min-width:200px; padding:4px 16px 2px;">
-
-            <div><strong><!--{{k}}--></strong><!--: {{v}}-->
-
-        </li>
-      </ul>
-
-      <button class="btn btn-blank start-stop" style="width:64px;">
-        <span class="btn-start"><!-- this is a commented-out attribute for the preceding span -> {{bindAttr class="model.actionIcon"}}-->
-        </span>
-        <span>Start<!--{{model.defaultAction}}--></span>
-      </button>
-      <button class="btn btn-blank btn-icon" style="border-right:0;"><span class="btn-config"></span></button>
-    </div>
-    <status status-endpoint="{{flow.getStatusEndpoint()}}" displaytype="large"></status>
-  </div>
 
   <div class="info-box sparkline-box app-processed">
     <div class="sparkline-box-value" style="display: block;">
