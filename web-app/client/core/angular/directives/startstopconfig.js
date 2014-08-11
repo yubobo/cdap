@@ -26,8 +26,6 @@ define(['helpers'], function (helpers) {
           if (typeof ival !== 'undefined') {
             $interval.cancel(ival);
           }
-          
-          metricsService.untrackStatus(scope.metricEndpoint);
         });
       }
     }

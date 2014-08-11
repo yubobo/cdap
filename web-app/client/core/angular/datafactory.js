@@ -244,11 +244,22 @@ define(['helpers'], function (helpers) {
        * @param  {Function} callback that consumes a Flow object.
        */
       getFlowByAppNameAndId: function (appId, flowId, callback) {
-        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/flows/' + flowId).success(function (data) {
-          data = helpers.transformFlowModel(data);
+        $http.get(
+          REACTOR_ENDPOINT + '/apps/' + appId + '/flows/' + flowId).success(function (data) {
+          data.app = appId  
           var flow = new Flow(data);
-          flow.app = appId;
           callback(flow);
+        });
+      },
+
+      /**
+       * Gets a flow config using its app name and id.
+       */
+      getFlowConfigByAppNameAndId: function (appId, flowId, callback) {
+        $http.get(
+          REACTOR_ENDPOINT + '/apps/' + appId + '/flows/' + flowId + '/runtimeargs')
+        .success(function (data) {
+          callback(data);
         });
       },
 

@@ -1,0 +1,99 @@
+  <div id="flowlet-popup-tabs">
+    <div id="flowlet-popup-inputs-tab" class="flowlet-popup-tab tab-selected"><a href="#" {{action select "inputs"}}>Inputs</a></div>
+    <div id="flowlet-popup-processed-tab" class="flowlet-popup-tab"><a href="#" {{action select "processed"}}>Processed</a></div>
+    <div id="flowlet-popup-outputs-tab" class="flowlet-popup-tab"><a href="#" {{action select "outputs"}}>Outputs</a></div>
+  </div>
+  <div id="flowlet-popup-tab-content">
+
+    <div id="flowlet-popup-inputs" class="flowlet-popup-tab-content">
+
+    <!-- {{#if model.inputs.length}} -->
+      <table style="width:100%;">
+        <tr>
+          <td style="height:214px;padding:0;">
+            <table style="width: 100%;">
+              <tbody>
+              <!-- {{#each model.inputs}} -->
+              <tr>
+                <td>
+                  <a ui-sref="flowsDetail.status.flowletId({ appId: flowlet.app, flow: flowlet.flow, flowletId: entry.name})" ng-repeat="entry in previous">
+                    <div class="flowlet-popup-input-contrib">{{entry.name}}</div>
+                  </a>
+                </td>
+                <td class="flowlet-popup-input">
+                  QUEUE_IN
+                </td>
+                <td class="flowlet-blue">
+                  <!-- {{view C.Embed.Chart grid="true" entityType="Queue" title="Inbound Events per Second" width="305" entityIdBinding=id metrics="/reactor/apps/{app}/flows/{flow}/flowlets/{flowlet}/process.events.in" classNames="sparkline-flowlet-box"}} -->
+                </td>
+              </tr>
+              <!-- {{/each}} -->
+            </table>
+          </td>
+        </tr>
+      </table>
+    <!-- {{else}} -->
+      <div class="flowlet-popup-empty">
+      There are no inputs on this flowlet.
+      </div>
+    <!-- {{/if}} -->
+
+  </div>
+
+  <div id="flowlet-popup-processed" class="flowlet-popup-tab-content">
+
+    <table style="width: 100%">
+      <tr>
+        <td class="flowlet-blue">
+          <!-- {{view C.Embed.Chart grid="true" width="305" metrics="/reactor/apps/{app}/flows/{flow}/flowlets/{id}/process.events.processed" classNames="sparkline-flowlet-box" title="Processing Rate"}} -->
+        </td>
+        <td class="flowlet-blue">
+          <!-- {{view C.Embed.Chart grid="true" width="305" metrics="/reactor/apps/{app}/flows/{flow}/flowlets/{id}/store.ops" classNames="sparkline-flowlet-box" title="Data Operations"}} -->
+        </td>
+      </tr>
+      <tr>
+        <td class="flowlet-blue">
+          <!-- {{view C.Embed.Chart grid="true" width="305" unit="percent" metrics="/reactor/apps/{app}/flows/{flow}/flowlets/{id}/process.busyness" classNames="sparkline-flowlet-box" title="Busyness"}} -->
+        </td>
+        <td class="flowlet-blue">
+          <!-- {{view C.Embed.Chart grid="true" width="305" metrics="/reactor/apps/{app}/flows/{flow}/flowlets/{id}/process.errors" classNames="sparkline-flowlet-box" title="Errors"}} -->
+        </td>
+      </tr>
+    </table>
+
+  </div>
+
+  <div id="flowlet-popup-outputs" class="flowlet-popup-tab-content">
+    <!-- {{#if model.outputs.length}} -->
+    <table style="width:100%;">
+      <tr>
+        <td style="height:214px;padding:0;">
+          <table style="width:100%;">
+            <tbody>
+              <!-- {{#each model.outputs}} -->
+              <tr>
+              <td class="flowlet-blue">
+                <!-- {{view C.Embed.Chart grid="true" entityType="Queue" title="Outbound Events per Second" width="305" entityIdBinding=id metrics="/reactor/apps/{app}/flows/{flow}/flowlets/{flowlet}/process.events.out" classNames="sparkline-flowlet-box"}} -->
+              </td>
+              <td class="flowlet-popup-input">
+              QUEUE_OUT
+              </td>
+              <td>
+                <a ui-sref="flowsDetail.status.flowletId({ appId: flowlet.app, flow: flowlet.flow, flowletId: entry.name})" ng-repeat="entry in next">
+                  <div class="flowlet-popup-input-contrib">{{entry.name}}</div>
+                </a>
+              </td>
+              </tr>
+              <!-- {{/each}} -->
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <!-- {{else}} -->
+      <div class="flowlet-popup-empty">
+      There are no outputs on this flowlet.
+      </div>
+    <!-- {{/if}} -->
+  </div>
+</div>  

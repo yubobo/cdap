@@ -2272,7 +2272,11 @@ textarea {
 	font-family:monospace;
 }
 
-#flowletdummy {
+.flowviz-renderer {
+	margin: 0px auto;
+}
+
+.flowletdummy {
 	width: 104px;
 	height: 104px;
 	background: url('../../img/empty-dag.png');
@@ -2440,6 +2444,7 @@ textarea {
 .config-modal {
 	top: 60px;
 	padding-top: 16px;
+
 }
 
 .config-editor {
@@ -2459,23 +2464,12 @@ textarea {
 	border-radius: 2px;
 }
 
-.single-config {
-	border-bottom: 1px solid #f0f0f0;
-}
-
-.config-editor-key input, .config-editor-value input {
-	display: none;
-}
-
-.config-editor-key.editing .config-text, .config-editor-value.editing .config-text {
-	display: none;
-}
-
 .config-editor-key.editing input, .config-editor-value.editing input {
 	display: block;
 	font-size: 12px;
 	padding-left: 7px !important;
 	font-family: sans-serif;
+	border: 1px solid #DDDDDD;
 }
 
 .config-editor-key {
@@ -2782,6 +2776,7 @@ ol {
 	top: 37px;
 	left: -50px;
 	width: 52px;
+	color: white;
 }
 
 .window-icon {
@@ -2806,6 +2801,7 @@ ol {
 	line-height: 12px;
 	word-wrap: break-word;
 	font-family: "Gotham";
+	color: white;
 }
 
 .window-title span {
@@ -3512,12 +3508,6 @@ div.tooltip {
 
 .btn-group.start-stop-btns .btn.stop:hover {
 	background: white;
-}
-
-path {
-	stroke: steelblue;
-	stroke-width: 2;
-	fill: none;
 }
 
 .btn-custom {

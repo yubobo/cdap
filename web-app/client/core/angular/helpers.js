@@ -107,142 +107,6 @@ define(function () {
         return [value, 'B'];
       },
 
-      /**
-       * HAX. Transforms v2 json to v1 format for rendering flow status diagram.
-       * TODO: Change frontend to accept v2 json and remove this code.
-       */
-      transformFlowModel: function (model) {
-        var obj = {};
-        var meta = {};
-        if (model.hasOwnProperty('name')) {
-          meta.name = model.name;
-        }
-        obj.meta = meta;
-        var datasets = [];
-        var flowlets = [];
-        var flowletStreams = {};
-        if (model.hasOwnProperty('flowlets')) {
-          for (var descriptor in model.flowlets) {
-            var flowlet = model.flowlets[descriptor];
-            flowlets.push({
-              name: flowlet.flowletSpec.name,
-              classname: flowlet.flowletSpec.className,
-              instances: flowlet.instances
-            });
-
-            if (!flowlet.datasets.length) {
-              datasets.push.apply(datasets, flowlet.datasets);
-            }
-
-            var strObj = {};
-            if (!$.isEmptyObject(flowlet.inputs)) {
-              strObj['queue_IN'] = {
-                second: 'IN'
-              };
-            }
-            if (!$.isEmptyObject(flowlet.outputs)) {
-              strObj['queue_OUT'] = {
-                second: 'OUT'
-              };
-            }
-            flowletStreams[descriptor] = strObj;
-          }
-        }
-        obj.flowletStreams = flowletStreams;
-        obj.datasets = datasets;
-        obj.flowlets = flowlets;
-        var connections = [];
-        var flowStreams = [];
-        model.connections = this.validateConnections(model.connections);
-        for (var i = 0; i < model.connections.length; i++) {
-          var cn = model.connections[i];
-          var from = {};
-          var to = {};
-          from[cn.sourceType.toLowerCase()] = cn.sourceName;
-          to['flowlet'] = cn.targetName;
-          connections.push({
-            from: from,
-            to: to
-          });
-          if (cn.sourceType === 'STREAM') {
-            flowStreams.push({
-              name: cn.sourceName
-            });
-          }
-        }
-        obj.flowStreams = flowStreams;
-
-        obj.connections = connections;
-        obj.name = obj.meta.name;
-        return obj;
-      },
-
-      /**
-       * Validates connections and inserts a dummy node where there are overlapping flowlets.
-       * @param  {Array} connections JSON received from server.
-       * @return {Array} Validated connections with dummy nodes appropriately inserted.
-       */
-      validateConnections: function (connections) {
-        var assignments = {};
-
-        // First determine which order the nodes are rendered visually. This is based on a horizontal
-        // column format.
-        for (var i = 0, len = connections.length; i < len; i++) {
-          var conn = connections[i];
-          if (!(conn['sourceName'] in assignments)) {
-            assignments[conn['sourceName']] = 0;
-          }
-          if (!(conn['targetName'] in assignments)) {
-            assignments[conn['targetName']] = assignments[conn['sourceName']] + 1;
-          }
-        }
-
-        // Determine if there are any anomolies i.e. nodelevel3 --> nodelevel3 and increment to
-        // nodelevel3 --> nodelevel4.
-        for (var i = 0, len = connections.length; i < len; i++) {
-          var conn = connections[i];
-          if (assignments[conn['sourceName']] === assignments[conn['targetName']]) {
-            assignments[conn['targetName']]++;
-          }
-        }
-
-        // Set up dummy connections if anomoly is detected and there is distance between connecting
-        // nodes. This changes connection nodelevel2 --> nodelevel5 to:
-        // nodelevel2 --> dummylevel3, dummylevel3 --> dummylevel4, dummylevel4 --> nodelevel5.
-        var newConnections = [];
-        for (var i = 0, len = connections.length; i < len; i++) {
-          var source = connections[i].sourceName;
-          var destination = connections[i].targetName;
-          if (assignments[destination] - assignments[source] > 1) {
-            var diff = assignments[destination] - assignments[source];
-            for (var z = 0; z < diff; z++) {
-              if (z === 0) {
-                newConnections.push({
-                  sourceType: connections[i].sourceType,
-                  sourceName: connections[i].sourceName,
-                  targetName: 'dummy'
-                });
-              } else if (z > 0 && z !== diff -1) {
-                newConnections.push({
-                  sourceType: 'FLOWLET',
-                  sourceName: 'dummy',
-                  targetName: 'dummy'
-                });
-              } else if (z === diff - 1) {
-                newConnections.push({
-                  sourceType: 'FLOWLET',
-                  sourceName: 'dummy',
-                  targetName: connections[i].targetName
-                });
-              }
-            }
-          } else {
-            newConnections.push(connections[i]);
-          }
-        }
-        return newConnections;
-      },
-
       interrupt: function () {
 
         $('#drop-border').addClass('hidden');
@@ -359,12 +223,79 @@ define(function () {
             return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.name
               + '/process.events.processed?start=now-60s&end=now-0s&count=60');
 
+          case 'flowlet':
+            return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
+              + '/flowlets/' + entity.name 
+              + '/process.events.processed?start=now-60s&end=now-0s&count=60');
+
+          case 'stream':
+            return ('/reactor/streams/' + entity.name 
+              + '/collect.events?start=now-60s&end=now-0s&count=60');
+
           default:
             break;
         }
       },
 
+      getEventsProcessedAggregateEndpoint: function (entity, optionalAppName) {
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
+        switch(entity.type.toLowerCase()) {
+          case 'flowlet':
+            return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
+              + '/flowlets/' + entity.name + '/process.events.processed?aggregate=true');
 
+          case 'stream':
+            return ('/reactor/streams/' + entity.name + '/collect.events?aggregate=true');
+
+          default:
+            break;
+        }
+      },
+
+      getInboundEventsEndpoint: function (entity, optionalAppName) {
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
+        switch(entity.type.toLowerCase()) {
+          case 'flowlet':
+            return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
+              + '/flowlets/' + entity.name + '/process.events.processed?aggregate=true');
+
+          case 'stream':
+            return ('/reactor/streams/' + entity.name + '/collect.events?aggregate=true');
+
+          default:
+            break;
+        }
+      },
+
+      getOutboundEventsEndpoint: function (entity, optionalAppName) {
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
+        switch(entity.type.toLowerCase()) {
+          case 'flowlet':
+            return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
+              + '/flowlets/' + entity.name + '/process.events.processed?aggregate=true');
+
+          case 'stream':
+            return ('/reactor/streams/' + entity.name + '/collect.events?aggregate=true');
+
+          default:
+            break;
+        }
+      },
+
+      getErrorsEndpoint: function (entity, optionalAppName) {
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
+        switch(entity.type.toLowerCase()) {
+          case 'flowlet':
+            return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
+              + '/flowlets/' + entity.name + '/process.events.processed?aggregate=true');
+
+          case 'stream':
+            return ('/reactor/streams/' + entity.name + '/collect.events?aggregate=true');
+
+          default:
+            break;
+        }
+      },
 
       getRequestRateEndpoint: function (entity, optionalAppName) {
         optionalAppName = optionalAppName ? optionalAppName : entity.app;

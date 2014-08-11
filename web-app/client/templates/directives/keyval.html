@@ -1,0 +1,24 @@
+<div class="config-editor clearfix">
+  <div class="single-config" ng-repeat="(key,val) in data">
+    <div class="config-editor-key editing">
+      <input ng-model="key" />
+    </div>
+    <div class="config-editor-value editing">
+      <input ng-model="val" />
+    </div>
+    <div class="config-editor-remove" ng-click="remove(key)">&times;</div>
+    <div style="clear:both"></div>
+  </div>
+  <div class="single-config">
+    <div class="config-editor-new">
+      <div class="config-editor-key editing" style="border: 0;">
+        <input ng-model="addingKey" />
+      </div>
+      <div class="config-editor-value editing" style="border: 0;">
+        <input ng-model="addingVal" />
+      </div>
+      <div class="config-editor-add" ng-click="add()">&#43;</div>
+    </div>
+    <div style="clear:both"></div>
+  </div>
+</div>

@@ -10,7 +10,8 @@ requirejs.config({
     'angular-sanitize': ['/third_party/angular-1.2.16/angular-sanitize'],
     'jQuery': ['/third_party/jquery-1.11.1.min'],
     'bootstrap': ['/third_party/bootstrap/bootstrap.min'],
-    'helpers': ['/core/angular/helpers']
+    'helpers': ['/core/angular/helpers'],
+    'plumber': ['/core/angular/plumber']
   },
   shim: {
     'angular': {
@@ -46,6 +47,8 @@ require([
   './controllers/streams',
   './controllers/app',
   './controllers/flow',
+  './controllers/flowconfig',
+  './controllers/flowflowlet',
   './controllers/mapreduce',
   './controllers/workflow',
   './controllers/stream',
@@ -83,6 +86,9 @@ require([
   './directives/bytes-counter',
   './directives/startstopconfig',
   './directives/flowviz',
+  './directives/dagnode',
+  './directives/keyval',
+  './directives/flowletviz',
 
   // Filters.
   './filters',
@@ -105,6 +111,8 @@ require([
     StreamsCtrl,
     AppCtrl,
     FlowCtrl,
+    FlowConfigCtrl,
+    FlowFlowletCtrl,
     MapreduceCtrl,
     WorkflowCtrl,
     StreamCtrl,
@@ -141,7 +149,10 @@ require([
     Status,
     BytesCounter,
     StartStopConfig,
-    FlowViz) {
+    FlowViz,
+    DagNode,
+    KeyVal,
+    FlowletViz) {
 
     // Instantiate Reactor webapp module.
     var reactorWebapp = angular.module('ReactorWebapp', [
@@ -228,7 +239,13 @@ require([
             .state('flowsDetail.status.config', {
               url: '/config',
               templateUrl: '/templates/partials/flowstatusconfig.html',
-              controller: FlowCtrl
+              controller: FlowConfigCtrl
+            })
+
+            .state('flowsDetail.status.flowletId', {
+              url: '/flowlet/:flowletId',
+              templateUrl: '/templates/partials/flowflowlet.html',
+              controller: FlowFlowletCtrl
             })
 
           .state('flowsDetail.log', {
@@ -313,15 +330,15 @@ require([
 
 
     // Declare models and other values here. These values can change in the future.
-    reactorWebapp.value('App', AppModel);
-    reactorWebapp.value('Flow', FlowModel);
-    reactorWebapp.value('Stream', StreamModel);
-    reactorWebapp.value('Dataset', DatasetModel);
-    reactorWebapp.value('Procedure', ProcedureModel);
-    reactorWebapp.value('Flowlet', FlowletModel);
-    reactorWebapp.value('Service', ServiceModel);
-    reactorWebapp.value('Mapreduce', MapreduceModel);
-    reactorWebapp.value('Workflow', WorkflowModel);
+    reactorWebapp.factory('App', AppModel);
+    reactorWebapp.factory('Stream', StreamModel);
+    reactorWebapp.factory('Dataset', DatasetModel);
+    reactorWebapp.factory('Procedure', ProcedureModel);
+    reactorWebapp.factory('Flowlet', FlowletModel);
+    reactorWebapp.factory('Flow', FlowModel);
+    reactorWebapp.factory('Service', ServiceModel);
+    reactorWebapp.factory('Mapreduce', MapreduceModel);
+    reactorWebapp.factory('Workflow', WorkflowModel);
 
 
     // Backend connections and all ajax calls are made in the factory handlers.
@@ -356,6 +373,8 @@ require([
     .controller('StreamsCtrl', StreamsCtrl)
     .controller('AppCtrl', AppCtrl)
     .controller('FlowCtrl', FlowCtrl)
+    .controller('FlowConfigCtrl', FlowConfigCtrl)
+    .controller('FlowFlowletCtrl', FlowFlowletCtrl)
     .controller('FlowCtrl', MapreduceCtrl)
     .controller('FlowCtrl', WorkflowCtrl)
     .controller('StreamCtrl', StreamCtrl)
@@ -376,6 +395,9 @@ require([
     reactorWebapp.directive('bytesCounter', BytesCounter);
     reactorWebapp.directive('startstopconfig', StartStopConfig);
     reactorWebapp.directive('flowviz', FlowViz);
+    reactorWebapp.directive('dagnode', DagNode);
+    reactorWebapp.directive('keyval', KeyVal);
+    reactorWebapp.directive('flowletviz', FlowletViz);
 
 
     // Manually bootstrap the application since we are bootstrapping with requirejs.

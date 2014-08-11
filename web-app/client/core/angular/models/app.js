@@ -2,38 +2,39 @@
 
 define(['helpers'], function (helpers) {
 
-  var Model = Class.create({
-    initialize: function (data) {
-      this.id = '';
-      this.name = '';
-      this.description = '';
-      this.streams = [];
-      this.flows  = [];
-      this.datasets = [];
-      this.procedures = [];
-      this.type = 'App';
-      this.finalMetric = 0;
+  var Model = [function () {
+    return Class.create({
+      initialize: function (data) {
+        this.id = '';
+        this.name = '';
+        this.description = '';
+        this.streams = [];
+        this.flows  = [];
+        this.datasets = [];
+        this.procedures = [];
+        this.type = 'App';
 
-      if (data && Object.prototype.toString.call(data) === '[object Object]') {
-        for (var index in data) {
-          this[index] = data[index];
+        if (data && Object.prototype.toString.call(data) === '[object Object]') {
+          for (var index in data) {
+            this[index] = data[index];
+          }
         }
+      },
+
+      getBusynessEndpoint: function () {
+        return helpers.getBusynessEndpoint(this);
+      },
+
+      getEventsProcessedEndpoint: function () {
+        return helpers.getEventsProcessedEndpoint(this);
+      },
+
+      getStorageEndpoint: function () {
+        return helpers.getStorageEndpoint(this);
       }
-    },
 
-    getBusynessEndpoint: function () {
-      return helpers.getBusynessEndpoint(this);
-    },
-
-    getEventsProcessedEndpoint: function () {
-      return helpers.getEventsProcessedEndpoint(this);
-    },
-
-    getStorageEndpoint: function () {
-      return helpers.getStorageEndpoint(this);
-    }
-
-  });
+    });
+  }];
 
   return Model;
 

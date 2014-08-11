@@ -21,10 +21,20 @@ define(['helpers'], function (helpers) {
 
     dataFactory.getFlowByAppNameAndId(appId, flowId, function (flow) {
       $scope.flow = flow;
+      dataFactory.getFlowConfigByAppNameAndId(appId, flowId, function (config) {
+        $scope.flow.config = config;
+      });
     });
 
 
-    $scope.$on("$destroy", function(){
+    $scope.closeConfig = function () {
+      $state.go('flowsDetail.status', {
+        appId: $scope.flow.app,
+        flowId: $scope.flow.name
+      });
+    };
+
+    $scope.$on("$destroy", function() {
       if (typeof intervals !== 'undefined') {
         helpers.cancelAllIntervals($interval, intervals);
       }

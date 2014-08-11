@@ -61,7 +61,7 @@ define([], function () {
    * @param {jsPlumb endpoint} to ending point.
    * @param {string} opt_color optional color of color.
    */
-  Plumber.prototype.connect = function(from, to, opt_color) {
+  Plumber.prototype.connect = function(from, to, opt_color, opt_connector) {
     
     var self = this;
     var color = opt_color || DEFAULT_COLOR;
@@ -73,7 +73,7 @@ define([], function () {
       source: sourceEndPoint,
       target: targetEndPoint,
       paintStyle: {strokeStyle: color, lineWidth: 2, dashstyle:"1"},
-      connector: this.connector
+      connector: opt_connector || this.connector
     })
   };
 
