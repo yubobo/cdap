@@ -371,7 +371,8 @@ require([
 
     // Assing controller a name so that they can be used in templates eg:
     // <div ng-include="<template location>" ng-controller="OverviewCtrl"></div>
-    reactorWebapp.controller('BaseCtrl', BaseCtrl)
+    reactorWebapp.controller('BaseCtrl', BaseCtrl);
+    reactorWebapp.controller('AppsCtrl', AppsCtrl)
 
     // Directives.
     reactorWebapp.directive('sparkline', Sparkline);

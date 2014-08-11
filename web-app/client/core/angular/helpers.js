@@ -141,36 +141,24 @@ define(function () {
       },
 
       getStatusEndpoint: function (entity, optionalAppName) {
-
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
         switch(entity.type.toLowerCase()) {
 
           case 'flow':
-            if (optionalAppName) {
-              return '/apps/' + optionalAppName + '/flows/' + entity.name + '/status';
-            }
-            return '/apps/' + entity.app + '/flows/' + entity.name + '/status';
-
+            return '/apps/' + optionalAppName + '/flows/' + entity.name + '/status';
+            break;
 
           case 'mapreduce':
-            if (optionalAppName) {
-              return '/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/status';
-            }
-            return '/apps/' + entity.app + '/mapreduce/' + entity.name + '/status';
-
+            return '/apps/' + optionalAppName + '/mapreduce/' + entity.name + '/status';
+            break;
 
           case 'workflow':
-            if (optionalAppName) {
-              return '/apps/' + optionalAppName + '/workflows/' + entity.name + '/status';
-            }
-            return '/apps/' + entity.app + '/workflows/' + entity.name + '/status';
-
+            return '/apps/' + optionalAppName + '/workflows/' + entity.name + '/status';
+            break;
 
           case 'procedure':
-            if (optionalAppName) {
-              return '/apps/' + optionalAppName + '/procedures/' + entity.name + '/status';
-            }
-            return '/apps/' + entity.app + '/procedures/' + entity.name + '/status';
-
+            return '/apps/' + optionalAppName + '/procedures/' + entity.name + '/status';
+            break;
 
           default:
             break;

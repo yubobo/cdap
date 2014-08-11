@@ -19,7 +19,7 @@
           <button class="btn btn-blank btn-icon" {{bindAttr disabled="model.startStopDisabled"}} {{action "config"}}><span class="btn-config"></span></button>
 
         </div>
-        <div class="flow-state"><strong><status status-endpoint="{{procedure.getStatusEndpoint()}}"></status></strong></div>
+        <div class="flow-state"><strong><status status-endpoint="{{procedure.getStatusEndpoint()}}" displaytype="large"></status></strong></div>
       </div>
 
       <div class="info-box sparkline-box">

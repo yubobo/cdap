@@ -183,7 +183,10 @@ define(['helpers'], function (helpers) {
        * @param  {Function} callback that consumes a Procedure object.
        */
       getProcedureByAppNameAndId: function (appId, procedureId, callback) {
-        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/procedures/' + procedureId).success(function (data) {
+        $http.get(
+          REACTOR_ENDPOINT + '/apps/' + appId + '/procedures/' + procedureId)
+          .success(function (data) {
+          data.app = appId;
           var procedure = new Procedure(data);
           callback(procedure);
         });
@@ -334,6 +337,7 @@ define(['helpers'], function (helpers) {
         $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/procedures').success(function (data) {
           var entries = [];
           data.map(function (entry) {
+            entry.app = appId;
             entries.push(new Procedure(entry));
           });
           callback(entries);

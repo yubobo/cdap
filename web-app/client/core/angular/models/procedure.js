@@ -6,6 +6,7 @@ define(['helpers'], function (helpers) {
      return Class.create({
       initialize: function (data) {
         this.type = 'Procedure';
+        this.app = '';
         this.id = '';
         this.name = '';
         this.description = '';
