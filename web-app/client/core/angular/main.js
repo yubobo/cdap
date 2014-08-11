@@ -58,6 +58,8 @@ require([
   './controllers/workflow',
   './controllers/stream',
   './controllers/procedure',
+  './controllers/procedureconfig',
+  './controllers/procedurehistory',
   './controllers/dataset',
   './controllers/loading',
   './controllers/login',
@@ -124,6 +126,8 @@ require([
     WorkflowCtrl,
     StreamCtrl,
     ProcedureCtrl,
+    ProcedureConfigCtrl,
+    ProcedureHistoryCtrl,
     DatasetCtrl,
     LoadingCtrl,
     LoginCtrl,
@@ -285,6 +289,30 @@ require([
           templateUrl: '/templates/procedure.html',
           controller: ProcedureCtrl
         })
+
+          .state('proceduresDetail.status', {
+            url: '/status',
+            templateUrl: '/templates/partials/procedurestatus.html',
+            controller: ProcedureCtrl
+          })
+
+            .state('proceduresDetail.status.config', {
+              url: '/config',
+              templateUrl: '/templates/partials/procedurestatusconfig.html',
+              controller: ProcedureConfigCtrl
+            })
+
+          .state('proceduresDetail.log', {
+            url: '/log',
+            templateUrl: '/templates/partials/procedurelog.html',
+            controller: ProcedureCtrl
+          })
+
+          .state('proceduresDetail.history', {
+            url: '/history',
+            templateUrl: '/templates/partials/procedurehistory.html',
+            controller: ProcedureHistoryCtrl
+          })
 
         .state('mapreducesDetail', {
           url: '/apps/:appId/mapreduces/:mapreduceId',

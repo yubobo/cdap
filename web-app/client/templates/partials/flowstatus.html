@@ -7,7 +7,7 @@
     </div>
     <div class="sparkline-box-title">Processing Rate</div>
     <div class="sparkline-box-container">
-      <sparkline data="processingRate"></sparkline>
+      <sparkline metric-endpoint="{{flow.getEventsProcessedEndpoint()}}"></sparkline>
     </div>
   </div>
   <div class="info-box sparkline-box app-busyness">
@@ -16,7 +16,7 @@
     </div>
     <div class="sparkline-box-title">Busyness</div>
     <div class="sparkline-box-container">
-      <sparkline data="busyness"></sparkline>
+      <sparkline metric-endpoint="{{flow.getBusynessEndpoint()}}"></sparkline>
     </div>
 
   </div>

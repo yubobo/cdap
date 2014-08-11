@@ -278,6 +278,28 @@ define(['helpers'], function (helpers) {
       },
 
       /**
+       * Gets a procedure config using its app name and id.
+       */
+      getProcedureConfigByAppNameAndId: function (appId, procedureId, callback) {
+        $http.get(
+          REACTOR_ENDPOINT + '/apps/' + appId + '/procedures/' + procedureId + '/runtimeargs')
+        .success(function (data) {
+          callback(data);
+        });
+      },
+
+      /**
+       * Gets procedure history using its app name and id.
+       */
+      getProcedureHistoryByAppNameAndId: function (appId, procedureId, callback) {
+        $http.get(
+          REACTOR_ENDPOINT + '/apps/' + appId + '/procedures/' + procedureId + '/history')
+        .success(function (data) {
+          callback(data);
+        });
+      },
+
+      /**
        * Gets map reduce jobs for an app.
        * @param  {Function} callback that consumes list of Mapreduce objects.
        */

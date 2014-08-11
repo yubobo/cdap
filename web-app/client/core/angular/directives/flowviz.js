@@ -107,6 +107,7 @@ define(['helpers', 'plumber'], function (helpers, Plumber) {
       link: function (scope, elm, attrs) {
         // An array of arrays for maintaining columns. Each entry in inner array must be a flow
         // element.
+
         scope.cols = [];
 
         scope.$watch('data', function (newVal, oldVal) {
