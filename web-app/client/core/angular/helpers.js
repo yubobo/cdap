@@ -195,7 +195,7 @@ define(function () {
       },
 
       getBusynessEndpoint: function (entity, optionalAppName) {
-
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
         switch(entity.type.toLowerCase()) {
 
           case 'app':
@@ -205,6 +205,10 @@ define(function () {
           case 'flow':
             return ('/reactor/apps/' + entity.app + '/flows/' + entity.name
               + '/process.busyness?start=now-60s&end=now-0s&count=60');
+
+          case 'flowlet':
+            return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow + '/flowlets/' +
+              entity.name + '/process.busyness?start=now-60s&end=now-0s&count=60');
 
           default:
             break;
@@ -257,11 +261,7 @@ define(function () {
         switch(entity.type.toLowerCase()) {
           case 'flowlet':
             return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
-              + '/flowlets/' + entity.name + '/process.events.processed?aggregate=true');
-
-          case 'stream':
-            return ('/reactor/streams/' + entity.name + '/collect.events?aggregate=true');
-
+              + '/flowlets/' + entity.name + '/process.events.in?start=now-60s&end=now-0s&count=60');
           default:
             break;
         }
@@ -272,11 +272,8 @@ define(function () {
         switch(entity.type.toLowerCase()) {
           case 'flowlet':
             return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
-              + '/flowlets/' + entity.name + '/process.events.processed?aggregate=true');
-
-          case 'stream':
-            return ('/reactor/streams/' + entity.name + '/collect.events?aggregate=true');
-
+              + '/flowlets/' + entity.name 
+              + '/process.events.out?start=now-60s&end=now-0s&count=60');
           default:
             break;
         }
@@ -287,15 +284,24 @@ define(function () {
         switch(entity.type.toLowerCase()) {
           case 'flowlet':
             return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
-              + '/flowlets/' + entity.name + '/process.events.processed?aggregate=true');
-
-          case 'stream':
-            return ('/reactor/streams/' + entity.name + '/collect.events?aggregate=true');
+              + '/flowlets/' + entity.name + '/process.errors?start=now-60s&end=now-0s&count=60');
 
           default:
             break;
         }
       },
+
+      getDataOpertionsEndpoint: function (entity, optionalAppName) {
+        optionalAppName = optionalAppName ? optionalAppName : entity.app;
+        switch(entity.type.toLowerCase()) {
+          case 'flowlet':
+            return ('/reactor/apps/' + optionalAppName + '/flows/' + entity.flow
+              + '/flowlets/' + entity.name + '/store.ops?start=now-60s&end=now-0s&count=60');
+
+          default:
+            break;
+        }
+      },      
 
       getRequestRateEndpoint: function (entity, optionalAppName) {
         optionalAppName = optionalAppName ? optionalAppName : entity.app;

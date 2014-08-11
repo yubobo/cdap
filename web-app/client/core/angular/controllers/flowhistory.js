@@ -20,23 +20,15 @@ define(['helpers'], function (helpers) {
     var appId = $stateParams.appId;
     var flowId = $stateParams.flowId;
 
-
     $scope.$watch('$parent.flow', function (newVal, oldVal) {
       if (angular.isObject(newVal) && Object.keys(newVal).length) {
         $scope.flow = $scope.$parent.flow;
-        dataFactory.getFlowConfigByAppNameAndId(appId, flowId, function (config) {
-          $scope.flow.config = config;
+        dataFactory.getFlowHistoryByAppNameAndId(appId, flowId, function (history) {
+          $scope.flow.history = history;
         });
       }
     });
-
-
-    $scope.closeConfig = function () {
-      $state.go('flowsDetail.status', {
-        appId: $scope.flow.app,
-        flowId: $scope.flow.name
-      });
-    };
+  
 
     $scope.$on("$destroy", function() {
       if (typeof intervals !== 'undefined') {

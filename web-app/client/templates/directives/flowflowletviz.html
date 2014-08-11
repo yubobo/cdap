@@ -1,0 +1,95 @@
+  <div id="flowlet-popup-tabs">
+    <div id="flowlet-popup-inputs-tab" class="flowlet-popup-tab tab-selected"><a ng-click="toggleTab('inputs')">Inputs</a></div>
+    <div id="flowlet-popup-processed-tab" class="flowlet-popup-tab"><a ng-click="toggleTab('processed')">Processed</a></div>
+    <div id="flowlet-popup-outputs-tab" class="flowlet-popup-tab"><a ng-click="toggleTab('outputs')">Outputs</a></div>
+  </div>
+  <div id="flowlet-popup-tab-content">
+
+    <div id="flowlet-popup-inputs" class="flowlet-popup-tab-content">
+
+      <table style="width:100%;" ng-if="previous.length">
+        <tr>
+          <td style="height:214px;padding:0;">
+            <table style="width: 100%;">
+              <tbody>
+              <tr>
+                <td>
+                  <a ui-sref="flowsDetail.status.flowletId({ appId: flowlet.app, flow: flowlet.flow, flowletId: entry.name})" ng-repeat="entry in previous">
+                    <div class="flowlet-popup-input-contrib">{{entry.name}}</div>
+                  </a>
+                </td>
+                <td class="flowlet-popup-input">
+                  QUEUE_IN
+                </td>
+                <td class="flowlet-blue">
+                  <delay-counter metric-endpoint="{{flowlet.getInboundEventsEndpoint()}}"></delay-counter>
+                  <sparkline metric-endpoint="{{flowlet.getInboundEventsEndpoint()}}"></sparkline>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <div class="flowlet-popup-empty" ng-if="!previous.length">
+      There are no inputs on this flowlet.
+      </div>
+
+  </div>
+
+  <div id="flowlet-popup-processed" class="flowlet-popup-tab-content">
+
+    <table style="width: 100%">
+      <tr>
+        <td class="flowlet-blue">
+          <delay-counter metric-endpoint="{{flowlet.getEventsProcessedEndpoint()}}"></delay-counter>
+          <sparkline metric-endpoint="{{flowlet.getEventsProcessedEndpoint()}}"></sparkline>
+        </td>
+        <td class="flowlet-blue">
+          <delay-counter metric-endpoint="{{flowlet.getDataOpertionsEndpoint()}}"></delay-counter>
+          <sparkline metric-endpoint="{{flowlet.getDataOpertionsEndpoint()}}"></sparkline>
+        </td>
+      </tr>
+      <tr>
+        <td class="flowlet-blue">
+          <delay-counter metric-endpoint="{{flowlet.getBusynessEndpoint()}}"></delay-counter>
+          <sparkline metric-endpoint="{{flowlet.getBusynessEndpoint()}}"></sparkline>
+        </td>
+        <td class="flowlet-blue">
+          <delay-counter metric-endpoint="{{flowlet.getErrorsEndpoint()}}"></delay-counter>
+          <sparkline metric-endpoint="{{flowlet.getErrorsEndpoint()}}"></sparkline>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+
+  <div id="flowlet-popup-outputs" class="flowlet-popup-tab-content">
+    <table style="width:100%;" ng-if="next.length">
+      <tr>
+        <td style="height:214px;padding:0;">
+          <table style="width:100%;">
+            <tbody>
+              <tr>
+              <td class="flowlet-blue">
+                <delay-counter metric-endpoint="{{flowlet.getOutboundEventsEndpoint()}}"></delay-counter>
+                <sparkline metric-endpoint="{{flowlet.getOutboundEventsEndpoint()}}"></sparkline>   
+              </td>
+              <td class="flowlet-popup-input">
+              QUEUE_OUT
+              </td>
+              <td>
+                <a ui-sref="flowsDetail.status.flowletId({ appId: flowlet.app, flow: flowlet.flow, flowletId: entry.name})" ng-repeat="entry in next">
+                  <div class="flowlet-popup-input-contrib">{{entry.name}}</div>
+                </a>
+              </td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </table>
+      <div class="flowlet-popup-empty" ng-if="!next.length">
+      There are no outputs on this flowlet.
+      </div>
+  </div>
+</div>  

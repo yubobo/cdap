@@ -23,6 +23,10 @@ define(['helpers'], function (helpers) {
         return helpers.getEventsProcessedEndpoint(this);
       },
 
+      getEventsProcessedAggregateEndpoint: function () {
+        return helpers.getEventsProcessedAggregateEndpoint(this);
+      },
+
       getArrivalRateEndpoint: function () {
         return helpers.getArrivalRateEndpoint(this);
       },

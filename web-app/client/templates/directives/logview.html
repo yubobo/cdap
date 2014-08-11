@@ -1,0 +1,13 @@
+<div id="panels">
+  <div class="panel" style="padding: 10px;">
+    <ul class="nav nav-tabs">
+      <li ng-class="{'active': logView.logMetrics.ALL.active}"><a ng-click="showLogsByType('ALL')">ALL({{logView.logMetrics.ALL.count}})</a></li>
+      <li ng-class="{'active': logView.logMetrics.INFO.active}"><a ng-click="showLogsByType('INFO')">INFO({{logView.logMetrics.INFO.count}})</a></li>
+      <li ng-class="{'active': logView.logMetrics.WARN.active}"><a ng-click="showLogsByType('WARN')">WARN({{logView.logMetrics.WARN.count}})</a></li>
+      <li ng-class="{'active': logView.logMetrics.ERROR.active}"><a ng-click="showLogsByType('ERROR')">ERROR({{logView.logMetrics.ERROR.count}})</a></li>
+      <li ng-class="{'active': logView.logMetrics.DEBUG.active}"><a ng-click="showLogsByType('DEBUG')">DEBUG({{logView.logMetrics.DEBUG.count}})</a></li>
+      <li ng-class="{'active': logView.logMetrics.OTHER.active}"><a ng-click="showLogsByType('OTHER')">OTHER({{logView.logMetrics.OTHER.count}})</a></li>
+    </ul>
+    <pre id="logView" class="well query-response"></pre>
+  </div>
+</div>

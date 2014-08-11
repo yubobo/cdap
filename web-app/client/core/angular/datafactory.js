@@ -264,6 +264,17 @@ define(['helpers'], function (helpers) {
       },
 
       /**
+       * Gets a flow history using its app name and id.
+       */
+      getFlowHistoryByAppNameAndId: function (appId, flowId, callback) {
+        $http.get(
+          REACTOR_ENDPOINT + '/apps/' + appId + '/flows/' + flowId + '/history')
+        .success(function (data) {
+          callback(data);
+        });
+      },
+
+      /**
        * Gets map reduce jobs for an app.
        * @param  {Function} callback that consumes list of Mapreduce objects.
        */
@@ -327,11 +338,30 @@ define(['helpers'], function (helpers) {
           });
           callback(entries);
         });
+      },
+
+      /**
+       * Gets next flow logs from offsett based on app name and id.
+       */
+      getFlowLogsNextByAppNameAndId: function (appId, flowId, queryStr, callback) {
+        var url = REACTOR_ENDPOINT + '/apps/' + appId + '/flows/' + flowId + '/logs/next?';
+        url += queryStr;
+        $http.get(url).success(function (data) {
+          callback(data);
+        });  
+      },
+
+      /**
+       * Gets previous flow logs from offsett based on app name and id.
+       */
+      getFlowLogsPrevByAppNameAndId: function (appId, flowId, queryStr, callback) {
+        var url = REACTOR_ENDPOINT + '/apps/' + appId + '/flows/' + flowId + '/logs/prev?';
+        url += queryStr;
+        $http.get(url).success(function (data) {
+          callback(data);
+        });  
       }
-
-
     };
-
 
   }];
 

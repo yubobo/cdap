@@ -1,4 +1,3 @@
-
 'use strict';
 
 define(['helpers'], function (helpers) {
@@ -9,16 +8,23 @@ define(['helpers'], function (helpers) {
     return {
 
       restrict: 'AE',
-      templateUrl: '/templates/directives/flowletviz.html',
+      templateUrl: function (elem, attrs) {
+        var url = '/templates/directives/flowflowletviz.html';
+        if (attrs.hasOwnProperty('type')) {
+          if (attrs.type.toLowerCase() === 'stream') {
+            url = '/templates/directives/flowstreamviz.html';
+          }
+        }
+        return url;
+      },
       link: function (scope, elm, attrs) {
 
-        scope.$watch('flowlet', function (newVal, oldval) {
-
-          if(newVal && angular.isObject(newVal) && Object.keys(newVal).length) {
-            console.log(newVal);
-          }
-
-        });
+        scope.toggleTab = function (tabName) {
+          jQuery('.flowlet-popup-tab-content').hide();
+          jQuery('#flowlet-popup-' + tabName).show();
+          jQuery('.flowlet-popup-tab').removeClass('tab-selected');
+          jQuery('#flowlet-popup-' + tabName + '-tab').addClass('tab-selected');
+        };
 
 
         scope.$on('$destroy', function() {

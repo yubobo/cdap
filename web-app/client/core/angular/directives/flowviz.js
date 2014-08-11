@@ -117,6 +117,13 @@ define(['helpers', 'plumber'], function (helpers, Plumber) {
           }
         });
 
+        scope.openFlowlet = function (flowlet) {
+          $state.go('flowsDetail.status.flowletId', {
+            appId: flowlet.app,
+            flow: flowlet.flow,
+            flowletId: flowlet.name
+          });
+        };
       
         scope.$on('$destroy', function() {
           if (typeof ival !== 'undefined') {

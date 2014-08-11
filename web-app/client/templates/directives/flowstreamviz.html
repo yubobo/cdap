@@ -1,0 +1,29 @@
+<table class="table" class="popup-stream-table">
+  <thead>
+  <th style="width: 100px;text-align: center;">Storage</th>
+  <th style="width: 100px;text-align: center;">Events</th>
+  <th style="width: 295px;">Events per Second</th>
+  </thead>
+  <tbody>
+  <tr>
+  <td class="app-list-count">
+    <bytes-counter metric-endpoint="{{flowlet.getStorageEndpoint()}}"></bytes-counter>
+    <br /><span>{{model.storageUnits}}</span></td>
+  <td class="app-list-count">
+    <bytes-counter metric-endpoint="{{flowlet.getEventsProcessedAggregateEndpoint()}}"></bytes-counter>
+    <br /><span>Events</span></td>
+  <td style="padding-right: 0;max-width:295px;">
+    <delay-counter metric-endpoint="{{flowlet.getArrivalRateEndpoint()}}"></delay-counter>
+    <sparkline metric-endpoint="{{flowlet.getArrivalRateEndpoint()}}"></sparkline>
+  </td>
+  </tr>
+  </tbody>
+</table>
+
+<div class="popup-inject-wrapper">
+  <textarea id="flow-injector-input" placeholder="Events injected here will be consumed by all attached programs."></textarea>
+  <button class="btn btn-blank" style="float: right;" {{action "inject" on="click"}}>Inject</button>
+  <span class="sparkline-box-title">
+    <input type="checkbox"> Inject by pressing Enter
+  </span>
+</div>

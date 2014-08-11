@@ -1,10 +1,7 @@
 <div class="flowviz-renderer">
   <div class="column" ng-repeat="col in visualizer.cols">
     <div id="{{'flowlet' + entry.name}}" class="window" ng-class="{'source': entry.type==='Stream', 'window-{{visualizer.maxNodes - col.length}}': $first}" ng-repeat="entry in col">
-      <a ui-sref="flowsDetail.status.flowletId({ appId: entry.app, flow: entry.flow, flowletId: entry.name})">
-        <dagnode element="{{entry}}" metric-endpoint="{{entry.getEventsProcessedAggregateEndpoint()}}"></dagnode>
-      </a>
-    </div>
+      <dagnode element="{{entry}}" metric-endpoint="{{entry.getEventsProcessedAggregateEndpoint()}}" ng-click="openFlowlet(entry)"></dagnode>
   </div>
   <div style="clear: both"></div>
 </div>

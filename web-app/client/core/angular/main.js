@@ -11,7 +11,8 @@ requirejs.config({
     'jQuery': ['/third_party/jquery-1.11.1.min'],
     'bootstrap': ['/third_party/bootstrap/bootstrap.min'],
     'helpers': ['/core/angular/helpers'],
-    'plumber': ['/core/angular/plumber']
+    'plumber': ['/core/angular/plumber'],
+    'timeago': ['/third_party/jquery.timeago'],
   },
   shim: {
     'angular': {
@@ -25,6 +26,9 @@ requirejs.config({
       exports : 'angular'
     },
     'bootstrap': {
+      deps: ['jQuery']
+    },
+    'timeago': {
       deps: ['jQuery']
     }
   }
@@ -49,6 +53,7 @@ require([
   './controllers/flow',
   './controllers/flowconfig',
   './controllers/flowflowlet',
+  './controllers/flowhistory',
   './controllers/mapreduce',
   './controllers/workflow',
   './controllers/stream',
@@ -89,6 +94,7 @@ require([
   './directives/dagnode',
   './directives/keyval',
   './directives/flowletviz',
+  './directives/logview',
 
   // Filters.
   './filters',
@@ -113,6 +119,7 @@ require([
     FlowCtrl,
     FlowConfigCtrl,
     FlowFlowletCtrl,
+    FlowHistoryCtrl,
     MapreduceCtrl,
     WorkflowCtrl,
     StreamCtrl,
@@ -152,7 +159,8 @@ require([
     FlowViz,
     DagNode,
     KeyVal,
-    FlowletViz) {
+    FlowletViz,
+    LogView) {
 
     // Instantiate Reactor webapp module.
     var reactorWebapp = angular.module('ReactorWebapp', [
@@ -257,7 +265,7 @@ require([
           .state('flowsDetail.history', {
             url: '/history',
             templateUrl: '/templates/partials/flowhistory.html',
-            controller: FlowCtrl
+            controller: FlowHistoryCtrl
           })
 
         .state('streamsDetail', {
@@ -361,32 +369,9 @@ require([
     .constant('DEFAULT_DISPLAY_TIME', 1000);
 
 
-    // Assing controllers a name so that they can be used in templates eg:
+    // Assing controller a name so that they can be used in templates eg:
     // <div ng-include="<template location>" ng-controller="OverviewCtrl"></div>
     reactorWebapp.controller('BaseCtrl', BaseCtrl)
-    .controller('OverviewCtrl', OverviewCtrl)
-    .controller('ResourcesCtrl', ResourcesCtrl)
-    .controller('AppsCtrl', AppsCtrl)
-    .controller('FlowsCtrl', FlowsCtrl)
-    .controller('DatasetsCtrl', DatasetsCtrl)
-    .controller('ProceduresCtrl', ProceduresCtrl)
-    .controller('StreamsCtrl', StreamsCtrl)
-    .controller('AppCtrl', AppCtrl)
-    .controller('FlowCtrl', FlowCtrl)
-    .controller('FlowConfigCtrl', FlowConfigCtrl)
-    .controller('FlowFlowletCtrl', FlowFlowletCtrl)
-    .controller('FlowCtrl', MapreduceCtrl)
-    .controller('FlowCtrl', WorkflowCtrl)
-    .controller('StreamCtrl', StreamCtrl)
-    .controller('ProcedureCtrl', ProcedureCtrl)
-    .controller('DatasetCtrl', DatasetCtrl)
-    .controller('LoadingCtrl', LoadingCtrl)
-    .controller('LoginCtrl', LoginCtrl)
-    .controller('PageNotFoundCtrl', PageNotFoundCtrl)
-    .controller('ConnectionErrorCtrl', ConnectionErrorCtrl)
-    .controller('AnalyzeCtrl', AnalyzeCtrl)
-    .controller('ServicesCtrl', ServicesCtrl)
-    .controller('ServiceCtrl', ServiceCtrl);
 
     // Directives.
     reactorWebapp.directive('sparkline', Sparkline);
@@ -398,6 +383,7 @@ require([
     reactorWebapp.directive('dagnode', DagNode);
     reactorWebapp.directive('keyval', KeyVal);
     reactorWebapp.directive('flowletviz', FlowletViz);
+    reactorWebapp.directive('logview', LogView);
 
 
     // Manually bootstrap the application since we are bootstrapping with requirejs.

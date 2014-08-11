@@ -2,8 +2,7 @@
   <div id="informer"></div>
   <div class="panel">
     <div id="object-list">
-      {{#if runs.length}}
-        <table class="table table-condensed">
+        <table class="table table-condensed" ng-if="flow.history.length">
         <thead>
           <tr><th style="width: 300px;">Started</th>
           <th>Ended</th>
@@ -11,28 +10,24 @@
           </tr>
         </thead>
         <tbody>
-        {{#each runs}}
-          <tr class="run-list" {{action "loadRun" runid}}>
-            <td>{{started}}<div class="flow-run-date"> {{startDate}} </div></td>
-            <td>{{ended}} <div class="flow-run-date"> {{endDate}}</div></td>
-            <td>{{detail}}</td>
+          <tr class="run-list" ng-repeat="item in flow.history">
+            <td>{{item.start|started}}<div class="flow-run-date"> {{item.start|startDate}} </div></td>
+            <td>{{item.end|ended}} <div class="flow-run-date"> {{item.end|endDate}}</div></td>
+            <td>{{item.status|detail}}</td>
           </tr>
-        {{/each}}
         </tbody>
         </table>
-      {{else}}
-        <div class="object-list-empty">
+        <div class="object-list-empty" ng-if="!flow.history.length">
         <div class="object-list-empty-content">
         <div>No History.</div>
         <span>This Flow has not completed a run yet.</span>
         </div>
         </div>
-      {{/if}}
     </div>
   </div>
   <div class="panel">
     <div id="flowviz-container" class="flowviz-fade">
-      {{view C.Embed.Visualizer viewName="visualizer"}}
+      <flowviz data="flow"></flowviz>
     </div>
   </div>
 </div>

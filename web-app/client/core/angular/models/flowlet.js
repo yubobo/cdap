@@ -24,10 +24,14 @@ define(['helpers'], function (helpers) {
 
       getEventsProcessedAggregateEndpoint: function () {
         return helpers.getEventsProcessedAggregateEndpoint(this);
-      }
+      },
 
       getEventsProcessedEndpoint: function () {
         return helpers.getEventsProcessedEndpoint(this); 
+      },
+
+      getDataOpertionsEndpoint: function () {
+        return helpers.getDataOpertionsEndpoint(this); 
       },
 
       getInboundEventsEndpoint: function () {

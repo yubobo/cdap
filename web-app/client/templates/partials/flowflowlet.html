@@ -4,7 +4,7 @@
     <div class="popup-body">
       <div class="popup-close" ng-click="closeConfig()">×</div>
 
-      <div class="btn-group pull-right" style="margin-top: 4px;">
+      <div class="btn-group pull-right" style="margin-top: 4px;" ng-if="flowlet.type.toLowerCase() === 'flowlet'">
         <button class="btn btn-blank" {{action "addOneInstance" on="click"}}>+</button>
         <button class="btn btn-blank" {{action "removeOneInstance" on="click"}}>-</button>
         <!-- {{#if C.isLocal}} -->
@@ -14,12 +14,13 @@
         <!-- {{/if}} -->
       </div>
 
-      <div class="popup-icon"></div>
+      <div class="popup-icon" ng-if="flowlet.type.toLowerCase() === 'flowlet'"></div>
+      <div class="popup-icon-stream" ng-if="flowlet.type.toLowerCase() === 'stream'"></div>
 
       <h1 class="popup-title"> {{flowlet.name}}</h1>
 
-      <flowletviz flowlet="flowlet"></flowletviz>
-
+      <flowletviz type="flowlet" ng-if="flowlet.type.toLowerCase() === 'flowlet'"></flowletviz>
+      <flowletviz type="stream" ng-if="flowlet.type.toLowerCase() === 'stream'"></flowletviz>
     </div>
   </div>
 </div>
