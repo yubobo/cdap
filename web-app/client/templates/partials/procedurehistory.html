@@ -1,0 +1,28 @@
+<div id="panels">
+  <div id="informer"></div>
+  <div class="panel">
+    <div id="object-list">
+        <table class="table table-condensed" ng-if="procedure.history.length">
+        <thead>
+          <tr><th style="width: 300px;">Started</th>
+          <th>Ended</th>
+          <th style="width:250px;">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="run-list" ng-repeat="item in procedure.history">
+            <td>{{item.start|started}}<div class="flow-run-date"> {{item.start|startDate}} </div></td>
+            <td>{{item.end|ended}} <div class="flow-run-date"> {{item.end|endDate}}</div></td>
+            <td>{{item.status|detail}}</td>
+          </tr>
+        </tbody>
+        </table>
+        <div class="object-list-empty" ng-if="!procedure.history.length">
+        <div class="object-list-empty-content">
+        <div>No History.</div>
+        <span>This Procedure has not completed a run yet.</span>
+        </div>
+        </div>
+    </div>
+  </div>
+</div>

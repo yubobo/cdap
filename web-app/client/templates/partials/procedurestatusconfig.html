@@ -1,0 +1,27 @@
+<div class="popup-modal config-modal">
+  <div class="popup-container">
+    <div class="popup-body">
+      <div class="popup-close" ng-click="closeConfig()">×</div>
+      <h2>Runtime Configuration</h2>
+
+      <keyval data="procedure.config"></keyval>
+
+
+    </div>
+      <div class="modal-footer">
+        <button {{action close}} class="btn btn-blank">Cancel</button>
+        <button {{action clear}} style="margin-right: 5px;" class="btn btn-blank">Clear</button>
+<!--         {{#if runnable}}
+          {{#if model.running}} -->
+            <button {{action save}} class="btn btn-blank">Save and Close</button>
+            <button {{action saveAndRestart}} class="btn btn-blank">Save and Restart</button>
+          <!-- {{else}} -->
+            <button {{action runOnce}} class="btn btn-blank">Run Once</button>
+            <button {{action saveAndRun}} class="btn btn-blank">Save and Run</button>
+          <!-- {{/if}}
+        {{else}} -->
+        <button {{action save}} class="btn btn-blank">Save and Close</button>
+        <!-- {{/if}} -->
+      </div>
+  </div>
+</div>

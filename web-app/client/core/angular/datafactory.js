@@ -218,11 +218,11 @@ define(['helpers'], function (helpers) {
       },
 
       /**
-       * Gets a stream by app name and id. Depends on the Stream model.
+       * Gets a stream by id. Depends on the Stream model.
        * @param  {Function} callback that consumes a Stream object.
        */
-      getStreamByAppNameAndId: function (appId, streamId, callback) {
-        $http.get(REACTOR_ENDPOINT + '/apps/' + appId + '/streams/' + streamId).success(function (data) {
+      getStreamById: function (streamId, callback) {
+        $http.get(REACTOR_ENDPOINT + '/streams/' + streamId).success(function (data) {
           var stream = new Stream(data);
           callback(stream);
         });

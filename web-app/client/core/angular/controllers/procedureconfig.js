@@ -32,7 +32,7 @@ define(['helpers'], function (helpers) {
 
 
     $scope.closeConfig = function () {
-      $state.go('procedureDetail.status', {
+      $state.go('proceduresDetail.status', {
         appId: $scope.procedure.app,
         procedureId: $scope.procedure.name
       });
