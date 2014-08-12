@@ -2,18 +2,23 @@
   <startstopconfig entity="procedure"></startstopconfig>
   <div class="info-box sparkline-box">
 
-    <div class="sparkline-box-value" style="display: block;">0<br><span>EPS</span></div>
+    <div class="sparkline-box-value" style="display: block;">
+      <delay-counter metric-endpoint="{{procedure.getRequestRateEndpoint()}}"></delay-counter>
+      <br><span>EPS</span></div>
     <div class="sparkline-box-title">Successful</div>
     <div class="sparkline-box-container">
-      <sparkline data="successfulEps"></sparkline>
+      
+      <sparkline data="{{procedure.getRequestRateEndpoint()}}"></sparkline>
     </div>
   </div>
   <div class="info-box sparkline-box">
-    <!--{{view C.Embed.Chart title="Failed" metrics="/reactor/apps/{parent}/procedures/{id}/query.failures"}}-->
-    <div class="sparkline-box-value" style="display: block;">0<br><span>EPS</span></div>
+    <div class="sparkline-box-value" style="display: block;">
+      <delay-counter metric-endpoint="{{procedure.getErrorRateEndpoint()}}"></delay-counter>
+      <br><span>EPS</span></div>
     <div class="sparkline-box-title">Failed</div>
     <div class="sparkline-box-container">
-      <sparkline data="failedEps"></sparkline>
+      
+      <sparkline data="{{procedure.getErrorRateEndpoint()}}"></sparkline>
     </div>
   </div>
 </div>
@@ -45,19 +50,17 @@
       <tbody>
       <tr>
         <td>
-            <textarea id="method-name"></textarea>
-            <!--{{view C.Embed.TextField valueBinding="controllers.Procedure.requestMethod" id="method-name"}}-->
+            <input id="method-name" />
         </td>
         <td>
             <textarea id="flow-injector-input"></textarea>
             <br />
-          <!--{{view C.Embed.Injector valueBinding="controllers.Procedure.requestParams"}}--><br />
-          <!--{{#if model.running}}-->
-            <div ng-if="procedure.running">
+            <br />
+            <div ng-if="status.toLowerCase() === 'running'">
                 <button id="execute-button" {{action "submit"}} class="btn btn-blank">Execute</button>
             </div>
 
-            <div ng-if="!procedure.running">
+            <div ng-if="status.toLowerCase() !== 'running'">
                 <button disabled="disabled" class="btn btn-blank">Click "Start" Above</button>
             </div>
 
@@ -70,7 +73,7 @@
 
   <div class="panel" style="padding: 10px;">
     <textarea class="well query-response"></textarea>
-    <!--{{view Ember.TextArea valueBinding="responseBody" classNames="well query-response"}}-->
   </div>
 
 </div>
+<div ui-view></div>

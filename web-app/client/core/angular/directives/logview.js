@@ -363,6 +363,7 @@ define(['helpers'], function (helpers) {
 
 
         scope.$on('$destroy', function() {
+          scope.logView.unload();
         });
       }
     }

@@ -10,7 +10,7 @@ define(['helpers'], function (helpers) {
       throw "Route not loaded properly.";
     }
     /**
-     * @type {Procedure}
+     * @type {Flow}
      */
     $scope.procedure = {};
 
@@ -20,15 +20,15 @@ define(['helpers'], function (helpers) {
     var appId = $stateParams.appId;
     var procedureId = $stateParams.procedureId;
 
-
     $scope.$watch('$parent.procedure', function (newVal, oldVal) {
       if (angular.isObject(newVal) && Object.keys(newVal).length) {
         $scope.procedure = $scope.$parent.procedure;
-        dataFactory.getProcedureConfigByAppNameAndId(appId, procedureId, function (config) {
-          $scope.procedure.config = config;
+        dataFactory.getProcedureHistoryByAppNameAndId(appId, procedureId, function (history) {
+          $scope.procedure.history = history;
         });
       }
     });
+  
 
     $scope.$on("$destroy", function() {
       if (typeof intervals !== 'undefined') {

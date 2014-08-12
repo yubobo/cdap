@@ -1,19 +1,46 @@
 <div id="title">
-  <h1><span>Stream</span>{{stream.name}}</h1>
+  <h1><span>Stream</span> {{stream.name}}</h1>
 </div>
 <div id="info">
-  <div class="info-box sparkline-box"></div>
+  <div class="info-box sparkline-box">
+    <div class="sparkline-box-value" style="display: block;">
+      <delay-counter metric-endpoint="{{stream.getArrivalRateEndpoint()}}"></delay-counter>
+      <br>
+      <span>EPS</span>
+    </div><div class="sparkline-box-title">Arrival Rate</div>
+    <div class="sparkline-box-container">
+      <sparkline metric-endpoint="{{stream.getArrivalRateEndpoint()}}"></sparkline>
+    </div>
+  </div>
+
   <div class="info-box" style="text-align: center;">
     <div class="sparkline-box-title">Storage</div>
-    <div class="sparkline-box-value" style="padding-left: 0;padding-top:19px;width: 100px;"><br /><span></span></div>
+    <div class="sparkline-box-value" style="padding-left: 0;padding-top:19px;width: 100px;"><br />
+      <span><bytes-counter metric-endpoint="{{stream.getStorageEndpoint()}}"></bytes-counter></span>
+    </div>
   </div>
   <div class="info-box" style="text-align: center;">
     <div class="sparkline-box-title">Events</div>
-    <div class="sparkline-box-value" style="padding-top:19px;padding-left:0;width:100px;"><br /><span>Events</span></div>
+    <div class="sparkline-box-value" style="padding-top:19px;padding-left:0;width:100px;"><br />
+      <bytes-counter metric-endpoint="{{stream.getEventsProcessedAggregateEndpoint()}}" countertype="non-bytes"></bytes-counter>
+      <span>Events</span></div>
   </div>
 </div>
 <div id="panels">
-  <div class="panel">
-  <div class="panel-head"><div class="panel-title">Attached Flows</div></div>
+  <div class="panel" id="process-panel">
+
+    <div class="panel-head">
+      <div class="panel-title">Attached Flows</div>
+    </div>
+    <table class="table" ng-if="flows.length">
+      <thead ng-include src="'/templates/partials/flows-table-header.html'" include-replace></thead>
+      <tbody>
+          <tr ng-repeat="flow in flows" ng-include="'/templates/partials/flows-list.html'">
+          </tr>
+      </tbody>
+    </table>
+    <div ng-if="!flows.length">
+      <div ng-include src="'/templates/partials/no-flows.html'" include-replace></div>
+    </div>
   </div>
 </div>

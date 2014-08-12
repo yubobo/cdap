@@ -8,6 +8,8 @@ define(['helpers'], function (helpers) {
 
     var inlineTemplate = ('<div class="sparkline-list-value" style="display: block;">{{curValue}}{{curLabel}}'
       + '<div class="inline-display" ng-if="percent">%</div></div>');
+    var nonbytesTemplate = ('<div class="sparkline-list-value" style="display: block;">{{curValue}}'
+      + '<div class="inline-display" ng-if="percent">%</div></div>');
     var dashTemplate = ('<span class="value-number">{{curValue}}{{curLabel}}</span>'
       + '<span ng-if="percent">%</span></div>');
 
@@ -16,6 +18,9 @@ define(['helpers'], function (helpers) {
       switch(type) {
         case 'dash':
           template = dashTemplate;
+          break;
+        case 'non-bytes':
+          template = nonbytesTemplate;
           break;
         default:
          template = inlineTemplate;

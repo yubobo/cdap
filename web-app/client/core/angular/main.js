@@ -180,6 +180,8 @@ require([
       $urlRouterProvider.otherwise('/pagenotfound');
       $urlRouterProvider.when('', '/overview');
       $urlRouterProvider.when('/apps/:appId/flows/:flowId', '/apps/:appId/flows/:flowId/status');
+      $urlRouterProvider.when(
+        '/apps/:appId/procedures/:procedureId', '/apps/:appId/procedures/:procedureId/status');
 
       $stateProvider
         .state('overview', {
@@ -273,13 +275,13 @@ require([
           })
 
         .state('streamsDetail', {
-          url: '/apps/:appId/streams/:streamId',
+          url: '/streams/:streamId',
           templateUrl: '/templates/stream.html',
           controller: StreamCtrl
         })
 
         .state('datasetsDetail', {
-          url: '/apps/:appId/datasets/:datasetId',
+          url: '/datasets/:datasetId',
           templateUrl: '/templates/dataset.html',
           controller: DatasetCtrl
         })

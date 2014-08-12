@@ -1,32 +1,19 @@
 'use strict';
 
-define(function () {
+define(['helpers'], function (helpers) {
 
   /* Items */
 
-  var Ctrl = ['$scope', '$interval', '$stateParams', 'dataFactory', 'statusService', 'metricsService', 'helpers', 'POLLING_INTERVAL',
-    function($scope, $interval, $stateParams, dataFactory, statusService, metricsService, helpers, POLLING_INTERVAL) {
+  var Ctrl = ['$scope', '$interval', '$stateParams', 'dataFactory', 'statusService', 'metricsService', 'POLLING_INTERVAL',
+    function($scope, $interval, $stateParams, dataFactory, statusService, metricsService, POLLING_INTERVAL) {
 
-    var statusEndpoints = [];
-    var intervals = [];
-
-    var appId = $stateParams.appId;
     var streamId = $stateParams.streamId;
 
-    $scope.arrivalRate = [];
-
-    var metrics = [
-      { name: 'arrivalRate',
-        endpoint: '/reactor/apps/' + appId + '/procedures/' + procedureId + '/query.requests?start=now-60s&end=now-0s&count=60' }
-    ];
-
-    dataFactory.getStreamByAppNameAndId(appId, streamId, function (stream) {
+    dataFactory.getStreamById(streamId, function (stream) {
       $scope.stream = stream;
-    });
-
-
-    dataFactory.getFlowsByStream(streamId, function(flow) {
-      $scope.flow = flow;
+      dataFactory.getFlowsByStream(streamId, function (flows) {
+        $scope.flows = flows;
+      });
     });
 
     $scope.$on("$destroy", function(){
