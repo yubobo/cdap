@@ -10,13 +10,16 @@
     </div>
   </div>
   <div class="info-box sparkline-box app-processed">
-    <div class="sparkline-box-title">Processed</div>
+    <div>
+    
     <div class="sparkline-box-value" style="display: block;">
       <delay-counter metric-endpoint="{{app.getEventsProcessedEndpoint()}}"></delay-counter>
       <span>EPS</span>
     </div>
+    <div class="sparkline-box-title">Processed</div>
     <div class="sparkline-box-container">
       <sparkline metric-endpoint="{{app.getEventsProcessedEndpoint()}}"></sparkline>
+    </div>
     </div>
   </div>
   <div class="info-box sparkline-box app-busyness">

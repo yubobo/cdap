@@ -840,7 +840,7 @@ h1 span:first-child {
 }
 
 .panel table th, .popup-container table th {
-	padding: 10px;
+	padding: 10px !important;
 	text-transform: uppercase;
 	font-size: 12px;
 }
@@ -935,11 +935,11 @@ h1 span:first-child {
 	width: 90px;
 	border-left: 0;
 	background-color: white;
-	color: #555;
+	color: #2451A4;
 	font-weight: 400;
 	overflow: hidden;
 	font-size: 24px;
-	padding-left: 5px;
+	padding-left: 10px;
 	text-align: left;
 	line-height: normal !important;
 }
@@ -1761,7 +1761,7 @@ a.brand {
 }
 
 .panel td {
-	padding: 10px;
+	padding: 10px !important;
 }
 
 .label {
@@ -1793,10 +1793,10 @@ a strong {
 	background: #fff;
 	text-shadow: none;
 	color: #969CB4;
-	letter-spacing: 0.1em;
+	letter-spacing: 0;
 	line-height: 21px;
 	font-size: 14px !important;
-	padding: 7px 10px;
+	padding: 7px 10px !important;
 	border-radius: 2px;
 	opacity: 1;
 	border: 1px solid #D3D2D7;
@@ -1897,6 +1897,10 @@ a strong {
 
 .btn-group.pull-right > .btn {
 	float: right;
+}
+
+.btn-group > .btn {
+	padding: 4px 12px;
 }
 
 .btn-group > .btn:first-child {
@@ -3614,15 +3618,15 @@ div.tooltip {
 }
 
 .query-status.FINISHED {
-	color: #3EC173; 
+	color: #3EC173;
 }
 
 .query-status.RUNNING {
-	color: #2D65C9; 
+	color: #2D65C9;
 }
 
 .query-status.ERROR {
-	color: #E34F6A; 
+	color: #E34F6A;
 }
 
 .query-table-entry {
@@ -3669,7 +3673,7 @@ div.tooltip {
  */
 .panel table td, .panel table th {
   border-top: 0;
-  border-bottom: 1px solid #EEE;
+  border-bottom: 1px solid #EEE !important;
 }
 /**
  *User Services stop-start
@@ -3688,3 +3692,4 @@ div.tooltip {
 	width: 20px;
 	height: 20px
 }
+
