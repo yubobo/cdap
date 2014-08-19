@@ -34,6 +34,8 @@ import co.cask.cdap.proto.DatasetModuleMeta;
 import co.cask.cdap.proto.DatasetTypeMeta;
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
@@ -65,6 +67,8 @@ public class RemoteDatasetFramework implements DatasetFramework {
   private final DatasetServiceClient client;
   private final DatasetDefinitionRegistryFactory registryFactory;
   private final DatasetTypeClassLoaderFactory typeLoader;
+  private final Cache<String, ClassLoader> classLoaderCache;
+  private final DatasetDefinitionRegistry registry;
 
   @Inject
   public RemoteDatasetFramework(DiscoveryServiceClient discoveryClient,
@@ -74,6 +78,8 @@ public class RemoteDatasetFramework implements DatasetFramework {
     this.client = new DatasetServiceClient(discoveryClient);
     this.registryFactory = registryFactory;
     this.typeLoader = typeLoader;
+    this.classLoaderCache = CacheBuilder.newBuilder().build();
+    registry = registryFactory.create();
   }
 
   @Override
@@ -253,17 +259,12 @@ public class RemoteDatasetFramework implements DatasetFramework {
     }
   }
 
-  // can be used directly if DatasetTypeMeta is known, like in create dataset by dataset ops executor service
-  public <T extends DatasetType> T getDatasetType(DatasetTypeMeta implementationInfo,
-                                                  ClassLoader classLoader)
-    throws DatasetManagementException {
-
-
+  public ClassLoader getDatasetTypeClassLoader(DatasetTypeMeta implementationInfo,
+                                               ClassLoader classLoader) {
     if (classLoader == null) {
       classLoader = Objects.firstNonNull(Thread.currentThread().getContextClassLoader(), getClass().getClassLoader());
     }
 
-    DatasetDefinitionRegistry registry = registryFactory.create();
     List<DatasetModuleMeta> modulesToLoad = implementationInfo.getModules();
     for (DatasetModuleMeta moduleMeta : modulesToLoad) {
       // adding dataset module jar to classloader
@@ -292,14 +293,27 @@ public class RemoteDatasetFramework implements DatasetFramework {
 
       try {
         DatasetModule module = DatasetModules.getDatasetModule(moduleClass);
-        module.register(registry);
+        module.register(this.registry);
       } catch (Exception e) {
         LOG.error("Was not able to load dataset module class {} while trying to load type {}",
                   moduleMeta.getClassName(), implementationInfo, e);
         throw Throwables.propagate(e);
       }
     }
+    return classLoader;
+  }
 
-    return (T) new DatasetType(registry.get(implementationInfo.getName()), classLoader);
+  // can be used directly if DatasetTypeMeta is known, like in create dataset by dataset ops executor service
+  public <T extends DatasetType> T getDatasetType(DatasetTypeMeta implementationInfo,
+                                                  ClassLoader classLoader)
+    throws DatasetManagementException {
+    ClassLoader cacheClassLoader = classLoaderCache.getIfPresent(implementationInfo.getName());
+    if (cacheClassLoader == null) {
+      cacheClassLoader = getDatasetTypeClassLoader(implementationInfo, classLoader);
+      classLoaderCache.put(implementationInfo.getName(), cacheClassLoader);
+    } else {
+      LOG.info("Located {} in cache", implementationInfo.getName());
+    }
+    return (T) new DatasetType(this.registry.get(implementationInfo.getName()), cacheClassLoader);
   }
 }
