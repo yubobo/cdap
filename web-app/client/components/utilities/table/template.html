@@ -1,0 +1,18 @@
+<table class="table table-striped table-bordered">
+	<thead>
+		<tr>
+			<th ng-repeat="(key, val) in data[0]" ng-click="setSortBy({ col: key })" ng-class="{ 'sortable':true, 'active' : sortBy == key }">
+				<span ng-show="sortBy == key && sortOrder == 'asc'">&#8595;</span> 
+				<span ng-show="sortBy == key && sortOrder == 'desc'">&#8593;</span>
+				{{ key }}
+			</th>
+		</tr>
+	</thead>
+	<tbody>
+	    <tr ng-repeat="row in data">
+	        <td ng-repeat="(key,val) in row">
+	            {{val}}
+	        </td>
+	    </tr>
+	</tbody>
+</table>

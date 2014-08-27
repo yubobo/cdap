@@ -1,0 +1,92 @@
+{
+  "settings": {
+    "api_call_interval": {
+      "pretty":"API call interval (millis)",
+      "type": "number",
+      "min": 500,
+      "max": 60000,
+      "default": 5000
+    },
+    "api_failed_request_limit": {
+      "pretty": "API failed request limit",
+      "type": "number",
+      "min":1,
+      "max":10,
+      "default": 5
+    },
+    "max_tabs_per_project": {
+      "pretty": "Max tabs per project",
+      "type": "number",
+      "min":1,
+      "max":5,
+      "default": 5
+    }
+  },
+  
+  "components": {
+    "charting": {
+      "name": "Charting",
+      "module":"dashboard.components.charting",
+      "moduleFile":"/components/charting/module.js",
+      "components": [
+        {
+          "id":"dashboardPieChart",
+          "name":"Pie Chart",
+          "path":"/components/charting/pie",
+          "requireEndpoint":true
+        },
+        {
+          "id":"dashboardBarChart",
+          "name":"Bar Chart",
+          "path":"/components/charting/bar",
+          "requireEndpoint":true
+        },
+        {
+          "id":"dashboardLineChart",
+          "name":"Line Chart",
+          "path":"/components/charting/line",
+          "requireEndpoint":true
+        }
+      ]
+    },
+    "utilities": {
+      "name": "Utilities",
+      "module":"dashboard.components.utilities",
+      "moduleFile":"/components/utilities/module.js",
+      "components": [
+        {
+          "id":"dashboardTernary",
+          "name":"Ternary",
+          "path":"/components/utilities/ternary",
+          "requireEndpoint":true
+        },
+        {
+          "id":"dashboardProgressBar",
+          "name":"Progress Bar",
+          "path":"/components/utilities/progress-bar",
+          "requireEndpoint":true
+        }
+        ,
+        {
+          "id":"dashboardTable",
+          "name":"Data Table",
+          "path":"/components/utilities/table",
+          "requireEndpoint":true
+        }
+      ]
+    },
+    "custom": {
+      "name": "Custom Components",
+      "module":"dashboard.components.custom",
+      "moduleFile":"/components/custom/module.js",
+      "components": [
+        {
+          "id":"testComponent",
+          "name":"Test Custom Component",
+          "path":"/components/custom/test",
+          "requireEndpoint":false
+        }
+      ]
+    }
+  }
+}

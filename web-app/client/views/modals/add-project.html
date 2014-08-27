@@ -1,0 +1,26 @@
+<div class="modal-header">
+    <h3 class="modal-title">Add New Project</h3>
+</div>
+<div class="modal-body">
+	<div class="alert alert-danger" ng-show="!!addProjectError">{{ addProjectError }}</div>
+    <div class="row">
+		<div class="col-xs-12 form-group">
+	    	<label class="control-label">New Project Name:</label>
+            <input type="text" class="form-control" placeholder="New Project Name" ng-model="newProject.name" enter-input="ok()">
+	    </div>
+    </div>
+    <div class="row">
+    	<div class="col-xs-6 form-group">
+			<label class="control-label">First Tab Name:</label>
+			<input type="text" class="form-control" placeholder="New Tab Name" ng-model="newProject.firstTabName" enter-input="add()">
+    	</div>
+    	<div class="col-xs-6 form-group">
+    		<label class="control-label">Start with this widget row type:</label>
+    		<select class="form-control" ng-model="newProject.firstTabRowFormat" ng-options="item.val as item.label for item in availableRowLayouts"></select>
+    	</div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" ng-click="ok()">OK</button>
+    <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+</div>

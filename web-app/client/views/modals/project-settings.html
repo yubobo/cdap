@@ -1,0 +1,17 @@
+<div class="modal-header">
+    <h3 class="modal-title">Project Settings</h3>
+</div>
+<div class="modal-body">
+	<div class="alert alert-danger" ng-show="!!editProjectError">{{ editProjectError }}</div>
+    <div class="row">
+		<div class="col-xs-12 form-group">
+	    	<label class="control-label">Project name:</label>
+	    	<input type="text" class="form-control" placeholder="Project Name" ng-model="project.name" enter-input="ok()">
+	    </div>
+    </div>
+	
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-danger pull-left" ng-click="deleteProject()">Delete Project</button>
+    <button class="btn btn-primary" ng-click="save()">Done/Close</button>
+</div>

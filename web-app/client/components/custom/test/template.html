@@ -1,0 +1,16 @@
+<div>{{ finalOut }}</div>
+<table role="table" class="table">
+<tr>
+  <th>Type</th>
+  <th>App</th>
+  <th>Id</th>
+  <th>Description</th>
+</tr>
+<tr ng-repeat="procedure in procedures">
+  <td>{{procedure.type}}</td>
+  <td>{{procedure.app}}</td>
+  <td>{{procedure.id}}</td>
+  <td>{{procedure.description}}</td>
+</tr>
+</table>
+<custom></custom>

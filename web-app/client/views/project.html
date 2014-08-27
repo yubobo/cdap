@@ -1,0 +1,65 @@
+<div class="clearfix">
+  <!-- <h2>{{ project.name }}: {{ currentLayout.name }}</h2> -->
+</div>
+<nav class="project-tabs">
+  <div class="pull-right">
+    <a class="btn btn-xs btn-primary" ng-click="showSettings()"><i class="glyphicon glyphicon-cog"></i> Project Settings</a>
+    <a class="btn btn-xs btn-info" ng-click="exportProject()"><i class="glyphicon glyphicon-download"></i> Export Project</a>
+    <a class="btn btn-xs btn-success" ng-click="addWidget()"><i class="glyphicon glyphicon-plus"></i> Add Widget</a>
+    <a class="btn btn-xs btn-danger" ng-click="deleteCurrentTab()" ng-show="project.tabs.length > 1"><i class="glyphicon glyphicon-trash"></i> Delete Current Tab</a>
+  </div>
+  <ul class="tabs nav nav-tabs" role="tablist">
+    <li ng-repeat="tab in project.tabs track by $index" ng-class="{ 'active': tab.id == currentLayout.id }"><a ng-click="setCurrentTab(tab.id)" style="cursor: pointer;">{{tab.name}}</a></li>
+    <li ng-show="project.tabs.length < maxTabs"><a ng-click="addTab()" style="cursor: pointer;"><i class="glyphicon glyphicon-plus"></i> Add Tab</a></li>
+  </ul>  
+</nav>
+
+<div ng-class="{ 'content': true }">
+  <div ng-show="!editingRows">
+    <div ng-repeat="row in currentLayout.layout.rows track by row.id" ng-class="{ 'widget-row': true, 'format-{{row.format}}': true }">
+      <section ui-sortable="sortableWidgetOptions" ng-model="col.widgets" class="widget-container" ng-repeat="col in row.cols track by col.id">
+        <div class="widget panel panel-default" ng-repeat="widget in col.widgets track by widget.id">
+          <div class="panel-heading clearfix">
+            <h3 class="panel-title pull-left" ng-click="editWidgetSettings(widget)" tooltip="Click to edit title" tooltip-placement="top">{{widget.title}}</h3>
+            <div class="pull-right">
+              <span class="glyphicon glyphicon-move widget-move-handle" tooltip="Re-arrange widgets"></span>&nbsp;&nbsp;
+              <span class="glyphicon glyphicon-cog" ng-click="editWidgetSettings(widget)" tooltip="Widget settings"></span>&nbsp;&nbsp;
+              <span class="glyphicon glyphicon-remove widget-delete-icon" ng-click="deleteWidget(col, $index)" tooltip="Delete widget"></span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div component-wrapper="{{ widget.component }}" endpoint="{{ widget.endpoint }}"></div>
+          </div>
+          <div class="panel-footer" ng-show="widget.endpoint != 'http://'">
+            <!-- <div class="form-inline"><strong>Endpoint:</strong> <div editable-text="widget.endpoint"></div> -->
+            <span style="cursor: pointer" ng-click="editWidgetSettings(widget)">{{ widget.endpoint }}</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- row editing version -->
+  <div ng-show="!!editingRows" ui-sortable="sortableRowOptions" ng-model="currentLayout.layout.rows">
+    <div ng-repeat="row in currentLayout.layout.rows track by row.id" ng-class="{ 'widget-row-edit': true, 'row': true }">
+      <div class="col-xs-1">
+        <span class="glyphicon glyphicon-move move-handle" style="cursor: move;" tooltip="Re-order rows" tooltip-placement="right"></span>
+      </div>
+      <div ng-class="{ 'col-xs-10': true, 'widget-row': true, 'format-{{row.format}}': true }">
+        <section ng-model="col.widgets" class="widget-container" ng-repeat="col in row.cols track by col.id">
+          <span class="label label-info" ng-repeat="widget in col.widgets track by widget.id">{{ widget.title }}</span>
+        </section>
+      </div>
+      <div class="col-xs-1">
+        <button class="btn btn-xs btn-danger pull-right" ng-click="deleteRow($index)">Delete row</button>
+      </div>
+    </div>
+  </div>
+  <div class="well clearfix">
+    <div class="pull-left form-inline">Add New Widget Row: <select class="form-control inline-control" ng-model="newRowFormat" ng-options="item.val as item.label for item in availableRowLayouts"></select> <button type="button" class="btn btn-xs btn-success" ng-click="addRow()">Add Row</button>
+    </div>
+    <div class="pull-right">
+      <button ng-class="{ 'btn': true, 'btn-sm': true, 'btn-success': !!editingRows }" ng-click="toggleRowEditingMode()"><span ng-show="!editingRows">Edit Row Layout</span><span ng-show="!!editingRows">Done Editing Rows</span></button>
+    </div>
+  </div>
+</div>

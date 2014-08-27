@@ -1,0 +1,15 @@
+<div class="modal-header">
+    <h3 class="modal-title">Import Project</h3>
+</div>
+<div class="modal-body">
+	<div class="row">
+    	<div class="col-xs-12 form-group">
+			<label class="control-label">Paste your project JSON string below to import it:</label>
+			<textarea class="form-control" rows="20" ng-model="importedProject.json"></textarea>
+    	</div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-success" ng-click="import()">Import</button>
+    <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+</div>

@@ -1,0 +1,4 @@
+/* custom css code for this component */
+div[dashboard-table] {}
+div[dashboard-table] thead tr th { cursor: pointer; }
+div[dashboard-table] thead tr th.active { background-color: #49b1d2; } 
