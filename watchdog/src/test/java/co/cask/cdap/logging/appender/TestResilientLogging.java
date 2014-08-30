@@ -40,9 +40,9 @@ import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.explore.guice.ExploreClientModule;
 import co.cask.cdap.gateway.auth.AuthModule;
 import co.cask.cdap.logging.LoggingConfiguration;
+import co.cask.cdap.logging.appender.file.FileLogAppender;
 import co.cask.cdap.logging.context.FlowletLoggingContext;
 import co.cask.cdap.logging.filter.Filter;
-import co.cask.cdap.logging.guice.LoggingModules;
 import co.cask.cdap.logging.read.LogEvent;
 import co.cask.cdap.logging.read.SingleNodeLogReader;
 import com.continuuity.tephra.TransactionManager;
@@ -119,8 +119,7 @@ public class TestResilientLogging {
       }),
       new AuthModule(),
       new TransactionMetricsModule(),
-      new ExploreClientModule(),
-      new LoggingModules().getInMemoryModules());
+      new ExploreClientModule());
 
     TransactionManager txManager = injector.getInstance(TransactionManager.class);
     txManager.startAndWait();
@@ -137,8 +136,10 @@ public class TestResilientLogging {
 
     cConf.set(LoggingConfiguration.LOG_BASE_DIR, logBaseDir);
     cConf.setInt(LoggingConfiguration.LOG_MAX_FILE_SIZE_BYTES, 20 * 1024);
-    LogAppender appender = injector.getInstance(LogAppender.class);
-    new LogAppenderInitializer(appender).initialize("TestResilientLogging");
+    TransactionSystemClient txClient = injector.getInstance(TransactionSystemClient.class);
+    FileLogAppender fileLogAppender = new FileLogAppender(cConf, dsFramework, txClient, new LocalLocationFactory());
+    LogAppender asyncLogAppender = new AsyncLogAppender(fileLogAppender);
+    new LogAppenderInitializer(asyncLogAppender).initialize("TestResilientLogging");
 
     Logger logger = LoggerFactory.getLogger("TestResilientLogging");
     for (int i = 0; i < 5; ++i) {
@@ -176,7 +177,11 @@ public class TestResilientLogging {
       logger.warn("Test log message " + i + " {} {}", "arg1", "arg2", e2);
     }
 
-    appender.stop();
+    asyncLogAppender.stop();
+    // Wait for all log events to be flushed (Bamboo tests are slow hence, the wait time in stop is not sufficient)
+    while (fileLogAppender.isStarted()) {
+      TimeUnit.MILLISECONDS.sleep(200);
+    }
 
     // Verify - we should have at least 5 events.
     LoggingContext loggingContext = new FlowletLoggingContext("TRL_ACCT_1", "APP_1", "FLOW_1", "");

@@ -52,6 +52,7 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test logging to Avro file.
@@ -82,8 +83,8 @@ public class TestFileLogging {
     txManager.startAndWait();
     txClient = new InMemoryTxSystemClient(txManager);
 
-    LogAppender appender = new AsyncLogAppender(new FileLogAppender(cConf, dsFramework, txClient,
-                                                                         new LocalLocationFactory()));
+    FileLogAppender fileLogAppender = new FileLogAppender(cConf, dsFramework, txClient, new LocalLocationFactory());
+    LogAppender appender = new AsyncLogAppender(fileLogAppender);
     new LogAppenderInitializer(appender).initialize("TestFileLogging");
 
     Logger logger = LoggerFactory.getLogger("TestFileLogging");
@@ -99,6 +100,10 @@ public class TestFileLogging {
     System.out.println(bos.toString());
 
     appender.stop();
+    // Wait for all log events to be flushed (Bamboo tests are slow hence, the wait time in stop is not sufficient)
+    while (fileLogAppender.isStarted()) {
+      TimeUnit.MILLISECONDS.sleep(200);
+    }
   }
 
   @AfterClass
