@@ -16,8 +16,8 @@
 
 package co.cask.cdap.test.app;
 
+import co.cask.cdap.api.annotation.DisableTransaction;
 import co.cask.cdap.api.annotation.Handle;
-import co.cask.cdap.api.annotation.Transactional;
 import co.cask.cdap.api.annotation.UseDataSet;
 import co.cask.cdap.api.app.AbstractApplication;
 import co.cask.cdap.api.common.Bytes;
@@ -98,7 +98,6 @@ public class AppWithServices extends AbstractApplication {
 
       @Path("/write/{key}/{value}/{sleep}")
       @GET
-      @Transactional
       public void handler(HttpServiceRequest request, HttpServiceResponder responder,
                           @PathParam("key") String key, @PathParam("value") String value, @PathParam("sleep") int sleep)
         throws InterruptedException {
@@ -109,7 +108,6 @@ public class AppWithServices extends AbstractApplication {
 
       @Path("/read/{key}")
       @GET
-      @Transactional
       public void readHandler(HttpServiceRequest request, HttpServiceResponder responder,
                               @PathParam("key") String key) {
         String value = Bytes.toString(table.read(key));
@@ -127,6 +125,7 @@ public class AppWithServices extends AbstractApplication {
 
     @Path("/ping2")
     @GET
+    @DisableTransaction
     public void handler(HttpServiceRequest request, HttpServiceResponder responder) {
       responder.sendStatus(200);
     }

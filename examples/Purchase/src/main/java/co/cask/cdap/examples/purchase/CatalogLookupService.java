@@ -16,6 +16,7 @@
 
 package co.cask.cdap.examples.purchase;
 
+import co.cask.cdap.api.annotation.DisableTransaction;
 import co.cask.cdap.api.service.AbstractService;
 import co.cask.cdap.api.service.AbstractServiceWorker;
 import co.cask.cdap.api.service.http.AbstractHttpServiceHandler;
@@ -104,6 +105,7 @@ public class CatalogLookupService extends AbstractService {
 
     @Path("product/{id}/catalog")
     @GET
+    @DisableTransaction
     public void handler(HttpServiceRequest request, HttpServiceResponder responder, @PathParam("id") String id) {
       // send string Catalog-<id> with 200 OK response.
       responder.sendString(200, "Catalog-" + id, Charsets.UTF_8);

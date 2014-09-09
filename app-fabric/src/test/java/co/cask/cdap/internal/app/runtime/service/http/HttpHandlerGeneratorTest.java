@@ -16,6 +16,7 @@
 
 package co.cask.cdap.internal.app.runtime.service.http;
 
+import co.cask.cdap.api.annotation.DisableTransaction;
 import co.cask.cdap.api.data.DataSetInstantiationException;
 import co.cask.cdap.api.service.http.AbstractHttpServiceHandler;
 import co.cask.cdap.api.service.http.HttpServiceContext;
@@ -52,6 +53,7 @@ public class HttpHandlerGeneratorTest {
 
     @GET
     @Path("/handle")
+    @DisableTransaction
     public void process(HttpServiceRequest request, HttpServiceResponder responder) {
       responder.sendString("Hello World");
     }
@@ -67,6 +69,7 @@ public class HttpHandlerGeneratorTest {
 
     @Path("/echo/{name}")
     @POST
+    @DisableTransaction
     public void echo(HttpServiceRequest request, HttpServiceResponder responder, @PathParam("name") String name) {
       responder.sendString(Charsets.UTF_8.decode(request.getContent()).toString() + " " + name);
     }
@@ -77,6 +80,7 @@ public class HttpHandlerGeneratorTest {
 
     @Path("/ping")
     @GET
+    @DisableTransaction
     public void echo(HttpServiceRequest request, HttpServiceResponder responder) {
       responder.sendString("OK");
     }

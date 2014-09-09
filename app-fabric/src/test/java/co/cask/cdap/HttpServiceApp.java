@@ -16,6 +16,7 @@
 
 package co.cask.cdap;
 
+import co.cask.cdap.api.annotation.DisableTransaction;
 import co.cask.cdap.api.annotation.Handle;
 import co.cask.cdap.api.app.AbstractApplication;
 import co.cask.cdap.api.procedure.AbstractProcedure;
@@ -58,8 +59,10 @@ public class HttpServiceApp extends AbstractApplication {
    */
   @Path("/v1")
   public static final class BaseHttpHandler extends AbstractHttpServiceHandler {
+
     @GET
     @Path("/handle")
+    @DisableTransaction
     public void process(HttpRequest request, HttpResponder responder) {
       responder.sendString(HttpResponseStatus.OK, "Hello World");
     }
