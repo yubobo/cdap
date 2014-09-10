@@ -14,14 +14,16 @@
  * the License.
  */
 
-package co.cask.cdap;
+package co.cask.cdap.app;
+
+import co.cask.cdap.Configuration;
 
 import java.util.HashMap;
 
-public class FlowConfiguration implements Configuration {
+public class MapReduceConfiguration implements Configuration {
   private HashMap<String, String> config;
 
-  public FlowConfiguration() {
+  public MapReduceConfiguration() {
     this.config = new HashMap<String, String>();
   }
 

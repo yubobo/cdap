@@ -14,15 +14,17 @@
  * the License.
  */
 
-package co.cask.cdap;
+package co.cask.cdap.app;
+
+import co.cask.cdap.Configuration;
 
 import java.util.HashMap;
 
-public class ProcedureConfiguration implements Configuration {
+public class FlowletConfiguration implements Configuration {
   private HashMap<String, String> config;
 
-  public ProcedureConfiguration() {
-    this.config = new HashMap<String, String>();
+  public FlowletConfiguration() {
+    config = new HashMap<String, String>();
   }
 
   @Override

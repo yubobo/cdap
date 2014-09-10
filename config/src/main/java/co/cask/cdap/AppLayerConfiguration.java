@@ -16,6 +16,12 @@
 
 package co.cask.cdap;
 
+import co.cask.cdap.app.AppConfiguration;
+import co.cask.cdap.app.FlowConfiguration;
+import co.cask.cdap.app.FlowletConfiguration;
+import co.cask.cdap.app.MapReduceConfiguration;
+import co.cask.cdap.app.ProcedureConfiguration;
+
 import java.util.HashMap;
 
 public class AppLayerConfiguration implements Configuration {
