@@ -16,6 +16,9 @@
 
 package co.cask.cdap.internal.app.runtime.service.http;
 
+import com.continuuity.tephra.TransactionAware;
+import com.continuuity.tephra.TransactionContext;
+import com.continuuity.tephra.TransactionFailureException;
 import co.cask.cdap.api.data.DataSetInstantiationException;
 import co.cask.cdap.api.service.http.AbstractHttpServiceHandler;
 import co.cask.cdap.api.service.http.HttpServiceContext;
@@ -27,6 +30,8 @@ import co.cask.http.HttpHandler;
 import co.cask.http.NettyHttpService;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.reflect.TypeToken;
 import org.junit.Assert;
@@ -36,6 +41,7 @@ import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collections;
 import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -141,7 +147,7 @@ public class HttpHandlerGeneratorTest {
     }
   }
 
-  private abstract static class AbstractDelegatorContext<T extends HttpServiceHandler> implements DelegatorContext<T> {
+  private abstract static class AbstractDelegatorContext<T extends HttpServiceHandler> implements DelegatorContext<T>{
 
     private final ThreadLocal<T> threadLocal = new ThreadLocal<T>() {
       @Override
@@ -157,30 +163,63 @@ public class HttpHandlerGeneratorTest {
 
     @Override
     public final HttpServiceContext getServiceContext() {
-      return new HttpServiceContext() {
-        @Override
-        public HttpServiceSpecification getSpecification() {
-          return null;
-        }
-
-        @Override
-        public Map<String, String> getRuntimeArguments() {
-          return null;
-        }
-
-        @Override
-        public <T extends Closeable> T getDataSet(String name) throws DataSetInstantiationException {
-          return null;
-        }
-
-        @Override
-        public <T extends Closeable> T getDataSet(String name, Map<String, String> arguments)
-          throws DataSetInstantiationException {
-          return null;
-        }
-      };
+      return new NoOpHttpServiceContext();
     }
 
     protected abstract T createHandler();
+  }
+
+  public static class NoOpHttpServiceContext implements HttpServiceContext, TransactionalHttpServiceContext {
+
+    @Override
+    public HttpServiceSpecification getSpecification() {
+      return null;
+    }
+
+    @Override
+    public Map<String, String> getRuntimeArguments() {
+      return null;
+    }
+
+    @Override
+    public <T extends Closeable> T getDataSet(String name) throws DataSetInstantiationException {
+      return null;
+    }
+
+    @Override
+    public <T extends Closeable> T getDataSet(String name, Map<String, String> arguments) throws DataSetInstantiationException {
+      return null;
+    }
+
+    @Override
+    public TransactionContext getTransactionContext() {
+      return new TransactionContext(null, ImmutableList.<TransactionAware>of()) {
+
+        @Override
+        public void addTransactionAware(TransactionAware txAware) {
+          return;
+        }
+
+        @Override
+        public void start() throws TransactionFailureException {
+          return;
+        }
+
+        @Override
+        public void finish() throws TransactionFailureException {
+          return;
+        }
+
+        @Override
+        public void abort() throws TransactionFailureException {
+          return;
+        }
+
+        @Override
+        public void abort(TransactionFailureException cause) throws TransactionFailureException {
+          return;
+        }
+      };
+    }
   }
 }
