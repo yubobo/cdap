@@ -700,7 +700,8 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
    */
   @PUT
   @Path("/apps/{app-id}/{runnable-type}/{runnable-id}/runtimeargs")
-  public void saveRunnableRuntimeArgs(HttpRequest request, HttpResponder responder,
+  public void saveRunnableRuntimeArgs(HttpRequest request,
+                                      HttpResponder responder,
                                       @PathParam("app-id") final String appId,
                                       @PathParam("runnable-type") final String runnableType,
                                       @PathParam("runnable-id") final String runnableId) {
@@ -712,7 +713,6 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
 
     String accountId = getAuthenticatedAccountId(request);
     Id.Program id = Id.Program.from(accountId, appId, runnableId);
-
 
     try {
       if (!store.programExists(id, type)) {

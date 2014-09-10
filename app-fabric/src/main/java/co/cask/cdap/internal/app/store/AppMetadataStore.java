@@ -49,6 +49,9 @@ public class AppMetadataStore extends MetadataStoreDataset {
 
   private static final String TYPE_APP_META = "appMeta";
   private static final String TYPE_STREAM = "stream";
+  private static final String TYPE_FLOW = "flow";
+  private static final String TYPE_FLOWLET = "flowlet";
+  private static final String TYPE_PROCEDURE = "procedure";
   private static final String TYPE_RUN_RECORD_STARTED = "runRecordStarted";
   private static final String TYPE_RUN_RECORD_COMPLETED = "runRecordCompleted";
   private static final String TYPE_PROGRAM_ARGS = "programArgs";
@@ -67,6 +70,22 @@ public class AppMetadataStore extends MetadataStoreDataset {
     return GSON.fromJson(Bytes.toString(serialized), classOfT);
   }
 
+  public List<RunRecord> getRunHistory(String accountId, String appId, String programId,
+                                       final long startTime, final long endTime, int limit) {
+    Key prgrKey = new Key.Builder().add(TYPE_RUN_RECORD_COMPLETED, accountId, appId, programId).build();
+    // NOTE: ts is inverted to get latest first
+    Key start = new Key.Builder(prgrKey).add(getInvertedTsKeyPart(endTime)).build();
+    Key stop = new Key.Builder(prgrKey).add(getInvertedTsKeyPart(startTime)).build();
+    return list(start, stop, RunRecord.class, limit);
+  }
+
+  private long getInvertedTsKeyPart(long endTime) {
+    return Long.MAX_VALUE - endTime;
+  }
+
+
+
+  // APPLICATION
   @Nullable
   public ApplicationMeta getApplication(String accountId, String appId) {
     return get(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(), ApplicationMeta.class);
@@ -114,7 +133,22 @@ public class AppMetadataStore extends MetadataStoreDataset {
       writeStream(accountId, stream);
     }
   }
+//
+//  public void writeApplicationArgs(String accountId, String appId, Map<String, String> args) {
+//    write(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(), new ProgramArgs(args));
+//  }
+//
+//  public void deleteApplicationArgs(String accountId, String appId) {
+//    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId, appId).build());
+//  }
+//
+//  public void deleteApplicationArgs(String accountId) {
+//    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId).build());
+//  }
 
+
+
+  // PROGRAM
   public void recordProgramStart(String accountId, String appId, String programId, String pid, long startTs) {
     write(new Key.Builder().add(TYPE_RUN_RECORD_STARTED, accountId, appId, programId, pid).build(),
           new RunRecord(pid, startTs));
@@ -140,19 +174,28 @@ public class AppMetadataStore extends MetadataStoreDataset {
     write(key, new RunRecord(started, stopTs, endStatus));
   }
 
-  public List<RunRecord> getRunHistory(String accountId, String appId, String programId,
-                                       final long startTime, final long endTime, int limit) {
-    Key prgrKey = new Key.Builder().add(TYPE_RUN_RECORD_COMPLETED, accountId, appId, programId).build();
-    // NOTE: ts is inverted to get latest first
-    Key start = new Key.Builder(prgrKey).add(getInvertedTsKeyPart(endTime)).build();
-    Key stop = new Key.Builder(prgrKey).add(getInvertedTsKeyPart(startTime)).build();
-    return list(start, stop, RunRecord.class, limit);
+  public void writeProgramArgs(String accountId, String appId, String programName, Map<String, String> args) {
+    write(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build(), new ProgramArgs(args));
+  }
+  public ProgramArgs getProgramArgs(String accountId, String appId, String programName) {
+    return get(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build(), ProgramArgs.class);
   }
 
-  private long getInvertedTsKeyPart(long endTime) {
-    return Long.MAX_VALUE - endTime;
+  public void deleteProgramArgs(String accountId, String appId, String programName) {
+    deleteAll(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build());
   }
 
+  public void deleteProgramArgs(String accountId, String appId) {
+    deleteAll(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId).build());
+  }
+
+  public void deleteProgramArgs(String accountId) {
+    deleteAll(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId).build());
+  }
+
+
+
+  // STREAM
   public void writeStream(String accountId, StreamSpecification spec) {
     write(new Key.Builder().add(TYPE_STREAM, accountId, spec.getName()).build(), spec);
   }
@@ -171,25 +214,5 @@ public class AppMetadataStore extends MetadataStoreDataset {
 
   public void deleteStream(String accountId, String name) {
     deleteAll(new Key.Builder().add(TYPE_STREAM, accountId, name).build());
-  }
-
-  public void writeProgramArgs(String accountId, String appId, String programName, Map<String, String> args) {
-    write(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build(), new ProgramArgs(args));
-  }
-
-  public ProgramArgs getProgramArgs(String accountId, String appId, String programName) {
-    return get(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build(), ProgramArgs.class);
-  }
-
-  public void deleteProgramArgs(String accountId, String appId, String programName) {
-    deleteAll(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build());
-  }
-
-  public void deleteProgramArgs(String accountId, String appId) {
-    deleteAll(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId).build());
-  }
-
-  public void deleteProgramArgs(String accountId) {
-    deleteAll(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId).build());
   }
 }
