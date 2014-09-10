@@ -16,13 +16,18 @@
 
 package co.cask.cdap.internal.app.runtime.service.http;
 
+import co.cask.cdap.api.service.http.HttpServiceContext;
 import com.continuuity.tephra.TransactionContext;
 
 /**
- *
+ * Defines a {@link HttpServiceContext} that supports transactions.
  */
 public interface TransactionalHttpServiceContext {
 
+  /**
+   * Get a {@link TransactionContext} for a HttpServiceHandler.
+   * @return
+   */
   TransactionContext getTransactionContext();
 
 }
