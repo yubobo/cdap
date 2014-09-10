@@ -17,46 +17,22 @@
 package co.cask.cdap.internal.app.runtime.service.http;
 
 import co.cask.cdap.api.service.http.HttpServiceHandler;
-
-import com.continuuity.tephra.TransactionAware;
-import com.continuuity.tephra.TransactionContext;
-import com.continuuity.tephra.TransactionFailureException;
-import com.continuuity.tephra.TransactionSystemClient;
 import co.cask.cdap.api.data.DataSetInstantiationException;
 import co.cask.cdap.api.service.http.AbstractHttpServiceHandler;
 import co.cask.cdap.api.service.http.HttpServiceContext;
 import co.cask.cdap.api.service.http.HttpServiceRequest;
 import co.cask.cdap.api.service.http.HttpServiceResponder;
 import co.cask.cdap.api.service.http.HttpServiceSpecification;
-import co.cask.cdap.app.guice.DataFabricFacadeModule;
-import co.cask.cdap.common.conf.CConfiguration;
-import co.cask.cdap.common.guice.ConfigModule;
-import co.cask.cdap.common.guice.DiscoveryRuntimeModule;
-import co.cask.cdap.common.guice.IOModule;
-import co.cask.cdap.common.guice.LocationRuntimeModule;
-import co.cask.cdap.common.guice.ZKClientModule;
-import co.cask.cdap.data.runtime.DataFabricModules;
-import co.cask.cdap.data.runtime.DataSetServiceModules;
-import co.cask.cdap.data.runtime.DataSetsModules;
-import co.cask.cdap.data2.dataset2.DatasetFramework;
-import co.cask.cdap.explore.guice.ExploreClientModule;
-import co.cask.cdap.gateway.auth.AuthModule;
-import co.cask.cdap.internal.app.runtime.ProgramServiceDiscovery;
-import co.cask.cdap.internal.app.runtime.distributed.DistributedProgramServiceDiscovery;
-import co.cask.cdap.metrics.guice.MetricsClientRuntimeModule;
 import co.cask.http.HttpHandler;
 import co.cask.http.NettyHttpService;
+import com.continuuity.tephra.TransactionAware;
+import com.continuuity.tephra.TransactionContext;
+import com.continuuity.tephra.TransactionFailureException;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.reflect.TypeToken;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Scopes;
-import org.apache.twill.discovery.DiscoveryServiceClient;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Closeable;
@@ -190,6 +166,9 @@ public class HttpHandlerGeneratorTest {
     protected abstract T createHandler();
   }
 
+  /**
+   * An no-op implementation of {@link HttpServiceContext} that implements no-op transactional operations.
+   */
   public static class NoOpHttpServiceContext implements HttpServiceContext, TransactionalHttpServiceContext {
 
     @Override
