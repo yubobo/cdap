@@ -16,10 +16,10 @@
 
 package co.cask.cdap.internal.app.runtime.service.http;
 
-import co.cask.cdap.api.service.http.HttpServiceHandler;
 import co.cask.cdap.api.data.DataSetInstantiationException;
 import co.cask.cdap.api.service.http.AbstractHttpServiceHandler;
 import co.cask.cdap.api.service.http.HttpServiceContext;
+import co.cask.cdap.api.service.http.HttpServiceHandler;
 import co.cask.cdap.api.service.http.HttpServiceRequest;
 import co.cask.cdap.api.service.http.HttpServiceResponder;
 import co.cask.cdap.api.service.http.HttpServiceSpecification;
@@ -144,7 +144,7 @@ public class HttpHandlerGeneratorTest {
     }
   }
 
-  private abstract static class AbstractDelegatorContext<T extends HttpServiceHandler> implements DelegatorContext<T>{
+  private abstract static class AbstractDelegatorContext<T extends HttpServiceHandler> implements DelegatorContext<T> {
 
     private final ThreadLocal<T> threadLocal = new ThreadLocal<T>() {
       @Override
@@ -187,7 +187,8 @@ public class HttpHandlerGeneratorTest {
     }
 
     @Override
-    public <T extends Closeable> T getDataSet(String name, Map<String, String> arguments) throws DataSetInstantiationException {
+    public <T extends Closeable> T getDataSet(String name, Map<String, String> arguments)
+      throws DataSetInstantiationException {
       return null;
     }
 
