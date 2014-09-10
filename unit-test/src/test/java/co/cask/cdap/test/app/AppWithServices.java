@@ -159,11 +159,6 @@ public class AppWithServices extends AbstractApplication {
       }
 
       @Override
-      public void destroy() {
-        // no-op
-      }
-
-      @Override
       public void run() {
         // Run this loop till stop is called.
         while (!workerStopped) {
