@@ -105,7 +105,6 @@ public class DefaultStore implements Store {
                       LocationFactory locationFactory,
                       final TransactionSystemClient txClient,
                       DatasetFramework framework) {
-
     this.locationFactory = locationFactory;
     this.configuration = conf;
     this.dsFramework =
@@ -142,6 +141,7 @@ public class DefaultStore implements Store {
     framework.addInstance(Table.class.getName(), APP_META_TABLE, DatasetProperties.EMPTY);
   }
 
+  // PROGRAM
   @Nullable
   @Override
   public Program loadProgram(final Id.Program id, ProgramType type) throws IOException {
@@ -204,6 +204,50 @@ public class DefaultStore implements Store {
     });
   }
 
+  // todo: this method should be moved into DeletedProgramHandlerState, bad design otherwise
+  @Override
+  public List<ProgramSpecification> getDeletedProgramSpecifications(final Id.Application id,
+                                                                    ApplicationSpecification appSpec) {
+
+    ApplicationMeta existing = txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, ApplicationMeta>() {
+      @Override
+      public ApplicationMeta apply(AppMds mds) throws Exception {
+        return mds.apps.getApplication(id.getAccountId(), id.getId());
+      }
+    });
+
+    List<ProgramSpecification> deletedProgramSpecs = Lists.newArrayList();
+
+    if (existing != null) {
+      ApplicationSpecification existingAppSpec = existing.getSpec();
+
+      ImmutableMap<String, ProgramSpecification> existingSpec = new ImmutableMap.Builder<String, ProgramSpecification>()
+        .putAll(existingAppSpec.getMapReduce())
+        .putAll(existingAppSpec.getWorkflows())
+        .putAll(existingAppSpec.getFlows())
+        .putAll(existingAppSpec.getProcedures())
+        .putAll(existingAppSpec.getServices())
+        .build();
+
+      ImmutableMap<String, ProgramSpecification> newSpec = new ImmutableMap.Builder<String, ProgramSpecification>()
+        .putAll(appSpec.getMapReduce())
+        .putAll(appSpec.getWorkflows())
+        .putAll(appSpec.getFlows())
+        .putAll(appSpec.getProcedures())
+        .putAll(appSpec.getServices())
+        .build();
+
+
+      MapDifference<String, ProgramSpecification> mapDiff = Maps.difference(existingSpec, newSpec);
+      deletedProgramSpecs.addAll(mapDiff.entriesOnlyOnLeft().values());
+    }
+
+    return deletedProgramSpecs;
+  }
+
+
+
+  // APPLICATION
   @Override
   public void addApplication(final Id.Application id,
                              final ApplicationSpecification spec, final Location appArchiveLocation) {
@@ -223,47 +267,78 @@ public class DefaultStore implements Store {
 
   }
 
-  // todo: this method should be moved into DeletedProgramHandlerState, bad design otherwise
   @Override
-  public List<ProgramSpecification> getDeletedProgramSpecifications(final Id.Application id,
-                                                                    ApplicationSpecification appSpec) {
+  public void removeApplication(final Id.Application id) {
+    LOG.trace("Removing application: account: {}, application: {}", id.getAccountId(), id.getId());
 
-    ApplicationMeta existing = txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, ApplicationMeta>() {
+    txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
-      public ApplicationMeta apply(AppMds mds) throws Exception {
-        return mds.apps.getApplication(id.getAccountId(), id.getId());
+      public Void apply(AppMds mds) throws Exception {
+        mds.apps.deleteApplication(id.getAccountId(), id.getId());
+        mds.apps.deleteProgramArgs(id.getAccountId(), id.getId());
+        // todo: delete program history?
+        return null;
       }
     });
-
-    List<ProgramSpecification> deletedProgramSpecs = Lists.newArrayList();
-
-    if (existing != null) {
-      ApplicationSpecification existingAppSpec = existing.getSpec();
-
-      ImmutableMap<String, ProgramSpecification> existingSpec = new ImmutableMap.Builder<String, ProgramSpecification>()
-                                                                      .putAll(existingAppSpec.getMapReduce())
-                                                                      .putAll(existingAppSpec.getWorkflows())
-                                                                      .putAll(existingAppSpec.getFlows())
-                                                                      .putAll(existingAppSpec.getProcedures())
-                                                                      .putAll(existingAppSpec.getServices())
-                                                                      .build();
-
-      ImmutableMap<String, ProgramSpecification> newSpec = new ImmutableMap.Builder<String, ProgramSpecification>()
-                                                                      .putAll(appSpec.getMapReduce())
-                                                                      .putAll(appSpec.getWorkflows())
-                                                                      .putAll(appSpec.getFlows())
-                                                                      .putAll(appSpec.getProcedures())
-                                                                      .putAll(appSpec.getServices())
-                                                                      .build();
-
-
-      MapDifference<String, ProgramSpecification> mapDiff = Maps.difference(existingSpec, newSpec);
-      deletedProgramSpecs.addAll(mapDiff.entriesOnlyOnLeft().values());
-    }
-
-    return deletedProgramSpecs;
   }
 
+  @Override
+  public void removeAllApplications(final Id.Account id) {
+    LOG.trace("Removing all applications of account with id: {}", id.getId());
+
+    txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
+      @Override
+      public Void apply(AppMds mds) throws Exception {
+        mds.apps.deleteApplications(id.getId());
+        mds.apps.deleteProgramArgs(id.getId());
+        // todo: delete program history?
+        return null;
+      }
+    });
+  }
+
+  @Nullable
+  @Override
+  public ApplicationSpecification getApplication(final Id.Application id) {
+    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, ApplicationSpecification>() {
+      @Override
+      public ApplicationSpecification apply(AppMds mds) throws Exception {
+        return getApplicationSpec(mds, id);
+      }
+    });
+  }
+
+  @Override
+  public Collection<ApplicationSpecification> getAllApplications(final Id.Account id) {
+    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Collection<ApplicationSpecification>>() {
+      @Override
+      public Collection<ApplicationSpecification> apply(AppMds mds) throws Exception {
+        return Lists.transform(mds.apps.getAllApplications(id.getId()),
+                               new Function<ApplicationMeta, ApplicationSpecification>() {
+                                 @Override
+                                 public ApplicationSpecification apply(ApplicationMeta input) {
+                                   return input.getSpec();
+                                 }
+                               });
+      }
+    });
+  }
+
+  @Nullable
+  @Override
+  public Location getApplicationArchiveLocation(final Id.Application id) {
+    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Location>() {
+      @Override
+      public Location apply(AppMds mds) throws Exception {
+        ApplicationMeta meta = mds.apps.getApplication(id.getAccountId(), id.getId());
+        return meta == null ? null : locationFactory.create(URI.create(meta.getArchiveLocation()));
+      }
+    });
+  }
+
+
+
+  // STREAM
   @Override
   public void addStream(final Id.Account id, final StreamSpecification streamSpec) {
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
@@ -295,6 +370,9 @@ public class DefaultStore implements Store {
     });
   }
 
+
+
+  // FLOWLET
   @Override
   public void setFlowletInstances(final Id.Program id, final String flowletId, final int count) {
     Preconditions.checkArgument(count > 0, "cannot change number of flowlet instances to negative number: " + count);
@@ -344,6 +422,9 @@ public class DefaultStore implements Store {
     });
   }
 
+
+
+  // PROCEDURE
   @Override
   public void setProcedureInstances(final Id.Program id, final int count) {
     Preconditions.checkArgument(count > 0, "cannot change number of program instances to negative number: " + count);
@@ -374,6 +455,37 @@ public class DefaultStore implements Store {
               id.getAccountId(), id.getApplicationId(), id.getId(), count);
   }
 
+  private static ApplicationSpecification replaceProcedureInAppSpec(
+    final ApplicationSpecification appSpec,
+    final Id.Program id,
+    final ProcedureSpecification procedureSpecification) {
+    // replace the new procedure spec.
+    return new ApplicationSpecificationWithChangedProcedure(appSpec, id.getId(), procedureSpecification);
+  }
+
+  private static final class ApplicationSpecificationWithChangedProcedure extends ForwardingApplicationSpecification {
+    private final String procedureId;
+    private final ProcedureSpecification procedureSpecification;
+
+    private ApplicationSpecificationWithChangedProcedure(ApplicationSpecification delegate,
+                                                         String procedureId,
+                                                         ProcedureSpecification procedureSpecification) {
+      super(delegate);
+      this.procedureId = procedureId;
+      this.procedureSpecification = procedureSpecification;
+    }
+
+    @Override
+    public Map<String, ProcedureSpecification> getProcedures() {
+      Map<String, ProcedureSpecification> procedures = Maps.newHashMap(super.getProcedures());
+      procedures.put(procedureId, procedureSpecification);
+      return procedures;
+    }
+  }
+
+
+
+  // MISC
   @Override
   public int getServiceRunnableInstances(final Id.Program id, final String runnable) {
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Integer>() {
@@ -424,36 +536,6 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void removeApplication(final Id.Application id) {
-    LOG.trace("Removing application: account: {}, application: {}", id.getAccountId(), id.getId());
-
-    txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
-      @Override
-      public Void apply(AppMds mds) throws Exception {
-        mds.apps.deleteApplication(id.getAccountId(), id.getId());
-        mds.apps.deleteProgramArgs(id.getAccountId(), id.getId());
-        // todo: delete program history?
-        return null;
-      }
-    });
-  }
-
-  @Override
-  public void removeAllApplications(final Id.Account id) {
-    LOG.trace("Removing all applications of account with id: {}", id.getId());
-
-    txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
-      @Override
-      public Void apply(AppMds mds) throws Exception {
-        mds.apps.deleteApplications(id.getId());
-        mds.apps.deleteProgramArgs(id.getId());
-        // todo: delete program history?
-        return null;
-      }
-    });
-  }
-
-  @Override
   public void removeAll(final Id.Account id) {
     LOG.trace("Removing all applications of account with id: {}", id.getId());
 
@@ -469,69 +551,6 @@ public class DefaultStore implements Store {
     });
   }
 
-  @Override
-  public void storeRunArguments(final Id.Program id, final Map<String, String> arguments) {
-    LOG.trace("Updated program args in mds: id: {}, app: {}, prog: {}, args: {}",
-              id.getId(), id.getApplicationId(), id.getId(), Joiner.on(",").withKeyValueSeparator("=").join(arguments));
-
-    txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
-      @Override
-      public Void apply(AppMds mds) throws Exception {
-        mds.apps.writeProgramArgs(id.getAccountId(), id.getApplicationId(), id.getId(), arguments);
-        return null;
-      }
-    });
-  }
-
-  @Override
-  public Map<String, String> getRunArguments(final Id.Program id) {
-    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Map<String, String>>() {
-      @Override
-      public Map<String, String> apply(AppMds mds) throws Exception {
-        ProgramArgs programArgs = mds.apps.getProgramArgs(id.getAccountId(), id.getApplicationId(), id.getId());
-        return programArgs == null ? Maps.<String, String>newHashMap() : programArgs.getArgs();
-      }
-    });
-  }
-
-  @Nullable
-  @Override
-  public ApplicationSpecification getApplication(final Id.Application id) {
-    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, ApplicationSpecification>() {
-      @Override
-      public ApplicationSpecification apply(AppMds mds) throws Exception {
-        return getApplicationSpec(mds, id);
-      }
-    });
-  }
-
-  @Override
-  public Collection<ApplicationSpecification> getAllApplications(final Id.Account id) {
-    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Collection<ApplicationSpecification>>() {
-      @Override
-      public Collection<ApplicationSpecification> apply(AppMds mds) throws Exception {
-        return Lists.transform(mds.apps.getAllApplications(id.getId()),
-                               new Function<ApplicationMeta, ApplicationSpecification>() {
-                                 @Override
-                                 public ApplicationSpecification apply(ApplicationMeta input) {
-                                   return input.getSpec();
-                                 }
-                               });
-      }
-    });
-  }
-
-  @Nullable
-  @Override
-  public Location getApplicationArchiveLocation(final Id.Application id) {
-    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Location>() {
-      @Override
-      public Location apply(AppMds mds) throws Exception {
-        ApplicationMeta meta = mds.apps.getApplication(id.getAccountId(), id.getId());
-        return meta == null ? null : locationFactory.create(URI.create(meta.getArchiveLocation()));
-      }
-    });
-  }
 
   @Override
   public void changeFlowletSteamConnection(final Id.Program flow, final String flowletId,
@@ -897,6 +916,7 @@ public class DefaultStore implements Store {
     return replaceFlowInAppSpec(appSpec, id, new FlowSpecificationWithChangedFlowlets(flowSpec, adjustedFlowletDef));
   }
 
+  // FLOW
   private static ApplicationSpecification replaceFlowInAppSpec(final ApplicationSpecification appSpec,
                                                                final Id.Program id,
                                                                final FlowSpecification newFlowSpec) {
@@ -923,34 +943,6 @@ public class DefaultStore implements Store {
     }
   }
 
-  private static ApplicationSpecification replaceProcedureInAppSpec(
-                                                             final ApplicationSpecification appSpec,
-                                                             final Id.Program id,
-                                                             final ProcedureSpecification procedureSpecification) {
-    // replace the new procedure spec.
-    return new ApplicationSpecificationWithChangedProcedure(appSpec, id.getId(), procedureSpecification);
-  }
-
-  private static final class ApplicationSpecificationWithChangedProcedure extends ForwardingApplicationSpecification {
-    private final String procedureId;
-    private final ProcedureSpecification procedureSpecification;
-
-    private ApplicationSpecificationWithChangedProcedure(ApplicationSpecification delegate,
-                                                         String procedureId,
-                                                         ProcedureSpecification procedureSpecification) {
-      super(delegate);
-      this.procedureId = procedureId;
-      this.procedureSpecification = procedureSpecification;
-    }
-
-    @Override
-    public Map<String, ProcedureSpecification> getProcedures() {
-      Map<String, ProcedureSpecification> procedures = Maps.newHashMap(super.getProcedures());
-       procedures.put(procedureId, procedureSpecification);
-      return procedures;
-    }
-  }
-
   private static final class AppMds implements Iterable<AppMetadataStore> {
     private final AppMetadataStore apps;
 
@@ -962,5 +954,33 @@ public class DefaultStore implements Store {
     public Iterator<AppMetadataStore> iterator() {
       return Iterators.singletonIterator(apps);
     }
+  }
+
+
+
+  // RUNTIME ARGUMENTS
+  @Override
+  public void storeRunArguments(final Id.Program id, final Map<String, String> arguments) {
+    LOG.trace("Updated program args in mds: id: {}, app: {}, prog: {}, args: {}",
+              id.getId(), id.getApplicationId(), id.getId(), Joiner.on(",").withKeyValueSeparator("=").join(arguments));
+
+    txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
+      @Override
+      public Void apply(AppMds mds) throws Exception {
+        mds.apps.writeProgramArgs(id.getAccountId(), id.getApplicationId(), id.getId(), arguments);
+        return null;
+      }
+    });
+  }
+
+  @Override
+  public Map<String, String> getRunArguments(final Id.Program id) {
+    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Map<String, String>>() {
+      @Override
+      public Map<String, String> apply(AppMds mds) throws Exception {
+        ProgramArgs programArgs = mds.apps.getProgramArgs(id.getAccountId(), id.getApplicationId(), id.getId());
+        return programArgs == null ? Maps.<String, String>newHashMap() : programArgs.getArgs();
+      }
+    });
   }
 }

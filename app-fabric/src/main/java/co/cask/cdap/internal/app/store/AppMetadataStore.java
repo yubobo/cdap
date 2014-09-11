@@ -126,6 +126,14 @@ public class AppMetadataStore extends MetadataStoreDataset {
     return list(new Key.Builder().add(TYPE_APP_META, accountId).build(), ApplicationMeta.class);
   }
 
+  public void deleteApplication(String accountId, String appId) {
+    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId, appId).build());
+  }
+
+  public void deleteApplications(String accountId) {
+    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId).build());
+  }
+
   public void writeApplicationArgs(String accountId, String appId, Map<String, String> args) {
     write(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(), new ProgramArgs(args));
   }
@@ -153,15 +161,6 @@ public class AppMetadataStore extends MetadataStoreDataset {
     this.deleteApplicationArgs(accountId);
     this.writeApplicationArgs(accountId, appId, old_args);
   }
-
-  public void deleteApplication(String accountId, String appId) {
-    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId, appId).build());
-  }
-
-  public void deleteApplications(String accountId) {
-    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId).build());
-  }
-
   public void deleteApplicationArgs(String accountId) {
     deleteAll(new Key.Builder().add(TYPE_APP_META, accountId).build());
   }
@@ -201,6 +200,7 @@ public class AppMetadataStore extends MetadataStoreDataset {
   public void writeProgramArgs(String accountId, String appId, String programName, Map<String, String> args) {
     write(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build(), new ProgramArgs(args));
   }
+
   public ProgramArgs getProgramArgs(String accountId, String appId, String programName) {
     return get(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build(), ProgramArgs.class);
   }

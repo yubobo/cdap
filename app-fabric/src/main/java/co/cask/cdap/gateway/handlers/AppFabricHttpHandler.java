@@ -705,26 +705,31 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
                                       @PathParam("app-id") final String appId,
                                       @PathParam("runnable-type") final String runnableType,
                                       @PathParam("runnable-id") final String runnableId) {
-    ProgramType type = RUNNABLE_TYPE_MAP.get(runnableType);
-    if (type == null || type == ProgramType.WEBAPP) {
-      responder.sendStatus(HttpResponseStatus.NOT_FOUND);
-      return;
-    }
-
-    String accountId = getAuthenticatedAccountId(request);
-    Id.Program id = Id.Program.from(accountId, appId, runnableId);
-
     try {
+      // pre-checks
+      ProgramType type = RUNNABLE_TYPE_MAP.get(runnableType);
+      if (type == null || type == ProgramType.WEBAPP) {
+        responder.sendStatus(HttpResponseStatus.NOT_FOUND);
+        return;
+      }
+
+      // get account and program id
+      String accountId = getAuthenticatedAccountId(request);
+      Id.Program id = Id.Program.from(accountId, appId, runnableId);
       if (!store.programExists(id, type)) {
         responder.sendString(HttpResponseStatus.NOT_FOUND, "Runnable not found");
         return;
       }
+
+      // store runtime arguments
       Map<String, String> args = decodeArguments(request);
       store.storeRunArguments(id, args);
       responder.sendStatus(HttpResponseStatus.OK);
+
     } catch (Throwable e) {
       LOG.error("Error getting runtime args {}", e.getMessage(), e);
       responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+
     }
   }
 

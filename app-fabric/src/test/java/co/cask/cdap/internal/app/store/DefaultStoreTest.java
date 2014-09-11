@@ -464,7 +464,7 @@ public class DefaultStoreTest {
   }
 
   @Test
-  public void testRuntimeArgsDeletion() throws Exception {
+  public void testRuntimeArgs() throws Exception {
     ApplicationSpecification spec = Specifications.from(new AllProgramsApp());
     Id.Account accountId = new Id.Account("testDeleteRuntimeArgs");
     Id.Application appId = new Id.Application(accountId, spec.getName());
@@ -481,7 +481,6 @@ public class DefaultStoreTest {
     store.storeRunArguments(mapreduceProgramId, ImmutableMap.of("path", "/data"));
     store.storeRunArguments(procedureProgramId, ImmutableMap.of("timeoutMs", "1000"));
     store.storeRunArguments(workflowProgramId, ImmutableMap.of("whitelist", "continuuity"));
-
 
     Map<String, String> args = store.getRunArguments(flowProgramId);
     Assert.assertEquals(1, args.size());
@@ -514,6 +513,9 @@ public class DefaultStoreTest {
 
     args = store.getRunArguments(workflowProgramId);
     Assert.assertEquals(0, args.size());
+
+
+
   }
 
 

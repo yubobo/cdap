@@ -16,18 +16,29 @@
 
 package co.cask.cdap.internal.app.store;
 
+import co.cask.cdap.api.dataset.DatasetProperties;
+import co.cask.cdap.api.dataset.lib.ACLTable;
 import co.cask.cdap.data2.dataset2.AbstractDatasetTest;
+import co.cask.cdap.data2.dataset2.DatasetManagementException;
+import co.cask.cdap.data2.dataset2.lib.table.ACLTableModule;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class AppMetadataStoreTest extends AbstractDatasetTest {
   private static AppMetadataStore store;
 
-  public AppMetadataStoreTest() {
-    this.store = AppMetadataStore();
+  @BeforeClass
+  public static void beforeClass() throws IOException, DatasetManagementException {
+    addModule("AppMetaDataTableModule", new ACLTableModule());
+    createInstance(ACLTable.class.getName(), "AppMetaDataTable", DatasetProperties.EMPTY);
+    ACLTable table = getInstance("AppMetaDataTable");
+
+    store = new AppMetadataStore((co.cask.cdap.api.dataset.table.Table) table);
   }
 
   @Test
