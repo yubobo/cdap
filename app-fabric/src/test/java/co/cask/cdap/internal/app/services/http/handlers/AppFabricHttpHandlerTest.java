@@ -252,6 +252,7 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
     response = doPut("/v2/apps/" + appId + "/" + runnableType + "/" + runnableId + "/runtimeargs", "");
     Assert.assertEquals(200, response.getStatusLine().getStatusCode());
 
+    // testr
     response = doGet("/v2/apps/" + appId + "/" + runnableType + "/" + runnableId + "/runtimeargs");
     Assert.assertEquals(200, response.getStatusLine().getStatusCode());
     argsRead = GSON.fromJson(EntityUtils.toString(response.getEntity()),
@@ -259,15 +260,15 @@ public class AppFabricHttpHandlerTest extends AppFabricTestBase {
     Assert.assertEquals(0, argsRead.size());
 
     //test null runtime args
-    response = doPut("/v2/apps/" + appId + "/" + runnableType + "/" + runnableId + "/runtimeargs", null);
+    response = doPut("/v2/apps/" + appId + "/" + runnableType + "/"
+                                            + runnableId + "/runtimeargs", null);
     Assert.assertEquals(200, response.getStatusLine().getStatusCode());
 
-    response = doGet("/v2/apps/" + appId + "/" + runnableType + "/" + runnableId + "/runtimeargs");
+    response = doGet("/v2/apps/" + appId + "/" + runnableType + "/"
+                                            + runnableId + "/runtimeargs");
     Assert.assertEquals(200, response.getStatusLine().getStatusCode());
-    argsRead = GSON.fromJson(
-      EntityUtils.toString(response.getEntity()),
-      new TypeToken<Map<String, String>>() { }.getType()
-    );
+    argsRead = GSON.fromJson(EntityUtils.toString(response.getEntity()),
+        new TypeToken<Map<String, String>>() { }.getType());
     Assert.assertEquals(0, argsRead.size());
   }
 

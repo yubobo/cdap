@@ -33,6 +33,11 @@
   <dependencies>
     <dependency>
       <groupId>co.cask.cdap</groupId>
+      <artifactId>api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
       <artifactId>common</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -45,6 +50,13 @@
       <groupId>co.cask.cdap</groupId>
       <artifactId>data-fabric</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>data-fabric</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>co.cask.cdap</groupId>

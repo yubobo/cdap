@@ -86,31 +86,6 @@ public class AppMetadataStore extends MetadataStoreDataset {
 
 
   // APPLICATION
-  @Nullable
-  public ApplicationMeta getApplication(String accountId, String appId) {
-    return get(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(), ApplicationMeta.class);
-  }
-
-  public List<ApplicationMeta> getAllApplications(String accountId) {
-    return list(new Key.Builder().add(TYPE_APP_META, accountId).build(), ApplicationMeta.class);
-  }
-
-  public void writeApplication(String accountId, String appId, ApplicationSpecification spec, String archiveLocation) {
-    // NOTE: we use Gson underneath to do serde, as it doesn't serialize inner classes (which we use everywhere for
-    //       specs - see forwarding specs), we want to wrap spec with DefaultApplicationSpecification
-    spec = DefaultApplicationSpecification.from(spec);
-    write(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(),
-          new ApplicationMeta(appId, spec, archiveLocation));
-  }
-
-  public void deleteApplication(String accountId, String appId) {
-    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId, appId).build());
-  }
-
-  public void deleteApplications(String accountId) {
-    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId).build());
-  }
-
   // todo: do we need appId? may be use from appSpec?
   public void updateAppSpec(String accountId, String appId, ApplicationSpecification spec) {
     // NOTE: we use Gson underneath to do serde, as it doesn't serialize inner classes (which we use everywhere for
@@ -133,18 +108,67 @@ public class AppMetadataStore extends MetadataStoreDataset {
       writeStream(accountId, stream);
     }
   }
-//
-//  public void writeApplicationArgs(String accountId, String appId, Map<String, String> args) {
-//    write(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(), new ProgramArgs(args));
-//  }
-//
-//  public void deleteApplicationArgs(String accountId, String appId) {
-//    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId, appId).build());
-//  }
-//
-//  public void deleteApplicationArgs(String accountId) {
-//    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId).build());
-//  }
+
+  public void writeApplication(String accountId, String appId, ApplicationSpecification spec, String archiveLocation) {
+    // NOTE: we use Gson underneath to do serde, as it doesn't serialize inner classes (which we use everywhere for
+    //       specs - see forwarding specs), we want to wrap spec with DefaultApplicationSpecification
+    spec = DefaultApplicationSpecification.from(spec);
+    write(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(),
+          new ApplicationMeta(appId, spec, archiveLocation));
+  }
+
+  @Nullable
+  public ApplicationMeta getApplication(String accountId, String appId) {
+    return get(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(), ApplicationMeta.class);
+  }
+
+  public List<ApplicationMeta> getAllApplications(String accountId) {
+    return list(new Key.Builder().add(TYPE_APP_META, accountId).build(), ApplicationMeta.class);
+  }
+
+  public void writeApplicationArgs(String accountId, String appId, Map<String, String> args) {
+    write(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(), new ProgramArgs(args));
+  }
+
+  public ProgramArgs getApplicationArgs(String accountId, String appId) {
+    return get(new Key.Builder().add(TYPE_APP_META, accountId, appId).build(), ProgramArgs.class);
+  }
+
+  public void updateApplicationArgs(String accountId, String appId, Map<String, String> new_args) {
+    ProgramArgs old_prog_args = this.getApplicationArgs(accountId, appId);
+    Map<String, String> old_args = old_prog_args.getArgs();
+
+    // iterate over map and update
+    for (String arg : new_args.keySet()) {
+      if (old_args.containsKey(arg) == false) {
+        old_args.put(arg, new_args.get(arg));
+
+      } else if (old_args.get(arg).equals(new_args.get(arg)) != true) {
+        old_args.put(arg, new_args.get(arg)); // replace old arg value
+
+      }
+    }
+
+    // remove old args and replace with new
+    this.deleteApplicationArgs(accountId);
+    this.writeApplicationArgs(accountId, appId, old_args);
+  }
+
+  public void deleteApplication(String accountId, String appId) {
+    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId, appId).build());
+  }
+
+  public void deleteApplications(String accountId) {
+    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId).build());
+  }
+
+  public void deleteApplicationArgs(String accountId) {
+    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId).build());
+  }
+
+  public void deleteApplicationArgs(String accountId, String appId) {
+    deleteAll(new Key.Builder().add(TYPE_APP_META, accountId, appId).build());
+  }
 
 
 
@@ -179,6 +203,24 @@ public class AppMetadataStore extends MetadataStoreDataset {
   }
   public ProgramArgs getProgramArgs(String accountId, String appId, String programName) {
     return get(new Key.Builder().add(TYPE_PROGRAM_ARGS, accountId, appId, programName).build(), ProgramArgs.class);
+  }
+
+  public void updateProgramArgs(String accountId, String appId, String programName, Map<String, String> new_args) {
+    ProgramArgs old_prog_args = this.getProgramArgs(accountId, appId, programName);
+    Map<String, String> old_args = old_prog_args.getArgs();
+
+    // iterate over map and update
+    for (String arg : new_args.keySet()) {
+      if (old_args.containsKey(arg) == false) {
+        old_args.put(arg, new_args.get(arg));
+      } else if (old_args.get(arg).equals(new_args.get(arg)) != true) {
+        old_args.put(arg, new_args.get(arg));
+      }
+    }
+
+    // remove old args and replace with new
+    this.deleteApplicationArgs(accountId);
+    this.writeApplicationArgs(accountId, appId, old_args);
   }
 
   public void deleteProgramArgs(String accountId, String appId, String programName) {
