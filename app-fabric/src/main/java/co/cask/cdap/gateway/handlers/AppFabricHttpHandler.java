@@ -181,6 +181,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
    */
   private static final long UPLOAD_TIMEOUT = TimeUnit.MILLISECONDS.convert(10, TimeUnit.MINUTES);
 
+  // TODO: inconsistent name of runnable-type, runnable-id, in the docs it is referred to as element-type, element-id
   private static final Map<String, ProgramType> RUNNABLE_TYPE_MAP = new ImmutableMap.Builder<String, ProgramType>()
     .put("mapreduce", ProgramType.MAPREDUCE)
     .put("spark", ProgramType.SPARK)
@@ -597,6 +598,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
   }
 
 
+  // TODO: inconsistent name of runnable-type, runnable-id, in the docs it is referred to as element-type, element-id
   /**
    * Starts a program.
    */
@@ -609,6 +611,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     startStopProgram(request, responder, appId, runnableType, runnableId, "start");
   }
 
+  // TODO: inconsistent name of runnable-type, runnable-id, in the docs it is referred to as element-type, element-id
   /**
    * Starts a program with debugging enabled.
    */
@@ -625,6 +628,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     startStopProgram(request, responder, appId, runnableType, runnableId, "debug");
   }
 
+  // TODO: inconsistent name of runnable-type, runnable-id, in the docs it is referred to as element-type, element-id
   /**
    * Stops a program.
    */
@@ -637,6 +641,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     startStopProgram(request, responder, appId, runnableType, runnableId, "stop");
   }
 
+  // TODO: inconsistent name of runnable-type, runnable-id, in the docs it is referred to as element-type, element-id
   /**
    * Returns program run history.
    */
@@ -663,6 +668,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     getHistory(request, responder, appId, runnableId, start, end, limit);
   }
 
+  // TODO: inconsistent name of runnable-type, runnable-id, in the docs it is referred to as element-type, element-id
   /**
    * Get runnable runtime args.
    */
@@ -695,6 +701,7 @@ public class AppFabricHttpHandler extends AbstractAppFabricHttpHandler {
     }
   }
 
+  // TODO: inconsistent name of runnable-type, runnable-id, in the docs it is referred to as element-type, element-id
   /**
    * Save runnable runtime args.
    */

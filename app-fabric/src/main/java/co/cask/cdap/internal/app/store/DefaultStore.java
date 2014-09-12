@@ -693,7 +693,7 @@ public class DefaultStore implements Store {
   }
 
   private static RuntimeSpecification replaceResourceSpec(final RuntimeSpecification runtimeSpec,
-                                                   final ResourceSpecification resourceSpec) {
+                                                          final ResourceSpecification resourceSpec) {
     return new RuntimeSpecificationWithChangedResources(runtimeSpec, resourceSpec);
   }
 
@@ -960,10 +960,17 @@ public class DefaultStore implements Store {
 
 
   // RUNTIME ARGUMENTS
+  // TODO: At the moment the following function only stores Program runtime arguments, there needs to be a better way
+  // to define the type of runtime arguments
   @Override
   public void storeRunArguments(final Id.Program id, final Map<String, String> arguments) {
-    LOG.trace("Updated program args in mds: id: {}, app: {}, prog: {}, args: {}",
-              id.getId(), id.getApplicationId(), id.getId(), Joiner.on(",").withKeyValueSeparator("=").join(arguments));
+    LOG.trace(
+      "Updated program args in mds: id: {}, app: {}, prog: {}, args: {}",
+      id.getId(),
+      id.getApplicationId(),
+      id.getId(),
+      Joiner.on(",").withKeyValueSeparator("=").join(arguments)
+    );
 
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
@@ -974,6 +981,7 @@ public class DefaultStore implements Store {
     });
   }
 
+  // TODO: similar to the previous function
   @Override
   public Map<String, String> getRunArguments(final Id.Program id) {
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Map<String, String>>() {
