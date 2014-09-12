@@ -250,7 +250,8 @@ public class DefaultStore implements Store {
   // APPLICATION
   @Override
   public void addApplication(final Id.Application id,
-                             final ApplicationSpecification spec, final Location appArchiveLocation) {
+                             final ApplicationSpecification spec,
+                             final Location appArchiveLocation) {
 
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override

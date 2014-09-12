@@ -201,4 +201,84 @@ public final class Id  {
     }
   }
 
+  public static class Stream {
+    private final Program program;
+    private final String id;
+
+    public Stream(Program program, final String id) {
+      Preconditions.checkNotNull(program, "Program cannot be null.");
+      Preconditions.checkNotNull(id, "Id cannot be null.");
+
+      this.program = program;
+      this.id = id;
+    }
+
+    public String getAccountId() { return this.program.getApplication().getAccountId(); }
+
+    public String getApplicationId() { return this.program.getApplicationId(); }
+
+    public String getProgramId() { return this.program.id; }
+
+    public String getId() { return this.id; }
+
+    // TODO: This is a shallow equals, may need to implement a deep equals in the future?
+    @Override
+    public boolean equals(Object o) {
+      // check if same object
+      if (this == o) {
+        return true;
+      }
+
+      // check null and class differences
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      // check target and ids
+      Stream target = (Stream) o;
+      return target.equals(this) && target.id.equals(this.id);
+    }
+
+    // TODO: This is bad, this will collide with the Program's hashCode() if both program and stream have same id
+    @Override
+    public int hashCode() {
+      Application application = this.program.getApplication();
+      int result = application.hashCode();
+      result = 31 * result + id.hashCode();
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("Stream(");
+      Application application = this.program.getApplication();
+
+      // account id
+      sb.append("accountId:");
+      if (application.getAccountId() == null) {
+        sb.append("null");
+      } else {
+        sb.append(application.getAccountId());
+      }
+
+      // application id
+      sb.append(", applicationId:");
+      if (application.getId() == null) {
+        sb.append("null");
+      } else {
+        sb.append(application.getId());
+      }
+
+      // runnable id
+      sb.append(", runnableId:");
+      if (this.id == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.id);
+      }
+      sb.append(")");
+
+      return sb.toString();
+    }
+  }
 }
