@@ -1,7 +1,7 @@
 
 # Cask Data Application Platform - CDAP
 
-![CDAP Logo](/cdap-docs/developer-guide/source/_images/CDAP.png)
+![CDAP Logo](cdap-docs/developer-guide/source/_images/CDAP.png)
 
 **Introduction**
 
@@ -26,11 +26,11 @@ Developers can build and test their applications end-to-end in a full-stack, sin
 installation. CDAP can be run either standalone, deployed within the Enterprise or hosted in the Cloud.
 
 For more information, see our collection of 
-[Developer Guides and other documentation](http://docs.cask.co/cdap/current/index.html).
+[Developer Guides and other documentation](http://docs.cask.co/cdap/current/en/index.html).
 
 
 ## Getting Started
-
+                                                    t
 ### Prerequisites
 
 To install and use CDAP and its included examples, there are a few simple prerequisites:
