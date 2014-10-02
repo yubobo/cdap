@@ -220,9 +220,9 @@ public class ExploreRuntimeModule extends RuntimeModule {
         LOG.info("Setting {} to {}", HiveConf.ConfVars.LOCALSCRATCHDIR.toString(),
                  System.getProperty(HiveConf.ConfVars.LOCALSCRATCHDIR.toString()));
 
-
-        // We don't support security in Hive Server.
-        System.setProperty("hive.server2.authentication", "NONE");
+        // We don't support security in Hive Server: Not really true now...
+        // TODO depending on security/not security, change the following
+        System.setProperty("hive.server2.authentication", "NOSASL");
         System.setProperty("hive.server2.enable.doAs", "false");
         System.setProperty("hive.server2.enable.impersonation", "false");
 
@@ -237,9 +237,9 @@ public class ExploreRuntimeModule extends RuntimeModule {
     @Provides
     @Singleton
     @Exposed
-    public final ExploreService providesExploreService(Injector injector, Configuration hConf) {
+    public final ExploreService providesExploreService(Injector injector) {
       // Figure out which HiveExploreService class to load
-      Class<? extends ExploreService> hiveExploreServiceCl = ExploreServiceUtils.getHiveService(hConf);
+      Class<? extends ExploreService> hiveExploreServiceCl = ExploreServiceUtils.getHiveService();
       LOG.info("Using Explore service class {}", hiveExploreServiceCl.getName());
       return injector.getInstance(hiveExploreServiceCl);
     }

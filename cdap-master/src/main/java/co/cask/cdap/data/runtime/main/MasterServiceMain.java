@@ -40,6 +40,7 @@ import co.cask.cdap.data2.util.hbase.ConfigurationTable;
 import co.cask.cdap.data2.util.hbase.HBaseTableUtilFactory;
 import co.cask.cdap.explore.client.ExploreClient;
 import co.cask.cdap.explore.guice.ExploreClientModule;
+import co.cask.cdap.explore.security.HiveSecureStoreUpdater;
 import co.cask.cdap.explore.service.ExploreServiceUtils;
 import co.cask.cdap.gateway.auth.AuthModule;
 import co.cask.cdap.internal.app.services.AppFabricServer;
@@ -120,7 +121,8 @@ public class MasterServiceMain extends DaemonMain {
   private MetricsCollectionService metricsCollectionService;
   private DatasetService dsService;
   private ServiceStore serviceStore;
-  private HBaseSecureStoreUpdater secureStoreUpdater;
+  private HBaseSecureStoreUpdater hbaseSecureStoreUpdater;
+  private HiveSecureStoreUpdater hiveSecureStoreUpdater;
   private ExploreClient exploreClient;
 
   private String serviceName;
@@ -168,7 +170,8 @@ public class MasterServiceMain extends DaemonMain {
     serviceStore = baseInjector.getInstance(ServiceStore.class);
     exploreClient = baseInjector.getInstance(ExploreClient.class);
 
-    secureStoreUpdater = baseInjector.getInstance(HBaseSecureStoreUpdater.class);
+    hbaseSecureStoreUpdater = baseInjector.getInstance(HBaseSecureStoreUpdater.class);
+    hiveSecureStoreUpdater = baseInjector.getInstance(HiveSecureStoreUpdater.class);
 
     checkTransactionRequirements();
     checkExploreRequirements();
@@ -196,7 +199,7 @@ public class MasterServiceMain extends DaemonMain {
     }
 
     // This checking will throw an exception if Hive is not present or if its distribution is unsupported
-    ExploreServiceUtils.checkHiveSupportWithSecurity(hConf);
+    ExploreServiceUtils.checkHiveSupportWithSecurity();
   }
 
   @Override
@@ -350,15 +353,18 @@ public class MasterServiceMain extends DaemonMain {
 
   private void scheduleSecureStoreUpdate(TwillRunner twillRunner) {
     if (User.isHBaseSecurityEnabled(hConf)) {
-      twillRunner.scheduleSecureStoreUpdate(secureStoreUpdater, 30000L, secureStoreUpdater.getUpdateInterval(),
+      twillRunner.scheduleSecureStoreUpdate(hbaseSecureStoreUpdater, 30000L,
+                                            hbaseSecureStoreUpdater.getUpdateInterval(),
                                             TimeUnit.MILLISECONDS);
     }
+    // TODO add schedule for hive secure store to refresh the tokens
   }
 
 
   private TwillPreparer prepare(TwillPreparer preparer) {
     return preparer.withDependencies(new HBaseTableUtilFactory().get().getClass())
-      .addSecureStore(secureStoreUpdater.update(null, null)); // HBaseSecureStoreUpdater.update() ignores parameters
+      // HBaseSecureStoreUpdater.update() ignores parameters
+      .addSecureStore(hbaseSecureStoreUpdater.update(null, null));
   }
 
   private void runTwillApps() {
@@ -482,6 +488,9 @@ public class MasterServiceMain extends DaemonMain {
         preparer = preparer.withResources(ExploreServiceUtils.hijackHiveConfFile(file).toURI());
       }
     }
+
+    // HiveSecureStoreUpdater.update() ignores parameters
+    preparer.addSecureStore(hiveSecureStoreUpdater.update(null, null));
 
     return preparer;
   }

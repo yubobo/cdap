@@ -63,6 +63,12 @@ import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.ql.io.HiveFileFormatUtils;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hive.service.auth.HiveAuthFactory;
 import org.apache.hive.service.cli.CLIService;
 import org.apache.hive.service.cli.ColumnDescriptor;
 import org.apache.hive.service.cli.FetchOrientation;
@@ -110,6 +116,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   private static final Gson GSON = new Gson();
   private static final int PREVIEW_COUNT = 5;
   private static final long METASTORE_CLIENT_CLEANUP_PERIOD = 60;
+  public static final String HIVE_METASTORE_TOKEN_KEY = "hive.metastore.token.signature";
 
   private final CConfiguration cConf;
   private final Configuration hConf;
@@ -220,6 +227,34 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   protected void startUp() throws Exception {
     LOG.info("Starting {}...", BaseHiveExploreService.class.getSimpleName());
+
+    // Read delegation token if security is enabled.
+    if (getHiveConf().getBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_SASL)) {
+      Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
+      if (credentials == null) {
+        String message = "Cannot get credentials to get Hive MetaStore delegation token";
+        LOG.error(message);
+        throw new ExploreException(message);
+      }
+
+      LOG.info("Printing credentials:");
+      for (Token t : credentials.getAllTokens()) {
+        LOG.info("{}", t);
+      }
+
+      Token<? extends TokenIdentifier> delegationToken =
+        credentials.getToken(new Text(HiveAuthFactory.HS2_CLIENT_TOKEN));
+      if (delegationToken == null) {
+        String message = String.format(
+          "Cannot get delegation token for Hive MetaStore from credentials for service %s",
+          HiveAuthFactory.HS2_CLIENT_TOKEN);
+        LOG.error(message);
+        throw new ExploreException(message);
+      }
+
+      System.setProperty(HIVE_METASTORE_TOKEN_KEY, delegationToken.encodeToUrlString());
+    }
+
     cliService.init(getHiveConf());
     cliService.start();
 
@@ -533,6 +568,28 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   public QueryHandle execute(String statement) throws ExploreException, SQLException {
     try {
+      // Read delegation token if security is enabled.
+      if (getHiveConf().getBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_SASL)) {
+        Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
+        if (credentials == null) {
+          String message = "Cannot get credentials to get Hive MetaStore delegation token";
+          LOG.error(message);
+          throw new ExploreException(message);
+        }
+
+        Token<? extends TokenIdentifier> delegationToken =
+          credentials.getToken(new Text(HiveAuthFactory.HS2_CLIENT_TOKEN));
+        if (delegationToken == null) {
+          String message = String.format(
+            "Cannot get delegation token for Hive MetaStore from credentials for service %s",
+            HiveAuthFactory.HS2_CLIENT_TOKEN);
+          LOG.error(message);
+          throw new ExploreException(message);
+        }
+
+        System.setProperty(HIVE_METASTORE_TOKEN_KEY, delegationToken.encodeToUrlString());
+      }
+
       Map<String, String> sessionConf = startSession();
       // It looks like the username and password below is not used when security is disabled in Hive Server2.
       SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);

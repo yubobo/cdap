@@ -37,7 +37,7 @@ public class ExploreServiceUtilsTest {
   @Test
   public void testHiveVersion() throws Exception {
     // This would throw an exception if it didn't pass
-    ExploreServiceUtils.checkHiveSupportWithSecurity(new Configuration(), this.getClass().getClassLoader());
+    ExploreServiceUtils.checkHiveSupportWithSecurity(this.getClass().getClassLoader());
   }
 
   @Test
