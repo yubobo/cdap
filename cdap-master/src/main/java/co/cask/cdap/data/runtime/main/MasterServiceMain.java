@@ -357,7 +357,7 @@ public class MasterServiceMain extends DaemonMain {
                                             hbaseSecureStoreUpdater.getUpdateInterval(),
                                             TimeUnit.MILLISECONDS);
     }
-    // TODO add schedule for hive secure store to refresh the tokens
+    // TODO add schedule for hive secure store to refresh the tokens as well
   }
 
 

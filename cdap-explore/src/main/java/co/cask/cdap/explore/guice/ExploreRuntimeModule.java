@@ -163,6 +163,11 @@ public class ExploreRuntimeModule extends RuntimeModule {
       @Override
       public ExploreService get() {
         File hiveDataDir = new File(cConf.get(Constants.Explore.LOCAL_DATA_DIR));
+
+        // NOTE: the properties set using setProperty will be included to any new HiveConf object created,
+        // at the condition that the configuration is known by Hive, and so is one of the HiveConf.ConfVars
+        // variables.
+
         System.setProperty(HiveConf.ConfVars.SCRATCHDIR.toString(),
                            new File(hiveDataDir, cConf.get(Constants.AppFabric.TEMP_DIR)).getAbsolutePath());
 
@@ -223,8 +228,9 @@ public class ExploreRuntimeModule extends RuntimeModule {
         // We don't support security in Hive Server: Not really true now...
         // TODO depending on security/not security, change the following
         System.setProperty("hive.server2.authentication", "NOSASL");
-        System.setProperty("hive.server2.enable.doAs", "false");
-        System.setProperty("hive.server2.enable.impersonation", "false");
+        // TODO change those to false when no security
+        System.setProperty("hive.server2.enable.doAs", "true");
+        System.setProperty("hive.server2.enable.impersonation", "true");
 
         File previewDir = Files.createTempDir();
         LOG.info("Storing preview files in {}", previewDir.getAbsolutePath());

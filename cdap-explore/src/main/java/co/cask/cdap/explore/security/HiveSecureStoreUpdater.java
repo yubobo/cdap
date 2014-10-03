@@ -36,18 +36,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class HiveSecureStoreUpdater implements SecureStoreUpdater {
 
-  private final Configuration hiveConf;
+  private final Configuration conf;
   private final LocationFactory locationFactory;
   private long nextUpdateTime = -1;
   private Credentials credentials;
 
   @Inject
-  public HiveSecureStoreUpdater(Configuration hiveConf, LocationFactory locationFactory) {
-    // TODO maybe this Configuration should really be a HiveConf, since the injection should not give
-    // an HBase configuration
-    // Although it seems to be used by Twill only to get some Yarn settings, so should be good
-    // rename to a generic configuration param
-    this.hiveConf = hiveConf;
+  public HiveSecureStoreUpdater(Configuration conf, LocationFactory locationFactory) {
+    this.conf = conf;
     this.locationFactory = locationFactory;
     this.credentials = new Credentials();
   }
@@ -55,22 +51,21 @@ public class HiveSecureStoreUpdater implements SecureStoreUpdater {
   private void refreshCredentials() {
     try {
       HiveTokenUtils.obtainToken(credentials);
-      YarnUtils.addDelegationTokens(hiveConf, locationFactory, credentials);
+      YarnUtils.addDelegationTokens(conf, locationFactory, credentials);
     } catch (IOException ioe) {
       throw Throwables.propagate(ioe);
     }
   }
 
   /**
-   * Returns the update interval for the HBase delegation token.
+   * Returns the update interval for the Hive delegation token.
    * @return The update interval in milliseconds.
    */
   public long getUpdateInterval() {
-    // TODO change that using hive settings - if necesarry at all? Doesn't seem like hive has any setting
-    // like that
+    // TODO change that using hive settings - this has just been copied from the HBaseSecureStoreUpdater
 
     // The value contains in hbase-default.xml, so it should always there. If it is really missing, default it to 1 day.
-    return hiveConf.getLong(Constants.HBase.AUTH_KEY_UPDATE_INTERVAL, TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS));
+    return conf.getLong(Constants.HBase.AUTH_KEY_UPDATE_INTERVAL, TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS));
   }
 
   @Override
