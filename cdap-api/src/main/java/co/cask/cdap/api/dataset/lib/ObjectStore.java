@@ -19,6 +19,8 @@ package co.cask.cdap.api.dataset.lib;
 import co.cask.cdap.api.annotation.Beta;
 import co.cask.cdap.api.data.batch.BatchReadable;
 import co.cask.cdap.api.data.batch.BatchWritable;
+import co.cask.cdap.api.data.batch.RecordScannable;
+import co.cask.cdap.api.data.batch.RecordWritable;
 import co.cask.cdap.api.dataset.Dataset;
 import co.cask.cdap.api.dataset.table.Delete;
 
@@ -42,7 +44,8 @@ import java.util.Map;
  * @param <T> the type of objects in the store
  */
 @Beta
-public interface ObjectStore<T> extends Dataset, BatchReadable<byte[], T>, BatchWritable<byte[], T> {
+public interface ObjectStore<T> extends Dataset, BatchReadable<byte[], T>, BatchWritable<byte[], T>,
+  RecordScannable<T> {
 
   /**
    * Write an object with a given key.

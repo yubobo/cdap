@@ -37,6 +37,8 @@ import co.cask.cdap.internal.io.Schema;
 import co.cask.cdap.internal.io.TypeRepresentation;
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -51,6 +53,8 @@ import javax.annotation.Nullable;
  */
 @Beta
 public class ObjectStoreDataset<T> extends AbstractDataset implements ObjectStore<T> {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ObjectStoreDataset.class);
 
   private final KeyValueTable kvTable;
   private final TypeRepresentation typeRep;
@@ -162,18 +166,30 @@ public class ObjectStoreDataset<T> extends AbstractDataset implements ObjectStor
 
   // TODO: it should implement RecordScannable, but due to classloading issues it doesn't
 //  @Override
-  public RecordScanner<KeyValue<byte[], T>> createSplitRecordScanner(Split split) {
-    return Scannables.splitRecordScanner(createSplitReader(split), new ObjectRecordMaker());
+  public RecordScanner<T> createSplitRecordScanner(Split split) {
+    LOG.error("OBJSTORE CREATE SPLIT RECORD SCANNER");
+    return Scannables.valueRecordScanner(createSplitReader(split));
   }
 
   // TODO: it should implement RecordScannable, but due to classloading issues it doesn't
 //  @Override
   public Type getRecordType() {
+//    return typeRep.toType();
+    LOG.error("OBJSTORE GET RECORD TYPE " + typeRep.toType() + " " + typeRep.getRawType());
     return typeRep.toType();
+//    return new TypeToken<T>(getClass()) { }.getType();
+
+//    final Class<?> typeRepType = typeRep.getClass();
+//    KeyValue<byte[], T> keyValue = new KeyValue<byte[], T>(null, null);
+//    return TypeToken.of(keyValue.getClass()).getType();
+
+//    typeRepType.getClass();
+//    return new TypeToken<KeyValue<byte[], typeRepType>>() { }.getType();
   }
 
   @Override
   public List<Split> getSplits() {
+    LOG.error("OBJSTORE GET SPLITS");
     return kvTable.getSplits();
   }
 

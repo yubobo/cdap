@@ -22,6 +22,8 @@ import co.cask.cdap.api.app.AbstractApplication;
 import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.api.data.stream.Stream;
 import co.cask.cdap.api.dataset.lib.KeyValueTable;
+import co.cask.cdap.api.dataset.lib.ObjectStore;
+import co.cask.cdap.api.dataset.lib.ObjectStores;
 import co.cask.cdap.api.flow.Flow;
 import co.cask.cdap.api.flow.FlowSpecification;
 import co.cask.cdap.api.flow.flowlet.AbstractFlowlet;
@@ -31,6 +33,9 @@ import co.cask.cdap.api.procedure.AbstractProcedure;
 import co.cask.cdap.api.procedure.ProcedureRequest;
 import co.cask.cdap.api.procedure.ProcedureResponder;
 import co.cask.cdap.api.procedure.ProcedureResponse;
+import co.cask.cdap.internal.io.UnsupportedTypeException;
+import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 
 import static co.cask.cdap.api.procedure.ProcedureResponse.Code.SUCCESS;
 
@@ -49,15 +54,25 @@ public class HelloWorld extends AbstractApplication {
     setName("HelloWorld");
     setDescription("A Hello World program for the Cask Data Application Platform");
     addStream(new Stream("who"));
-    createDataset("whom", KeyValueTable.class);
+//    createDataset("whom", KeyValueTable.class);
     addFlow(new WhoFlow());
     addProcedure(new Greeting());
+
+    try {
+      ObjectStores.createObjectStore(getConfigurer(), "whom", String.class);
+    } catch (UnsupportedTypeException e) {
+      // This exception is thrown by ObjectStore if its parameter type cannot be
+      // (de)serialized (for example, if it is an interface and not a class, then there is
+      // no auto-magic way deserialize an object.) In this case that will not happen
+      // because String is an actual class.
+      throw new RuntimeException(e);
+    }
   }
 
   /**
    * Sample Flow.
    */
-  public static class WhoFlow implements Flow {
+  public class WhoFlow implements Flow {
 
     @Override
     public FlowSpecification configure() {
@@ -73,19 +88,20 @@ public class HelloWorld extends AbstractApplication {
   /**
    * Sample Flowlet.
    */
-  public static class NameSaver extends AbstractFlowlet {
+  public class NameSaver extends AbstractFlowlet {
 
-    static final byte[] NAME = { 'n', 'a', 'm', 'e' };
+//    final byte[] NAME = { 'n', 'a', 'm', 'e' };
 
     @UseDataSet("whom")
-    KeyValueTable whom;
+    ObjectStore<String> whom;
     Metrics flowletMetrics;
 
     @ProcessInput
     public void process(StreamEvent event) {
       byte[] name = Bytes.toBytes(event.getBody());
       if (name != null && name.length > 0) {
-        whom.write(NAME, name);
+//        whom.write(NAME, name);
+        whom.write(name, new String(name));
       }
       if (name.length > 10) {
         flowletMetrics.count("names.longnames", 1);
@@ -97,21 +113,27 @@ public class HelloWorld extends AbstractApplication {
   /**
    * Sample Procedure.
    */
-  public static class Greeting extends AbstractProcedure {
+  public class Greeting extends AbstractProcedure {
 
     @UseDataSet("whom")
-    KeyValueTable whom;
+    ObjectStore<String> whom;
     Metrics procedureMetrics;
 
     @Handle("greet")
     public void greet(ProcedureRequest request, ProcedureResponder responder) throws Exception {
-      byte[] name = whom.read(NameSaver.NAME);
+//      byte[] name = whom.read(NameSaver.NAME);
+      String name = request.getArgument("name");
       String toGreet = name != null ? new String(name) : "World";
       if (toGreet.equals("Jane Doe")) {
         procedureMetrics.count("greetings.count.jane_doe", 1);
       }
       responder.sendJson(new ProcedureResponse(SUCCESS), "Hello " + toGreet + "!");
     }
+  }
+
+  private class CustomObject {
+    public String name;
+    public int number;
   }
 }
 
