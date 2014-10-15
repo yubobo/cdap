@@ -15,6 +15,25 @@
 # the License.
 #
 
+# Add default JVM options here. You can also use JAVA_OPTS and CDAP_OPTS to pass JVM options to this script.
+CDAP_OPTS="-XX:+UseConcMarkSweepGC -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Djava.awt.headless=true"
+
+# Specifies Web App Path
+WEB_APP_PATH=${WEB_APP_PATH:-"web-app/local/server/main.js"}
+
+APP_HOME="`pwd -P`"
+NUX_FILE="$APP_HOME/.nux_dashboard"
+
+CLASSPATH=$APP_HOME/lib/*:$APP_HOME/conf/
+CDAP_HOME=${CDAP_HOME:-/opt/cdap}; export CDAP_HOME
+COMPONENT_HOME=${CDAP_HOME}; export COMPONENT_HOME
+
+# PID Location
+PID_DIR=/var/tmp
+BASENAME=${PRG##*/}
+pid=$PID_DIR/$BASENAME.pid
+
+
 # We need a larger PermSize for SparkProgramRunner to call SparkSubmit
 function set_perm_size
 {
@@ -29,17 +48,13 @@ function set_perm_size
     echo $DEFAULT_JVM_OPTS
 }
 
-# Add default JVM options here. You can also use JAVA_OPTS and CDAP_OPTS to pass JVM options to this script.
-CDAP_OPTS="-XX:+UseConcMarkSweepGC -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Djava.awt.headless=true"
-
-# Specifies Web App Path
-WEB_APP_PATH=${WEB_APP_PATH:-"web-app/local/server/main.js"}
-
-# Attempt to set APP_HOME
 function set_app_home
 {
-    # Resolve links: $0 may be a link
+    # $0 - program
+
+    # Resolve symlinks:
     PRG="$0"
+
     # Need this for relative symlinks.
     while [ -h "$PRG" ] ; do
         ls=`ls -ld "$PRG"`
@@ -52,19 +67,6 @@ function set_app_home
     done
     # cd "`dirname \"$PRG\"`/.." >&-
 }
-
-APP_HOME="`pwd -P`"
-NUX_FILE="$APP_HOME/.nux_dashboard"
-
-CLASSPATH=$APP_HOME/lib/*:$APP_HOME/conf/
-CDAP_HOME=${CDAP_HOME:-/opt/cdap}; export CDAP_HOME
-COMPONENT_HOME=${CDAP_HOME}; export COMPONENT_HOME
-
-# PID Location
-PID_DIR=/var/tmp
-BASENAME=${PRG##*/}
-pid=$PID_DIR/$BASENAME.pid
-
 
 function warn
 {
@@ -91,51 +93,56 @@ function program_is_installed
     fi
 }
 
-# Determine the Java command to use to start the JVM.
 function check_java_cmd
 {
     if [ -n "$JAVA_HOME" ] ; then
         if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
             # IBM's JDK on AIX uses strange locations for the executables
-            JAVACMD="$JAVA_HOME/jre/sh/java"
+            JAVA_CMD="$JAVA_HOME/jre/sh/java"
         else
-            JAVACMD="$JAVA_HOME/bin/java"
+            JAVA_CMD="$JAVA_HOME/bin/java"
         fi
 
-        if [ ! -x "$JAVACMD" ] ; then
+        if [ ! -x "$JAVA_CMD" ] ; then
             die "Error! invalid JAVA_HOME env path: $JAVA_HOME"
         fi
     else
-        JAVACMD="java"
+        JAVA_CMD="java"
         which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
 
 Please set the JAVA_HOME variable in your environment to match the
 location of your Java installation."
     fi
-    echo $JAVACMD
+    echo $JAVA_CMD
 }
 # check_java_cmd
-#
-# # java version check
-# function check_java_version
-# {
-#     JAVA_VERSION=`java -version 2>&1 | grep "java version" | awk '{print $3}' | awk -F '.' '{print $2}'`
-#     if [ $JAVA_VERSION -ne 6 ] && [ $JAVA_VERSION -ne 7 ]; then
-#         die "ERROR: Java version not supported
-#         Please install Java 6 or 7 - other versions of Java are not yet supported."
-#     fi
-# }
+
+function check_java_version
+{
+    JAVA_CMD=$1
+    JAVA_VERSION=`$JAVA_CMD -version 2>&1 | grep "java version" | awk '{print $3}' | awk -F '.' '{print $2}'`
+
+    if [ -z "$JAVA_VERSION" ]; then
+        die "Failed to parse Java version!"
+    elif [ $JAVA_VERSION -ne 6 ] && [ $JAVA_VERSION -ne 7 ]; then
+        die "ERROR: Java version not supported! Please install Java 6 or 7!"
+    fi
+
+    echo $JAVA_VERSION
+    exit 0
+}
 # check_java_version
-#
-# # Check Node.js installation
-# function check_nodejs
-# {
-#     NODE_INSTALL_STATUS=$(program_is_installed node)
-#     if [ "x$NODE_INSTALL_STATUS" == "x1" ]; then
-#         die "Node.js is not installed
-#         Please install Node.js - the minimum version supported v0.8.16."
-#     fi
-# }
+
+function check_nodejs
+{
+    NODE_INSTALL_STATUS=$(program_is_installed node)
+
+    if [ "x$NODE_INSTALL_STATUS" == "x1" ]; then
+        die "Node.js is not installed, minimum version supported is v0.8.16"
+    fi
+
+    echo 0
+}
 # check_nodejs
 #
 # # Check Node.js version

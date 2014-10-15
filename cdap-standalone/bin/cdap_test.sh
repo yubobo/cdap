@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 SCRIPT_DIR=$PWD
+CHECK_JAVA_VERSION=6
 source $SCRIPT_DIR/cdap-standalone/bin/cdap.sh
 source $SCRIPT_DIR/cdap-standalone/bin/assert.sh
 
@@ -44,7 +45,7 @@ function test_check_java_cmd
     touch /tmp/jre/sh/java
     chmod +x /tmp/jre/sh/java
 
-    export JAVA_HOME="/tmp/"
+    export JAVA_HOME="/tmp"
     assert "echo $(check_java_cmd)" "$JAVA_HOME/jre/sh/java"
 
     rm -rf /tmp/jre
@@ -70,6 +71,21 @@ function test_check_java_cmd
     export JAVA_HOME=$ORIGINAL_JAVA_HOME
 }
 
+function test_check_java_version
+{
+    # pass test
+    assert "echo $(check_java_version java)" "$CHECK_JAVA_VERSION"
+
+    # fail test
+    assert "echo $(check_java_version not_java)" "Failed to parse Java version!"
+    assert_raises  "$(check_java_version not_java)" "127" ""
+}
+
+function test_check_nodejs
+{
+    echo
+}
+
 
 # TESTS
 test_set_perm_size
@@ -78,6 +94,8 @@ test_warn
 test_die
 test_program_is_installed
 test_check_java_cmd
+test_check_java_version
+test_check_nodejs
 
 assert_end regression
 echo "Done!"
