@@ -103,11 +103,11 @@ function test_check_nodejs_version
 {
     ORIGINAL_PATH=$PATH
 
-    # pass test
+    # PASS TEST
     assert "echo $(check_nodejs_version)" "1"
     assert_raises  "check_nodejs_version" "0" ""
 
-    # fail test
+    # FAIL TEST
     # create mock nodejs script - returns old version string
     cat <<-"EOF" > /tmp/node
         #!/bin/sh
@@ -126,15 +126,47 @@ EOF
 
     # clean up
     export PATH=$ORIGINAL_PATH
-    rm /tmp/node
-    rm /tmp/awk
+    rm /tmp/node 2>/dev/null
+    rm /tmp/awk 2>/dev/null
 }
 
 function test_check_before_start
 {
-    echo
+    # PASS TEST
+    assert "echo $(check_before_start cdap)" "1"
 
+    # FAIL TEST - OLD NODE VERSION
+    # create mock nodejs script - returns old version string
+    cat <<-"EOF" > /tmp/node
+        #!/bin/sh
+        if [ -n "$1" ] && [ "$1" == "-v" ]; then
+            echo 'v0.8.0'
+        fi
+EOF
+    chmod +x /tmp/node
+    ln -fs $(which awk) /tmp/awk  # function check_nodejs_version uses awk
+    ln -fs $(which ps) /tmp/ps  # function check_before_start uses ps
+    ln -fs $(which grep) /tmp/grep  # function check_before_start uses grep
+    ln -fs $(which sed) /tmp/sed  # assert needs sed
+    ln -fs $(which bc) /tmp/bc  # assert needs sed
+    ln -fs $(which date) /tmp/date  # assert needs sed
+    export PATH="/tmp"
 
+    # assert fail on old version
+    assert "check_before_start" \
+        "\nCDAP requires Node.js! but it's either not installed or not in path. Exiting..."
+
+    # assert fail on non-existent node
+    rm /tmp/node 2>/dev/null
+    assert "check_before_start" \
+        "\nCDAP requires Node.js! but it's either not installed or not in path. Exiting..."
+
+    # clean up
+    export PATH=$ORIGINAL_PATH
+    rm /tmp/awk 2>/dev/null
+    rm /tmp/ps 2>/dev/null
+    rm /tmp/grep 2>/dev/null
+    rm /tmp/sed 2>/dev/null
 }
 
 
@@ -148,6 +180,7 @@ test_check_java_cmd
 test_check_java_version
 test_check_nodejs
 test_check_nodejs_version
+test_check_before_start
 
 assert_end regression
 echo "Done!"

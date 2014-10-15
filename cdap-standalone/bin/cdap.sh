@@ -30,8 +30,6 @@ COMPONENT_HOME=${CDAP_HOME}; export COMPONENT_HOME
 
 # PID Location
 PID_DIR=/var/tmp
-BASENAME=${PRG##*/}
-pid=$PID_DIR/$BASENAME.pid
 
 MIN_NODE_VER="v0.8.16"
 MIN_NODE_MAJ_VER=8
@@ -173,22 +171,26 @@ function check_nodejs_version
 #     JVM_OPTS=("$@")
 # }
 
-# Checks if PID already exists. Alert user but still return success
+# checks if PID already exists. Alert user but still return success
 function check_before_start
 {
+    BASENAME=${1##*/}
+    PID_FILE=$PID_DIR/$BASENAME.pid
+
     # setup $PID_DIR
     if [ ! -d "$PID_DIR" ]; then
         mkdir -p "$PID_DIR"
     fi
 
     # checks nodejs availability before it starts CDAP
-    if [ $(check_nodejs) == "1" ] && [ $(check_nodejs_version) ]; then
+    if [ "$(check_nodejs)" != "1" ] && [ "$(check_nodejs_version)" != "1" ]; then
         die "CDAP requires Node.js! but it's either not installed or not in path. Exiting..."
     fi
 
     # check existing CDAP processes
-    if [ -f $pid ]; then
-        if kill -0 `cat $pid` > /dev/null 2>&1; then
+    if [ -f $PID_FILE ]; then
+        # kill -0 returns 1 if PID exists else 0
+        if kill -0 `cat $PID_FILE` > /dev/null 2>&1; then
             echo "$0 running as process `cat $pid`."
             echo "Stop it first or use the restart function"
             exit 0
@@ -199,6 +201,8 @@ function check_before_start
             kill -9 $nodejs_pid 2>/dev/null >/dev/null
         fi
     fi
+
+    echo "1"
 }
 
 # # checks for any updates of standalone
