@@ -33,6 +33,10 @@ PID_DIR=/var/tmp
 BASENAME=${PRG##*/}
 pid=$PID_DIR/$BASENAME.pid
 
+MIN_NODE_VER="v0.8.16"
+MIN_NODE_MAJ_VER=8
+MIN_NODE_MIN_VER=16
+
 
 # We need a larger PermSize for SparkProgramRunner to call SparkSubmit
 function set_perm_size
@@ -139,58 +143,64 @@ function check_nodejs
         die "Node.js is not installed, minimum version supported is v0.8.16"
     fi
 
-    echo 0
+    echo 1
     exit 0
 }
 # check_nodejs
 
 function check_nodejs_version
 {
-    NODE_VERSION=$(node -v 2>&1)
-    NODE_VERSION_MAJOR=$(echo $NODE_VERSION | awk -F '.' ' { print $2 } ')
-    NODE_VERSION_MINOR=$(echo $NODE_VERSION | awk -F '.' ' { print $3 } ')
+    NODE_VER=$(node -v 2>&1)
+    MAJOR_VER=$(echo $NODE_VER | awk -F '.' ' { print $2 } ')
+    MINOR_VER=$(echo $NODE_VER | awk -F '.' ' { print $3 } ')
+    MIN_MAJOR=$MIN_NODE_MAJ_VER
+    MIN_MINOR=$MIN_NODE_MAJ_VER
 
-    if [ $NODE_VERSION_MAJOR -lt 8 ]; then
-        die "ERROR: The minimum Node.js version supported is v0.8.16."
-    elif [ $NODE_VERSION_MAJOR -eq 8 ] && [ $NODE_VERSION_MINOR -lt 16 ]; then
-        die "ERROR: The minimum Node.js version supported is v0.8.16."
+    if [ $MAJOR_VER -lt $MIN_NODE_MAJ_VER ]; then
+        die "ERROR: minimum Node.js version supported is $MIN_NODE_VER."
+    elif [ $MAJOR_VER -eq $MIN_MAJOR ] && [ $MINOR_VER -lt $MIN_MINOR ]; then
+        die "ERROR: The minimum Node.js version supported is $MIN_NODE_VER."
     fi
 
-    echo 0
+    echo 1
     exit 0
 }
 # check_nodejs_version
-#
+
 # # Split up the JVM_OPTS And CDAP_OPTS values into an array, following the shell quoting and substitution rules
 # function splitJvmOpts
 # {
 #     JVM_OPTS=("$@")
 # }
-#
-# # checks if there exists a PID that is already running. Alert user but still return success
-# function check_before_start
-# {
-#     if [ ! -d "$PID_DIR" ]; then
-#         mkdir -p "$PID_DIR"
-#     fi
-#
-#     # Checks if nodejs is available before it starts Cask Local DAP.
-#     command -v node >/dev/null 2>&1 || \
-#         { echo >&2 "CDAP requires Node.js but it's either not installed or not in path. Exiting."; exit 1; }
-#
-#     if [ -f $pid ]; then
-#         if kill -0 `cat $pid` > /dev/null 2>&1; then
-#             echo "$0 running as process `cat $pid`. Stop it first or use the restart function."
-#             exit 0
-#         fi
-#     else
-#         nodejs_pid=`ps | grep web-app/ | grep -v grep | awk ' { print $1 } '`
-#         if [[ "x{nodejs_pid}" != "x" ]]; then
-#             kill -9 $nodejs_pid 2>/dev/null >/dev/null
-#         fi
-#     fi
-# }
-#
+
+# Checks if PID already exists. Alert user but still return success
+function check_before_start
+{
+    # setup $PID_DIR
+    if [ ! -d "$PID_DIR" ]; then
+        mkdir -p "$PID_DIR"
+    fi
+
+    # checks nodejs availability before it starts CDAP
+    if [ $(check_nodejs) == "1" ] && [ $(check_nodejs_version) ]; then
+        die "CDAP requires Node.js! but it's either not installed or not in path. Exiting..."
+    fi
+
+    # check existing CDAP processes
+    if [ -f $pid ]; then
+        if kill -0 `cat $pid` > /dev/null 2>&1; then
+            echo "$0 running as process `cat $pid`."
+            echo "Stop it first or use the restart function"
+            exit 0
+        fi
+    else
+        nodejs_pid=`ps | grep web-app/ | grep -v grep | awk ' { print $1 } '`
+        if [[ "x{nodejs_pid}" != "x" ]]; then
+            kill -9 $nodejs_pid 2>/dev/null >/dev/null
+        fi
+    fi
+}
+
 # # checks for any updates of standalone
 # function check_for_updates
 # {

@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 SCRIPT_DIR=$PWD
 CHECK_JAVA_VERSION=6
 source $SCRIPT_DIR/cdap-standalone/bin/cdap.sh
@@ -87,7 +86,7 @@ function test_check_nodejs
     ORIGINAL_PATH=$PATH
 
     # pass test
-    assert "echo $(check_nodejs)" "0"
+    assert "echo $(check_nodejs)" "1"
     assert_raises  "check_nodejs" "0" ""
 
     # fail test
@@ -105,7 +104,7 @@ function test_check_nodejs_version
     ORIGINAL_PATH=$PATH
 
     # pass test
-    assert "echo $(check_nodejs_version)" "0"
+    assert "echo $(check_nodejs_version)" "1"
     assert_raises  "check_nodejs_version" "0" ""
 
     # fail test
@@ -129,6 +128,13 @@ EOF
     export PATH=$ORIGINAL_PATH
     rm /tmp/node
     rm /tmp/awk
+}
+
+function test_check_before_start
+{
+    echo
+
+
 }
 
 
