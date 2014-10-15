@@ -157,8 +157,7 @@ class IncrementSummingScanner implements RegionScanner {
               runningSum = 0;
             }
             // add this increment to the tally
-            runningSum += Bytes.toLong(cell.getValueArray(),
-                                       cell.getValueOffset() + IncrementHandler.DELTA_MAGIC_PREFIX.length);
+            runningSum += Bytes.toLong(cell.getValueArray(), cell.getValueOffset());
           } else {
             // 2. otherwise (not an increment)
             if (previousIncrement != null) {
