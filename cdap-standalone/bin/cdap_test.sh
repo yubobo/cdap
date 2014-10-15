@@ -75,15 +75,60 @@ function test_check_java_version
 {
     # pass test
     assert "echo $(check_java_version java)" "$CHECK_JAVA_VERSION"
+    assert_raises  "check_java_version java" "0" ""
 
     # fail test
     assert "echo $(check_java_version not_java)" "Failed to parse Java version!"
-    assert_raises  "$(check_java_version not_java)" "127" ""
+    assert_raises  "check_java_version not_java" "1" ""
 }
 
 function test_check_nodejs
 {
-    echo
+    ORIGINAL_PATH=$PATH
+
+    # pass test
+    assert "echo $(check_nodejs)" "0"
+    assert_raises  "check_nodejs" "0" ""
+
+    # fail test
+    export PATH=""
+
+    assert "echo $(check_nodejs)" \
+        "Node.js is not installed, minimum version supported is v0.8.16"
+    assert_raises  "check_nodejs" "1" ""
+
+    export PATH=$ORIGINAL_PATH
+}
+
+function test_check_nodejs_version
+{
+    ORIGINAL_PATH=$PATH
+
+    # pass test
+    assert "echo $(check_nodejs_version)" "0"
+    assert_raises  "check_nodejs_version" "0" ""
+
+    # fail test
+    # create mock nodejs script - returns old version string
+    cat <<-"EOF" > /tmp/node
+        #!/bin/sh
+        if [ -n "$1" ] && [ "$1" == "-v" ]; then
+            echo 'v0.8.0'
+        fi
+EOF
+    chmod +x /tmp/node
+    ln -s $(which awk) /tmp/awk  # function check_nodejs_version uses awk
+    export PATH="/tmp"
+
+    # assert
+    assert "echo $(check_nodejs_version)" \
+        "ERROR: The minimum Node.js version supported is v0.8.16."
+    assert_raises "check_nodejs_version" "1" ""
+
+    # clean up
+    export PATH=$ORIGINAL_PATH
+    rm /tmp/node
+    rm /tmp/awk
 }
 
 
@@ -96,6 +141,7 @@ test_program_is_installed
 test_check_java_cmd
 test_check_java_version
 test_check_nodejs
+test_check_nodejs_version
 
 assert_end regression
 echo "Done!"

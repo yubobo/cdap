@@ -85,7 +85,7 @@ function program_is_installed
 {
     # $1 - program to be checked
 
-    which $1 > /dev/null
+    which $1 > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo 1
     else
@@ -135,30 +135,30 @@ function check_java_version
 
 function check_nodejs
 {
-    NODE_INSTALL_STATUS=$(program_is_installed node)
-
-    if [ "x$NODE_INSTALL_STATUS" == "x1" ]; then
+    if [ $(program_is_installed node) -eq 0 ]; then
         die "Node.js is not installed, minimum version supported is v0.8.16"
     fi
 
     echo 0
+    exit 0
 }
 # check_nodejs
-#
-# # Check Node.js version
-# function check_nodejs_version
-# {
-#     NODE_VERSION=`node -v 2>&1`
-#     NODE_VERSION_MAJOR=`echo $NODE_VERSION | awk -F '.' ' { print $2 } '`
-#     NODE_VERSION_MINOR=`echo $NODE_VERSION | awk -F '.' ' { print $3 } '`
-#     if [ $NODE_VERSION_MAJOR -lt 8 ]; then
-#         die "ERROR: Node.js version is not supported
-#         The minimum version supported is v0.8.16."
-#     elif [ $NODE_VERSION_MAJOR -eq 8 ] && [ $NODE_VERSION_MINOR -lt 16 ]; then
-#         die "ERROR: Node.js version is not supported
-#         The minimum version supported is v0.8.16."
-#     fi
-# }
+
+function check_nodejs_version
+{
+    NODE_VERSION=$(node -v 2>&1)
+    NODE_VERSION_MAJOR=$(echo $NODE_VERSION | awk -F '.' ' { print $2 } ')
+    NODE_VERSION_MINOR=$(echo $NODE_VERSION | awk -F '.' ' { print $3 } ')
+
+    if [ $NODE_VERSION_MAJOR -lt 8 ]; then
+        die "ERROR: The minimum Node.js version supported is v0.8.16."
+    elif [ $NODE_VERSION_MAJOR -eq 8 ] && [ $NODE_VERSION_MINOR -lt 16 ]; then
+        die "ERROR: The minimum Node.js version supported is v0.8.16."
+    fi
+
+    echo 0
+    exit 0
+}
 # check_nodejs_version
 #
 # # Split up the JVM_OPTS And CDAP_OPTS values into an array, following the shell quoting and substitution rules
