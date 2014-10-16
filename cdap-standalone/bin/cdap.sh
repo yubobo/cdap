@@ -133,7 +133,6 @@ function check_java_version
     fi
 
     echo $JAVA_VERSION
-    exit 0
 }
 # check_java_version
 
@@ -144,7 +143,6 @@ function check_nodejs
     fi
 
     echo 1
-    exit 0
 }
 # check_nodejs
 
@@ -163,15 +161,13 @@ function check_nodejs_version
     fi
 
     echo 1
-    exit 0
 }
 # check_nodejs_version
 
-# # Split up the JVM_OPTS And CDAP_OPTS values into an array, following the shell quoting and substitution rules
-# function splitJvmOpts
-# {
-#     JVM_OPTS=("$@")
-# }
+function split_jvm_opts
+{
+    JVM_OPTS=("$@")
+}
 
 # checks if PID already exists. Alert user but still return success
 function check_before_start
@@ -325,7 +321,7 @@ function rotate_log
 #     debug=$1; shift
 #     port=$1; shift
 #
-#     eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $CDAP_OPTS
+#     eval split_jvm_opts $DEFAULT_JVM_OPTS $JAVA_OPTS $CDAP_OPTS
 #     check_before_start
 #     mkdir -p $APP_HOME/logs
 #     rotate_log $APP_HOME/logs/cdap.log

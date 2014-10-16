@@ -130,6 +130,20 @@ EOF
     rm /tmp/awk 2>/dev/null
 }
 
+function test_split_jvm_opts
+{
+    JVM_OPTS=""
+
+    # PASS TEST
+    assert "split_jvm_opts 'one' 'two' 'three' 'four'" ""
+
+    split_jvm_opts 'one' 'two' 'three' 'four'
+    assert "echo ${JVM_OPTS[0]}" "one"
+    assert "echo ${JVM_OPTS[1]}" "two"
+    assert "echo ${JVM_OPTS[2]}" "three"
+    assert "echo ${JVM_OPTS[3]}" "four"
+}
+
 function test_check_before_start
 {
     # PASS TEST
@@ -213,19 +227,20 @@ function test_rotate_log
 }
 
 # TESTS
-test_set_perm_size
-test_script_variables
-test_warn
-test_die
-test_program_is_installed
-test_check_java_cmd
-test_check_java_version
-test_check_nodejs
-test_check_nodejs_version
-test_check_before_start
-test_compare_versions
-test_check_for_updates
-test_rotate_log
+# test_set_perm_size
+# test_script_variables
+# test_warn
+# test_die
+# test_program_is_installed
+# test_check_java_cmd
+# test_check_java_version
+# test_check_nodejs
+# test_check_nodejs_version
+test_split_jvm_opts
+# test_check_before_start
+# test_compare_versions
+# test_check_for_updates
+# test_rotate_log
 
 assert_end regression
 echo "Done!"
