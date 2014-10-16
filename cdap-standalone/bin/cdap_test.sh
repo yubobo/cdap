@@ -194,6 +194,23 @@ function test_check_for_updates
     rm $APP_HOME/VERSION
 }
 
+function test_rotate_log
+{
+    touch /tmp/test.log
+
+    # PASS TEST - ROTATE LOG TO LOG.1
+    assert "rotate_log /tmp/test.log" ""
+    assert "ls /tmp/test.log" ""
+    assert "ls /tmp/test.log.*" "/tmp/test.log.1"
+
+    # PASS TEST - ROTATE LOG.1 TO LOG.2
+    touch /tmp/test.log
+    assert "rotate_log /tmp/test.log" ""
+    assert "ls /tmp/test.log" ""
+    assert "ls /tmp/test.log.*" "/tmp/test.log.1\n/tmp/test.log.2"
+
+    rm /tmp/test.log.*
+}
 
 # TESTS
 test_set_perm_size
@@ -208,6 +225,7 @@ test_check_nodejs_version
 test_check_before_start
 test_compare_versions
 test_check_for_updates
+test_rotate_log
 
 assert_end regression
 echo "Done!"

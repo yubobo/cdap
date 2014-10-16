@@ -242,7 +242,6 @@ function compare_versions
     done
 }
 
-
 function check_for_updates
 {
     # check if connected to internet
@@ -271,24 +270,29 @@ function check_for_updates
     fi
 }
 
-# # Rotates the basic start/stop logs
-# function rotate_log
-# {
-#     log=$1;
-#     num=5;
-#     if [ -n "$2" ]; then
-#     num=$2
-#     fi
-#     if [ -f "$log" ]; then # rotate logs
-#     while [ $num -gt 1 ]; do
-#         prev=`expr $num - 1`
-#         [ -f "$log.$prev" ] && mv -f "$log.$prev" "$log.$num"
-#         num=$prev
-#     done
-#     mv -f "$log" "$log.$num";
-#     fi
-# }
-#
+function rotate_log
+{
+    # $1 - log file to rotate
+    log=$1
+    num=5
+
+    # rotate the basic start/stop logs
+    if [ -n "$2" ]; then
+        num=$2
+    fi
+
+    # rotate logs
+    if [ -f "$log" ]; then
+        while [ $num -gt 1 ]; do
+            prev=`expr $num - 1`
+            [ -f "$log.$prev" ] && mv -f "$log.$prev" "$log.$num"
+            num=$prev
+        done
+
+        mv -f "$log" "$log.$num";
+    fi
+}
+
 # # Delete the nux file to reenable nux flow
 # function reenable_nux
 # {
