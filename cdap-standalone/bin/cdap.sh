@@ -35,6 +35,8 @@ MIN_NODE_VER="v0.8.16"
 MIN_NODE_MAJ_VER=8
 MIN_NODE_MIN_VER=16
 
+VERSION_HOST="205.186.175.189"
+
 
 # We need a larger PermSize for SparkProgramRunner to call SparkSubmit
 function set_perm_size
@@ -205,61 +207,69 @@ function check_before_start
     echo "1"
 }
 
-# # checks for any updates of standalone
-# function check_for_updates
-# {
-#     # check if connected to internet
-#     l=`ping -c 3 $VERSION_HOST 2>/dev/null | grep "64 bytes" | wc -l`
-#
-#     if [ $l -eq 3 ]; then
-#         new=`curl 'http://s3.amazonaws.com/cdap-docs/VERSION' 2>/dev/null`
-#         if [[ "x${new}" != "x" ]]; then
-#             current=`cat ${APP_HOME}/VERSION`
-#             compare_versions $new $current
-#             case $? in
-#                 0);;
-#             1) echo ""
-#                 echo "UPDATE: There is a newer version of the CDAP SDK available."
-#                 echo "        Download it from http://cask.co/downloads"
-#                 echo "";;
-#             2);;
-#             esac
-#         fi
-#     fi
-# }
-#
-# function compare_versions
-# {
-#     if [[ $1 == $2 ]]
-#     then
-#         return 0
-#     fi
-#     local IFS=.
-#     local i ver1=($1) ver2=($2)
-#     # fill empty fields in ver1 with zeros
-#     for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
-#     do
-#         ver1[i]=0
-#     done
-#     for ((i=0; i<${#ver1[@]}; i++))
-#     do
-#         if [[ -z ${ver2[i]} ]]
-#         then
-#             # fill empty fields in ver2 with zeros
-#             ver2[i]=0
-#         fi
-#         if ((10#${ver1[i]} > 10#${ver2[i]}))
-#         then
-#             return 1
-#         fi
-#         if ((10#${ver1[i]} < 10#${ver2[i]}))
-#         then
-#             return 2
-#         fi
-#     done
-#     return 0
-# }
-#
+function compare_versions
+{
+    # $1 - new version
+    # $2 - old version
+
+    local IFS=.
+    local i
+    local ver1=($1)
+    local ver2=($2)
+
+    if [[ $1 == $2 ]]; then
+        echo 0
+    fi
+
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
+        ver1[i]=0
+    done
+
+    for ((i=0; i<${#ver1[@]}; i++)); do
+        if [[ -z ${ver2[i]} ]]; then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+
+        if ((10#${ver1[i]} > 10#${ver2[i]})); then
+            echo 1
+        fi
+
+        if ((10#${ver1[i]} < 10#${ver2[i]})); then
+            echo 2
+        fi
+    done
+}
+
+
+function check_for_updates
+{
+    # check if connected to internet
+    l=`ping -c 3 $VERSION_HOST 2>/dev/null | grep "64 bytes" | wc -l`
+
+    if [ $l -eq 3 ]; then
+        new=`curl 'http://s3.amazonaws.com/cdap-docs/VERSION' 2>/dev/null`
+
+        if [[ "x${new}" != "x" ]]; then
+            current=`cat ${APP_HOME}/VERSION`
+            compare_versions $new $current
+            case $? in
+            0)
+                ;;
+            1)
+                echo ""
+                echo "UPDATE: There is a newer version of the CDAP SDK available."
+                echo "Download it from http://cask.co/downloads"
+                echo ""
+                ;;
+            2)
+                ;;
+            esac
+        fi
+    fi
+}
+
 # # Rotates the basic start/stop logs
 # function rotate_log
 # {
@@ -460,4 +470,3 @@ function check_before_start
 # esac
 # exit $?
 #
-# VERSION_HOST="205.186.175.189"
