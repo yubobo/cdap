@@ -1,6 +1,7 @@
 #!/bin/bash
 SCRIPT_DIR=$PWD
 CHECK_JAVA_VERSION=6
+LATEST_CDAP_VERSION=2.5.0
 source $SCRIPT_DIR/cdap-standalone/bin/cdap.sh
 source $SCRIPT_DIR/cdap-standalone/bin/assert.sh
 
@@ -193,7 +194,7 @@ function test_compare_versions
 function test_check_for_updates
 {
     # PASS TEST
-    echo "2.5.0" > $APP_HOME/VERSION
+    echo "$LATEST_CDAP_VERSION" > $APP_HOME/VERSION
     assert "check_for_updates" ""
 
     # FAIL TEST - PROMPT USER TO UPDATE
@@ -226,21 +227,57 @@ function test_rotate_log
     rm /tmp/test.log.*
 }
 
+function test_reenable_nux
+{
+    touch $NUX_FILE
+
+    # PASS TEST
+    reenable_nux
+    assert_raises "cat $NUX_FILE" "1" ""
+
+    rm -f $NUX_FILE
+}
+
+function test_is_nux_enabled
+{
+    touch $NUX_FILE
+
+    # TEST - NUX FILE EXISTS
+    assert "is_nux_enabled" "1"
+
+    # TEST - NUX FILE DOES NOT EXISTS
+    rm $NUX_FILE
+    assert "is_nux_enabled" "0"
+}
+
+# function test_nux
+# {
+#     echo "$LATEST_CDAP_VERSION" > $APP_HOME/VERSION
+# 
+#     nux
+# 
+#     rm $APP_HOME/VERSION
+# }
+
+
 # TESTS
-# test_set_perm_size
-# test_script_variables
-# test_warn
-# test_die
-# test_program_is_installed
-# test_check_java_cmd
-# test_check_java_version
-# test_check_nodejs
-# test_check_nodejs_version
+test_set_perm_size
+test_script_variables
+test_warn
+test_die
+test_program_is_installed
+test_check_java_cmd
+test_check_java_version
+test_check_nodejs
+test_check_nodejs_version
 test_split_jvm_opts
-# test_check_before_start
-# test_compare_versions
-# test_check_for_updates
-# test_rotate_log
+test_check_before_start
+test_compare_versions
+test_check_for_updates
+test_rotate_log
+test_reenable_nux
+test_is_nux_enabled
+# test_nux
 
 assert_end regression
 echo "Done!"

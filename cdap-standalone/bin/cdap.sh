@@ -245,19 +245,19 @@ function check_for_updates
 
 
     if [ $INET_CHECK -eq 3 ]; then
-        new=`curl 'http://s3.amazonaws.com/cdap-docs/VERSION' 2>/dev/null`
+        NEW=`curl 'http://s3.amazonaws.com/cdap-docs/VERSION' 2>/dev/null`
 
-        if [[ "x${new}" != "x" ]]; then
-            current=`cat ${APP_HOME}/VERSION`
+        if [[ "x${NEW}" != "x" ]]; then
+            CURRENT=`cat ${APP_HOME}/VERSION`
 
-            case $(compare_versions $new $current) in
+            case $(compare_versions $NEW $CURRENT) in
             0)
                 ;;
             1)
-                echo ""
+                echo 
                 echo "UPDATE: There is a newer version of the CDAP SDK available."
                 echo "Download it from http://cask.co/downloads"
-                echo ""
+                echo 
                 ;;
             2)
                 ;;
@@ -289,33 +289,41 @@ function rotate_log
     fi
 }
 
-# # Delete the nux file to reenable nux flow
-# function reenable_nux
-# {
-#     rm -f $NUX_FILE
-# }
-#
-# # Checks if this is first time user is using the Standalone CDAP
-# function nux_enabled
-# {
-#     if [ -f $NUX_FILE ];
-#     then
-#         return 1;
-#     else
-#         return 0;
-#     fi
-# }
-#
-# function nux
-# {
-#     version=`cat ${APP_HOME}/VERSION`
-#     # Deploy apps
-#     curl -sL -o /dev/null -H "X-Archive-Name: LogAnalytics.jar" --data-binary "@$APP_HOME/examples/ResponseCodeAnalytics/target/ResponseCodeAnalytics-${version}.jar" -X POST http://127.0.0.1:10000/v2/apps
-#     # Start flow and procedure
-#     curl -sL -o /dev/null -X POST http://127.0.0.1:10000/v2/apps/ResponseCodeAnalytics/flows/LogAnalyticsFlow/start
-#     curl -sL -o /dev/null -X POST http://127.0.0.1:10000/v2/apps/ResponseCodeAnalytics/procedures/StatusCodeProcedure/start
-# }
-#
+function reenable_nux
+{
+    # delete the nux file to reenable nux flow
+    rm -f $NUX_FILE
+}
+
+function is_nux_enabled
+{
+    # checks if this is first time user is using the Standalone CDAP
+    if [ -f $NUX_FILE ]; then
+        echo 1
+    else
+        echo 0
+    fi
+}
+
+function nux
+{
+    version=`cat ${APP_HOME}/VERSION`
+
+    # Deploy apps
+    curl -sL -o /dev/null \
+        -H "X-Archive-Name: LogAnalytics.jar" \
+        --data-binary \
+        "@$APP_HOME/examples/ResponseCodeAnalytics/target/ResponseCodeAnalytics-${version}.jar" \
+        -X POST http://127.0.0.1:10000/v2/apps
+
+    # Start flow and procedure
+    curl -sL -o /dev/null \
+        -X POST http://127.0.0.1:10000/v2/apps/ResponseCodeAnalytics/flows/LogAnalyticsFlow/start
+
+    curl -sL -o /dev/null \
+        -X POST http://127.0.0.1:10000/v2/apps/ResponseCodeAnalytics/procedures/StatusCodeProcedure/start
+}
+
 # function start
 # {
 #     debug=$1; shift
@@ -361,7 +369,7 @@ function rotate_log
 #
 #     # Disabling NUX
 #     # TODO: Enable NUX with new example, see CDAP-22
-#     #nux_enabled
+#     #is_nux_enabled
 #
 #     #NUX_ENABLED=$?
 #     #if [ "x$NUX_ENABLED" == "x0" ]; then
