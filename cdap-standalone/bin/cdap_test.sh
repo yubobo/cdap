@@ -176,10 +176,23 @@ function test_compare_versions
     assert "compare_versions '1.0.0' '2.0.0'" "2"
 }
 
-# function test_check_for_updates
-# {
-#     check_for_updates
-# }
+function test_check_for_updates
+{
+    # PASS TEST
+    echo "2.5.0" > $APP_HOME/VERSION
+    assert "check_for_updates" ""
+
+    # FAIL TEST - PROMPT USER TO UPDATE
+    echo "1.5.0" > $APP_HOME/VERSION
+    assert "check_for_updates" \
+        "\nUPDATE: There is a newer version of the CDAP SDK available.\nDownload it from http://cask.co/downloads"
+
+    # FAIL TEST - HAVE NEWER VERSION THAN CASK - IS THAT POSSIBLE?
+    echo "100.0.0" > $APP_HOME/VERSION
+    assert "check_for_updates" ""
+
+    rm $APP_HOME/VERSION
+}
 
 
 # TESTS
@@ -194,7 +207,7 @@ test_check_nodejs
 test_check_nodejs_version
 test_check_before_start
 test_compare_versions
-# test_check_for_updates
+test_check_for_updates
 
 assert_end regression
 echo "Done!"

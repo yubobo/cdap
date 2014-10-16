@@ -246,15 +246,16 @@ function compare_versions
 function check_for_updates
 {
     # check if connected to internet
-    l=`ping -c 3 $VERSION_HOST 2>/dev/null | grep "64 bytes" | wc -l`
+    INET_CHECK=`ping -c 3 $VERSION_HOST 2>/dev/null | grep "64 bytes" | wc -l`
 
-    if [ $l -eq 3 ]; then
+
+    if [ $INET_CHECK -eq 3 ]; then
         new=`curl 'http://s3.amazonaws.com/cdap-docs/VERSION' 2>/dev/null`
 
         if [[ "x${new}" != "x" ]]; then
             current=`cat ${APP_HOME}/VERSION`
-            compare_versions $new $current
-            case $? in
+
+            case $(compare_versions $new $current) in
             0)
                 ;;
             1)
