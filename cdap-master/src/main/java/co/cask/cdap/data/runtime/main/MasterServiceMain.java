@@ -489,6 +489,7 @@ public class MasterServiceMain extends DaemonMain {
       }
     }
 
+    // TODO only put that when Hive is secure
     // HiveSecureStoreUpdater.update() ignores parameters
     preparer.addSecureStore(hiveSecureStoreUpdater.update(null, null));
 
