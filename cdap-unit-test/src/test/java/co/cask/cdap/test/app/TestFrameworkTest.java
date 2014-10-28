@@ -340,7 +340,7 @@ public class TestFrameworkTest extends TestBase {
     URL url = new URL(serviceManager.getServiceURL(5, TimeUnit.SECONDS), "ping2");
     HttpRequest request = HttpRequest.get(url).build();
     HttpResponse response = HttpRequests.execute(request);
-    Assert.assertEquals(response.getResponseCode(), 200);
+    Assert.assertEquals(200, response.getResponseCode());
 
     serviceManager.stop();
     serviceStatusCheck(serviceManager, false);
@@ -659,9 +659,8 @@ public class TestFrameworkTest extends TestBase {
     }
   }
 
-  @Test(timeout = 60000L)
+  @Test(timeout = 90000L)
   public void testSQLQuery() throws Exception {
-
     deployDatasetModule("my-kv", AppsWithDataset.KeyValueTableDefinition.Module.class);
     ApplicationManager appManager = deployApplication(AppsWithDataset.AppWithAutoCreate.class);
     DataSetManager<AppsWithDataset.KeyValueTableDefinition.KeyValueTable> myTableManager =

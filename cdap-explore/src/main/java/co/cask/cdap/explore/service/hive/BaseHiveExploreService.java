@@ -111,6 +111,11 @@ import javax.annotation.Nullable;
 /**
  * Defines common functionality used by different HiveExploreServices. The common functionality includes
  * starting/stopping transactions, serializing configuration and saving operation information.
+ *
+ * Overridden {@link co.cask.cdap.explore.service.Explore} methods also call {@code startAndWait()},
+ * which effectively allows this {@link com.google.common.util.concurrent.Service} to not have to start
+ * until the first call to the explore methods is made. This is used for {@link Constants.Explore#START_ON_DEMAND},
+ * which, if true, does not start the {@link ExploreService} when the explore HTTP services are started.
  */
 public abstract class BaseHiveExploreService extends AbstractIdleService implements ExploreService {
   private static final Logger LOG = LoggerFactory.getLogger(BaseHiveExploreService.class);
@@ -294,6 +299,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   public QueryHandle getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
     throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       Map<String, String> sessionConf = startSession();
       SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
@@ -317,6 +324,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public QueryHandle getCatalogs() throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       Map<String, String> sessionConf = startSession();
       SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
@@ -338,6 +347,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public QueryHandle getSchemas(String catalog, String schemaPattern) throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       Map<String, String> sessionConf = startSession();
       SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
@@ -360,6 +371,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   public QueryHandle getFunctions(String catalog, String schemaPattern, String functionNamePattern)
     throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       Map<String, String> sessionConf = startSession();
       SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
@@ -383,6 +396,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public MetaDataInfo getInfo(MetaDataInfo.InfoType infoType) throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       MetaDataInfo ret = infoType.getDefaultValue();
       if (ret != null) {
@@ -421,6 +436,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   public QueryHandle getTables(String catalog, String schemaPattern, String tableNamePattern,
                                List<String> tableTypes) throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       Map<String, String> sessionConf = startSession();
       SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
@@ -444,6 +461,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public List<TableNameInfo> getTables(@Nullable final String database) throws ExploreException {
+    startAndWait();
+
     // TODO check if the database user is allowed to access if security is enabled and
     // namespacing is in place.
 
@@ -470,6 +489,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   public TableInfo getTableInfo(@Nullable String database, String table)
     throws ExploreException, TableNotFoundException {
+    startAndWait();
+
     // TODO check if the database user is allowed to access if security is enabled and
     // namespacing is in place.
 
@@ -506,6 +527,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public QueryHandle getTableTypes() throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       Map<String, String> sessionConf = startSession();
       SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
@@ -527,6 +550,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public QueryHandle getTypeInfo() throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       Map<String, String> sessionConf = startSession();
       SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
@@ -548,6 +573,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public QueryHandle execute(String statement) throws ExploreException, SQLException {
+    startAndWait();
+
     try {
       Map<String, String> sessionConf = startSession();
       SessionHandle sessionHandle;
@@ -606,6 +633,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public QueryStatus getStatus(QueryHandle handle) throws ExploreException, HandleNotFoundException, SQLException {
+    startAndWait();
+
     InactiveOperationInfo inactiveOperationInfo = inactiveHandleCache.getIfPresent(handle);
     if (inactiveOperationInfo != null) {
       // Operation has been made inactive, so return the saved status.
@@ -636,6 +665,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   public List<QueryResult> nextResults(QueryHandle handle, int size)
     throws ExploreException, HandleNotFoundException, SQLException {
+    startAndWait();
+
     InactiveOperationInfo inactiveOperationInfo = inactiveHandleCache.getIfPresent(handle);
     if (inactiveOperationInfo != null) {
       // Operation has been made inactive, so all results should have been fetched already - return empty list.
@@ -664,6 +695,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   protected List<QueryResult> fetchNextResults(OperationHandle operationHandle, int size)
     throws HiveSQLException, ExploreException, HandleNotFoundException {
+    startAndWait();
+
     try {
       if (operationHandle.hasResultSet()) {
         // Rowset is an interface in Hive 13, but a class in Hive 12, so we use reflection
@@ -699,6 +732,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   public List<QueryResult> previewResults(QueryHandle handle)
     throws ExploreException, HandleNotFoundException, SQLException {
+    startAndWait();
+
     if (inactiveHandleCache.getIfPresent(handle) != null) {
       throw new HandleNotFoundException("Query is inactive.", true);
     }
@@ -747,6 +782,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   public List<ColumnDesc> getResultSchema(QueryHandle handle)
     throws ExploreException, HandleNotFoundException, SQLException {
+    startAndWait();
+
     try {
       InactiveOperationInfo inactiveOperationInfo = inactiveHandleCache.getIfPresent(handle);
       if (inactiveOperationInfo != null) {
@@ -803,12 +840,15 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
   @Override
   public void close(QueryHandle handle) throws ExploreException, HandleNotFoundException {
+    startAndWait();
     inactiveHandleCache.invalidate(handle);
     activeHandleCache.invalidate(handle);
   }
 
   @Override
   public List<QueryInfo> getQueries() throws ExploreException, SQLException {
+    startAndWait();
+
     List<QueryInfo> result = Lists.newArrayList();
     for (Map.Entry<QueryHandle, OperationInfo> entry : activeHandleCache.asMap().entrySet()) {
       try {
