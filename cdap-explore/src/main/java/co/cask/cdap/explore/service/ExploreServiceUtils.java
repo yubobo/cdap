@@ -397,6 +397,8 @@ public class ExploreServiceUtils {
     conf.setBoolean("mapreduce.user.classpath.first", true);
     conf.setBoolean(Job.MAPREDUCE_JOB_USER_CLASSPATH_FIRST, true);
 
+    conf.set("mapreduce.job.credentials.binary", "${HADOOP_TOKEN_FILE_LOCATION}");
+
     File newHiveConfFile = new File(Files.createTempDir(), "hive-site.xml");
     FileOutputStream fos;
     try {
