@@ -18,6 +18,7 @@ package co.cask.cdap.metrics.query;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.metrics.MetricsScope;
 import co.cask.cdap.metrics.data.Interpolators;
+import org.apache.hadoop.record.meta.TypeID;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -242,12 +243,12 @@ public class MetricsRequestParserTest {
   public void testUserServices() throws MetricsPathException  {
     MetricsRequest request = MetricsRequestParser.parse(
       URI.create("/system/apps/app1/services/serve1/reads?summary=true"));
-    Assert.assertEquals("app1.s.serve1", request.getContextPrefix());
+    Assert.assertEquals("app1.u.serve1", request.getContextPrefix());
     Assert.assertEquals("reads", request.getMetricPrefix());
 
     request = MetricsRequestParser.parse(
       URI.create("/system/apps/app1/services/serve1/runnables/run1/reads?summary=true"));
-    Assert.assertEquals("app1.s.serve1.run1", request.getContextPrefix());
+    Assert.assertEquals("app1.u.serve1.run1", request.getContextPrefix());
     Assert.assertEquals("reads", request.getMetricPrefix());
   }
 
