@@ -16,10 +16,15 @@
 package co.cask.cdap.data2.transaction.stream;
 
 import co.cask.cdap.api.flow.flowlet.StreamEvent;
+import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.queue.QueueName;
 import co.cask.cdap.common.stream.StreamEventCodec;
+import co.cask.cdap.data.file.FileReader;
 import co.cask.cdap.data.file.FileWriter;
+import co.cask.cdap.data.file.ReadFilter;
+import co.cask.cdap.data.stream.StreamEventOffset;
+import co.cask.cdap.data.stream.StreamFileOffset;
 import co.cask.cdap.data.stream.StreamFileWriterFactory;
 import co.cask.cdap.data2.queue.ConsumerConfig;
 import co.cask.cdap.data2.queue.DequeueResult;
@@ -38,9 +43,12 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
+import org.apache.twill.filesystem.Location;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -51,11 +59,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  *
  */
 public abstract class StreamConsumerTestBase {
+
+  private static final Logger LOG = LoggerFactory.getLogger(StreamConsumerTestBase.class);
 
   private static final Comparator<StreamEvent> STREAM_EVENT_COMPARATOR = new Comparator<StreamEvent>() {
     @Override
@@ -390,6 +401,71 @@ public abstract class StreamConsumerTestBase {
   }
 
   @Test
+  public void testTTLOverflow() throws Exception {
+    String stream = "testTTLOverflow";
+    QueueName streamName = QueueName.fromStream(stream);
+    StreamAdmin streamAdmin = getStreamAdmin();
+
+    // Create stream with ttl of 1 day
+    final long ttl = Long.MAX_VALUE;
+    final long currentTime = System.currentTimeMillis();
+    final long increment = TimeUnit.SECONDS.toMillis(1);
+    final long approxEarliestNonExpiredTime = currentTime - TimeUnit.HOURS.toMillis(1);
+
+    Properties streamProperties = new Properties();
+    streamAdmin.create(stream, streamProperties);
+
+    StreamConfig streamConfig = streamAdmin.getConfig(stream);
+    streamAdmin.configureInstances(streamName, 0L, 1);
+
+    TestStreamFileConsumerFactory consumerFactory = new TestStreamFileConsumerFactory(
+      CConfiguration.create(), streamAdmin, new StreamConsumerStateStoreFactory() {
+      @Override
+      public StreamConsumerStateStore create(StreamConfig streamConfig) throws IOException {
+        return null;
+      }
+
+      @Override
+      public void dropAll() throws IOException {
+
+      }
+    }, getQueueClientFactory(),
+      streamAdmin, (AbstractStreamFileConsumerFactory) getConsumerFactory());
+
+    Assert.assertEquals(ttl, streamConfig.getTTL());
+
+    Set<StreamEvent> expectedEvents = Sets.newTreeSet(STREAM_EVENT_COMPARATOR);
+    FileWriter<StreamEvent> writer = getFileWriterFactory().create(streamConfig, 0);
+
+    try {
+      // Write 5 non-expired messages
+      expectedEvents.addAll(writeEvents(streamConfig, "New event ", 12,
+                                        new IncrementingClock(approxEarliestNonExpiredTime, increment)));
+    } finally {
+      writer.close();
+    }
+
+    // Dequeue from stream. Should only get the 5 unexpired events.
+    StreamConsumer consumer = consumerFactory.create(streamName, stream,
+                                                     new ConsumerConfig(0L, 0, 1, DequeueStrategy.FIFO, null));
+
+    try {
+      verifyEvents(consumer, expectedEvents);
+    } finally {
+      consumer.close();
+    }
+
+    // Dequeue from stream. Should only get the 5 unexpired events.
+    consumer = consumerFactory.create(streamName, stream,
+                                      new ConsumerConfig(0L, 0, 1, DequeueStrategy.FIFO, null));
+    try {
+      verifyEvents(consumer, expectedEvents);
+    } finally {
+      consumer.close();
+    }
+  }
+
+  @Test
   public void testTTLMultipleEventsWithSameTimestamp() throws Exception {
     String stream = "testTTLMultipleEventsWithSameTimestamp";
     QueueName streamName = QueueName.fromStream(stream);
@@ -622,5 +698,47 @@ public abstract class StreamConsumerTestBase {
       currentRepeat++;
       return result;
     }
+  }
+
+  public static final class TestStreamFileConsumerFactory extends AbstractStreamFileConsumerFactory {
+
+    public AbstractStreamFileConsumerFactory delegate;
+
+    protected TestStreamFileConsumerFactory(CConfiguration cConf, StreamAdmin streamAdmin,
+                                            StreamConsumerStateStoreFactory stateStoreFactory, QueueClientFactory
+      queueClientFactory, StreamAdmin oldStreamAdmin, AbstractStreamFileConsumerFactory delegate) {
+      super(cConf, streamAdmin, stateStoreFactory, queueClientFactory, oldStreamAdmin);
+      this.delegate = delegate;
+    }
+
+    @Override
+    protected StreamConsumer create(String tableName, StreamConfig streamConfig, ConsumerConfig consumerConfig,
+                                    StreamConsumerStateStore stateStore, StreamConsumerState beginConsumerState, FileReader<StreamEventOffset, Iterable<StreamFileOffset>> reader, @Nullable ReadFilter extraFilter) throws IOException {
+      return delegate.create(tableName, streamConfig, consumerConfig, stateStore, beginConsumerState, reader, extraFilter);
+    }
+
+    @Override
+    protected void dropTable(String tableName) throws IOException {
+      delegate.dropTable(tableName);
+    }
+
+    @Override
+    protected void getFileOffsets(Location partitionLocation, Collection<? super StreamFileOffset> fileOffsets, int
+      generation) throws IOException {
+      LOG.debug("\n\nGOT FILE OFFSETS!!!\n\n");
+      delegate.getFileOffsets(partitionLocation, fileOffsets, generation);
+    }
+
+    @Override
+    public void dropAll(QueueName streamName, String namespace, Iterable<Long> groupIds) throws IOException {
+      delegate.dropAll(streamName, namespace, groupIds);
+    }
+
+    @Override
+    public StreamConsumer create(QueueName streamName, String namespace,
+                                       ConsumerConfig consumerConfig) throws IOException {
+      return delegate.create(streamName, namespace, consumerConfig);
+    }
+
   }
 }

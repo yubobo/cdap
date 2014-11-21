@@ -104,6 +104,7 @@ public abstract class AbstractStreamFileConsumerFactory implements StreamConsume
   protected void getFileOffsets(Location partitionLocation,
                                 Collection<? super StreamFileOffset> fileOffsets,
                                 int generation) throws IOException {
+    LOG.debug("\n\nGOT GET FILE OFFSETS ABSTRACT\n\n");
     // TODO: Support dynamic writer instances discovery
     // Current assume it won't change and is based on cConf
     int instances = cConf.getInt(Constants.Stream.CONTAINER_INSTANCES);
@@ -118,8 +119,10 @@ public abstract class AbstractStreamFileConsumerFactory implements StreamConsume
   }
 
   @Override
-  public final StreamConsumer create(QueueName streamName, String namespace,
+  public StreamConsumer create(QueueName streamName, String namespace,
                                      ConsumerConfig consumerConfig) throws IOException {
+
+    LOG.debug("\n\nGOT CONSUMER FACTORY CREATE\n");
 
     StreamConfig streamConfig = StreamUtils.ensureExists(streamAdmin, streamName.getSimpleName());
 
@@ -185,6 +188,9 @@ public abstract class AbstractStreamFileConsumerFactory implements StreamConsume
 
   private MultiLiveStreamFileReader createReader(final StreamConfig streamConfig,
                                                  StreamConsumerState consumerState) throws IOException {
+
+    LOG.debug("\n\nGOT CONSUMER FACTORY CREATE READER\n");
+
     Location streamLocation = streamConfig.getLocation();
     Preconditions.checkNotNull(streamLocation, "Stream location is null for %s", streamConfig.getName());
 
@@ -195,12 +201,18 @@ public abstract class AbstractStreamFileConsumerFactory implements StreamConsume
     final long currentTime = System.currentTimeMillis();
 
     if (!Iterables.isEmpty(consumerState.getState())) {
+
+      LOG.debug("\n\nGOT IF CREATE READER STATEMENT\n");
+
       // See if any offset has a different generation or is expired. If so, don't use the old states.
       boolean useStoredStates = Iterables.all(consumerState.getState(), new Predicate<StreamFileOffset>() {
         @Override
         public boolean apply(StreamFileOffset input) {
+//          boolean isExpired = input.getPartitionEnd() + streamConfig.getTTL() < currentTime;
           boolean isExpired = input.getPartitionEnd() < currentTime - streamConfig.getTTL();
+          LOG.debug("\n\nIS EXPIRED: {}\n\n", isExpired);
           boolean sameGeneration = generation == input.getGeneration();
+          LOG.debug("\n\nNOT IS EXPIRED AND SAMEGEN: {}\n\n", !isExpired && sameGeneration);
           return !isExpired && sameGeneration;
         }
       });
