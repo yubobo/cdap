@@ -32,6 +32,7 @@ public final class EchoHandler extends AbstractHttpServiceHandler {
   @POST
   @Path("/echo")
   public void echo(HttpServiceRequest request, HttpServiceResponder responder) {
-    responder.send(200, request.getContent(), "text/plain", null);
+//    responder.send(200, request.getContent(), "text/plain", null);
+    responder.sendStatus(200);
   }
 }

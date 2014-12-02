@@ -123,7 +123,7 @@ public class CLIMainTest extends StandaloneTestBase {
     testCommandOutputContains(cli, "start service " + qualifiedServiceId, "Successfully started Service");
     testCommandOutputContains(cli, "get endpoints service " + qualifiedServiceId, "POST");
     testCommandOutputContains(cli, "get endpoints service " + qualifiedServiceId, "/echo");
-    testCommandOutputContains(cli, "call service " + qualifiedServiceId + " POST /echo body \"testBody\"", "testBody");
+    testCommandOutputContains(cli, "call service " + qualifiedServiceId + " GET /echo", "200");
     testCommandOutputContains(cli, "stop service " + qualifiedServiceId, "Successfully stopped Service");
 
     // test spark commands
