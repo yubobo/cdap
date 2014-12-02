@@ -72,7 +72,6 @@ public final class MapReduceCounterCollectionService extends AggregatedMetricsCo
         continue;
       }
 
-      counterGroup += "." + record.getType().toString();
       counterGroup += "." + scope.name();
 
       if (record.getType() == MetricType.COUNTER) {
