@@ -366,7 +366,7 @@ public class TestFrameworkTest extends TestBase {
       ServiceManager serviceManager = applicationManager.startService(AppWithServices.SERVICE_NAME);
       serviceStatusCheck(serviceManager, true);
 
-      LOG.info("Service Started");
+      LOG.info("Service Started: {}", AppWithServices.SERVICE_NAME);
 
       // Call the ping endpoint
       URL url = new URL(serviceManager.getServiceURL(5, TimeUnit.SECONDS), "ping2");

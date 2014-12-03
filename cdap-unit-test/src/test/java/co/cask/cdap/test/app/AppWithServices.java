@@ -39,6 +39,8 @@ import co.cask.cdap.api.service.http.HttpServiceRequest;
 import co.cask.cdap.api.service.http.HttpServiceResponder;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -146,23 +148,28 @@ public class AppWithServices extends AbstractApplication {
   }
 
   @Path("/")
-  public class ServerService extends AbstractHttpServiceHandler {
+  public static final class ServerService extends AbstractHttpServiceHandler {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ServerService.class);
 
     @Path("/ping2")
     @GET
     public void handler(HttpServiceRequest request, HttpServiceResponder responder) {
+      LOG.info("Received {} {}", request.getMethod(), request.getRequestURI());
       responder.sendStatus(200);
     }
 
     @Path("/failure")
     @GET
     public void failure(HttpServiceRequest request, HttpServiceResponder responder) {
+      LOG.info("Received {} {}", request.getMethod(), request.getRequestURI());
       throw new IllegalStateException("Failed");
     }
 
     @Path("verifyClassLoader")
     @GET
     public void verifyClassLoader(HttpServiceRequest request, HttpServiceResponder responder) {
+      LOG.info("Received {} {}", request.getMethod(), request.getRequestURI());
       if (Thread.currentThread().getContextClassLoader() != getClass().getClassLoader()) {
         responder.sendStatus(500);
       } else {
@@ -174,6 +181,7 @@ public class AppWithServices extends AbstractApplication {
     @GET
     public void discoverService(HttpServiceRequest request, HttpServiceResponder responder,
                                 @PathParam("app") String appId, @PathParam("service") String serviceId) {
+      LOG.info("Received {} {}", request.getMethod(), request.getRequestURI());
       URL url = getContext().getServiceURL(appId, serviceId);
       if (url == null) {
         responder.sendStatus(HttpURLConnection.HTTP_NO_CONTENT);
