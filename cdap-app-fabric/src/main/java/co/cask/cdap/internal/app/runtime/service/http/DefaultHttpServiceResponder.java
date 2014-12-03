@@ -24,16 +24,20 @@ import com.google.common.collect.Multimap;
 import com.google.gson.Gson;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of {@link HttpServiceResponder} which delegates calls to
  * the HttpServiceResponder's methods to the matching methods for a {@link HttpResponder}.
  */
 final class DefaultHttpServiceResponder implements HttpServiceResponder {
+  private static final Logger LOG = LoggerFactory.getLogger(DefaultHttpServiceResponder.class);
 
   private final HttpResponder responder;
   private final MetricsCollector metricsCollector;
@@ -119,6 +123,12 @@ final class DefaultHttpServiceResponder implements HttpServiceResponder {
   public void sendStatus(int status) {
     responder.sendStatus(HttpResponseStatus.valueOf(status));
     emitMetrics(status);
+    try {
+      LOG.info("Sleeping for 5 sec after response");
+      TimeUnit.SECONDS.sleep(5);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
   /**
