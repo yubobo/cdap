@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of {@link HttpServiceResponder} which delegates calls to
@@ -123,12 +122,12 @@ final class DefaultHttpServiceResponder implements HttpServiceResponder {
   public void sendStatus(int status) {
     responder.sendStatus(HttpResponseStatus.valueOf(status));
     emitMetrics(status);
-    try {
-      LOG.info("Sleeping for 5 sec after response");
-      TimeUnit.SECONDS.sleep(5);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+//    try {
+//      LOG.info("Sleeping for 5 sec after response");
+//      TimeUnit.SECONDS.sleep(5);
+//    } catch (InterruptedException e) {
+//      e.printStackTrace();
+//    }
   }
 
   /**
