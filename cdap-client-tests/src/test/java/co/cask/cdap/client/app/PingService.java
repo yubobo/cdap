@@ -32,6 +32,8 @@ public final class PingService extends AbstractHttpServiceHandler {
   @Path("ping")
   @GET
   public void ping(HttpServiceRequest request, HttpServiceResponder responder) {
-    responder.sendString("OK");
+    // TODO: Using the first responder statement makes it pass.
+//    responder.sendString("OK");
+    responder.sendStatus(200);
   }
 }
