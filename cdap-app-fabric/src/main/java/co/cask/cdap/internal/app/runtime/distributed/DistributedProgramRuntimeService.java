@@ -466,8 +466,8 @@ public final class DistributedProgramRuntimeService extends AbstractProgramRunti
           long availableMemory = clusterMetrics.get("availableMB").getAsLong();
           MetricsCollector collector = getCollector(CLUSTER_METRICS_CONTEXT);
           LOG.trace("resource manager, total memory = " + totalMemory + " available = " + availableMemory);
-          collector.increment("resources.total.memory", (int) totalMemory);
-          collector.increment("resources.available.memory", (int) availableMemory);
+          collector.gauge("resources.total.memory", (int) totalMemory);
+          collector.gauge("resources.available.memory", (int) availableMemory);
           return true;
         }
         return false;
@@ -510,11 +510,11 @@ public final class DistributedProgramRuntimeService extends AbstractProgramRunti
         MetricsCollector collector = getCollector(CLUSTER_METRICS_CONTEXT);
         // TODO: metrics should support longs
         LOG.trace("total cluster storage = " + storageCapacity + " total used = " + totalUsed);
-        collector.increment("resources.total.storage", (int) (storageCapacity / 1024 / 1024));
-        collector.increment("resources.available.storage", (int) (storageAvailable / 1024 / 1024));
-        collector.increment("resources.used.storage", (int) (totalUsed / 1024 / 1024));
-        collector.increment("resources.used.files", (int) totalFiles);
-        collector.increment("resources.used.directories", (int) totalDirectories);
+        collector.gauge("resources.total.storage", (int) (storageCapacity / 1024 / 1024));
+        collector.gauge("resources.available.storage", (int) (storageAvailable / 1024 / 1024));
+        collector.gauge("resources.used.storage", (int) (totalUsed / 1024 / 1024));
+        collector.gauge("resources.used.files", (int) totalFiles);
+        collector.gauge("resources.used.directories", (int) totalDirectories);
       } catch (IOException e) {
         LOG.warn("Exception getting hdfs metrics", e);
       }
