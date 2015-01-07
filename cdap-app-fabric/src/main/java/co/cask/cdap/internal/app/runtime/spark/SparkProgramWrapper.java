@@ -23,12 +23,16 @@ import co.cask.cdap.api.spark.SparkContext;
 import co.cask.cdap.api.spark.SparkProgram;
 import com.google.common.base.Throwables;
 import org.apache.spark.network.ConnectionManager;
+import org.apache.twill.api.RunId;
+import org.apache.twill.internal.RunIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.channels.Selector;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class which wraps around user's program class to integrate the spark program with CDAP.
@@ -66,6 +70,10 @@ public class SparkProgramWrapper {
   // CDAP-4
   private static boolean sparkProgramSuccessful;
   private static boolean sparkProgramRunning;
+  
+  
+  public static Map<RunId, SparkProgramRuntimeContext> sparkProgramRuntimeContextMap = new ConcurrentHashMap<RunId,
+                                                                                          SparkProgramRuntimeContext>();
 
   /**
    * Constructor
@@ -78,7 +86,9 @@ public class SparkProgramWrapper {
     arguments = validateArgs(args);
     try {
       // Load the user class from the ProgramClassLoader
-      userProgramClass = loadUserSparkClass(arguments[0]);
+      RunId runId = RunIds.fromString(arguments[0]);
+      
+      userProgramClass = sparkProgramRuntimeContextMap.containsKey(runId) ? sparkProgramRuntimeContextMap.get(runId) : throw new RuntimeException("Mango");
     } catch (ClassNotFoundException e) {
       LOG.error("Unable to load program class: {}", arguments[0], e);
       throw Throwables.propagate(e);

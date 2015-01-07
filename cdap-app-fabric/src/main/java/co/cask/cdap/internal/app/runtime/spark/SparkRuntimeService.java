@@ -163,6 +163,10 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
       // depends on.
       Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
       try {
+        SparkProgramRuntimeContext sparkProgramRuntimeContext =  new SparkProgramRuntimeContext(
+                                                                              sparkSpecification.getMainClassName(),
+                                                                              context);
+        SparkProgramWrapper.sparkProgramRuntimeContextMap.put(context.getRunId(), sparkProgramRuntimeContext);
         SparkProgramWrapper.setBasicSparkContext(context);
         SparkProgramWrapper.setSparkProgramRunning(true);
         SparkSubmit.main(sparkSubmitArgs);
@@ -317,7 +321,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
 
     return new String[]{"--class", SparkProgramWrapper.class.getCanonicalName(), "--jars",
       Joiner.on(',').join(jars), "--master", conf.get(MRConfig.FRAMEWORK_NAME), jobJarCopy.toURI().getPath(),
-      sparkSpec.getMainClassName()};
+      context.getRunId().getId()};
   }
 
   /**
