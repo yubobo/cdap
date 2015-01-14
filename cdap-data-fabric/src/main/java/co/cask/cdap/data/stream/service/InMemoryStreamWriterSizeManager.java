@@ -17,6 +17,7 @@
 package co.cask.cdap.data.stream.service;
 
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.data.stream.StreamCoordinator;
 import co.cask.cdap.data.stream.service.heartbeat.HeartbeatPublisher;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -28,8 +29,9 @@ public class InMemoryStreamWriterSizeManager extends AbstractStreamWriterSizeMan
 
   @Inject
   public InMemoryStreamWriterSizeManager(HeartbeatPublisher heartbeatPublisher,
+                                         StreamCoordinator streamCoordinator,
                                          @Named(Constants.Stream.CONTAINER_INSTANCE_ID) int instanceId) {
-    super(heartbeatPublisher, instanceId);
+    super(heartbeatPublisher, streamCoordinator, instanceId);
   }
 
   @Override

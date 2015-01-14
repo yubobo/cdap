@@ -18,6 +18,7 @@ package co.cask.cdap.data.stream.service;
 
 import co.cask.cdap.api.data.stream.StreamSpecification;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.data.stream.StreamCoordinator;
 import co.cask.cdap.data.stream.StreamFileType;
 import co.cask.cdap.data.stream.StreamUtils;
 import co.cask.cdap.data.stream.service.heartbeat.HeartbeatPublisher;
@@ -48,9 +49,9 @@ public class StreamFileWriterSizeManager extends AbstractStreamWriterSizeManager
 
   @Inject
   public StreamFileWriterSizeManager(StreamMetaStore streamMetaStore, HeartbeatPublisher heartbeatPublisher,
-                                     StreamAdmin streamAdmin,
+                                     StreamAdmin streamAdmin, StreamCoordinator streamCoordinator,
                                      @Named(Constants.Stream.CONTAINER_INSTANCE_ID) int instanceId) {
-    super(heartbeatPublisher, instanceId);
+    super(heartbeatPublisher, streamCoordinator, instanceId);
     this.streamMetaStore = streamMetaStore;
     this.streamAdmin = streamAdmin;
   }

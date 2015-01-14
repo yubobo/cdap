@@ -120,7 +120,8 @@ public class StreamFileSizeManagerTest {
         protected void configure() {
           bind(MetricsCollectionService.class).to(MockMetricsCollectionService.class);
 
-          bind(StreamConsumerStateStoreFactory.class).to(LevelDBStreamConsumerStateStoreFactory.class).in(Singleton.class);
+          bind(StreamConsumerStateStoreFactory.class)
+            .to(LevelDBStreamConsumerStateStoreFactory.class).in(Singleton.class);
           bind(StreamAdmin.class).to(LevelDBStreamFileAdmin.class).in(Singleton.class);
           bind(StreamConsumerFactory.class).to(LevelDBStreamFileConsumerFactory.class).in(Singleton.class);
           bind(StreamFileWriterFactory.class).to(LocationStreamFileWriterFactory.class).in(Singleton.class);
@@ -163,7 +164,7 @@ public class StreamFileSizeManagerTest {
 
   @Test
   public void streamPublishesHeartbeatTest() throws Exception {
-    // Now, create the new stream.
+    // Create a new stream.
     HttpURLConnection urlConn = openURL(String.format("http://%s:%d/v2/streams/test_stream1", HOSTNAME, port),
                                         HttpMethod.PUT);
     Assert.assertEquals(HttpResponseStatus.OK.getCode(), urlConn.getResponseCode());
@@ -179,10 +180,24 @@ public class StreamFileSizeManagerTest {
       urlConn.disconnect();
     }
 
+    // Wait to receive heartbeat
     TimeUnit.SECONDS.sleep(Constants.Stream.HEARTBEAT_DELAY + 1);
     StreamWriterHeartbeat heartbeat = heartbeatPublisher.getHeartbeat();
     Assert.assertNotNull(heartbeat);
     Assert.assertEquals(20, heartbeat.getAbsoluteDataSize());
+    Assert.assertEquals(StreamWriterHeartbeat.Type.REGULAR, heartbeat.getType());
+
+    // Truncate the stream
+    urlConn = openURL(String.format("http://%s:%d/v2/streams/test_stream1/truncate", HOSTNAME, port),
+                      HttpMethod.POST);
+    Assert.assertEquals(HttpResponseStatus.OK.getCode(), urlConn.getResponseCode());
+    urlConn.disconnect();
+
+    // Wait to receive heartbeat
+    TimeUnit.SECONDS.sleep(Constants.Stream.HEARTBEAT_DELAY + 1);
+    heartbeat = heartbeatPublisher.getHeartbeat();
+    Assert.assertNotNull(heartbeat);
+    Assert.assertEquals(0, heartbeat.getAbsoluteDataSize());
     Assert.assertEquals(StreamWriterHeartbeat.Type.REGULAR, heartbeat.getType());
   }
 

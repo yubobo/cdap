@@ -17,6 +17,8 @@
 package co.cask.cdap.data.stream.service;
 
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.data.stream.StreamCoordinator;
+import co.cask.cdap.data.stream.StreamPropertyListener;
 import co.cask.cdap.data.stream.service.heartbeat.HeartbeatPublisher;
 import co.cask.cdap.data.stream.service.heartbeat.StreamWriterHeartbeat;
 import com.google.common.collect.Maps;
@@ -42,14 +44,17 @@ public abstract class AbstractStreamWriterSizeManager extends AbstractIdleServic
 
   // Note: Stores stream name to absolute size in bytes.
   private final ConcurrentMap<String, Long> absoluteSizes;
+  private final StreamCoordinator streamCoordinator;
   private ListeningScheduledExecutorService scheduledExecutor;
 
   protected abstract void init() throws Exception;
 
   protected AbstractStreamWriterSizeManager(HeartbeatPublisher heartbeatPublisher,
+                                            StreamCoordinator streamCoordinator,
                                             @Named(Constants.Stream.CONTAINER_INSTANCE_ID) int instanceId) {
     this.heartbeatPublisher = heartbeatPublisher;
     this.instanceId = instanceId;
+    this.streamCoordinator = streamCoordinator;
     this.absoluteSizes = Maps.newConcurrentMap();
   }
 
@@ -108,11 +113,20 @@ public abstract class AbstractStreamWriterSizeManager extends AbstractIdleServic
   }
 
   /**
-   * Schedule publishing heartbeats for the {@code streamName}. At fixed rate, a heartbeat will be send
-   * with containing the absolute size of the files own by this stream handler and concerning the stream
+   * Schedule publishing heartbeats for the {@code streamName} at fixed rate. A heartbeat will be sent
+   * containing the absolute size of the files own by this stream handler and concerning the stream
    * {@code streamName}.
    */
   protected void scheduleHeartbeats(final String streamName) {
+    // Handle stream truncation - whenever the generation is changed, that means the stream
+    // get truncated, and we reset the data count of this stream writer to 0.
+    streamCoordinator.addListener(streamName, new StreamPropertyListener() {
+      @Override
+      public void generationChanged(String streamName, int generation) {
+        absoluteSizes.replace(streamName, (long) 0);
+      }
+    });
+
     scheduledExecutor.scheduleAtFixedRate(new Runnable() {
       @Override
       public void run() {
