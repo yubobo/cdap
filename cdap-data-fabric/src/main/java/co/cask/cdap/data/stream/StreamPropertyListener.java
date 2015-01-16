@@ -58,4 +58,6 @@ public abstract class StreamPropertyListener {
   public void ttlDeleted(String streamName) {
     // Default no-op
   }
+
+  // TODO add methods for threshold
 }

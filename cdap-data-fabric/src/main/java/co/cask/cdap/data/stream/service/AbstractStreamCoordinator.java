@@ -140,7 +140,8 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
               StreamConfig newConfig = new StreamConfig(streamConfig.getName(), streamConfig.getPartitionDuration(),
                                                         streamConfig.getIndexInterval(), newTTL,
                                                         streamConfig.getLocation(),
-                                                        streamConfig.getFormat());
+                                                        streamConfig.getFormat(),
+                                                        streamConfig.getNotificationThresholdMB());
               saveConfig(newConfig);
               resultFuture.set(new StreamProperty(currentGeneration, newTTL));
             } catch (IOException e) {

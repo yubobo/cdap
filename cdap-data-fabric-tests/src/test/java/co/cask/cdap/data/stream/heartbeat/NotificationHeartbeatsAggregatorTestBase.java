@@ -73,14 +73,15 @@ public abstract class NotificationHeartbeatsAggregatorTestBase {
 
   protected static NotificationFeedManager feedManager;
 
+  private static CConfiguration cConf;
   private static StreamCoordinator streamCoordinator;
   private static NotificationService notificationService;
   private static StreamsHeartbeatsAggregator aggregator;
 
   protected abstract StreamAdmin getStreamAdmin();
 
-  public static Injector createInjector(CConfiguration cConf, Configuration hConf,  Module... modules) {
-
+  public static Injector createInjector(CConfiguration conf, Configuration hConf,  Module... modules) {
+    cConf = conf;
     return Guice.createInjector(Iterables.concat(
       ImmutableList.of(new ConfigModule(cConf, hConf),
                        new DiscoveryRuntimeModule().getInMemoryModules(),
@@ -165,7 +166,7 @@ public abstract class NotificationHeartbeatsAggregatorTestBase {
     });
 
     // Send fake heartbeats describing large increments of data
-    long increment = Constants.Notification.Stream.DEFAULT_DATA_THRESHOLD / 3;
+    long increment = ((long) (cConf.getInt(Constants.Stream.NOTIFICATION_THRESHOLD)) * 1000000) / 3;
     for (int i = 0; i <= 3; i++) {
       notificationService.publish(heartbeatFeed,
                                   new StreamWriterHeartbeat(System.currentTimeMillis(), increment, i,

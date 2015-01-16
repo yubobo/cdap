@@ -23,6 +23,7 @@ import co.cask.cdap.data.stream.service.AbstractStreamCoordinator;
 import co.cask.cdap.data.stream.service.StreamMetaStore;
 import co.cask.cdap.data.stream.service.heartbeat.StreamsHeartbeatsAggregator;
 import co.cask.cdap.data2.transaction.stream.StreamAdmin;
+import co.cask.cdap.data2.transaction.stream.StreamConfig;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -92,12 +93,12 @@ public final class InMemoryStreamCoordinator extends AbstractStreamCoordinator {
   }
 
   @Override
-  public ListenableFuture<Void> streamCreated(final String streamName) {
+  public ListenableFuture<Void> streamCreated(final StreamConfig streamConfig) {
     // Note: the leader of a stream in local mode is always the only existing stream handler
     return executor.submit(new Callable<Void>() {
       @Override
       public Void call() throws Exception {
-        streamsHeartbeatsAggregator.listenToStream(streamName);
+        streamsHeartbeatsAggregator.listenToStream(streamConfig.getName());
         return null;
       }
     });

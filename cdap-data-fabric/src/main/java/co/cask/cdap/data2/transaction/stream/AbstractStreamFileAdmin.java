@@ -275,41 +275,44 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
                                                                cConf.get(Constants.Stream.INDEX_INTERVAL)));
     long ttl = Long.parseLong(properties.getProperty(Constants.Stream.TTL,
                                                      cConf.get(Constants.Stream.TTL)));
+    int threshold = Integer.parseInt(properties.getProperty(Constants.Stream.NOTIFICATION_THRESHOLD,
+                                                            cConf.get(Constants.Stream.NOTIFICATION_THRESHOLD)));
 
-    StreamConfig config = new StreamConfig(name, partitionDuration, indexInterval, ttl, streamLocation, null);
+    StreamConfig config = new StreamConfig(name, partitionDuration, indexInterval, ttl, streamLocation,
+                                           null, threshold);
     saveConfig(config);
 
-    streamCoordinator.streamCreated(name);
+    streamCoordinator.streamCreated(config);
 
     // Create the notification feeds linked to that stream
-    createStreamFeeds(name);
+    createStreamFeeds(config);
   }
 
-  private void createStreamFeeds(String stream) {
+  private void createStreamFeeds(StreamConfig config) {
     // TODO use accountID as namespace?
     try {
       NotificationFeed streamFeed = new NotificationFeed.Builder()
         .setNamespace("default")
         .setCategory(Constants.Notification.Stream.STREAM_FEED_CATEGORY)
-        .setName(stream)
+        .setName(config.getName())
         .setDescription(String.format("Size updates feed for Stream %s every %dMB",
-                                      stream, Constants.Notification.Stream.DEFAULT_DATA_THRESHOLD))
+                                      config.getName(), config.getNotificationThresholdMB()))
         .build();
       notificationFeedManager.createFeed(streamFeed);
     } catch (NotificationFeedException e) {
-      LOG.error("Cannot create feed for Stream {}", stream, e);
+      LOG.error("Cannot create feed for Stream {}", config.getName(), e);
     }
 
     try {
       NotificationFeed streamHeartbeatsFeed = new NotificationFeed.Builder()
         .setNamespace("default")
         .setCategory(Constants.Notification.Stream.STREAM_HEARTBEAT_FEED_CATEGORY)
-        .setName(stream)
-        .setDescription(String.format("Heartbeats feed for Stream %s.", stream))
+        .setName(config.getName())
+        .setDescription(String.format("Heartbeats feed for Stream %s.", config.getName()))
         .build();
       notificationFeedManager.createFeed(streamHeartbeatsFeed);
     } catch (NotificationFeedException e) {
-      LOG.error("Cannot create feed for Stream {} heartbeats.", stream, e);
+      LOG.error("Cannot create feed for Stream {} heartbeats.", config.getName(), e);
     }
   }
 
@@ -365,7 +368,7 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
       StreamConfig.class);
 
     return new StreamConfig(streamLocation.getName(), config.getPartitionDuration(), config.getIndexInterval(),
-                            config.getTTL(), streamLocation, config.getFormat());
+                            config.getTTL(), streamLocation, config.getFormat(), config.getNotificationThresholdMB());
   }
 
   private boolean isValidConfigUpdate(StreamConfig originalConfig, StreamConfig newConfig) {

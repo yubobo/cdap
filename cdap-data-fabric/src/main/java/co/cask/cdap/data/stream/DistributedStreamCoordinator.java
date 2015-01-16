@@ -31,6 +31,7 @@ import co.cask.cdap.data.stream.service.AbstractStreamCoordinator;
 import co.cask.cdap.data.stream.service.StreamMetaStore;
 import co.cask.cdap.data.stream.service.heartbeat.StreamsHeartbeatsAggregator;
 import co.cask.cdap.data2.transaction.stream.StreamAdmin;
+import co.cask.cdap.data2.transaction.stream.StreamConfig;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
@@ -161,7 +162,7 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
   }
 
   @Override
-  public ListenableFuture<Void> streamCreated(final String streamName) {
+  public ListenableFuture<Void> streamCreated(final StreamConfig streamConfig) {
     // modify the requirement to add the new stream as a new partition of the existing requirement
     ListenableFuture<ResourceRequirement> future = resourceCoordinatorClient.modifyRequirement(
       Constants.Service.STREAMS, new ResourceModifier() {
@@ -175,7 +176,7 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
             partitions = ImmutableSet.of();
           }
 
-          ResourceRequirement.Partition newPartition = new ResourceRequirement.Partition(streamName, 1);
+          ResourceRequirement.Partition newPartition = new ResourceRequirement.Partition(streamConfig.getName(), 1);
           if (partitions.contains(newPartition)) {
             return null;
           }

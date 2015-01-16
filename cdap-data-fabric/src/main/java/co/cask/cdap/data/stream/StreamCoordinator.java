@@ -59,10 +59,10 @@ public interface StreamCoordinator extends Service {
    * Called whenever a new stream is created.
    * Affect a Stream handler leader to a stream.
    *
-   * @param streamName name of the stream.
+   * @param streamConfig configuration of the stream.
    * @return A {@link ListenableFuture} describing the progress of the operation.
    */
-  ListenableFuture<Void> streamCreated(String streamName);
+  ListenableFuture<Void> streamCreated(StreamConfig streamConfig);
 
   /**
    * Set the {@link Discoverable} that defines the Stream handler in which this {@link StreamCoordinator} runs.

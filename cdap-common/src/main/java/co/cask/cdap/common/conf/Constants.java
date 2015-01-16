@@ -233,6 +233,7 @@ public final class Constants {
     public static final String FILE_PREFIX = "stream.file.prefix";
     public static final String CONSUMER_TABLE_PRESPLITS = "stream.consumer.table.presplits";
     public static final String FILE_CLEANUP_PERIOD = "stream.file.cleanup.period";
+    public static final String NOTIFICATION_THRESHOLD = "stream.notification.threshold";
 
     // Stream http service configurations.
     public static final String STREAM_HANDLER = "stream.handler";
@@ -587,8 +588,6 @@ public final class Constants {
     public static final class Stream {
       public static final String STREAM_HEARTBEAT_FEED_CATEGORY = "streamHeartbeats";
       public static final String STREAM_FEED_CATEGORY = "streams";
-
-      public static final long DEFAULT_DATA_THRESHOLD = 1000000000;
 
       public static final int INIT_AGGREGATION_DELAY = 2;
       public static final int AGGREGATION_DELAY = 5;
