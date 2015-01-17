@@ -137,6 +137,7 @@ public abstract class NotificationHeartbeatsAggregatorTestBase {
     StreamAdmin streamAdmin = getStreamAdmin();
     long partitionDuration = 3600;
     int thresholdMB = 10;
+    final long increment = ((long) (thresholdMB) * 1000000) / 3;
 
     // Create a stream with 3600 seconds partition.
     Properties properties = new Properties();
@@ -172,7 +173,7 @@ public abstract class NotificationHeartbeatsAggregatorTestBase {
         public void received(StreamSizeNotification notification, NotificationContext notificationContext) {
           try {
             LOG.info("Notification {} received", notification);
-            // TODO do assertion on the size in the notification
+            Assert.assertEquals(increment * (long) 4, notification.getAbsoluteSize());
             Assert.assertTrue(notificationReceived.compareAndSet(false, true));
           } catch (Throwable t) {
             assertionOk.set(false);
@@ -181,8 +182,10 @@ public abstract class NotificationHeartbeatsAggregatorTestBase {
         }
       });
 
+    // Give time to the aggregator to subscribe to the heartbeats feed
+    TimeUnit.MILLISECONDS.sleep(500);
+
     // Send fake heartbeats describing large increments of data
-    long increment = ((long) (thresholdMB) * 1000000) / 3;
     for (int i = 0; i <= 3; i++) {
       notificationService.publish(heartbeatFeed,
                                   new StreamWriterHeartbeat(System.currentTimeMillis(), increment, i,
