@@ -106,7 +106,7 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
               // Create the generation directory
               Locations.mkdirsIfNotExists(StreamUtils.createGenerationLocation(streamConfig.getLocation(),
                                                                                newGeneration));
-              resultFuture.set(new StreamProperty(newGeneration, currentTTL));
+              resultFuture.set(new StreamProperty(newGeneration, currentTTL, threshold));
             } catch (IOException e) {
               resultFuture.setException(e);
             }
@@ -143,7 +143,7 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
                                                         streamConfig.getFormat(),
                                                         streamConfig.getNotificationThresholdMB());
               saveConfig(newConfig);
-              resultFuture.set(new StreamProperty(currentGeneration, newTTL));
+              resultFuture.set(new StreamProperty(currentGeneration, newTTL, threshold));
             } catch (IOException e) {
               resultFuture.setException(e);
             }
@@ -212,10 +212,15 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
      * TTL of the stream. {@code null} to ignore this field.
      */
     private final long ttl;
+    /**
+     * Notification threshold of the stream.
+     */
+    private final int threshold;
 
-    private StreamProperty(int generation, long ttl) {
+    private StreamProperty(int generation, long ttl, int threshold) {
       this.generation = generation;
       this.ttl = ttl;
+      this.threshold = threshold;
     }
 
     public int getGeneration() {
@@ -226,11 +231,16 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
       return ttl;
     }
 
+    public int getThreshold() {
+      return threshold;
+    }
+
     @Override
     public String toString() {
       return Objects.toStringHelper(this)
         .add("generation", generation)
         .add("ttl", ttl)
+        .add("threshold", threshold)
         .toString();
     }
   }
@@ -267,10 +277,11 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
       this.listener = listener;
       try {
         StreamConfig streamConfig = streamAdmin.getConfig(streamName);
-        this.currentProperty = new StreamProperty(StreamUtils.getGeneration(streamConfig), streamConfig.getTTL());
+        this.currentProperty = new StreamProperty(StreamUtils.getGeneration(streamConfig), streamConfig.getTTL(),
+                                                  streamConfig.getNotificationThresholdMB());
       } catch (Exception e) {
-        // It's ok if the stream config is not yet available (meaning no data has ever been writen to the stream yet.
-        this.currentProperty = new StreamProperty(0, Long.MAX_VALUE);
+        // It's ok if the stream config is not yet available (meaning no data has ever been written to the stream yet.
+        this.currentProperty = new StreamProperty(0, Long.MAX_VALUE, 1000);
       }
     }
 
