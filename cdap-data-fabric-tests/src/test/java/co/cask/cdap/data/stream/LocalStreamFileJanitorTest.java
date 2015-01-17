@@ -24,7 +24,7 @@ import co.cask.cdap.common.guice.LocationRuntimeModule;
 import co.cask.cdap.data.file.FileWriter;
 import co.cask.cdap.data.runtime.DataFabricLevelDBModule;
 import co.cask.cdap.data.runtime.TransactionMetricsModule;
-import co.cask.cdap.data.stream.service.NoOpStreamMetaStore;
+import co.cask.cdap.data.stream.service.InMemoryStreamMetaStore;
 import co.cask.cdap.data.stream.service.StreamMetaStore;
 import co.cask.cdap.data2.transaction.stream.StreamAdmin;
 import co.cask.cdap.data2.transaction.stream.StreamConfig;
@@ -35,6 +35,7 @@ import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.google.inject.util.Modules;
 import org.apache.twill.filesystem.LocationFactory;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class LocalStreamFileJanitorTest extends StreamFileJanitorTestBase {
   private static LocationFactory locationFactory;
   private static StreamAdmin streamAdmin;
   private static StreamFileWriterFactory fileWriterFactory;
+  private static StreamCoordinator streamCoordinator;
 
   @BeforeClass
   public static void init() throws IOException {
@@ -58,12 +60,13 @@ public class LocalStreamFileJanitorTest extends StreamFileJanitorTestBase {
       new ConfigModule(cConf),
       new LocationRuntimeModule().getInMemoryModules(),
       new TransactionMetricsModule(),
+      new DataFabricLevelDBModule(),
       new NotificationFeedServiceRuntimeModule().getInMemoryModules(),
       Modules.override(new StreamAdminModules().getStandaloneModules()).with(new AbstractModule() {
         @Override
         protected void configure() {
           bind(StreamAdmin.class).to(TestStreamFileAdmin.class).in(Scopes.SINGLETON);
-          bind(StreamMetaStore.class).to(NoOpStreamMetaStore.class);
+          bind(StreamMetaStore.class).to(InMemoryStreamMetaStore.class);
         }
       })
     );
@@ -71,6 +74,13 @@ public class LocalStreamFileJanitorTest extends StreamFileJanitorTestBase {
     locationFactory = injector.getInstance(LocationFactory.class);
     streamAdmin = injector.getInstance(StreamAdmin.class);
     fileWriterFactory = injector.getInstance(StreamFileWriterFactory.class);
+    streamCoordinator = injector.getInstance(StreamCoordinator.class);
+    streamCoordinator.startAndWait();
+  }
+
+  @AfterClass
+  public static void shutdown() throws Exception {
+    streamCoordinator.stopAndWait();
   }
 
   @Override

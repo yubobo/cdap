@@ -17,6 +17,7 @@
 package co.cask.cdap.data.stream.service.heartbeat;
 
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.common.stream.notification.StreamSizeNotification;
 import co.cask.cdap.data.stream.StreamCoordinator;
 import co.cask.cdap.data.stream.StreamPropertyListener;
 import co.cask.cdap.data2.transaction.stream.StreamAdmin;
@@ -52,7 +53,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link StreamsHeartbeatsAggregator} in which heartbeats are received as notifications. This implementation
  * uses the {@link NotificationService} to subscribe to heartbeats sent by Stream writers.
  */
-// TODO this guy should have a way to get the Threshold for the streams it is doing aggregation
+// TODO this guy should have a way to get the Threshold for the streams it is doing aggregation -
+// will come in a later PR
 public class NotificationHeartbeatsAggregator extends AbstractIdleService implements StreamsHeartbeatsAggregator {
   private static final Logger LOG = LoggerFactory.getLogger(NotificationHeartbeatsAggregator.class);
 
@@ -102,7 +104,7 @@ public class NotificationHeartbeatsAggregator extends AbstractIdleService implem
       try {
         listenToStream(streamAdmin.getConfig(streamName));
       } catch (IOException e) {
-        LOG.warn("Unable to listen to heartbeats of Stream {}", streamName);
+        LOG.warn("Unable to listen to heartbeats of Stream {}", streamName, e);
       }
     }
 
@@ -116,12 +118,7 @@ public class NotificationHeartbeatsAggregator extends AbstractIdleService implem
     }
   }
 
-  @Override
-  public synchronized void listenToStream(StreamConfig streamConfig) throws IOException {
-    if (streamHeartbeatsSubscriptions.containsKey(streamConfig.getName())) {
-      return;
-    }
-
+  private synchronized void listenToStream(StreamConfig streamConfig) throws IOException {
     final Aggregator aggregator = new Aggregator(streamConfig);
 
     final Cancellable heartbeatsSubscription = subscribeToStreamHeartbeats(streamConfig.getName(), aggregator);
@@ -229,12 +226,12 @@ public class NotificationHeartbeatsAggregator extends AbstractIdleService implem
       this.thresholdMB = streamConfig.getNotificationThresholdMB();
 
       // TODO add a listener to the streamCoordinator to get the new threshold if it changes.
-      streamCoordinator.addListener(streamConfig.getName(), new StreamPropertyListener() {
-        @Override
-        public void generationChanged(String streamName, int generation) {
-          super.generationChanged(streamName, generation);
-        }
-      })
+//      streamCoordinator.addListener(streamConfig.getName(), new StreamPropertyListener() {
+//        @Override
+//        public void generationChanged(String streamName, int generation) {
+//          super.generationChanged(streamName, generation);
+//        }
+//      });
     }
 
     public Map<Integer, StreamWriterHeartbeat> getHeartbeats() {
@@ -252,9 +249,6 @@ public class NotificationHeartbeatsAggregator extends AbstractIdleService implem
 
     @Override
     public void run() {
-      // For now just count the last heartbeat present in the map, but we should set a sort of sliding window for
-      // the aggregator, and it would look for the last heartbeat in that window only
-      // TODO why should we remember more than the last heartbeat?
       int sum = 0;
       for (StreamWriterHeartbeat heartbeat : heartbeats.values()) {
         sum += heartbeat.getAbsoluteDataSize();
@@ -270,10 +264,11 @@ public class NotificationHeartbeatsAggregator extends AbstractIdleService implem
       }
     }
 
-    private void publishNotification(int updatedCount) {
+    private void publishNotification(long absoluteSize) {
       try {
-        // TODO thing about the kind of notification to send here
-        notificationService.publish(streamFeed, String.format("Has received %d bytes of data total", updatedCount))
+        notificationService.publish(
+          streamFeed,
+          new StreamSizeNotification(System.currentTimeMillis(), absoluteSize))
           .get();
       } catch (NotificationFeedException e) {
         LOG.warn("Error with notification feed {}", streamFeed, e);

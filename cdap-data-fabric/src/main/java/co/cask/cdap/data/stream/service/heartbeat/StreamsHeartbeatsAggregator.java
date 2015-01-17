@@ -16,10 +16,8 @@
 
 package co.cask.cdap.data.stream.service.heartbeat;
 
-import co.cask.cdap.data2.transaction.stream.StreamConfig;
 import com.google.common.util.concurrent.Service;
 
-import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -34,15 +32,4 @@ public interface StreamsHeartbeatsAggregator extends Service {
    * @param streamNames names of the streams to perform data sizes aggregation on
    */
   void listenToStreams(Collection<String> streamNames);
-
-  /**
-   * Perform aggregation on the Stream described by the {@code streamName}.
-   * This method does not cancel aggregation done on other Streams.
-   * This call does nothing if this aggregator already listens to the Stream.
-   * This method is thread safe, so that the logic deployed to listen to one stream can't be duplicated.
-   *
-   * @param streamConfig configuration of the stream to perform data sizes aggregation on
-   * @throws IOException when an error occurred in subscribing to the heartbeats of the stream
-   */
-  void listenToStream(StreamConfig streamConfig) throws IOException;
 }

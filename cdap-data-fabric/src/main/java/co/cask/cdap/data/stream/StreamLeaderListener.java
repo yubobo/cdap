@@ -1,5 +1,5 @@
 /*
- * Copyright © 2014 Cask Data, Inc.
+ * Copyright © 2015 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,19 +13,21 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package co.cask.cdap.metrics.collect;
 
-import co.cask.cdap.metrics.transport.MetricValue;
+package co.cask.cdap.data.stream;
+
+import java.util.Set;
 
 /**
- * A MetricsEmitter is a class that is able to emit {@link MetricValue}.
+ * Defines a behavior that is triggered when a Stream handler becomes leader of a Stream, or a collection of streams.
  */
-public interface MetricsEmitter {
+public interface StreamLeaderListener {
 
   /**
-   * Emits metric for the given timestamp.
-   * @param timestamp The timestamp for the metrics.
-   * @return A {@link MetricValue} representing metrics for the given timestamp.
+   * This method is called to specify that the Stream handler it is called from
+   * is the leader of all {@code streamNames}.
+   *
+   * @param streamNames stream names of which the current Stream handler became leader
    */
-  MetricValue emit(long timestamp);
+  void leaderOf(Set<String> streamNames);
 }

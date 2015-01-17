@@ -27,17 +27,14 @@ import co.cask.cdap.common.zookeeper.coordination.ResourceHandler;
 import co.cask.cdap.common.zookeeper.coordination.ResourceModifier;
 import co.cask.cdap.common.zookeeper.coordination.ResourceRequirement;
 import co.cask.cdap.common.zookeeper.store.ZKPropertyStore;
-import co.cask.cdap.data.stream.service.AbstractStreamCoordinator;
 import co.cask.cdap.data.stream.service.StreamMetaStore;
-import co.cask.cdap.data.stream.service.heartbeat.StreamsHeartbeatsAggregator;
 import co.cask.cdap.data2.transaction.stream.StreamAdmin;
-import co.cask.cdap.data2.transaction.stream.StreamConfig;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -72,7 +69,6 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
   private final DiscoveryServiceClient discoveryServiceClient;
   private final StreamMetaStore streamMetaStore;
   private final ResourceCoordinatorClient resourceCoordinatorClient;
-  private final StreamsHeartbeatsAggregator streamsHeartbeatsAggregator;
 
   private LeaderElection leaderElection;
   private ResourceCoordinator resourceCoordinator;
@@ -81,13 +77,11 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
 
   @Inject
   public DistributedStreamCoordinator(StreamAdmin streamAdmin, ZKClient zkClient,
-                                      DiscoveryServiceClient discoveryServiceClient, StreamMetaStore streamMetaStore,
-                                      StreamsHeartbeatsAggregator streamsHeartbeatsAggregator) {
+                                      DiscoveryServiceClient discoveryServiceClient, StreamMetaStore streamMetaStore) {
     super(streamAdmin);
     this.zkClient = zkClient;
     this.discoveryServiceClient = discoveryServiceClient;
     this.streamMetaStore = streamMetaStore;
-    this.streamsHeartbeatsAggregator = streamsHeartbeatsAggregator;
     this.resourceCoordinatorClient = new ResourceCoordinatorClient(zkClient);
     this.handlerDiscoverable = null;
   }
@@ -106,22 +100,30 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
       public void leader() {
         LOG.info("Became Stream handler leader. Starting resource coordinator.");
         resourceCoordinator = new ResourceCoordinator(zkClient, discoveryServiceClient,
-                                                             new BalancedAssignmentStrategy());
+                                                      new BalancedAssignmentStrategy());
         resourceCoordinator.startAndWait();
 
-        try {
-          // Create one requirement for the resource coordinator for all the streams.
-          // One stream is identified by one partition
-          ResourceRequirement.Builder builder = ResourceRequirement.builder(Constants.Service.STREAMS);
-          for (StreamSpecification spec : streamMetaStore.listStreams()) {
-            LOG.debug("Adding {} stream as a resource to the coordinator to manager streams leaders.", spec.getName());
-            builder.addPartition(new ResourceRequirement.Partition(spec.getName(), 1));
+        resourceCoordinatorClient.modifyRequirement(Constants.Service.STREAMS, new ResourceModifier() {
+          @Nullable
+          @Override
+          public ResourceRequirement apply(@Nullable ResourceRequirement existingRequirement) {
+            try {
+              // Create one requirement for the resource coordinator for all the streams.
+              // One stream is identified by one partition
+              ResourceRequirement.Builder builder = ResourceRequirement.builder(Constants.Service.STREAMS);
+              for (StreamSpecification spec : streamMetaStore.listStreams()) {
+                LOG.debug("Adding {} stream as a resource to the coordinator to manager streams leaders.",
+                          spec.getName());
+                builder.addPartition(new ResourceRequirement.Partition(spec.getName(), 1));
+              }
+              return builder.build();
+            } catch (Throwable e) {
+              LOG.error("Could not create requirement for coordinator in Stream handler leader", e);
+              Throwables.propagate(e);
+              return null;
+            }
           }
-          resourceCoordinatorClient.submitRequirement(builder.build()).get();
-        } catch (Throwable e) {
-          LOG.error("Could not create requirement for coordinator in Stream handler leader", e);
-          Throwables.propagate(e);
-        }
+        });
       }
 
       @Override
@@ -132,8 +134,6 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
         }
       }
     });
-
-    streamsHeartbeatsAggregator.startAndWait();
   }
 
   @Override
@@ -150,10 +150,6 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
     if (resourceCoordinatorClient != null) {
       resourceCoordinatorClient.stopAndWait();
     }
-
-    if (streamsHeartbeatsAggregator != null) {
-      streamsHeartbeatsAggregator.stopAndWait();
-    }
   }
 
   @Override
@@ -162,7 +158,7 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
   }
 
   @Override
-  public ListenableFuture<Void> streamCreated(final StreamConfig streamConfig) {
+  public ListenableFuture<Void> streamCreated(final String streamName) {
     // modify the requirement to add the new stream as a new partition of the existing requirement
     ListenableFuture<ResourceRequirement> future = resourceCoordinatorClient.modifyRequirement(
       Constants.Service.STREAMS, new ResourceModifier() {
@@ -176,7 +172,7 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
             partitions = ImmutableSet.of();
           }
 
-          ResourceRequirement.Partition newPartition = new ResourceRequirement.Partition(streamConfig.getName(), 1);
+          ResourceRequirement.Partition newPartition = new ResourceRequirement.Partition(streamName, 1);
           if (partitions.contains(newPartition)) {
             return null;
           }
@@ -209,15 +205,17 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
 
     @Override
     public void onChange(Collection<PartitionReplica> partitionReplicas) {
-      Collection<String> streamNames = Collections2.transform(partitionReplicas,
-                                                              new Function<PartitionReplica, String>() {
-        @Nullable
-        @Override
-        public String apply(@Nullable PartitionReplica input) {
-          return input != null ? input.getName() : null;
-        }
-      });
-      streamsHeartbeatsAggregator.listenToStreams(streamNames);
+      Set<String> streamNames =
+        ImmutableSet.copyOf(Iterables.transform(
+          partitionReplicas,
+          new Function<PartitionReplica, String>() {
+            @Nullable
+            @Override
+            public String apply(@Nullable PartitionReplica input) {
+              return input != null ? input.getName() : null;
+            }
+          }));
+      invokeLeaderListeners(ImmutableSet.copyOf(streamNames));
     }
 
     @Override
