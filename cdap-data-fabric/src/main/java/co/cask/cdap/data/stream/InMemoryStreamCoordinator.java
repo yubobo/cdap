@@ -16,6 +16,7 @@
 package co.cask.cdap.data.stream;
 
 import co.cask.cdap.api.data.stream.StreamSpecification;
+import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.InMemoryPropertyStore;
 import co.cask.cdap.common.conf.PropertyStore;
 import co.cask.cdap.common.io.Codec;
@@ -45,8 +46,8 @@ public final class InMemoryStreamCoordinator extends AbstractStreamCoordinator {
   private ListeningExecutorService executor;
 
   @Inject
-  protected InMemoryStreamCoordinator(StreamAdmin streamAdmin, StreamMetaStore streamMetaStore) {
-    super(streamAdmin);
+  protected InMemoryStreamCoordinator(StreamAdmin streamAdmin, CConfiguration cConf, StreamMetaStore streamMetaStore) {
+    super(streamAdmin, cConf);
     this.streamMetaStore = streamMetaStore;
   }
 

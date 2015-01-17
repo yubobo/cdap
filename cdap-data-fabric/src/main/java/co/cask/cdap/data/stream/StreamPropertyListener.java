@@ -59,8 +59,6 @@ public abstract class StreamPropertyListener {
     // Default no-op
   }
 
-  // TODO add methods for threshold
-
   /**
    * Invoked when the stream Notification threshold property is changed.
    *

@@ -17,6 +17,8 @@ package co.cask.cdap.data.stream;
 
 import co.cask.cdap.api.data.schema.Schema;
 import co.cask.cdap.common.async.ExecutorUtils;
+import co.cask.cdap.common.conf.CConfiguration;
+import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.conf.PropertyChangeListener;
 import co.cask.cdap.common.conf.PropertyStore;
 import co.cask.cdap.common.conf.PropertyUpdater;
@@ -67,9 +69,11 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
   private final StreamAdmin streamAdmin;
   private final Supplier<PropertyStore<StreamProperty>> propertyStore;
   private final Set<StreamLeaderListener> leaderListeners;
+  private final CConfiguration cConf;
 
-  protected AbstractStreamCoordinator(StreamAdmin streamAdmin) {
+  protected AbstractStreamCoordinator(StreamAdmin streamAdmin, CConfiguration cConf) {
     this.streamAdmin = streamAdmin;
+    this.cConf = cConf;
 
     propertyStore = Suppliers.memoize(new Supplier<PropertyStore<StreamProperty>>() {
       @Override
@@ -106,10 +110,13 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
             try {
               long currentTTL = (property == null) ? streamConfig.getTTL() : property.getTTL();
               int newGeneration = ((property == null) ? lowerBound : property.getGeneration()) + 1;
+              int newThreshold = (property == null) ?
+                streamConfig.getNotificationThresholdMB() :
+                property.getThreshold();
               // Create the generation directory
               Locations.mkdirsIfNotExists(StreamUtils.createGenerationLocation(streamConfig.getLocation(),
                                                                                newGeneration));
-              resultFuture.set(new StreamProperty(newGeneration, currentTTL, threshold));
+              resultFuture.set(new StreamProperty(newGeneration, currentTTL, newThreshold));
             } catch (IOException e) {
               resultFuture.setException(e);
             }
@@ -140,13 +147,17 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
                 StreamUtils.getGeneration(streamConfig) :
                 property.getGeneration();
 
+              int currentThreshold = (property == null) ?
+                streamConfig.getNotificationThresholdMB() :
+                property.getThreshold();
+
               StreamConfig newConfig = new StreamConfig(streamConfig.getName(), streamConfig.getPartitionDuration(),
                                                         streamConfig.getIndexInterval(), newTTL,
                                                         streamConfig.getLocation(),
                                                         streamConfig.getFormat(),
-                                                        streamConfig.getNotificationThresholdMB());
+                                                        currentThreshold);
               saveConfig(newConfig);
-              resultFuture.set(new StreamProperty(currentGeneration, newTTL, threshold));
+              resultFuture.set(new StreamProperty(currentGeneration, newTTL, currentThreshold));
             } catch (IOException e) {
               resultFuture.setException(e);
             }
@@ -308,7 +319,7 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
   /**
    * A {@link PropertyChangeListener} that convert onChange callback into {@link StreamPropertyListener}.
    */
-  private static final class StreamPropertyChangeListener extends StreamPropertyListener
+  private final class StreamPropertyChangeListener extends StreamPropertyListener
                                                           implements PropertyChangeListener<StreamProperty> {
 
     private final StreamPropertyListener listener;
@@ -322,8 +333,9 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
         this.currentProperty = new StreamProperty(StreamUtils.getGeneration(streamConfig), streamConfig.getTTL(),
                                                   streamConfig.getNotificationThresholdMB());
       } catch (Exception e) {
-        // It's ok if the stream config is not yet available (meaning no data has ever been written to the stream yet.
-        this.currentProperty = new StreamProperty(0, Long.MAX_VALUE, 1000);
+        // It's ok if the stream config is not yet available (meaning no data has ever been written to the stream yet.)
+        this.currentProperty = new StreamProperty(0, Long.MAX_VALUE,
+                                                  cConf.getInt(Constants.Stream.NOTIFICATION_THRESHOLD, 1000));
       }
     }
 
@@ -337,6 +349,10 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
 
           if (currentProperty == null || currentProperty.getTTL() != newProperty.getTTL()) {
             ttlChanged(name, newProperty.getTTL());
+          }
+
+          if (currentProperty == null || currentProperty.getThreshold() != newProperty.getThreshold()) {
+            thresholdChanged(name, newProperty.getThreshold());
           }
         } else {
           generationDeleted(name);
@@ -385,6 +401,15 @@ public abstract class AbstractStreamCoordinator extends AbstractIdleService impl
         listener.ttlDeleted(streamName);
       } catch (Throwable t) {
         LOG.error("Exception while calling StreamPropertyListener.ttlDeleted", t);
+      }
+    }
+
+    @Override
+    public void thresholdChanged(String streamName, int threshold) {
+      try {
+        listener.thresholdChanged(streamName, threshold);
+      } catch (Throwable t) {
+        LOG.error("Exception while calling StreamPropertyListener.thresholdChanged", t);
       }
     }
   }

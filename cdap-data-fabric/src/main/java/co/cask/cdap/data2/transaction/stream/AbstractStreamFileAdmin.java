@@ -285,7 +285,7 @@ public abstract class AbstractStreamFileAdmin implements StreamAdmin {
     // Create the notification feeds linked to that stream
     createStreamFeeds(config);
 
-    streamCoordinator.streamCreated(config);
+    streamCoordinator.streamCreated(name);
   }
 
   private void createStreamFeeds(StreamConfig config) {

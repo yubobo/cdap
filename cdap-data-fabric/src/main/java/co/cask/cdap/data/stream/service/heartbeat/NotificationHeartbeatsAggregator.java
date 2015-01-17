@@ -196,7 +196,7 @@ public class NotificationHeartbeatsAggregator extends AbstractIdleService implem
   }
 
   private long toB(int mb) {
-    return (long) mb * 1000;
+    return (long) mb * 1000000;
   }
 
   /**
@@ -225,13 +225,13 @@ public class NotificationHeartbeatsAggregator extends AbstractIdleService implem
       this.initNotificationSent = false;
       this.thresholdMB = streamConfig.getNotificationThresholdMB();
 
-      // TODO add a listener to the streamCoordinator to get the new threshold if it changes.
-//      streamCoordinator.addListener(streamConfig.getName(), new StreamPropertyListener() {
-//        @Override
-//        public void generationChanged(String streamName, int generation) {
-//          super.generationChanged(streamName, generation);
-//        }
-//      });
+      // Listen to changes in the threshold
+      streamCoordinator.addListener(streamConfig.getName(), new StreamPropertyListener() {
+        @Override
+        public void thresholdChanged(String streamName, int threshold) {
+          thresholdMB = threshold;
+        }
+      });
     }
 
     public Map<Integer, StreamWriterHeartbeat> getHeartbeats() {

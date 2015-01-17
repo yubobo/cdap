@@ -16,6 +16,7 @@
 package co.cask.cdap.data.stream;
 
 import co.cask.cdap.api.data.stream.StreamSpecification;
+import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.conf.PropertyStore;
 import co.cask.cdap.common.io.Codec;
@@ -76,9 +77,9 @@ public final class DistributedStreamCoordinator extends AbstractStreamCoordinato
   private Cancellable handlerSubscription;
 
   @Inject
-  public DistributedStreamCoordinator(StreamAdmin streamAdmin, ZKClient zkClient,
+  public DistributedStreamCoordinator(StreamAdmin streamAdmin, CConfiguration cConf, ZKClient zkClient,
                                       DiscoveryServiceClient discoveryServiceClient, StreamMetaStore streamMetaStore) {
-    super(streamAdmin);
+    super(streamAdmin, cConf);
     this.zkClient = zkClient;
     this.discoveryServiceClient = discoveryServiceClient;
     this.streamMetaStore = streamMetaStore;

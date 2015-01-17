@@ -136,10 +136,12 @@ public abstract class NotificationHeartbeatsAggregatorTestBase {
     String streamName = "stream";
     StreamAdmin streamAdmin = getStreamAdmin();
     long partitionDuration = 3600;
+    int thresholdMB = 10;
 
     // Create a stream with 3600 seconds partition.
     Properties properties = new Properties();
     properties.setProperty(Constants.Stream.PARTITION_DURATION, Long.toString(partitionDuration));
+    properties.setProperty(Constants.Stream.NOTIFICATION_THRESHOLD, Integer.toString(thresholdMB));
     streamAdmin.create(streamName, properties);
 
     NotificationFeed heartbeatFeed = new NotificationFeed.Builder()
@@ -158,26 +160,29 @@ public abstract class NotificationHeartbeatsAggregatorTestBase {
     // Assert than one notification will be sent to notify stream size change
     final AtomicBoolean notificationReceived = new AtomicBoolean(false);
     final AtomicBoolean assertionOk = new AtomicBoolean(true);
-    Cancellable cancellable = notificationService.subscribe(streamFeed, new NotificationHandler<Object>() {
-      @Override
-      public Type getNotificationFeedType() {
-        return StreamSizeNotification.class;
-      }
-
-      @Override
-      public void received(Object notification, NotificationContext notificationContext) {
-        try {
-          LOG.info("Notification {} received", notification);
-          Assert.assertTrue(notificationReceived.compareAndSet(false, true));
-        } catch (Throwable t) {
-          assertionOk.set(false);
-          Throwables.propagate(t);
+    Cancellable cancellable = notificationService.subscribe(
+      streamFeed,
+      new NotificationHandler<StreamSizeNotification>() {
+        @Override
+        public Type getNotificationFeedType() {
+          return StreamSizeNotification.class;
         }
-      }
-    });
+
+        @Override
+        public void received(StreamSizeNotification notification, NotificationContext notificationContext) {
+          try {
+            LOG.info("Notification {} received", notification);
+            // TODO do assertion on the size in the notification
+            Assert.assertTrue(notificationReceived.compareAndSet(false, true));
+          } catch (Throwable t) {
+            assertionOk.set(false);
+            Throwables.propagate(t);
+          }
+        }
+      });
 
     // Send fake heartbeats describing large increments of data
-    long increment = ((long) (cConf.getInt(Constants.Stream.NOTIFICATION_THRESHOLD)) * 1000000) / 3;
+    long increment = ((long) (thresholdMB) * 1000000) / 3;
     for (int i = 0; i <= 3; i++) {
       notificationService.publish(heartbeatFeed,
                                   new StreamWriterHeartbeat(System.currentTimeMillis(), increment, i,
