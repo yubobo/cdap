@@ -43,12 +43,15 @@ public class PurchaseApp extends AbstractApplication {
 
     // Store user profiles in a Dataset
     createDataset("userProfiles", KeyValueTable.class);
+    createDataset("recordDataset", RecordDataset.class);
 
     // Process events in realtime using a Flow
     addFlow(new PurchaseFlow());
 
     // Run a MapReduce job on the acquired data using a Workflow
     addWorkflow(new PurchaseHistoryWorkflow());
+
+    addService(new RecordService());
 
     // Retrieve the processed data using a Service
     addService(new PurchaseHistoryService());

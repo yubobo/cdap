@@ -156,6 +156,8 @@ public final class Constants {
 
     public static final String TABLE_PREFIX = "dataset.table.prefix";
 
+    public static final String FORCE_DATASET_UPGRADE = "force.dataset.upgrade";
+
     /**
      * DatasetManager service configuration.
      */

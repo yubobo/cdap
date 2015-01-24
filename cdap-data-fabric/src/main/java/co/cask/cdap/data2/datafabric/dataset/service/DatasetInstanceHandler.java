@@ -120,8 +120,9 @@ public class DatasetInstanceHandler extends AbstractHttpHandler {
     LOG.info("Creating dataset {}, type name: {}, typeAndProps: {}",
              name, creationProperties.getTypeName(), creationProperties.getProperties());
 
+    boolean allowDatasetForceUpgrade = conf.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
     DatasetSpecification existing = instanceManager.get(name);
-    if (existing != null) {
+    if (!allowDatasetForceUpgrade && existing != null) {
       String message = String.format("Cannot create dataset %s: instance with same name already exists %s",
                                      name, existing);
       LOG.warn(message);

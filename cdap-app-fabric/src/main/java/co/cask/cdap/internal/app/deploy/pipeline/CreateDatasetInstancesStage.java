@@ -17,6 +17,8 @@
 package co.cask.cdap.internal.app.deploy.pipeline;
 
 import co.cask.cdap.app.ApplicationSpecification;
+import co.cask.cdap.common.conf.CConfiguration;
+import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data.dataset.DatasetCreationSpec;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.InstanceConflictException;
@@ -33,10 +35,12 @@ import java.util.Map;
  */
 public class CreateDatasetInstancesStage extends AbstractStage<ApplicationDeployable> {
   private static final Logger LOG = LoggerFactory.getLogger(CreateDatasetInstancesStage.class);
+  private final CConfiguration configuration;
   private final DatasetFramework datasetFramework;
 
-  public CreateDatasetInstancesStage(DatasetFramework datasetFramework) {
+  public CreateDatasetInstancesStage(CConfiguration configuration, DatasetFramework datasetFramework) {
     super(TypeToken.of(ApplicationDeployable.class));
+    this.configuration = configuration;
     this.datasetFramework = datasetFramework;
   }
 
@@ -54,8 +58,12 @@ public class CreateDatasetInstancesStage extends AbstractStage<ApplicationDeploy
       String instanceName = instanceEntry.getKey();
       DatasetCreationSpec instanceSpec = instanceEntry.getValue();
       try {
-        if (!datasetFramework.hasInstance(instanceName)) {
+        boolean allowDatasetForceUpgrade = configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
+        if (!datasetFramework.hasInstance(instanceName) || allowDatasetForceUpgrade) {
+          LOG.info("Deploying instance: {}", instanceName);
           datasetFramework.addInstance(instanceSpec.getTypeName(), instanceName, instanceSpec.getProperties());
+        } else {
+          LOG.info("Not deploying instance: {}", instanceName);
         }
       } catch (InstanceConflictException e) {
         // NO-OP: Instance is simply already created, possibly by an older version of this app OR a different app
