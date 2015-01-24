@@ -861,6 +861,14 @@
         </description>
     </property>
 
+    <property>
+      <name>force.dataset.upgrade</name>
+      <value>false</value>
+      <description>
+        By default datasets are not redeployed. Setting this value to true forces a dataset upgrade on each deploy.
+      </description>
+    </property>
+
     <!---
          Web App Settings
      -->
