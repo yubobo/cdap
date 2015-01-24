@@ -32,23 +32,29 @@ import java.util.Map;
  * ReflectionStructObjectInspector works on struct data that is stored as a
  * native Java object. It will drill down into the Java class to get the fields
  * and construct ObjectInspectors for the fields, if they are not specified.
- * 
+ *
  * Always use the ObjectInspectorFactory to create new ObjectInspector objects,
  * instead of directly creating an instance of this class.
- * 
+ *
  */
 public class ReflectionStructObjectInspector extends
-    SettableStructObjectInspector {
+  SettableStructObjectInspector {
 
   /**
    * MyField.
    *
    */
   public static class MyField implements StructField {
+    protected int fieldID;
     protected Field field;
     protected ObjectInspector fieldObjectInspector;
 
-    public MyField(Field field, ObjectInspector fieldObjectInspector) {
+    protected MyField() {
+      super();
+    }
+
+    public MyField(int fieldID, Field field, ObjectInspector fieldObjectInspector) {
+      this.fieldID = fieldID;
       this.field = field;
       this.fieldObjectInspector = fieldObjectInspector;
     }
@@ -59,6 +65,10 @@ public class ReflectionStructObjectInspector extends
 
     public ObjectInspector getFieldObjectInspector() {
       return fieldObjectInspector;
+    }
+
+    public int getFieldID() {
+      return fieldID;
     }
 
     public String getFieldComment() {
@@ -134,7 +144,7 @@ public class ReflectionStructObjectInspector extends
       }
       if (!shouldIgnoreField(reflectionFields[i].getName())) {
         reflectionFields[i].setAccessible(true);
-        fields.add(new MyField(reflectionFields[i], structFieldObjectInspectors.get(used++)));
+        fields.add(new MyField(i, reflectionFields[i], structFieldObjectInspectors.get(used++)));
       }
     }
     assert (fields.size() == structFieldObjectInspectors.size());

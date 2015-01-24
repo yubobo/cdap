@@ -45,8 +45,12 @@ public class UnionStructObjectInspector extends StructObjectInspector {
    *
    */
   public static class MyField implements StructField {
-    public int structID;
-    StructField structField;
+    protected int structID;
+    protected StructField structField;
+
+    protected MyField() {
+      super();
+    }
 
     public MyField(int structID, StructField structField) {
       this.structID = structID;
@@ -59,6 +63,10 @@ public class UnionStructObjectInspector extends StructObjectInspector {
 
     public ObjectInspector getFieldObjectInspector() {
       return structField.getFieldObjectInspector();
+    }
+
+    public int getFieldID() {
+      return structID;
     }
 
     public String getFieldComment() {

@@ -32,12 +32,8 @@ import java.util.List;
  * Word splitter Flowlet.
  */
 public class WordSplitter extends AbstractFlowlet {
-  @UseDataSet("wordStats")
-  private Table wordStatsTable;
   @Output("wordOut")
   private OutputEmitter<String> wordOutput;
-  @Output("wordArrayOut")
-  private OutputEmitter<List<String>> wordListOutput;
 
   @ProcessInput
   public void process(StreamEvent event) {
@@ -63,14 +59,6 @@ public class WordSplitter extends AbstractFlowlet {
         wordCount++;
       }
     }
-
-    // Count other word statistics (word length, total words seen)
-    this.wordStatsTable.increment(new Increment("totals")
-                                          .add("total_length", sumOfLengths)
-                                          .add("total_words", wordCount));
-
-    // Send the list of words to the associater
-    wordListOutput.emit(wordList);
 
   }
 }

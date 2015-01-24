@@ -29,7 +29,6 @@ import co.cask.cdap.api.metrics.Metrics;
 public class Counter extends AbstractFlowlet {
   @UseDataSet("wordCounts")
   private KeyValueTable wordCountsTable;
-  private OutputEmitter<String> wordOutput;
   private Metrics metrics;
   int longestWordLength = 0;
 
@@ -41,7 +40,5 @@ public class Counter extends AbstractFlowlet {
       longestWordLength = word.length();
       metrics.gauge("longest.word.length", longestWordLength);
     }
-    // Forward the word to the unique counter Flowlet to do the unique count
-    wordOutput.emit(word);
   }
 }

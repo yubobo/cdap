@@ -48,14 +48,10 @@ public class WordCounter implements Flow {
         .setDescription("Example Word Count Flow")
         .withFlowlets()
             .add("splitter", new WordSplitter())
-            .add("associator", new WordAssociator())
             .add("counter", new Counter())
-            .add("unique", new UniqueCounter())
         .connect()
             .fromStream("wordStream").to("splitter")
-            .from("splitter").to("associator")
             .from("splitter").to("counter")
-            .from("counter").to("unique")
         .build();
   }
 }
