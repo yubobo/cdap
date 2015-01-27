@@ -38,11 +38,14 @@ import java.util.Map;
 public class DeployDatasetModulesStage extends AbstractStage<ApplicationDeployable> {
   private static final Logger LOG = LoggerFactory.getLogger(DeployDatasetModulesStage.class);
   private final DatasetFramework datasetFramework;
+  private final DatasetFramework systemDatasetFramework;
   private final CConfiguration configuration;
 
-  public DeployDatasetModulesStage(DatasetFramework datasetFramework, CConfiguration configuration) {
+  public DeployDatasetModulesStage(CConfiguration configuration,
+                                   DatasetFramework datasetFramework, DatasetFramework systemDatasetFramework) {
     super(TypeToken.of(ApplicationDeployable.class));
     this.datasetFramework = datasetFramework;
+    this.systemDatasetFramework = systemDatasetFramework;
     this.configuration = configuration;
   }
 
@@ -72,12 +75,15 @@ public class DeployDatasetModulesStage extends AbstractStage<ApplicationDeployab
         } else if (Dataset.class.isAssignableFrom(clazz)) {
           boolean allowForceDatasetUpgrade =
             configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
-          // checking if type is in already
-          if (!datasetFramework.hasType(clazz.getName()) || allowForceDatasetUpgrade) {
-            LOG.info("Deploying module: {}", clazz.getName());
-            datasetFramework.addModule(moduleName, new SingleTypeModule((Class<Dataset>) clazz));
-          } else {
-            LOG.info("Not deploying module: {}", clazz.getName());
+          boolean isSystemDataset = systemDatasetFramework.hasType(clazz.getName());
+          if (!isSystemDataset) {
+            // checking if type is in already or force upgrade is allowed
+            if (!datasetFramework.hasType(clazz.getName()) || allowForceDatasetUpgrade) {
+              LOG.info("Deploying module: {}", clazz.getName());
+              datasetFramework.addModule(moduleName, new SingleTypeModule((Class<Dataset>) clazz));
+            } else {
+              LOG.info("Not deploying module: {}", clazz.getName());
+            }
           }
         } else {
           String msg = String.format(
