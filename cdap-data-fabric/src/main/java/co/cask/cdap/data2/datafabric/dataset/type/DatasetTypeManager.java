@@ -20,6 +20,8 @@ import co.cask.cdap.api.dataset.DatasetDefinition;
 import co.cask.cdap.api.dataset.DatasetSpecification;
 import co.cask.cdap.api.dataset.module.DatasetDefinitionRegistry;
 import co.cask.cdap.api.dataset.module.DatasetModule;
+import co.cask.cdap.common.conf.CConfiguration;
+import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.lang.ClassLoaders;
 import co.cask.cdap.common.lang.ProgramClassLoader;
 import co.cask.cdap.common.lang.jar.BundleJarUtil;
@@ -63,16 +65,18 @@ import javax.annotation.Nullable;
 public class DatasetTypeManager extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(DatasetTypeManager.class);
 
+  private final CConfiguration configuration;
   private final MDSDatasetsRegistry mdsDatasets;
   private final LocationFactory locationFactory;
 
   private final Map<String, DatasetModule> defaultModules;
 
   @Inject
-  public DatasetTypeManager(MDSDatasetsRegistry mdsDatasets,
+  public DatasetTypeManager(CConfiguration configuration, MDSDatasetsRegistry mdsDatasets,
                             LocationFactory locationFactory,
                             @Named("defaultDatasetModules")
                             Map<String, ? extends DatasetModule> defaultModules) {
+    this.configuration = configuration;
     this.mdsDatasets = mdsDatasets;
     this.locationFactory = locationFactory;
     this.defaultModules = Maps.newLinkedHashMap(defaultModules);
@@ -105,7 +109,9 @@ public class DatasetTypeManager extends AbstractIdleService {
         @Override
         public Void call(MDSDatasets datasets) throws DatasetModuleConflictException {
           DatasetModuleMeta existing = datasets.getTypeMDS().getModule(name);
-          if (existing != null) {
+          boolean allowForceDatasetUpgrade =
+            configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
+          if (existing != null && !allowForceDatasetUpgrade) {
             String msg = String.format("cannot add module %s, module with the same name already exists: %s",
                                        name, existing);
             LOG.warn(msg);
@@ -126,7 +132,7 @@ public class DatasetTypeManager extends AbstractIdleService {
             @SuppressWarnings("unchecked")
             Class clazz = ClassLoaders.loadClass(className, cl, this);
             module = DatasetModules.getDatasetModule(clazz);
-            reg = new DependencyTrackingRegistry(datasets);
+            reg = new DependencyTrackingRegistry(configuration, datasets);
             module.register(reg);
           } catch (Exception e) {
             LOG.error("Could not instantiate instance of dataset module class {} for module {} using jarLocation {}",
@@ -355,13 +361,15 @@ public class DatasetTypeManager extends AbstractIdleService {
   }
 
   private class DependencyTrackingRegistry implements DatasetDefinitionRegistry {
+    private final CConfiguration configuration;
     private final MDSDatasets datasets;
     private final InMemoryDatasetDefinitionRegistry registry;
 
     private final List<String> types = Lists.newArrayList();
     private final LinkedHashSet<String> usedTypes = Sets.newLinkedHashSet();
 
-    public DependencyTrackingRegistry(MDSDatasets datasets) {
+    public DependencyTrackingRegistry(CConfiguration configuration, MDSDatasets datasets) {
+      this.configuration = configuration;
       this.datasets = datasets;
       this.registry = new InMemoryDatasetDefinitionRegistry();
     }
@@ -376,8 +384,9 @@ public class DatasetTypeManager extends AbstractIdleService {
 
     @Override
     public void add(DatasetDefinition def) {
+      boolean allowDatasetForceUpgrade = configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
       String typeName = def.getName();
-      if (datasets.getTypeMDS().getType(typeName) != null) {
+      if (datasets.getTypeMDS().getType(typeName) != null && !allowDatasetForceUpgrade) {
         String msg = "Cannot add dataset type: it already exists: " + typeName;
         LOG.error(msg);
         throw new TypeConflictException(msg);
