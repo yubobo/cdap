@@ -173,7 +173,6 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
     this.txClient = txClient;
     ContextManager.saveContext(datasetFramework);
-    DatasetAccessor.setRunContext(DatasetAccessor.RunContext.EXPLORE_SERVICE);
 
     cleanupJobSchedule = cConf.getLong(Constants.Explore.CLEANUP_JOB_SCHEDULE_SECS);
 
@@ -862,6 +861,9 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   protected Map<String, String> startSession() throws IOException {
     Map<String, String> sessionConf = Maps.newHashMap();
 
+    QueryHandle queryHandle = QueryHandle.generate();
+    sessionConf.put(Constants.Explore.QUERY_ID, queryHandle.getHandle());
+    
     Transaction tx = startTransaction();
     ConfigurationUtil.set(sessionConf, Constants.Explore.TX_QUERY_KEY, TxnCodec.INSTANCE, tx);
     ConfigurationUtil.set(sessionConf, Constants.Explore.CCONF_KEY, CConfCodec.INSTANCE, cConf);
@@ -890,7 +892,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
    */
   protected QueryHandle saveOperationInfo(OperationHandle operationHandle, SessionHandle sessionHandle,
                                      Map<String, String> sessionConf, String statement) {
-    QueryHandle handle = QueryHandle.generate();
+    QueryHandle handle = QueryHandle.fromId(sessionConf.get(Constants.Explore.QUERY_ID));
     activeHandleCache.put(handle, new OperationInfo(sessionHandle, operationHandle, sessionConf, statement));
     return handle;
   }
