@@ -19,7 +19,7 @@
 
 
   <property>
-    <name>force.dataset.upgrade</name>
+    <name>dataset.unchecked.upgrade</name>
     <value>true</value>
     <description>
       By default datasets are not redeployed. Setting this value to true forces a dataset upgrade on each deploy.

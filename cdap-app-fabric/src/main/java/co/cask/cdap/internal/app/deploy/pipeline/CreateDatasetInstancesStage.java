@@ -35,13 +35,13 @@ import java.util.Map;
  */
 public class CreateDatasetInstancesStage extends AbstractStage<ApplicationDeployable> {
   private static final Logger LOG = LoggerFactory.getLogger(CreateDatasetInstancesStage.class);
-  private final CConfiguration configuration;
   private final DatasetFramework datasetFramework;
+  private final boolean allowDatasetUncheckedUpgrade;
 
   public CreateDatasetInstancesStage(CConfiguration configuration, DatasetFramework datasetFramework) {
     super(TypeToken.of(ApplicationDeployable.class));
-    this.configuration = configuration;
     this.datasetFramework = datasetFramework;
+    this.allowDatasetUncheckedUpgrade = configuration.getBoolean(Constants.Dataset.DATASET_UNCHECKED_UPGRADE);
   }
 
   /**
@@ -58,8 +58,7 @@ public class CreateDatasetInstancesStage extends AbstractStage<ApplicationDeploy
       String instanceName = instanceEntry.getKey();
       DatasetCreationSpec instanceSpec = instanceEntry.getValue();
       try {
-        boolean allowDatasetForceUpgrade = configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
-        if (!datasetFramework.hasInstance(instanceName) || allowDatasetForceUpgrade) {
+        if (!datasetFramework.hasInstance(instanceName) || allowDatasetUncheckedUpgrade) {
           LOG.info("Adding instance: {}", instanceName);
           datasetFramework.addInstance(instanceSpec.getTypeName(), instanceName, instanceSpec.getProperties());
         }

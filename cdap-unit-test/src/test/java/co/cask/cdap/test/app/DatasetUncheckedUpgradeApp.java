@@ -31,8 +31,8 @@ import com.google.gson.Gson;
 /**
  *
  */
-public class ForceDatasetUpgradeApp extends AbstractApplication {
-  public static final String NAME = "ForceDatasetUpgradeApp";
+public class DatasetUncheckedUpgradeApp extends AbstractApplication {
+  public static final String NAME = "DatasetUncheckedUpgradeApp";
   public static final String DATASET_NAME = "dataset";
   private static final Gson GSON = new Gson();
 

@@ -56,10 +56,10 @@ public class InMemoryDatasetFramework implements DatasetFramework {
   private DatasetDefinitionRegistryFactory registryFactory;
   private Map<String, ? extends DatasetModule> defaultModules;
 
-  private final CConfiguration configuration;
   private final Map<String, String> moduleClasses = Maps.newLinkedHashMap();
   private final Set<String> defaultTypes = Sets.newHashSet();
   private final Map<String, DatasetSpecification> instances = Maps.newHashMap();
+  private final boolean allowDatasetUncheckedUpgrade;
 
   // NOTE: used only for "internal" operations, that doesn't return to client object of custom type
   // NOTE: for getting dataset/admin objects we construct fresh new one using all modules (no dependency management in
@@ -76,7 +76,7 @@ public class InMemoryDatasetFramework implements DatasetFramework {
                                   CConfiguration configuration) {
     this.registryFactory = registryFactory;
     this.defaultModules = defaultModules;
-    this.configuration = configuration;
+    this.allowDatasetUncheckedUpgrade = configuration.getBoolean(Constants.Dataset.DATASET_UNCHECKED_UPGRADE);
     resetRegistry();
   }
 
@@ -84,8 +84,7 @@ public class InMemoryDatasetFramework implements DatasetFramework {
   public synchronized void addModule(String moduleName, DatasetModule module)
     throws ModuleConflictException {
 
-    boolean allowForceDatasetUpgrade = configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
-    if (moduleClasses.containsKey(moduleName) && !allowForceDatasetUpgrade) {
+    if (moduleClasses.containsKey(moduleName) && !allowDatasetUncheckedUpgrade) {
       throw new ModuleConflictException("Cannot add module " + moduleName + ": it already exists.");
     }
     add(moduleName, module, false);
@@ -113,8 +112,7 @@ public class InMemoryDatasetFramework implements DatasetFramework {
   @Override
   public synchronized void addInstance(String datasetType, String datasetInstanceName, DatasetProperties props)
     throws InstanceConflictException, IOException {
-    boolean allowDatasetForceUpgrade = configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
-    if (!allowDatasetForceUpgrade && instances.get(datasetInstanceName) != null) {
+    if (!allowDatasetUncheckedUpgrade && instances.get(datasetInstanceName) != null) {
       throw new InstanceConflictException("Dataset instance with name already exists: " + datasetInstanceName);
     }
 

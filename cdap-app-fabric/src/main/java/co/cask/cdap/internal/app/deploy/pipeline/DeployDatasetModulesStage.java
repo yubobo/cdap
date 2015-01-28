@@ -40,14 +40,14 @@ public class DeployDatasetModulesStage extends AbstractStage<ApplicationDeployab
   private final DatasetFramework datasetFramework;
   // An instance of InMemoryDatasetFramework is used to check if a dataset is a system dataset
   private final DatasetFramework systemDatasetFramework;
-  private final CConfiguration configuration;
+  private final boolean allowDatasetUncheckedUpgrade;
 
   public DeployDatasetModulesStage(CConfiguration configuration,
                                    DatasetFramework datasetFramework, DatasetFramework inMemoryDatasetFramework) {
     super(TypeToken.of(ApplicationDeployable.class));
     this.datasetFramework = datasetFramework;
     this.systemDatasetFramework = inMemoryDatasetFramework;
-    this.configuration = configuration;
+    this.allowDatasetUncheckedUpgrade = configuration.getBoolean(Constants.Dataset.DATASET_UNCHECKED_UPGRADE);
   }
 
   /**
@@ -74,12 +74,10 @@ public class DeployDatasetModulesStage extends AbstractStage<ApplicationDeployab
         if (DatasetModule.class.isAssignableFrom(clazz)) {
           datasetFramework.addModule(moduleName, (DatasetModule) clazz.newInstance());
         } else if (Dataset.class.isAssignableFrom(clazz)) {
-          boolean allowForceDatasetUpgrade =
-            configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
           boolean isSystemDataset = systemDatasetFramework.hasType(clazz.getName());
           if (!isSystemDataset) {
             // checking if type is in already or force upgrade is allowed
-            if (!datasetFramework.hasType(clazz.getName()) || allowForceDatasetUpgrade) {
+            if (!datasetFramework.hasType(clazz.getName()) || allowDatasetUncheckedUpgrade) {
               LOG.info("Adding module: {}", clazz.getName());
               datasetFramework.addModule(moduleName, new SingleTypeModule((Class<Dataset>) clazz));
             }

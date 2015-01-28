@@ -21,7 +21,7 @@ import com.google.common.base.Objects;
 /**
  *
  */
-public class ForceDatasetCompatibleUpgradeApp extends ForceDatasetUpgradeApp {
+public class IncompatibleDatasetUncheckedUpgradeApp extends DatasetUncheckedUpgradeApp {
 
   @Override
   protected Class<?> getRecordClass() {
@@ -29,11 +29,11 @@ public class ForceDatasetCompatibleUpgradeApp extends ForceDatasetUpgradeApp {
   }
 
   public static final class Record {
-    private final String id;
+    private final long id;
     private final String firstName;
     private final boolean alive;
 
-    public Record(String id, String firstName, boolean alive) {
+    public Record(long id, String firstName, boolean alive) {
       this.id = id;
       this.firstName = firstName;
       this.alive = alive;

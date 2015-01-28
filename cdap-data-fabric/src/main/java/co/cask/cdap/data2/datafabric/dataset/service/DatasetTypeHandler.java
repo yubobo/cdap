@@ -248,7 +248,7 @@ public class DatasetTypeHandler extends AbstractHttpHandler {
    * @throws DatasetModuleConflictException if the module exists
    */
   private void conflictIfModuleExists(String moduleName) throws DatasetModuleConflictException {
-    if (cConf.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE)) {
+    if (cConf.getBoolean(Constants.Dataset.DATASET_UNCHECKED_UPGRADE)) {
       return;
     }
     DatasetModuleMeta existing = manager.getModule(moduleName);

@@ -65,21 +65,21 @@ import javax.annotation.Nullable;
 public class DatasetTypeManager extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(DatasetTypeManager.class);
 
-  private final CConfiguration configuration;
   private final MDSDatasetsRegistry mdsDatasets;
   private final LocationFactory locationFactory;
 
   private final Map<String, DatasetModule> defaultModules;
+  private final boolean allowDatasetUncheckedUpgrade;
 
   @Inject
   public DatasetTypeManager(CConfiguration configuration, MDSDatasetsRegistry mdsDatasets,
                             LocationFactory locationFactory,
                             @Named("defaultDatasetModules")
                             Map<String, ? extends DatasetModule> defaultModules) {
-    this.configuration = configuration;
     this.mdsDatasets = mdsDatasets;
     this.locationFactory = locationFactory;
     this.defaultModules = Maps.newLinkedHashMap(defaultModules);
+    this.allowDatasetUncheckedUpgrade = configuration.getBoolean(Constants.Dataset.DATASET_UNCHECKED_UPGRADE);
   }
 
   @Override
@@ -109,9 +109,7 @@ public class DatasetTypeManager extends AbstractIdleService {
         @Override
         public Void call(MDSDatasets datasets) throws DatasetModuleConflictException {
           DatasetModuleMeta existing = datasets.getTypeMDS().getModule(name);
-          boolean allowForceDatasetUpgrade =
-            configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
-          if (existing != null && !allowForceDatasetUpgrade) {
+          if (existing != null && !allowDatasetUncheckedUpgrade) {
             String msg = String.format("cannot add module %s, module with the same name already exists: %s",
                                        name, existing);
             LOG.warn(msg);
@@ -132,7 +130,7 @@ public class DatasetTypeManager extends AbstractIdleService {
             @SuppressWarnings("unchecked")
             Class clazz = ClassLoaders.loadClass(className, cl, this);
             module = DatasetModules.getDatasetModule(clazz);
-            reg = new DependencyTrackingRegistry(configuration, datasets);
+            reg = new DependencyTrackingRegistry(datasets);
             module.register(reg);
           } catch (Exception e) {
             LOG.error("Could not instantiate instance of dataset module class {} for module {} using jarLocation {}",
@@ -361,15 +359,13 @@ public class DatasetTypeManager extends AbstractIdleService {
   }
 
   private class DependencyTrackingRegistry implements DatasetDefinitionRegistry {
-    private final CConfiguration configuration;
     private final MDSDatasets datasets;
     private final InMemoryDatasetDefinitionRegistry registry;
 
     private final List<String> types = Lists.newArrayList();
     private final LinkedHashSet<String> usedTypes = Sets.newLinkedHashSet();
 
-    public DependencyTrackingRegistry(CConfiguration configuration, MDSDatasets datasets) {
-      this.configuration = configuration;
+    public DependencyTrackingRegistry(MDSDatasets datasets) {
       this.datasets = datasets;
       this.registry = new InMemoryDatasetDefinitionRegistry();
     }
@@ -384,9 +380,8 @@ public class DatasetTypeManager extends AbstractIdleService {
 
     @Override
     public void add(DatasetDefinition def) {
-      boolean allowDatasetForceUpgrade = configuration.getBoolean(Constants.Dataset.FORCE_DATASET_UPGRADE);
       String typeName = def.getName();
-      if (datasets.getTypeMDS().getType(typeName) != null && !allowDatasetForceUpgrade) {
+      if (datasets.getTypeMDS().getType(typeName) != null && !allowDatasetUncheckedUpgrade) {
         String msg = "Cannot add dataset type: it already exists: " + typeName;
         LOG.error(msg);
         throw new TypeConflictException(msg);

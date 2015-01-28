@@ -834,28 +834,28 @@ public class TestFrameworkTest extends TestBase {
 
   @Category(XSlowTests.class)
   @Test
-  public void testForceDatasetUpgrade() throws Exception {
-    ApplicationManager applicationManager = deployApplication(ForceDatasetUpgradeApp.class);
-    DataSetManager<ForceDatasetUpgradeApp.RecordDataset> datasetManager =
-      applicationManager.getDataSet(ForceDatasetUpgradeApp.DATASET_NAME);
-    ForceDatasetUpgradeApp.Record expectedRecord = new ForceDatasetUpgradeApp.Record("0AXB", "john", "doe");
+  public void testDatasetUncheckedUpgrade() throws Exception {
+    ApplicationManager applicationManager = deployApplication(DatasetUncheckedUpgradeApp.class);
+    DataSetManager<DatasetUncheckedUpgradeApp.RecordDataset> datasetManager =
+      applicationManager.getDataSet(DatasetUncheckedUpgradeApp.DATASET_NAME);
+    DatasetUncheckedUpgradeApp.Record expectedRecord = new DatasetUncheckedUpgradeApp.Record("0AXB", "john", "doe");
     datasetManager.get().writeRecord("key", expectedRecord);
     datasetManager.flush();
 
-    ForceDatasetUpgradeApp.Record actualRecord =
-      (ForceDatasetUpgradeApp.Record) datasetManager.get().getRecord("key");
+    DatasetUncheckedUpgradeApp.Record actualRecord =
+      (DatasetUncheckedUpgradeApp.Record) datasetManager.get().getRecord("key");
     Assert.assertEquals(expectedRecord, actualRecord);
 
     // Test compatible upgrade
-    applicationManager = deployApplication(ForceDatasetCompatibleUpgradeApp.class);
-    datasetManager = applicationManager.getDataSet(ForceDatasetUpgradeApp.DATASET_NAME);
-    ForceDatasetCompatibleUpgradeApp.Record compatibleRecord =
-      (ForceDatasetCompatibleUpgradeApp.Record) datasetManager.get().getRecord("key");
-    Assert.assertEquals(new ForceDatasetCompatibleUpgradeApp.Record("0AXB", "john", false), compatibleRecord);
+    applicationManager = deployApplication(CompatibleDatasetUncheckedUpgradeApp.class);
+    datasetManager = applicationManager.getDataSet(DatasetUncheckedUpgradeApp.DATASET_NAME);
+    CompatibleDatasetUncheckedUpgradeApp.Record compatibleRecord =
+      (CompatibleDatasetUncheckedUpgradeApp.Record) datasetManager.get().getRecord("key");
+    Assert.assertEquals(new CompatibleDatasetUncheckedUpgradeApp.Record("0AXB", "john", false), compatibleRecord);
 
     // Test in-compatible upgrade
-    applicationManager = deployApplication(ForceDatasetIncompatibleUpgradeApp.class);
-    datasetManager = applicationManager.getDataSet(ForceDatasetUpgradeApp.DATASET_NAME);
+    applicationManager = deployApplication(IncompatibleDatasetUncheckedUpgradeApp.class);
+    datasetManager = applicationManager.getDataSet(DatasetUncheckedUpgradeApp.DATASET_NAME);
     try {
       datasetManager.get().getRecord("key");
       Assert.fail("Expected to throw exception here due to an incompatible Dataset upgrade.");
@@ -864,10 +864,10 @@ public class TestFrameworkTest extends TestBase {
     }
 
     // Revert the upgrade
-    applicationManager = deployApplication(ForceDatasetCompatibleUpgradeApp.class);
-    datasetManager = applicationManager.getDataSet(ForceDatasetUpgradeApp.DATASET_NAME);
-    ForceDatasetCompatibleUpgradeApp.Record revertRecord =
-      (ForceDatasetCompatibleUpgradeApp.Record) datasetManager.get().getRecord("key");
-    Assert.assertEquals(new ForceDatasetCompatibleUpgradeApp.Record("0AXB", "john", false), revertRecord);
+    applicationManager = deployApplication(CompatibleDatasetUncheckedUpgradeApp.class);
+    datasetManager = applicationManager.getDataSet(DatasetUncheckedUpgradeApp.DATASET_NAME);
+    CompatibleDatasetUncheckedUpgradeApp.Record revertRecord =
+      (CompatibleDatasetUncheckedUpgradeApp.Record) datasetManager.get().getRecord("key");
+    Assert.assertEquals(new CompatibleDatasetUncheckedUpgradeApp.Record("0AXB", "john", false), revertRecord);
   }
 }
