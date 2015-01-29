@@ -861,6 +861,16 @@
         </description>
     </property>
 
+    <property>
+      <name>dataset.unchecked.upgrade</name>
+      <value>false</value>
+      <description>
+        By default, existing datasets are not redeployed when an app is deployed
+        - the existing instance is used instead. Setting this value to true does an
+        implicit redeployment of the dataset, making the new compatible, changes visible.
+      </description>
+    </property>
+
     <!---
          Web App Settings
      -->
