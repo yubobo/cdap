@@ -16,11 +16,19 @@
 
 package co.cask.cdap.examples.purchase;
 
+import co.cask.cdap.api.annotation.UseDataSet;
 import co.cask.cdap.api.app.AbstractApplication;
-import co.cask.cdap.api.data.schema.UnsupportedTypeException;
-import co.cask.cdap.api.data.stream.Stream;
+import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.api.dataset.lib.KeyValueTable;
-import co.cask.cdap.api.dataset.lib.ObjectStores;
+import co.cask.cdap.api.service.http.AbstractHttpServiceHandler;
+import co.cask.cdap.api.service.http.HttpServiceRequest;
+import co.cask.cdap.api.service.http.HttpServiceResponder;
+import com.google.common.collect.ImmutableMap;
+
+import java.util.Random;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 
 /**
  * This implements a simple purchase history application via a scheduled MapReduce Workflow --
@@ -35,45 +43,41 @@ public class PurchaseApp extends AbstractApplication {
     setName(APP_NAME);
     setDescription("Purchase history application.");
 
-    // Ingest data into the Application via a Stream
-    addStream(new Stream("purchaseStream"));
+    createDataset("KeyValueStore", KeyValueTable.class);
+    addService("KVService", new KVHandler());
+  }
 
-    // Store processed data in a Dataset
-    createDataset("frequentCustomers", KeyValueTable.class);
+  /**
+   * 
+   */
+  public static final class KVHandler extends AbstractHttpServiceHandler {
+    @UseDataSet("KeyValueStore")
+    private KeyValueTable store;
 
-    // Store user profiles in a Dataset
-    createDataset("userProfiles", KeyValueTable.class);
+    @Path("read/{id}")
+    @GET
+    public void read(HttpServiceRequest request, HttpServiceResponder responder, @PathParam("id") String id) {
+      byte[] value = store.read(id);
+      if (value != null) {
+        responder.sendJson(ImmutableMap.of("key", id, "value", Bytes.toString(value)));
+      } else {
+        responder.sendStatus(204);
+      }
+    }
 
-    // Process events in realtime using a Flow
-    addFlow(new PurchaseFlow());
+    @Path("write/{key}/{value}")
+    @GET
+    public void write(HttpServiceRequest request, HttpServiceResponder responder,
+                      @PathParam("key") String key, @PathParam("value") String value) {
+      store.write(key, value);
+      responder.sendStatus(200);
+    }
 
-    // Specify a MapReduce to run on the acquired data
-    addMapReduce(new PurchaseHistoryBuilder());
-
-    // Run a Workflow that uses the MapReduce to run on the acquired data
-    addWorkflow(new PurchaseHistoryWorkflow());
-
-    // Retrieve the processed data using a Service
-    addService(new PurchaseHistoryService());
-
-    // Store and retrieve user profile data using a Service
-    addService(UserProfileServiceHandler.SERVICE_NAME, new UserProfileServiceHandler());
-
-    // Provide a Service to Application components
-    addService(new CatalogLookupService());
-
-    // Schedule the workflow
-    scheduleWorkflow("DailySchedule", "0 4 * * *", "PurchaseHistoryWorkflow");
-
-    try {
-      createDataset("history", PurchaseHistoryStore.class, PurchaseHistoryStore.properties());
-      ObjectStores.createObjectStore(getConfigurer(), "purchases", Purchase.class);
-    } catch (UnsupportedTypeException e) {
-      // This exception is thrown by ObjectStore if its parameter type cannot be 
-      // (de)serialized (for example, if it is an interface and not a class, then there is
-      // no auto-magic way deserialize an object.) In this case that will not happen
-      // because PurchaseHistory and Purchase are actual classes.
-      throw new RuntimeException(e);
+    @Path("write/{key}")
+    @GET
+    public void write(HttpServiceRequest request, HttpServiceResponder responder, @PathParam("key") String key) {
+      store.write(key, String.valueOf(new Random(System.currentTimeMillis()).nextInt()));
+      responder.sendStatus(200);
     }
   }
 }

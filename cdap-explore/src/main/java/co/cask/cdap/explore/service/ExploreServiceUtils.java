@@ -34,7 +34,6 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.VersionInfo;
 import org.apache.twill.internal.utils.Dependencies;
@@ -228,11 +227,6 @@ public class ExploreServiceUtils {
    *                        If null, the class loader of this class is used.
    */
   public static HiveSupport checkHiveSupportWithSecurity(Configuration hConf, ClassLoader hiveClassLoader) {
-    if (User.isHBaseSecurityEnabled(hConf)) {
-      throw new RuntimeException("Explore is not supported on secure Hadoop clusters. Set the configuration '" +
-                                 Constants.Explore.EXPLORE_ENABLED +
-                                 "' to false to start without Explore.");
-    }
     return checkHiveSupportWithoutSecurity(hiveClassLoader);
   }
 
