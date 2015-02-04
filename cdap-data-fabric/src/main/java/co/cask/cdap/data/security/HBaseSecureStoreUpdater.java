@@ -65,7 +65,7 @@ public final class HBaseSecureStoreUpdater implements SecureStoreUpdater {
    */
   public long getUpdateInterval() {
     // The value contains in hbase-default.xml, so it should always there. If it is really missing, default it to 1 day.
-    return hConf.getLong(Constants.HBase.AUTH_KEY_UPDATE_INTERVAL, TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS));
+    return hConf.getLong(Constants.HBase.AUTH_KEY_UPDATE_INTERVAL, TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
   }
 
   @Override

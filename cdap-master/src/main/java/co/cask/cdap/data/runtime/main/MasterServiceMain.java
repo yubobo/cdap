@@ -212,7 +212,7 @@ public class MasterServiceMain extends DaemonMain {
     }
 
     // This checking will throw an exception if Hive is not present or if its distribution is unsupported
-    ExploreServiceUtils.checkHiveSupportWithSecurity(hConf);
+    ExploreServiceUtils.checkHiveSupportWithSecurity();
   }
 
   @Override
