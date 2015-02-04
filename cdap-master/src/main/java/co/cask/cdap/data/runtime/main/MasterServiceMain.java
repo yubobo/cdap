@@ -42,6 +42,7 @@ import co.cask.cdap.data2.util.hbase.ConfigurationTable;
 import co.cask.cdap.data2.util.hbase.HBaseTableUtilFactory;
 import co.cask.cdap.explore.client.ExploreClient;
 import co.cask.cdap.explore.guice.ExploreClientModule;
+import co.cask.cdap.explore.security.HiveSecureStoreUpdater;
 import co.cask.cdap.explore.service.ExploreServiceUtils;
 import co.cask.cdap.gateway.auth.AuthModule;
 import co.cask.cdap.internal.app.services.AppFabricServer;
@@ -126,6 +127,7 @@ public class MasterServiceMain extends DaemonMain {
   private DatasetService dsService;
   private ServiceStore serviceStore;
   private HBaseSecureStoreUpdater secureStoreUpdater;
+  private HiveSecureStoreUpdater hiveSecureStoreUpdater;
   private ExploreClient exploreClient;
 
   private String serviceName;
@@ -182,6 +184,7 @@ public class MasterServiceMain extends DaemonMain {
     exploreClient = baseInjector.getInstance(ExploreClient.class);
     secureStoreUpdater = baseInjector.getInstance(HBaseSecureStoreUpdater.class);
     serviceStore = baseInjector.getInstance(ServiceStore.class);
+    hiveSecureStoreUpdater = baseInjector.getInstance(HiveSecureStoreUpdater.class);
 
     checkTransactionRequirements();
     checkExploreRequirements();
@@ -369,6 +372,7 @@ public class MasterServiceMain extends DaemonMain {
       twillRunner.scheduleSecureStoreUpdate(secureStoreUpdater, 30000L, secureStoreUpdater.getUpdateInterval(),
                                             TimeUnit.MILLISECONDS);
     }
+    // TODO add schedule for hive secure store to refresh the tokens as well
   }
 
 
@@ -516,6 +520,10 @@ public class MasterServiceMain extends DaemonMain {
         }
       }
     }
+
+    // TODO only put that when Hive is secure
+    // HiveSecureStoreUpdater.update() ignores parameters
+    preparer.addSecureStore(hiveSecureStoreUpdater.update(null, null));
 
     return preparer;
   }

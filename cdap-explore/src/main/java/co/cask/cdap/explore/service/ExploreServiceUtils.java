@@ -35,6 +35,7 @@ import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.VersionInfo;
 import org.apache.twill.internal.utils.Dependencies;
 import org.slf4j.Logger;
@@ -125,14 +126,30 @@ public class ExploreServiceUtils {
       throw new RuntimeException("System property " + Constants.Explore.EXPLORE_CLASSPATH + " is not set.");
     }
 
+    // EXPLORE_CONF_FILES will be defined in startup scripts if Hive is installed.
+    String exploreConfPathStr = System.getProperty(Constants.Explore.EXPLORE_CONF_FILES);
+    LOG.debug("Explore classpath = {}", exploreConfPathStr);
+    if (exploreConfPathStr == null) {
+      throw new RuntimeException("System property " + Constants.Explore.EXPLORE_CONF_FILES + " is not set.");
+    }
+
     Iterable<File> hiveClassPath = getClassPathJarsFiles(exploreClassPathStr);
+    Iterable<File> hiveConfFiles = getClassPathJarsFiles(exploreConfPathStr);
     ImmutableList.Builder<URL> builder = ImmutableList.builder();
-    for (File jar : hiveClassPath) {
+    LOG.info("Printing classloader content");
+    for (File file : Iterables.concat(hiveClassPath, hiveConfFiles)) {
       try {
-        builder.add(jar.toURI().toURL());
+        // todo change to trace
+        LOG.info("{}", file.toURI().toURL());
+
+        if (file.getName().matches(".*\\.xml")) {
+          builder.add(file.getParentFile().toURI().toURL());
+        } else {
+          builder.add(file.toURI().toURL());
+        }
       } catch (MalformedURLException e) {
         LOG.error("Jar URL is malformed", e);
-        Throwables.propagate(e);
+        throw Throwables.propagate(e);
       }
     }
     exploreClassLoader = new URLClassLoader(Iterables.toArray(builder.build(), URL.class),
@@ -140,8 +157,8 @@ public class ExploreServiceUtils {
     return exploreClassLoader;
   }
 
-  public static Class<? extends ExploreService> getHiveService(Configuration hConf) {
-    HiveSupport hiveVersion = checkHiveSupportWithSecurity(hConf, null);
+  public static Class<? extends ExploreService> getHiveService() {
+    HiveSupport hiveVersion = checkHiveSupportWithSecurity(null);
     Class<? extends ExploreService> hiveServiceCl = hiveVersion.getHiveExploreServiceClass();
     return hiveServiceCl;
   }
@@ -210,23 +227,26 @@ public class ExploreServiceUtils {
    * Check that Hive is in the class path - with a right version. Use a separate class loader to load Hive classes,
    * built using the explore classpath passed as a system property to master. Also check that Hadoop cluster is
    * not secure, as it is not supported by Explore yet.
-   *
-   * @param hConf HBase configuration used to check if Hadoop cluster is secure.
    */
-  public static HiveSupport checkHiveSupportWithSecurity(Configuration hConf) {
+  public static HiveSupport checkHiveSupportWithSecurity() {
     ClassLoader classLoader = getExploreClassLoader();
-    return checkHiveSupportWithSecurity(hConf, classLoader);
+    return checkHiveSupportWithSecurity(classLoader);
   }
 
   /**
    * Check that Hive is in the class path - with a right version. Also check that Hadoop
    * cluster is not secure, as it is not supported by Explore yet.
    *
-   * @param hConf HBase configuration used to check if Hadoop cluster is secure.
    * @param hiveClassLoader class loader to use to load hive classes.
    *                        If null, the class loader of this class is used.
    */
-  public static HiveSupport checkHiveSupportWithSecurity(Configuration hConf, ClassLoader hiveClassLoader) {
+  public static HiveSupport checkHiveSupportWithSecurity(ClassLoader hiveClassLoader) {
+    if (UserGroupInformation.isSecurityEnabled()) {
+      LOG.info("Running Explore with security enabled.");
+//      throw new RuntimeException("Explore is not supported on secure Hadoop clusters. Set the configuration '" +
+//                                 Constants.Explore.EXPLORE_ENABLED +
+//                                 "' to false to start without Explore.");
+    }
     return checkHiveSupportWithoutSecurity(hiveClassLoader);
   }
 
@@ -378,6 +398,8 @@ public class ExploreServiceUtils {
     // the map reduces jobs launched by Hive.
     conf.setBoolean("mapreduce.user.classpath.first", true);
     conf.setBoolean(Job.MAPREDUCE_JOB_USER_CLASSPATH_FIRST, true);
+
+    conf.set("mapreduce.job.credentials.binary", "${HADOOP_TOKEN_FILE_LOCATION}");
 
     File newHiveConfFile = new File(Files.createTempDir(), "hive-site.xml");
     FileOutputStream fos;

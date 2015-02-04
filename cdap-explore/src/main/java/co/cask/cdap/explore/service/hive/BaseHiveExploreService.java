@@ -58,6 +58,11 @@ import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolPB;
+import org.apache.hadoop.hive.common.FileUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
@@ -65,6 +70,20 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.ql.Context;
+import org.apache.hadoop.hive.ql.exec.TaskRunner;
+import org.apache.hadoop.hive.ql.io.HiveFileFormatUtils;
+import org.apache.hadoop.hive.shims.ShimLoader;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.SaslRpcServer;
+import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.token.TokenSelector;
+import org.apache.hive.service.auth.HiveAuthFactory;
 import org.apache.hive.service.cli.CLIService;
 import org.apache.hive.service.cli.ColumnDescriptor;
 import org.apache.hive.service.cli.FetchOrientation;
@@ -92,6 +111,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
@@ -118,6 +138,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   private static final Gson GSON = new Gson();
   private static final int PREVIEW_COUNT = 5;
   private static final long METASTORE_CLIENT_CLEANUP_PERIOD = 60;
+  public static final String HIVE_METASTORE_TOKEN_KEY = "hive.metastore.token.signature";
 
   private final CConfiguration cConf;
   private final Configuration hConf;
@@ -229,7 +250,77 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   @Override
   protected void startUp() throws Exception {
     LOG.info("Starting {}...", BaseHiveExploreService.class.getSimpleName());
-    cliService.init(getHiveConf());
+
+//    ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+//    // TODO: fix logging issue in mapreduce:  ENG-3279
+//    if (!(loggerFactory instanceof ch.qos.logback.classic.LoggerContext)) {
+//      LOG.warn("LoggerFactory is not a logback LoggerContext. No log appender is added. " +
+//                 "Logback might not be in the classpath");
+//    }
+//
+//    ch.qos.logback.classic.Logger cdapLogger =
+//      (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+//    Iterator<ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent>> appenderIterator
+//      = cdapLogger.iteratorForAppenders();
+//    List<ch.qos.logback.core.Appender> appenders = Lists.newArrayList();
+//    while (appenderIterator.hasNext()) {
+//      appenders.add(appenderIterator.next());
+//    }
+//
+//
+//    ch.qos.logback.classic.LoggerContext loggerContext = (ch.qos.logback.classic.LoggerContext) loggerFactory;
+//    List<ch.qos.logback.classic.Logger> loggerList = loggerContext.getLoggerList();
+//    for (ch.qos.logback.classic.Logger logger : loggerList) {
+//      LOG.warn("{} level {}", logger.toString(), logger.getLevel());
+//      Iterator<ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent>> iterator =
+//        logger.iteratorForAppenders();
+//      while (iterator.hasNext()) {
+//        ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent> appender = iterator.next();
+//        LOG.warn("Appender name: {}", appender);
+//      }
+////      if (logger.getName() != org.slf4j.Logger.ROOT_LOGGER_NAME) {
+////        for (ch.qos.logback.core.Appender appender : appenders) {
+////          logger.addAppender(appender);
+////        }
+////      }
+//    }
+//
+//    // Print the logback files
+//    LOG.warn("Lobgback file: {}",
+//             IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("logback.xml"), "UTF-8"));
+//    LOG.warn("Lobgback-template file: {}",
+//             IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("logback-template.xml"),
+//                              "UTF-8"));
+//
+//    Log log = LogFactory.getLog(SaslRpcClient.class);
+//    log.info("TEST INFO");
+//    log.warn("TEST WARN");
+//    log.debug("TEST DEBUG");
+//    LOG.warn("log for saslRpcClient is: {}, debug is enabled: {}", log.getClass(), log.isDebugEnabled());
+//
+//
+//    // Change log level to debug programmatically
+//    ch.qos.logback.classic.Logger rootLogger =
+//      (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.apache.hadoop.security");
+//    LOG.warn("Log level was: {}", rootLogger.getLevel());
+//    rootLogger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+//    LOG.warn("Log level is now: {}", rootLogger.getLevel());
+
+    HiveConf conf = getHiveConf();
+    // Read delegation token if security is enabled.
+    if (ShimLoader.getHadoopShims().isSecurityEnabled()) {
+      conf.set(HIVE_METASTORE_TOKEN_KEY, HiveAuthFactory.HS2_CLIENT_TOKEN);
+
+      String hadoopAuthToken =
+        System.getenv(ShimLoader.getHadoopShims().getTokenFileLocEnvName());
+      if (hadoopAuthToken != null) {
+        conf.set("mapreduce.job.credentials.binary", hadoopAuthToken);
+      }
+    }
+
+    LOG.info("HIVE_METASTORE_TOKEN_KEY: {}", conf.get(HIVE_METASTORE_TOKEN_KEY));
+    LOG.info("mapreduce.job.credentials.binary: {}", conf.get("mapreduce.job.credentials.binary"));
+    cliService.init(conf);
     cliService.start();
 
     metastoreClientsExecutorService.scheduleWithFixedDelay(
@@ -596,8 +687,98 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
     try {
       Map<String, String> sessionConf = startSession();
-      // It looks like the username and password below is not used when security is disabled in Hive Server2.
-      SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
+      SessionHandle sessionHandle;
+
+      // Read delegation token if security is enabled.
+      if (ShimLoader.getHadoopShims().isSecurityEnabled()) {
+        LOG.info("Metastore SASL enabled");
+        Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
+        if (credentials == null) {
+          String message = "Cannot get credentials to get Hive MetaStore delegation token";
+          LOG.error(message);
+          throw new ExploreException(message);
+        }
+
+        LOG.info("Credentials:");
+        for (Token t : credentials.getAllTokens()) {
+          LOG.info("{}", t);
+        }
+
+        Token<? extends TokenIdentifier> delegationToken =
+          credentials.getToken(new Text(HiveAuthFactory.HS2_CLIENT_TOKEN));
+        if (delegationToken == null) {
+          String message = String.format(
+            "Cannot get delegation token for Hive MetaStore from credentials for service %s",
+            HiveAuthFactory.HS2_CLIENT_TOKEN);
+          LOG.error(message);
+          throw new ExploreException(message);
+        }
+
+        String hadoopAuthToken =
+          System.getenv(ShimLoader.getHadoopShims().getTokenFileLocEnvName());
+        sessionConf.put("mapreduce.job.credentials.binary", hadoopAuthToken);
+
+        UserGroupInformation.getCurrentUser().setAuthenticationMethod(SaslRpcServer.AuthMethod.TOKEN);
+        UserGroupInformation.getLoginUser().setAuthenticationMethod(SaslRpcServer.AuthMethod.TOKEN);
+
+        LOG.warn("Token for current user: {}", UserGroupInformation.getCurrentUser().getTokens());
+        LOG.warn("Token for login user: {}", UserGroupInformation.getLoginUser().getTokens());
+
+        Configuration conf = new HiveConf();
+        String hdfsAddr = conf.get("fs.defaultFS");
+//        LOG.warn("HDFS namenode addr: {}", hdfsAddr);
+//        NameNodeProxies.ProxyAndInfo<ClientProtocol> proxy =
+//          NameNodeProxies.createProxy(new HiveConf(), new URI(hdfsAddr), ClientProtocol.class);
+//        LOG.warn("proxy info type is: {}", proxy.getClass());
+//        LOG.warn("proxy type is: {}", proxy.getProxy().getClass());
+//        boolean b = proxy.getProxy().mkdirs("/tmp/test2", new FsPermission("666"), true);
+//        LOG.warn("creation of dir successful: {}", b);
+
+
+        LOG.warn("Task runner id is: {}", TaskRunner.getTaskRunnerID());
+        Path scratchDir = FileUtils.makeQualified(new Path(HiveConf.getVar(conf, HiveConf.ConfVars.SCRATCHDIR),
+                                                    Context.generateExecutionId()), conf);
+        Path testPath = new Path("/tmp/hive-yarn-yarn/", "hive_2014-11-03_22-30-55_898_6088858751068125188");
+
+        LOG.warn("Scratch dir is: {}", testPath);
+        URI uri = testPath.toUri();
+        Path dirPath = new Path(uri.getScheme(), uri.getAuthority(),
+                                uri.getPath() + "-" + TaskRunner.getTaskRunnerID());
+        LOG.warn("Dir path is: {}", dirPath);
+        FileSystem fs = dirPath.getFileSystem(conf);
+        LOG.warn("File system class is: {}", fs.getClass());
+        fs.mkdirs(dirPath, new FsPermission("755"));
+
+
+
+        TokenInfo tokenInfo = SecurityUtil.getTokenInfo(ClientNamenodeProtocolPB.class, conf);
+        LOG.warn("Get token info proto:" + ClientNamenodeProtocolPB.class + " info:" + tokenInfo);
+        if (tokenInfo == null) { // protocol has no support for tokens
+          LOG.warn("Token is null");
+        }
+        try {
+          TokenSelector<?> tokenSelector = tokenInfo.value().newInstance();
+          Token<? extends TokenIdentifier> token =
+            tokenSelector.selectToken(SecurityUtil.buildTokenService(new URI(hdfsAddr + ":8020")),
+                                      UserGroupInformation.getCurrentUser().getTokens());
+          LOG.warn("Selected token is: {}", token);
+        } catch (InstantiationException e) {
+          throw new IOException(e.toString());
+        } catch (IllegalAccessException e) {
+          throw new IOException(e.toString());
+        }
+
+        // Read delegation token if security is enabled.
+        sessionConf.put(HIVE_METASTORE_TOKEN_KEY, HiveAuthFactory.HS2_CLIENT_TOKEN);
+        sessionHandle = cliService.openSessionWithImpersonation(UserGroupInformation.getCurrentUser().getUserName(),
+                                                                "", sessionConf,
+                                                                delegationToken.encodeToUrlString());
+//        sessionHandle = cliService.openSession("", "", sessionConf);
+      } else {
+        // It looks like the username and password below is not used when security is disabled in Hive Server2.
+        sessionHandle = cliService.openSession("", "", sessionConf);
+      }
+
       try {
         OperationHandle operationHandle = doExecute(sessionHandle, statement);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, statement);
