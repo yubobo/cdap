@@ -250,61 +250,6 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   protected void startUp() throws Exception {
     LOG.info("Starting {}...", BaseHiveExploreService.class.getSimpleName());
 
-//    ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
-//    // TODO: fix logging issue in mapreduce:  ENG-3279
-//    if (!(loggerFactory instanceof ch.qos.logback.classic.LoggerContext)) {
-//      LOG.warn("LoggerFactory is not a logback LoggerContext. No log appender is added. " +
-//                 "Logback might not be in the classpath");
-//    }
-//
-//    ch.qos.logback.classic.Logger cdapLogger =
-//      (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-//    Iterator<ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent>> appenderIterator
-//      = cdapLogger.iteratorForAppenders();
-//    List<ch.qos.logback.core.Appender> appenders = Lists.newArrayList();
-//    while (appenderIterator.hasNext()) {
-//      appenders.add(appenderIterator.next());
-//    }
-//
-//
-//    ch.qos.logback.classic.LoggerContext loggerContext = (ch.qos.logback.classic.LoggerContext) loggerFactory;
-//    List<ch.qos.logback.classic.Logger> loggerList = loggerContext.getLoggerList();
-//    for (ch.qos.logback.classic.Logger logger : loggerList) {
-//      LOG.warn("{} level {}", logger.toString(), logger.getLevel());
-//      Iterator<ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent>> iterator =
-//        logger.iteratorForAppenders();
-//      while (iterator.hasNext()) {
-//        ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent> appender = iterator.next();
-//        LOG.warn("Appender name: {}", appender);
-//      }
-////      if (logger.getName() != org.slf4j.Logger.ROOT_LOGGER_NAME) {
-////        for (ch.qos.logback.core.Appender appender : appenders) {
-////          logger.addAppender(appender);
-////        }
-////      }
-//    }
-//
-//    // Print the logback files
-//    LOG.warn("Lobgback file: {}",
-//             IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("logback.xml"), "UTF-8"));
-//    LOG.warn("Lobgback-template file: {}",
-//             IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("logback-template.xml"),
-//                              "UTF-8"));
-//
-//    Log log = LogFactory.getLog(SaslRpcClient.class);
-//    log.info("TEST INFO");
-//    log.warn("TEST WARN");
-//    log.debug("TEST DEBUG");
-//    LOG.warn("log for saslRpcClient is: {}, debug is enabled: {}", log.getClass(), log.isDebugEnabled());
-//
-//
-//    // Change log level to debug programmatically
-//    ch.qos.logback.classic.Logger rootLogger =
-//      (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.apache.hadoop.security");
-//    LOG.warn("Log level was: {}", rootLogger.getLevel());
-//    rootLogger.setLevel(ch.qos.logback.classic.Level.DEBUG);
-//    LOG.warn("Log level is now: {}", rootLogger.getLevel());
-
     HiveConf conf = getHiveConf();
     // Read delegation token if security is enabled.
     if (ShimLoader.getHadoopShims().isSecurityEnabled()) {
