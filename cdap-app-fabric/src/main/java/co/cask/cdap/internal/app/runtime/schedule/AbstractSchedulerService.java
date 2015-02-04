@@ -29,7 +29,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closeables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.Job;
@@ -76,6 +75,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   protected final void startScheduler() {
     try {
       timeDelegate.start();
+      dataScheduler.start();
       LOG.info("Started scheduler");
     } catch (SchedulerException e) {
       LOG.error("Error starting scheduler {}", e.getCause(), e);
@@ -89,7 +89,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   protected final void stopScheduler() {
     try {
       timeDelegate.stop();
-      Closeables.closeQuietly(dataScheduler);
+      dataScheduler.stop();
       LOG.info("Stopped scheduler");
     } catch (SchedulerException e) {
       LOG.error("Error stopping scheduler {}", e.getCause(), e);

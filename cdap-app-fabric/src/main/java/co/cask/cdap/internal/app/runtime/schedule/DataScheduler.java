@@ -42,22 +42,23 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.twill.common.Cancellable;
+import org.apache.twill.common.Threads;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * {@link Scheduler} that triggers program executions based on data availability.
  */
 @Singleton
-public class DataScheduler implements Scheduler, Closeable {
+public class DataScheduler implements Scheduler {
   private static final Logger LOG = LoggerFactory.getLogger(DataScheduler.class);
 
   private final NotificationService notificationService;
@@ -67,6 +68,7 @@ public class DataScheduler implements Scheduler, Closeable {
   private final ConcurrentMap<String, StreamSizeNotificationSchedule> streamSizeSchedules;
 
   private Store store;
+  private Executor notificationExecutor;
 
   @Inject
   public DataScheduler(NotificationService notificationService, StoreFactory storeFactory,
@@ -79,8 +81,11 @@ public class DataScheduler implements Scheduler, Closeable {
     this.store = null;
   }
 
-  @Override
-  public void close() throws IOException {
+  public void start() {
+    notificationExecutor = Executors.newCachedThreadPool(Threads.createDaemonThreadFactory("data-scheduler-%d"));
+  }
+
+  public void stop() {
     for (StreamSizeNotificationSchedule streamSizeNotificationSchedule : streamSizeSchedules.values()) {
       streamSizeNotificationSchedule.cancel();
     }
@@ -238,7 +243,7 @@ public class DataScheduler implements Scheduler, Closeable {
      * not exist
      */
     public void startOrResume() throws NotificationFeedException {
-      notificationSubscription = notificationService.subscribe(getFeed(), this);
+      notificationSubscription = notificationService.subscribe(getFeed(), this, notificationExecutor);
       running = true;
 
       // TODO poll the stream and get the updated base size here, potentially triggering execution
