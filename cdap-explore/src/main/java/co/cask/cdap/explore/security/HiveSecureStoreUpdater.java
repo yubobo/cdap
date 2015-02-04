@@ -65,7 +65,7 @@ public class HiveSecureStoreUpdater implements SecureStoreUpdater {
     // TODO change that using hive settings - this has just been copied from the HBaseSecureStoreUpdater
 
     // The value contains in hbase-default.xml, so it should always there. If it is really missing, default it to 1 day.
-    return conf.getLong(Constants.HBase.AUTH_KEY_UPDATE_INTERVAL, TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS));
+    return conf.getLong(Constants.HBase.AUTH_KEY_UPDATE_INTERVAL, TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
   }
 
   @Override
