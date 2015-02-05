@@ -50,17 +50,17 @@ public class HiveTokenUtils {
     try {
       URL resource = hiveClassloader.getResource("hive-site.xml");
       URL resourceYarn = hiveClassloader.getResource("yarn-site.xml");
-      LOG.info("Resource hive-site.xml: {}", resource);
-      LOG.info("Resource yarn-site.xml: {}", resourceYarn);
+      LOG.trace("Resource hive-site.xml: {}", resource);
+      LOG.trace("Resource yarn-site.xml: {}", resourceYarn);
       Class hiveConfClass = hiveClassloader.loadClass("org.apache.hadoop.hive.conf.HiveConf");
 
       Object hiveConf = hiveConfClass.newInstance();
 
       Configuration configuration = (Configuration) hiveConf;
-      LOG.info("Conf for metastore: {}", configuration.get("hive.metastore.uris"));
-      LOG.info("Conf for metastore: {}", configuration);
+      LOG.trace("Conf for metastore: {}", configuration.get("hive.metastore.uris"));
+      LOG.trace("Conf for metastore: {}", configuration);
       for (Map.Entry<String, String> entry : configuration) {
-        LOG.info("{}", entry);
+        LOG.trace("{}", entry);
       }
 
       Class hiveClass = hiveClassloader.loadClass("org.apache.hadoop.hive.ql.metadata.Hive");
@@ -69,17 +69,17 @@ public class HiveTokenUtils {
       Object hiveObject = hiveGet.invoke(null, hiveConf);
 
       String user = UserGroupInformation.getCurrentUser().getShortUserName();
-      LOG.info("Fetching Hive MetaStore delegation token for user {}", user);
+      LOG.trace("Fetching Hive MetaStore delegation token for user {}", user);
 
       @SuppressWarnings("unchecked")
       Method getDelegationToken = hiveClass.getMethod("getDelegationToken", String.class, String.class);
       String tokenStr = (String) getDelegationToken.invoke(hiveObject, user, user);
-      LOG.info("Retrieved delegation token {} from Hive object", tokenStr);
+      LOG.trace("Retrieved delegation token {} from Hive object", tokenStr);
 
       Token<DelegationTokenIdentifier> delegationToken = new Token<DelegationTokenIdentifier>();
       delegationToken.decodeFromUrlString(tokenStr);
       delegationToken.setService(new Text("hiveserver2ClientToken"));
-      LOG.info("Adding delegation token {} from MetaStore for service {} for user {}", delegationToken,
+      LOG.trace("Adding delegation token {} from MetaStore for service {} for user {}", delegationToken,
                delegationToken.getService(), user);
       credentials.addToken(delegationToken.getService(), delegationToken);
       return credentials;

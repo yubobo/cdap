@@ -369,12 +369,16 @@ public class MasterServiceMain extends DaemonMain {
 
   private void scheduleSecureStoreUpdate(TwillRunner twillRunner) {
     if (User.isHBaseSecurityEnabled(hConf)) {
-      twillRunner.scheduleSecureStoreUpdate(secureStoreUpdater, 30000L, secureStoreUpdater.getUpdateInterval(),
+//      twillRunner.scheduleSecureStoreUpdate(secureStoreUpdater, 30000L, secureStoreUpdater.getUpdateInterval(),
+//                                            TimeUnit.MILLISECONDS);
+      twillRunner.scheduleSecureStoreUpdate(hiveSecureStoreUpdater, 3000L, hiveSecureStoreUpdater.getUpdateInterval(),
                                             TimeUnit.MILLISECONDS);
     }
-    // TODO add schedule for hive secure store to refresh the tokens as well
-  }
 
+//    if (User.isSecurityEnabled()) {
+        // TODO add schedule for hive secure store to refresh the tokens as well
+//    }
+  }
 
   private TwillPreparer prepare(TwillPreparer preparer) {
     return preparer.withDependencies(new HBaseTableUtilFactory().get().getClass())

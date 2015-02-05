@@ -58,7 +58,6 @@ import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolPB;
@@ -72,6 +71,7 @@ import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.ql.Context;
 import org.apache.hadoop.hive.ql.exec.TaskRunner;
+import org.apache.hadoop.hive.ql.exec.Utilities;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.Credentials;
@@ -111,6 +111,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.security.PrivilegedExceptionAction;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
@@ -668,7 +669,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
         LOG.warn("Token for current user: {}", UserGroupInformation.getCurrentUser().getTokens());
         LOG.warn("Token for login user: {}", UserGroupInformation.getLoginUser().getTokens());
 
-        Configuration conf = new HiveConf();
+        final Configuration conf = new HiveConf();
         String hdfsAddr = conf.get("fs.defaultFS");
 //        LOG.warn("HDFS namenode addr: {}", hdfsAddr);
 //        NameNodeProxies.ProxyAndInfo<ClientProtocol> proxy =
@@ -682,18 +683,44 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
         LOG.warn("Task runner id is: {}", TaskRunner.getTaskRunnerID());
         Path scratchDir = FileUtils.makeQualified(new Path(HiveConf.getVar(conf, HiveConf.ConfVars.SCRATCHDIR),
                                                     Context.generateExecutionId()), conf);
-        Path testPath = new Path("/tmp/hive-yarn-yarn/", "hive_2014-11-03_22-30-55_898_6088858751068125188");
+        Path testPath = new Path("/tmp/hive-yarn-yarn/", "hive_2014-11-03_22-30-55_898_6088858751068125188-new");
 
         LOG.warn("Scratch dir is: {}", testPath);
         URI uri = testPath.toUri();
-        Path dirPath = new Path(uri.getScheme(), uri.getAuthority(),
+        final Path dirPath = new Path(uri.getScheme(), uri.getAuthority(),
                                 uri.getPath() + "-" + TaskRunner.getTaskRunnerID());
         LOG.warn("Dir path is: {}", dirPath);
-        FileSystem fs = dirPath.getFileSystem(conf);
-        LOG.warn("File system class is: {}", fs.getClass());
-        fs.mkdirs(dirPath, new FsPermission("755"));
+//        FileSystem fs = dirPath.getFileSystem(conf);
+//        LOG.warn("File system class is: {}", fs.getClass());
+//        fs.mkdirs(dirPath, new FsPermission("755"));
 
+        LOG.info("UGI#isLoginKeyTabBased: {}", UserGroupInformation.isLoginKeytabBased());
+        LOG.info("UGI#isSecurityEnabled: {}", UserGroupInformation.isSecurityEnabled());
+        LOG.info("UGI#getLoginUser: {}", UserGroupInformation.getLoginUser());
+        LOG.info("UGI#getCurrentUser: {}", UserGroupInformation.getCurrentUser());
+        LOG.info("UGI#getCurrentUser.getRealUser: {}", UserGroupInformation.getCurrentUser().getRealUser());
+        LOG.info("UGI#getLoginUser.getAuthenticationMethod: {}",
+                 UserGroupInformation.getLoginUser().getAuthenticationMethod());
+        LOG.info("UGI#getCurrentUser.getAuthenticationMethod: {}",
+                 UserGroupInformation.getCurrentUser().getAuthenticationMethod());
+        LOG.info("UGI#getLoginUser.hasKerberosCredentials: {}",
+                 UserGroupInformation.getLoginUser().hasKerberosCredentials());
 
+        LOG.info("ShimLoader.getHadoopShims().isSecurityEnabled(): {}",
+                 ShimLoader.getHadoopShims().isSecurityEnabled());
+        UserGroupInformation sessionUGI =
+          ShimLoader.getHadoopShims().createProxyUser(UserGroupInformation.getCurrentUser().getUserName());
+        sessionUGI.doAs(new PrivilegedExceptionAction<Object>() {
+          @Override
+          public Object run() throws Exception {
+            if (!Utilities.createDirsWithPermission(conf, dirPath, new FsPermission("755"))) {
+              LOG.error("Cannot create directory {}", dirPath);
+            } else {
+              LOG.error("Created directory successfully: {}", dirPath);
+            }
+            return null;
+          }
+        });
 
         TokenInfo tokenInfo = SecurityUtil.getTokenInfo(ClientNamenodeProtocolPB.class, conf);
         LOG.warn("Get token info proto:" + ClientNamenodeProtocolPB.class + " info:" + tokenInfo);
