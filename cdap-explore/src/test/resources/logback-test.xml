@@ -18,7 +18,7 @@
 
 <configuration>
      <!--Supressing some chatty loggers -->
-    <logger name="org.apache.hadoop" level="ERROR"/>
+    <logger name="org.apache.hadoop" level="DEBUG"/>
     <logger name="org.apache.hive" level="INFO"/>
     <logger name="org.mortbay.log" level="INFO"/>
 
