@@ -694,6 +694,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 //        LOG.warn("File system class is: {}", fs.getClass());
 //        fs.mkdirs(dirPath, new FsPermission("755"));
 
+        LOG.info("Misc UGI values:");
         LOG.info("UGI#isLoginKeyTabBased: {}", UserGroupInformation.isLoginKeytabBased());
         LOG.info("UGI#isSecurityEnabled: {}", UserGroupInformation.isSecurityEnabled());
         LOG.info("UGI#getLoginUser: {}", UserGroupInformation.getLoginUser());
@@ -705,12 +706,45 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
                  UserGroupInformation.getCurrentUser().getAuthenticationMethod());
         LOG.info("UGI#getLoginUser.hasKerberosCredentials: {}",
                  UserGroupInformation.getLoginUser().hasKerberosCredentials());
-
         LOG.info("ShimLoader.getHadoopShims().isSecurityEnabled(): {}",
                  ShimLoader.getHadoopShims().isSecurityEnabled());
+
+
+        HiveAuthFactory.verifyProxyAccess(UserGroupInformation.getCurrentUser().getUserName(),
+                                          UserGroupInformation.getCurrentUser().getUserName(),
+                                          "10.240.249.204", hiveConf);
         UserGroupInformation sessionUGI =
           ShimLoader.getHadoopShims().createProxyUser(UserGroupInformation.getCurrentUser().getUserName());
+        LOG.info("UGI for proxyUser:");
+        LOG.info("proxyUser#getAuthenticationMethod: {}",
+                 sessionUGI.getAuthenticationMethod());
+        LOG.info("proxyUser#getRealAuthenticationMethod: {}",
+                 sessionUGI.getRealAuthenticationMethod());
+        LOG.info("proxyUser#hasKerberosCredentials: {}",
+                 sessionUGI.hasKerberosCredentials());
+        LOG.info("proxyUser#getCredentials: {}",
+                 sessionUGI.getCredentials());
+
+        LOG.info("Credentials for proxy user:");
+        for (Token t : sessionUGI.getCredentials().getAllTokens()) {
+          LOG.info("{}", t);
+        }
+
+        LOG.info("Attempting to create as proxy user:");
         sessionUGI.doAs(new PrivilegedExceptionAction<Object>() {
+          @Override
+          public Object run() throws Exception {
+            if (!Utilities.createDirsWithPermission(conf, dirPath, new FsPermission("755"))) {
+              LOG.error("Cannot create directory {}", dirPath);
+            } else {
+              LOG.error("Created directory successfully: {}", dirPath);
+            }
+            return null;
+          }
+        });
+
+        LOG.info("Attempting to create as currentUser:");
+        UserGroupInformation.getCurrentUser().doAs(new PrivilegedExceptionAction<Object>() {
           @Override
           public Object run() throws Exception {
             if (!Utilities.createDirsWithPermission(conf, dirPath, new FsPermission("755"))) {
