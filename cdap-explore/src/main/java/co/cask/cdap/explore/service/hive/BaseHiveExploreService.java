@@ -20,6 +20,7 @@ import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.transaction.stream.StreamAdmin;
+import co.cask.cdap.explore.service.CLIService;
 import co.cask.cdap.explore.service.ExploreException;
 import co.cask.cdap.explore.service.ExploreService;
 import co.cask.cdap.explore.service.HandleNotFoundException;
@@ -83,7 +84,6 @@ import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenInfo;
 import org.apache.hadoop.security.token.TokenSelector;
 import org.apache.hive.service.auth.HiveAuthFactory;
-import org.apache.hive.service.cli.CLIService;
 import org.apache.hive.service.cli.ColumnDescriptor;
 import org.apache.hive.service.cli.FetchOrientation;
 import org.apache.hive.service.cli.GetInfoType;
@@ -92,6 +92,8 @@ import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.cli.OperationHandle;
 import org.apache.hive.service.cli.SessionHandle;
 import org.apache.hive.service.cli.TableSchema;
+import org.apache.hive.service.cli.session.HiveSession;
+import org.apache.hive.service.cli.session.HiveSessionProxy;
 import org.apache.hive.service.cli.thrift.TColumnValue;
 import org.apache.hive.service.cli.thrift.TRow;
 import org.apache.hive.service.cli.thrift.TRowSet;
@@ -108,8 +110,10 @@ import java.io.Reader;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.security.PrivilegedExceptionAction;
 import java.sql.SQLException;
@@ -715,7 +719,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
                                           "10.240.249.204", hiveConf);
         UserGroupInformation sessionUGI =
           ShimLoader.getHadoopShims().createProxyUser(UserGroupInformation.getCurrentUser().getUserName());
-        LOG.info("UGI for proxyUser:");
+        sessionUGI.addCredentials(credentials);
+        LOG.info("UGI for proxyUser with credentials:");
         LOG.info("proxyUser#getAuthenticationMethod: {}",
                  sessionUGI.getAuthenticationMethod());
         LOG.info("proxyUser#getRealAuthenticationMethod: {}",
@@ -778,6 +783,36 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
         sessionHandle = cliService.openSessionWithImpersonation(UserGroupInformation.getCurrentUser().getUserName(),
                                                                 "", sessionConf,
                                                                 delegationToken.encodeToUrlString());
+        HiveSession session = cliService.getSession(sessionHandle);
+        LOG.info("HiveSession class: {}", session.getClass().getCanonicalName());
+
+        if (session instanceof Proxy) {
+          LOG.info("Setting credentials for HiveSessionProxy");
+          LOG.info("Invocation handler class: {}",
+                   Proxy.getInvocationHandler(session).getClass().getCanonicalName());
+          Field field = HiveSessionProxy.class.getDeclaredField("ugi");
+          field.setAccessible(true);
+
+          UserGroupInformation hiveSessionUGI =
+            (UserGroupInformation) field.get(Proxy.getInvocationHandler(session));
+          hiveSessionUGI.addCredentials(credentials);
+
+          LOG.info("Attempting to create as HiveSessionProxy:");
+          hiveSessionUGI.doAs(new PrivilegedExceptionAction<Object>() {
+            @Override
+            public Object run() throws Exception {
+              dirPath.suffix("-UGI");
+              if (!Utilities.createDirsWithPermission(conf, dirPath, new FsPermission("755"))) {
+                LOG.error("Cannot create directory {}", dirPath);
+              } else {
+                LOG.error("Created directory successfully: {}", dirPath);
+              }
+              return null;
+            }
+          });
+        } else {
+          LOG.info("Could not attempt creation as HiveSessionProxy since it isn't an instanceOf");
+        }
 //        sessionHandle = cliService.openSession("", "", sessionConf);
       } else {
         // It looks like the username and password below is not used when security is disabled in Hive Server2.
