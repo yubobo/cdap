@@ -29,6 +29,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.Job;
@@ -46,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Abstract scheduler service common scheduling functionality. The extending classes should implement
@@ -55,11 +57,15 @@ import java.util.List;
 public abstract class AbstractSchedulerService extends AbstractIdleService implements SchedulerService {
 
   private static final Logger LOG = LoggerFactory.getLogger(AbstractSchedulerService.class);
-  private final WrappedScheduler delegate;
+  private final WrappedTimeScheduler timeDelegate;
+  private final DataScheduler dataScheduler;
 
-  public AbstractSchedulerService(Supplier<org.quartz.Scheduler> schedulerSupplier, StoreFactory storeFactory,
-                                  ProgramRuntimeService programRuntimeService, PreferencesStore preferencesStore) {
-    this.delegate = new WrappedScheduler(schedulerSupplier, storeFactory, programRuntimeService, preferencesStore);
+  public AbstractSchedulerService(Supplier<org.quartz.Scheduler> schedulerSupplier, DataScheduler dataScheduler,
+                                  StoreFactory storeFactory, ProgramRuntimeService programRuntimeService,
+                                  PreferencesStore preferencesStore) {
+    this.timeDelegate = new WrappedTimeScheduler(schedulerSupplier, storeFactory, programRuntimeService,
+                                                 preferencesStore);
+    this.dataScheduler = dataScheduler;
   }
 
   /**
@@ -67,7 +73,8 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
    */
   protected final void startScheduler() {
     try {
-      delegate.start();
+      timeDelegate.start();
+      dataScheduler.start();
       LOG.info("Started scheduler");
     } catch (SchedulerException e) {
       LOG.error("Error starting scheduler {}", e.getCause(), e);
@@ -80,7 +87,8 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
    */
   protected final void stopScheduler() {
     try {
-      delegate.stop();
+      timeDelegate.stop();
+      dataScheduler.stop();
       LOG.info("Stopped scheduler");
     } catch (SchedulerException e) {
       LOG.error("Error stopping scheduler {}", e.getCause(), e);
@@ -90,62 +98,92 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
 
   @Override
   public void schedule(Id.Program programId, SchedulableProgramType programType, Schedule schedule) {
-    delegate.schedule(programId, programType, schedule);
+    if (schedule.getScheduleType().equals(Schedule.ScheduleType.TIME)) {
+      timeDelegate.schedule(programId, programType, schedule);
+    } else {
+      dataScheduler.schedule(programId, programType, schedule);
+    }
   }
 
   @Override
   public void schedule(Id.Program programId, SchedulableProgramType programType, Iterable<Schedule> schedules) {
-    delegate.schedule(programId, programType, schedules);
+    Set<Schedule> timeSchedules = Sets.newHashSet();
+    Set<Schedule> dataSchedules = Sets.newHashSet();
+    for (Schedule schedule : schedules) {
+      if (schedule.getScheduleType().equals(Schedule.ScheduleType.TIME)) {
+        timeSchedules.add(schedule);
+      } else if (schedule.getScheduleType().equals(Schedule.ScheduleType.DATA)) {
+        dataSchedules.add(schedule);
+      }
+    }
+    if (!timeSchedules.isEmpty()) {
+      timeDelegate.schedule(programId, programType, timeSchedules);
+    }
+    if (!dataSchedules.isEmpty()) {
+      dataScheduler.schedule(programId, programType, dataSchedules);
+    }
   }
 
   @Override
   public List<ScheduledRuntime> nextScheduledRuntime(Id.Program program, SchedulableProgramType programType) {
-   return delegate.nextScheduledRuntime(program, programType);
+   return timeDelegate.nextScheduledRuntime(program, programType);
   }
 
   @Override
   public List<String> getScheduleIds(Id.Program program, SchedulableProgramType programType) {
-    return delegate.getScheduleIds(program, programType);
+    return ImmutableList.<String>builder()
+      .addAll(timeDelegate.getScheduleIds(program, programType))
+      .addAll(dataScheduler.getScheduleIds(program, programType))
+      .build();
   }
 
   @Override
   public void suspendSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
-    delegate.suspendSchedule(program, programType, scheduleName);
+    // TODO figure out which one should be called, time or data scheduler
+    timeDelegate.suspendSchedule(program, programType, scheduleName);
+    dataScheduler.suspendSchedule(program, programType, scheduleName);
   }
 
   @Override
   public void resumeSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
-    delegate.resumeSchedule(program, programType, scheduleName);
+    timeDelegate.resumeSchedule(program, programType, scheduleName);
+    dataScheduler.resumeSchedule(program, programType, scheduleName);
   }
 
   @Override
   public void deleteSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
-    delegate.deleteSchedule(program, programType, scheduleName);
+    timeDelegate.deleteSchedule(program, programType, scheduleName);
+    dataScheduler.deleteSchedule(program, programType, scheduleName);
   }
 
   @Override
   public void deleteSchedules(Id.Program program, SchedulableProgramType programType) {
-    delegate.deleteSchedules(program, programType);
+    timeDelegate.deleteSchedules(program, programType);
+    dataScheduler.deleteSchedules(program, programType);
   }
 
   @Override
-  public ScheduleState scheduleState (Id.Program program, SchedulableProgramType programType, String scheduleName) {
-    return delegate.scheduleState(program, programType, scheduleName);
+  public ScheduleState scheduleState(Id.Program program, SchedulableProgramType programType, String scheduleName) {
+    ScheduleState state = timeDelegate.scheduleState(program, programType, scheduleName);
+    if (!state.equals(ScheduleState.NOT_FOUND)) {
+      return state;
+    }
+    return dataScheduler.scheduleState(program, programType, scheduleName);
   }
 
   /**
    * class that wraps Quartz scheduler. Needed to delegate start stop operations to classes that extend
    * DefaultSchedulerService.
    */
-  static final class WrappedScheduler implements co.cask.cdap.internal.app.runtime.schedule.Scheduler {
+  static final class WrappedTimeScheduler implements co.cask.cdap.internal.app.runtime.schedule.Scheduler {
     private Scheduler scheduler;
     private final StoreFactory storeFactory;
     private final Supplier<Scheduler> schedulerSupplier;
     private final ProgramRuntimeService programRuntimeService;
     private final PreferencesStore preferencesStore;
 
-    WrappedScheduler(Supplier<Scheduler> schedulerSupplier, StoreFactory storeFactory,
-                     ProgramRuntimeService programRuntimeService, PreferencesStore preferencesStore) {
+    WrappedTimeScheduler(Supplier<Scheduler> schedulerSupplier, StoreFactory storeFactory,
+                         ProgramRuntimeService programRuntimeService, PreferencesStore preferencesStore) {
       this.schedulerSupplier = schedulerSupplier;
       this.storeFactory = storeFactory;
       this.programRuntimeService = programRuntimeService;
