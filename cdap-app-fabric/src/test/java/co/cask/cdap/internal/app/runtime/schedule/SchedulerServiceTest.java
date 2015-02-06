@@ -83,7 +83,7 @@ public class SchedulerServiceTest {
     Assert.assertEquals(1, scheduleIds.size());
     checkState(Scheduler.ScheduleState.SCHEDULED, scheduleIds);
 
-    schedulerService.schedule(program, programType, ImmutableList.of(schedule2));
+    schedulerService.schedule(program, programType, schedule2);
     scheduleIds = schedulerService.getScheduleIds(program, programType);
     Assert.assertEquals(2, scheduleIds.size());
 
@@ -103,9 +103,10 @@ public class SchedulerServiceTest {
   }
 
   private void checkState(Scheduler.ScheduleState expectedState, List<String> scheduleIds) {
-    Assert.assertEquals(expectedState, schedulerService.scheduleState(program, SchedulableProgramType.WORKFLOW,
-                                                                      "Schedule1"));
-    Assert.assertEquals(expectedState, schedulerService.scheduleState(program, SchedulableProgramType.WORKFLOW,
-                                                                        "Schedule1"));
+    for (String scheduleId : scheduleIds) {
+      int i = scheduleId.lastIndexOf(':');
+      Assert.assertEquals(expectedState, schedulerService.scheduleState(program, SchedulableProgramType.WORKFLOW,
+                                                                        scheduleId.substring(i + 1)));
+    }
   }
 }

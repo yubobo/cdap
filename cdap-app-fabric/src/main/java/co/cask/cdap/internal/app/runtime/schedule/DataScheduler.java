@@ -28,7 +28,6 @@ import co.cask.cdap.common.stream.notification.StreamSizeNotification;
 import co.cask.cdap.config.PreferencesStore;
 import co.cask.cdap.internal.app.runtime.BasicArguments;
 import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
-import co.cask.cdap.notifications.feeds.NotificationFeed;
 import co.cask.cdap.notifications.feeds.NotificationFeedException;
 import co.cask.cdap.notifications.service.NotificationContext;
 import co.cask.cdap.notifications.service.NotificationHandler;
@@ -93,7 +92,6 @@ public class DataScheduler implements Scheduler {
   }
 
   @Override
-
   public void schedule(Id.Program program, SchedulableProgramType programType, Schedule schedule) {
     Preconditions.checkArgument(schedule instanceof DataSchedule, "Schedule should be of type DataSchedule");
 
@@ -251,9 +249,9 @@ public class DataScheduler implements Scheduler {
       // TODO poll the stream and get the updated base size here, potentially triggering execution
     }
 
-    private NotificationFeed getFeed() {
-      return new NotificationFeed.Builder()
-        .setNamespace(Constants.DEFAULT_NAMESPACE)
+    private Id.NotificationFeed getFeed() {
+      return new Id.NotificationFeed.Builder()
+        .setNamespaceId(programId.getNamespaceId())
         .setCategory(Constants.Notification.Stream.STREAM_FEED_CATEGORY)
         .setName(String.format("%sSize", dataSchedule.getSourceName()))
         .build();

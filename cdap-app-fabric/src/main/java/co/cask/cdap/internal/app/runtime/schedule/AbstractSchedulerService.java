@@ -29,6 +29,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.quartz.CronScheduleBuilder;
@@ -48,6 +49,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Abstract scheduler service common scheduling functionality. The extending classes should implement
@@ -60,12 +62,18 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   private final WrappedTimeScheduler timeDelegate;
   private final DataScheduler dataScheduler;
 
+  // TODO we should remember all schedules and their types, otherwise we could create two schedules of different types,
+  // with the same names. Then when doing operation using only the name, we could modify one or the other, with
+  // no consistency: TODO test the prevention of that behavior
+  private final ConcurrentMap<String, Schedule.ScheduleType> scheduleNames;
+
   public AbstractSchedulerService(Supplier<org.quartz.Scheduler> schedulerSupplier, DataScheduler dataScheduler,
                                   StoreFactory storeFactory, ProgramRuntimeService programRuntimeService,
                                   PreferencesStore preferencesStore) {
     this.timeDelegate = new WrappedTimeScheduler(schedulerSupplier, storeFactory, programRuntimeService,
                                                  preferencesStore);
     this.dataScheduler = dataScheduler;
+    this.scheduleNames = Maps.newConcurrentMap();
   }
 
   /**
