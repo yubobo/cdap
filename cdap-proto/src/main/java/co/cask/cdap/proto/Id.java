@@ -65,6 +65,13 @@ public final class Id  {
       return Objects.hashCode(id);
     }
 
+    @Override
+    public String toString() {
+      return Objects.toStringHelper(this)
+        .add("id", id)
+        .toString();
+    }
+
     public static Namespace from(String namespace) {
       return new Namespace(namespace);
     }

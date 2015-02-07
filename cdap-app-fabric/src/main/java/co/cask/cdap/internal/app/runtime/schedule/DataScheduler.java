@@ -251,7 +251,7 @@ public class DataScheduler implements Scheduler {
 
     private Id.NotificationFeed getFeed() {
       return new Id.NotificationFeed.Builder()
-        .setNamespaceId(programId.getNamespaceId())
+        .setNamespaceId(dataSchedule.getSourceNamespaceId())
         .setCategory(Constants.Notification.Stream.STREAM_FEED_CATEGORY)
         .setName(String.format("%sSize", dataSchedule.getSourceName()))
         .build();
@@ -263,7 +263,9 @@ public class DataScheduler implements Scheduler {
 
     @Override
     public void cancel() {
-      notificationSubscription.cancel();
+      if (notificationSubscription != null) {
+        notificationSubscription.cancel();
+      }
       running = false;
     }
 
