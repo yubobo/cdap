@@ -69,7 +69,7 @@ public class HiveTokenUtils {
       Object hiveObject = hiveGet.invoke(null, hiveConf);
 
       String user = UserGroupInformation.getCurrentUser().getShortUserName();
-      LOG.trace("Fetching Hive MetaStore delegation token for user {}", user);
+      LOG.info("Fetching Hive MetaStore delegation token for user {}", user);
 
       @SuppressWarnings("unchecked")
       Method getDelegationToken = hiveClass.getMethod("getDelegationToken", String.class, String.class);

@@ -43,6 +43,7 @@ public final class HBaseTokenUtils {
     if (!User.isHBaseSecurityEnabled(hConf)) {
       return credentials;
     }
+    LOG.info("Obtaining delegation token for HBase");
 
     try {
       Class c = Class.forName("org.apache.hadoop.hbase.security.token.TokenUtil");

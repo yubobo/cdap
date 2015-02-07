@@ -20,13 +20,21 @@ import co.cask.cdap.data.security.HBaseTokenUtils;
 import com.google.common.base.Throwables;
 import com.google.inject.Inject;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.yarn.api.records.Token;
+import org.apache.hadoop.yarn.client.api.YarnClient;
+import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.twill.api.RunId;
 import org.apache.twill.api.SecureStore;
 import org.apache.twill.api.SecureStoreUpdater;
 import org.apache.twill.filesystem.LocationFactory;
 import org.apache.twill.internal.yarn.YarnUtils;
 import org.apache.twill.yarn.YarnSecureStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +43,7 @@ import java.util.concurrent.TimeUnit;
  * A {@link SecureStoreUpdater} that provides update to Hive secure token.
  */
 public class HiveSecureStoreUpdater implements SecureStoreUpdater {
+  private static final Logger LOG = LoggerFactory.getLogger(HiveSecureStoreUpdater.class);
 
   private final Configuration conf;
   private final LocationFactory locationFactory;
@@ -53,10 +62,29 @@ public class HiveSecureStoreUpdater implements SecureStoreUpdater {
       Credentials creds = new Credentials();
       HBaseTokenUtils.obtainToken(conf, creds);
       HiveTokenUtils.obtainToken(creds);
+
+      LOG.info("Obtaining delegation token for Yarn RM");
+      YarnClient yarnClient = YarnClient.createYarnClient();
+      yarnClient.init(conf);
+      yarnClient.start();
+      Token token = yarnClient.getRMDelegationToken(new Text(UserGroupInformation.getCurrentUser().getShortUserName()));
+      yarnClient.stop();
+
+      creds.addToken(new Text(token.getService()), ConverterUtils.convertFromYarn(token, YarnUtils.getRMAddress(conf)));
+      creds.addToken(new Text(token.getService()), ConverterUtils.convertFromYarn(token, YarnUtils.getRMAddress(conf)));
+
       YarnUtils.addDelegationTokens(conf, locationFactory, creds);
+
+      JobHistory jobHistoryService = new JobHistory();
+
+
+
+
       this.credentials = creds;
     } catch (IOException ioe) {
       throw Throwables.propagate(ioe);
+    } catch (YarnException e) {
+      throw Throwables.propagate(e);
     }
   }
 

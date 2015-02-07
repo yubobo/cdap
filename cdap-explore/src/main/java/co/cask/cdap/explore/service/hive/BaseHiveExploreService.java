@@ -780,9 +780,8 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
         // Read delegation token if security is enabled.
         sessionConf.put(HIVE_METASTORE_TOKEN_KEY, HiveAuthFactory.HS2_CLIENT_TOKEN);
-        sessionHandle = cliService.openSessionWithImpersonation(UserGroupInformation.getCurrentUser().getUserName(),
-                                                                "", sessionConf,
-                                                                delegationToken.encodeToUrlString());
+        sessionHandle = cliService.openSession(UserGroupInformation.getCurrentUser().getUserName(),
+                                                                "", sessionConf);
         HiveSession session = cliService.getSession(sessionHandle);
         LOG.info("HiveSession class: {}", session.getClass().getCanonicalName());
 

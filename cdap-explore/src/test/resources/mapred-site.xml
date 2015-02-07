@@ -48,4 +48,8 @@
       <name>mapreduce.task.io.sort.mb</name>
       <value>250</value>
     </property>
+    <property>
+      <name>mapreduce.jobhistory.address</name>
+      <value>${""}</value>
+    </property>
 </configuration>

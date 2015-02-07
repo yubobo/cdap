@@ -37,6 +37,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.twill.kafka.client.KafkaClientService;
 import org.apache.twill.zookeeper.ZKClientService;
 import org.junit.Test;
@@ -78,4 +79,11 @@ public class ExploreTest {
     exploreService.startAndWait();
   }
 
+  @Test
+  public void test2() throws Exception {
+    JobConf jobConf = new JobConf();
+    System.setProperty("ABCDEF", "");
+    System.out.println(jobConf.get("mapreduce.jobhistory.address"));
+    System.out.println(jobConf.get("mapreduce.reduce.java.opts"));
+  }
 }
