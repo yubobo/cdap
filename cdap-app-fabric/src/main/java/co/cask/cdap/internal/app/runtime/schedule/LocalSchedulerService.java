@@ -34,9 +34,9 @@ public final class LocalSchedulerService extends AbstractSchedulerService {
 
   @Inject
   public LocalSchedulerService(Supplier<Scheduler> schedulerSupplier,
-                               DataScheduler dataScheduler, StoreFactory storeFactory,
+                               StreamSizeScheduler streamSizeScheduler, StoreFactory storeFactory,
                                ProgramRuntimeService programRuntimeService, PreferencesStore preferencesStore) {
-    super(schedulerSupplier, dataScheduler, storeFactory, programRuntimeService, preferencesStore);
+    super(schedulerSupplier, streamSizeScheduler, storeFactory, programRuntimeService, preferencesStore);
   }
 
   @Override

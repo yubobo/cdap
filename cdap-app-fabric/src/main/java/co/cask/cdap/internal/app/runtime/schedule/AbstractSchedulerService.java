@@ -18,6 +18,7 @@ package co.cask.cdap.internal.app.runtime.schedule;
 
 import co.cask.cdap.api.schedule.SchedulableProgramType;
 import co.cask.cdap.api.schedule.Schedule;
+import co.cask.cdap.api.schedule.StreamSizeSchedule;
 import co.cask.cdap.api.schedule.TimeSchedule;
 import co.cask.cdap.app.runtime.ProgramRuntimeService;
 import co.cask.cdap.app.store.Store;
@@ -60,19 +61,20 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
 
   private static final Logger LOG = LoggerFactory.getLogger(AbstractSchedulerService.class);
   private final WrappedTimeScheduler timeDelegate;
-  private final DataScheduler dataScheduler;
+  private final StreamSizeScheduler streamSizeScheduler;
 
   // TODO we should remember all schedules and their types, otherwise we could create two schedules of different types,
   // with the same names. Then when doing operation using only the name, we could modify one or the other, with
   // no consistency: TODO test the prevention of that behavior
-  private final ConcurrentMap<String, Schedule.ScheduleType> scheduleNames;
+  private final ConcurrentMap<String, Class<? extends Schedule>> scheduleNames;
 
-  public AbstractSchedulerService(Supplier<org.quartz.Scheduler> schedulerSupplier, DataScheduler dataScheduler,
+  public AbstractSchedulerService(Supplier<org.quartz.Scheduler> schedulerSupplier,
+                                  StreamSizeScheduler streamSizeScheduler,
                                   StoreFactory storeFactory, ProgramRuntimeService programRuntimeService,
                                   PreferencesStore preferencesStore) {
     this.timeDelegate = new WrappedTimeScheduler(schedulerSupplier, storeFactory, programRuntimeService,
                                                  preferencesStore);
-    this.dataScheduler = dataScheduler;
+    this.streamSizeScheduler = streamSizeScheduler;
     this.scheduleNames = Maps.newConcurrentMap();
   }
 
@@ -82,7 +84,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   protected final void startScheduler() {
     try {
       timeDelegate.start();
-      dataScheduler.start();
+      streamSizeScheduler.start();
       LOG.info("Started scheduler");
     } catch (SchedulerException e) {
       LOG.error("Error starting scheduler {}", e.getCause(), e);
@@ -96,7 +98,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   protected final void stopScheduler() {
     try {
       timeDelegate.stop();
-      dataScheduler.stop();
+      streamSizeScheduler.stop();
       LOG.info("Stopped scheduler");
     } catch (SchedulerException e) {
       LOG.error("Error stopping scheduler {}", e.getCause(), e);
@@ -106,29 +108,29 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
 
   @Override
   public void schedule(Id.Program programId, SchedulableProgramType programType, Schedule schedule) {
-    if (schedule.getScheduleType().equals(Schedule.ScheduleType.TIME)) {
+    if (schedule instanceof TimeSchedule) {
       timeDelegate.schedule(programId, programType, schedule);
-    } else {
-      dataScheduler.schedule(programId, programType, schedule);
+    } else if (schedule instanceof StreamSizeSchedule) {
+      streamSizeScheduler.schedule(programId, programType, schedule);
     }
   }
 
   @Override
   public void schedule(Id.Program programId, SchedulableProgramType programType, Iterable<Schedule> schedules) {
     Set<Schedule> timeSchedules = Sets.newHashSet();
-    Set<Schedule> dataSchedules = Sets.newHashSet();
+    Set<Schedule> streamSizeSchedules = Sets.newHashSet();
     for (Schedule schedule : schedules) {
-      if (schedule.getScheduleType().equals(Schedule.ScheduleType.TIME)) {
+      if (schedule instanceof TimeSchedule) {
         timeSchedules.add(schedule);
-      } else if (schedule.getScheduleType().equals(Schedule.ScheduleType.DATA)) {
-        dataSchedules.add(schedule);
+      } else if (schedule instanceof StreamSizeSchedule) {
+        streamSizeSchedules.add(schedule);
       }
     }
     if (!timeSchedules.isEmpty()) {
       timeDelegate.schedule(programId, programType, timeSchedules);
     }
-    if (!dataSchedules.isEmpty()) {
-      dataScheduler.schedule(programId, programType, dataSchedules);
+    if (!streamSizeSchedules.isEmpty()) {
+      streamSizeScheduler.schedule(programId, programType, streamSizeSchedules);
     }
   }
 
@@ -141,7 +143,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   public List<String> getScheduleIds(Id.Program program, SchedulableProgramType programType) {
     return ImmutableList.<String>builder()
       .addAll(timeDelegate.getScheduleIds(program, programType))
-      .addAll(dataScheduler.getScheduleIds(program, programType))
+      .addAll(streamSizeScheduler.getScheduleIds(program, programType))
       .build();
   }
 
@@ -149,25 +151,25 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   public void suspendSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
     // TODO figure out which one should be called, time or data scheduler
     timeDelegate.suspendSchedule(program, programType, scheduleName);
-    dataScheduler.suspendSchedule(program, programType, scheduleName);
+    streamSizeScheduler.suspendSchedule(program, programType, scheduleName);
   }
 
   @Override
   public void resumeSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
     timeDelegate.resumeSchedule(program, programType, scheduleName);
-    dataScheduler.resumeSchedule(program, programType, scheduleName);
+    streamSizeScheduler.resumeSchedule(program, programType, scheduleName);
   }
 
   @Override
   public void deleteSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
     timeDelegate.deleteSchedule(program, programType, scheduleName);
-    dataScheduler.deleteSchedule(program, programType, scheduleName);
+    streamSizeScheduler.deleteSchedule(program, programType, scheduleName);
   }
 
   @Override
   public void deleteSchedules(Id.Program program, SchedulableProgramType programType) {
     timeDelegate.deleteSchedules(program, programType);
-    dataScheduler.deleteSchedules(program, programType);
+    streamSizeScheduler.deleteSchedules(program, programType);
   }
 
   @Override
@@ -176,7 +178,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     if (!state.equals(ScheduleState.NOT_FOUND)) {
       return state;
     }
-    return dataScheduler.scheduleState(program, programType, scheduleName);
+    return streamSizeScheduler.scheduleState(program, programType, scheduleName);
   }
 
   /**

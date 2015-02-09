@@ -16,9 +16,9 @@
 
 package co.cask.cdap.internal.app.runtime.schedule;
 
-import co.cask.cdap.api.schedule.DataSchedule;
 import co.cask.cdap.api.schedule.SchedulableProgramType;
 import co.cask.cdap.api.schedule.Schedule;
+import co.cask.cdap.api.schedule.StreamSizeSchedule;
 import co.cask.cdap.app.runtime.Arguments;
 import co.cask.cdap.app.runtime.ProgramRuntimeService;
 import co.cask.cdap.app.store.Store;
@@ -29,6 +29,7 @@ import co.cask.cdap.config.PreferencesStore;
 import co.cask.cdap.internal.app.runtime.BasicArguments;
 import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
 import co.cask.cdap.notifications.feeds.NotificationFeedException;
+import co.cask.cdap.notifications.feeds.NotificationFeedNotFoundException;
 import co.cask.cdap.notifications.service.NotificationContext;
 import co.cask.cdap.notifications.service.NotificationHandler;
 import co.cask.cdap.notifications.service.NotificationService;
@@ -58,8 +59,8 @@ import java.util.concurrent.Executors;
  * {@link Scheduler} that triggers program executions based on data availability.
  */
 @Singleton
-public class DataScheduler implements Scheduler {
-  private static final Logger LOG = LoggerFactory.getLogger(DataScheduler.class);
+public class StreamSizeScheduler implements Scheduler {
+  private static final Logger LOG = LoggerFactory.getLogger(StreamSizeScheduler.class);
 
   private final NotificationService notificationService;
   private final StoreFactory storeFactory;
@@ -71,8 +72,8 @@ public class DataScheduler implements Scheduler {
   private Executor notificationExecutor;
 
   @Inject
-  public DataScheduler(NotificationService notificationService, StoreFactory storeFactory,
-                       ProgramRuntimeService programRuntimeService, PreferencesStore preferencesStore) {
+  public StreamSizeScheduler(NotificationService notificationService, StoreFactory storeFactory,
+                             ProgramRuntimeService programRuntimeService, PreferencesStore preferencesStore) {
     this.notificationService = notificationService;
     this.programRuntimeService = programRuntimeService;
     this.preferencesStore = preferencesStore;
@@ -93,14 +94,11 @@ public class DataScheduler implements Scheduler {
 
   @Override
   public void schedule(Id.Program program, SchedulableProgramType programType, Schedule schedule) {
-    Preconditions.checkArgument(schedule instanceof DataSchedule, "Schedule should be of type DataSchedule");
-
-    DataSchedule dataSchedule = (DataSchedule) schedule;
-    Preconditions.checkArgument(dataSchedule.getSourceType().equals(DataSchedule.SourceType.STREAM),
-                                "Can only dataSchedule based on data in streams for now");
+    Preconditions.checkArgument(schedule instanceof StreamSizeSchedule, "Schedule should be of type DataSchedule");
+    StreamSizeSchedule streamSizeSchedule = (StreamSizeSchedule) schedule;
     try {
       StreamSizeNotificationSchedule streamSizeNotificationSchedule =
-        new StreamSizeNotificationSchedule(program, ProgramType.valueOf(programType.name()), dataSchedule);
+        new StreamSizeNotificationSchedule(program, ProgramType.valueOf(programType.name()), streamSizeSchedule);
       StreamSizeNotificationSchedule existing =
         streamSizeSchedules.putIfAbsent(getScheduleId(program, programType, schedule.getName()),
                                         streamSizeNotificationSchedule);
@@ -108,7 +106,10 @@ public class DataScheduler implements Scheduler {
         streamSizeNotificationSchedule.startOrResume();
       }
     } catch (NotificationFeedException e) {
-      LOG.error("Notification feed does not exist for dataSchedule {}", dataSchedule);
+      LOG.error("Notification feed does not exist for streamSizeSchedule {}", streamSizeSchedule);
+      throw Throwables.propagate(e);
+    } catch (NotificationFeedNotFoundException e) {
+      LOG.error("Notification feed does not exist for streamSizeSchedule {}", streamSizeSchedule);
       throw Throwables.propagate(e);
     }
   }
@@ -152,7 +153,10 @@ public class DataScheduler implements Scheduler {
     try {
       notificationSchedule.startOrResume();
     } catch (NotificationFeedException e) {
-      LOG.error("Notification feed does not exist for dataSchedule {}", scheduleName);
+      LOG.error("Error when dealing with streamSizeSchedule {}", scheduleName);
+      throw Throwables.propagate(e);
+    } catch (NotificationFeedNotFoundException e) {
+      LOG.error("Notification feed does not exist for streamSizeSchedule {}", scheduleName);
       throw Throwables.propagate(e);
     }
   }
@@ -219,18 +223,18 @@ public class DataScheduler implements Scheduler {
     implements Cancellable, NotificationHandler<StreamSizeNotification> {
     private final Id.Program programId;
     private final ProgramType programType;
-    private final DataSchedule dataSchedule;
+    private final StreamSizeSchedule streamSizeSchedule;
 
     private Cancellable notificationSubscription;
 
     private long baseSize;
     private boolean running;
 
-    public StreamSizeNotificationSchedule(Id.Program programId, ProgramType programType, DataSchedule dataSchedule) {
-      Preconditions.checkArgument(dataSchedule.getSourceType().equals(DataSchedule.SourceType.STREAM));
+    public StreamSizeNotificationSchedule(Id.Program programId, ProgramType programType,
+                                          StreamSizeSchedule streamSizeSchedule) {
       this.programId = programId;
       this.programType = programType;
-      this.dataSchedule = dataSchedule;
+      this.streamSizeSchedule = streamSizeSchedule;
       this.running = false;
       this.baseSize = 0;
     }
@@ -242,7 +246,7 @@ public class DataScheduler implements Scheduler {
      * @throws NotificationFeedException in case the notification feed corresponding to the stream sizes does
      * not exist
      */
-    public void startOrResume() throws NotificationFeedException {
+    public void startOrResume() throws NotificationFeedException, NotificationFeedNotFoundException {
       notificationSubscription = notificationService.subscribe(getFeed(), this, notificationExecutor);
       running = true;
 
@@ -251,9 +255,9 @@ public class DataScheduler implements Scheduler {
 
     private Id.NotificationFeed getFeed() {
       return new Id.NotificationFeed.Builder()
-        .setNamespaceId(dataSchedule.getSourceNamespaceId())
+        .setNamespaceId(streamSizeSchedule.getNotificationSourceNamespaceId())
         .setCategory(Constants.Notification.Stream.STREAM_FEED_CATEGORY)
-        .setName(String.format("%sSize", dataSchedule.getSourceName()))
+        .setName(String.format("%sSize", streamSizeSchedule.getNotificationSourceName()))
         .build();
     }
 
@@ -276,7 +280,7 @@ public class DataScheduler implements Scheduler {
 
     @Override
     public void received(StreamSizeNotification notification, NotificationContext notificationContext) {
-      if (notification.getSize() < baseSize + toBytes(dataSchedule.getDataTriggerMB())) {
+      if (notification.getSize() < baseSize + toBytes(streamSizeSchedule.getDataTriggerMB())) {
         return;
       }
 
@@ -285,19 +289,19 @@ public class DataScheduler implements Scheduler {
 
         Arguments args = new BasicArguments(ImmutableMap.of(
           ProgramOptionConstants.LOGICAL_START_TIME, Long.toString(System.currentTimeMillis()),
-          ProgramOptionConstants.SCHEDULE_NAME, dataSchedule.getName(),
+          ProgramOptionConstants.SCHEDULE_NAME, streamSizeSchedule.getName(),
           ProgramOptionConstants.TOTAL_STREAM_SIZE, Long.toString(notification.getSize()),
-          ProgramOptionConstants.SCHEDULE_NAME, dataSchedule.getName()
+          ProgramOptionConstants.SCHEDULE_NAME, streamSizeSchedule.getName()
         ));
 
         try {
-          LOG.info("About to start dataSchedule {}", dataSchedule);
+          LOG.info("About to start streamSizeSchedule {}", streamSizeSchedule);
           taskRunner.run(programId, programType, args);
           break;
         } catch (TaskExecutionException e) {
-          LOG.error("Execution exception while running dataSchedule {}", dataSchedule.getName(), e);
+          LOG.error("Execution exception while running streamSizeSchedule {}", streamSizeSchedule.getName(), e);
           if (e.isRefireImmediately()) {
-            LOG.info("Retrying execution for dataSchedule {}", dataSchedule.getName());
+            LOG.info("Retrying execution for streamSizeSchedule {}", streamSizeSchedule.getName());
           } else {
             break;
           }
@@ -305,7 +309,7 @@ public class DataScheduler implements Scheduler {
       }
 
       baseSize = notification.getSize();
-      LOG.debug("Base size updated to {} for dataSchedule {}", baseSize, dataSchedule);
+      LOG.debug("Base size updated to {} for streamSizeSchedule {}", baseSize, streamSizeSchedule);
     }
 
     private long toBytes(int mb) {

@@ -45,11 +45,11 @@ public final class DistributedSchedulerService extends AbstractSchedulerService 
 
   @Inject
   public DistributedSchedulerService(Supplier<Scheduler> schedulerSupplier,
-                                     DataScheduler dataScheduler, StoreFactory storeFactory,
+                                     StreamSizeScheduler streamSizeScheduler, StoreFactory storeFactory,
                                      ProgramRuntimeService programRuntimeService,
                                      DiscoveryServiceClient discoveryServiceClient,
                                      PreferencesStore preferencesStore) {
-    super(schedulerSupplier, dataScheduler, storeFactory, programRuntimeService, preferencesStore);
+    super(schedulerSupplier, streamSizeScheduler, storeFactory, programRuntimeService, preferencesStore);
     this.discoveryServiceClient = discoveryServiceClient;
   }
 
