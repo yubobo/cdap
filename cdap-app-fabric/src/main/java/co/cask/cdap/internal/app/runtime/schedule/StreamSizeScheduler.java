@@ -56,7 +56,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
- * {@link Scheduler} that triggers program executions based on data availability.
+ * {@link Scheduler} that triggers program executions based on data availability in streams.
  */
 @Singleton
 public class StreamSizeScheduler implements Scheduler {
