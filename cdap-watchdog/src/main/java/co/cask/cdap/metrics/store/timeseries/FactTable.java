@@ -63,6 +63,7 @@ public final class FactTable {
 
   private final MetricsTable timeSeriesTable;
   private final FactCodec codec;
+  private final int rollTime;
 
   /**
    * Creates an instance of {@link FactTable}.
@@ -82,6 +83,7 @@ public final class FactTable {
 
     this.timeSeriesTable = timeSeriesTable;
     this.codec = new FactCodec(entityTable, resolution, rollTime);
+    this.rollTime = rollTime;
   }
 
   public void add(List<Fact> facts) throws Exception {
@@ -127,7 +129,8 @@ public final class FactTable {
                              scan.getStartTs(), scan.getEndTs());
   }
 
-  /**
+
+  /*
    * Given the list of tag values, return sorted collection of tagValues that appear next to the given tagValues
    * (on first position right after given ones) in any of the written facts in specified time range.
    * @param tags - list of tags , we need to return the tags at the next position after these list of tags.
@@ -143,7 +146,7 @@ public final class FactTable {
     byte[] endRow = codec.createEndRowKey(tags, null, endTs, true);
     endRow = Bytes.stopKeyForPrefix(endRow);
     FuzzyRowFilter fuzzyRowFilter = createFuzzyRowFilter(new FactScan(startTs, endTs, null, tags),
-                                                                startRow, true);
+                                                         startRow, true);
     Row rowResult;
     int targetIndex = tags.size();
     SortedSet<TagValue> result = Sets.newTreeSet(new Comparator<TagValue>() {
@@ -156,20 +159,34 @@ public final class FactTable {
         return t1.getValue().compareTo(t2.getValue());
       }
     });
+
     Scanner scanner = null;
+    long startTimeBase = startTs / rollTime * rollTime;
+    long endTimeBase = endTs / rollTime * rollTime;
     try {
-      do {
-        scanner = timeSeriesTable.scan(startRow, endRow, null, fuzzyRowFilter);
-        rowResult = scanner.next();
-        if (rowResult != null) {
-          //add item to list and increment the start row
-          List<TagValue> tagValues = codec.getTagValues(rowResult.getRow());
+      scanner = timeSeriesTable.scan(startRow, endRow, null, fuzzyRowFilter);
+      while ((rowResult = scanner.next()) != null) {
+        byte[] rowKey = rowResult.getRow();
+        // since the timestamp filter is fuzzy and also the aggregate_key is at the begging of rowKey,
+        // we could match rows where (ts < startTs or ts > endTs) and the tags at beginning match,
+        // we will skip those rows
+        if ((codec.getTimestamp(rowKey, codec.createColumn(startTs)) < startTimeBase) ||
+          (codec.getTimestamp(rowKey, codec.createColumn(endTs)) > endTimeBase)) {
+          continue;
+        }
+        List<TagValue> tagValues = codec.getTagValues(rowResult.getRow());
+        // if the timestamp is within query range and the tag-list matches, we add them to the result
+        if (startsWithTags(tags, tagValues)) {
+          //add item to result set and increment the start rowKey
           if (tagValues.size() > targetIndex) {
-            result.add(tagValues.get(targetIndex));
+            if (tagValues.get(targetIndex).getValue() != null) {
+              result.add(tagValues.get(targetIndex));
+            }
           }
           startRow = codec.getNextRowKey(rowResult.getRow(), tags.size());
+          scanner = timeSeriesTable.scan(startRow, endRow, null, fuzzyRowFilter);
         }
-      } while (rowResult != null);
+      }
     } finally {
       scanner.close();
     }
@@ -193,26 +210,49 @@ public final class FactTable {
     byte[] endRow = codec.createEndRowKey(tags, null, endTs, true);
     endRow = Bytes.stopKeyForPrefix(endRow);
     FuzzyRowFilter fuzzyRowFilter = createFuzzyRowFilter(new FactScan(startTs, endTs, null, tags),
-                                                                startRow, true);
+                                                         startRow, true);
     Row rowResult;
     SortedSet<String> measureNames = Sets.newTreeSet();
     Scanner scanner = null;
+    long startTimeBase = startTs / rollTime * rollTime;
+    long endTimeBase = endTs / rollTime * rollTime;
     try {
-      do {
-        scanner = timeSeriesTable.scan(startRow, endRow, null, fuzzyRowFilter);
-        rowResult = scanner.next();
-        if (rowResult != null) {
-          //add item to list and increment the start row
-          measureNames.add(codec.getMeasureName(rowResult.getRow()));
-          startRow = codec.getNextRowKey(rowResult.getRow(), tags.size());
+      scanner = timeSeriesTable.scan(startRow, endRow, null, fuzzyRowFilter);
+      while ((rowResult = scanner.next()) != null) {
+        byte[] rowKey = rowResult.getRow();
+        // since the timestamp filter is fuzzy and also the aggregate_key is at the begging of rowKey,
+        // we could match rows where (ts < startTs or ts > endTs) and the tags at beginning match,
+        // we will skip those rows
+        if ((codec.getTimestamp(rowKey, codec.createColumn(startTs)) < startTimeBase) ||
+          (codec.getTimestamp(rowKey, codec.createColumn(endTs)) > endTimeBase)) {
+          continue;
         }
-      } while (rowResult != null);
+        List<TagValue> tagValues = codec.getTagValues(rowResult.getRow());
+        // if the timestamp is within query range and the tag-list matches, we add them to the result
+        if (startsWithTags(tags, tagValues)) {
+          //add item to result set and increment the start rowKey
+          measureNames.add(codec.getMeasureName(rowResult.getRow()));
+          startRow = codec.getNextRowKey(rowResult.getRow(), tagValues.size());
+          scanner = timeSeriesTable.scan(startRow, endRow, null, fuzzyRowFilter);
+        }
+      }
     } finally {
       scanner.close();
     }
     return measureNames;
   }
 
+  private boolean startsWithTags(List<TagValue> expected, List<TagValue> actual) {
+    if (actual.size() < expected.size()) {
+      return false;
+    }
+    for (int i = 0; i < expected.size(); i++) {
+      if (expected.get(i).getValue() != null && !expected.get(i).equals(actual.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   @Nullable
   private FuzzyRowFilter createFuzzyRowFilter(FactScan scan, byte[] startRow, boolean isSearch) {

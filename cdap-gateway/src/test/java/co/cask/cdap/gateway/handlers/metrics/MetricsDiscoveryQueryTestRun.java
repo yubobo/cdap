@@ -92,6 +92,7 @@ public class MetricsDiscoveryQueryTestRun extends MetricsSuiteTestBase {
     expected.add(expectedWrites());
 
     HttpResponse response = doGet("/v2/metrics/available/apps/WordCount/flows/WordCounter/flowlets/splitter");
+    //HttpResponse response = doGet("/v2/metrics/available/apps/WordCount/flows/WordCounter");
     Reader reader = new InputStreamReader(response.getEntity().getContent(), Charsets.UTF_8);
     try {
       Assert.assertEquals("did not return 200 status.",
