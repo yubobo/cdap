@@ -180,7 +180,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     } else if (clz == StreamSizeSchedule.class) {
       return streamSizeScheduler.scheduleState(program, programType, scheduleName);
     } else {
-      return null;
+      throw new UnsupportedOperationException("Type of schedule unknown: " + clz.toString());
     }
   }
 }
