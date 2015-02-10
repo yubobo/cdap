@@ -30,6 +30,7 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -63,6 +64,8 @@ public final class FactTable {
 
   private final MetricsTable timeSeriesTable;
   private final FactCodec codec;
+
+  private final int resolution;
   private final int rollTime;
 
   /**
@@ -83,6 +86,7 @@ public final class FactTable {
 
     this.timeSeriesTable = timeSeriesTable;
     this.codec = new FactCodec(entityTable, resolution, rollTime);
+    this.resolution = resolution;
     this.rollTime = rollTime;
   }
 
@@ -114,10 +118,18 @@ public final class FactTable {
   public FactScanner scan(FactScan scan) throws Exception {
     byte[] startRow = codec.createStartRowKey(scan.getTagValues(), scan.getMeasureName(), scan.getStartTs(), false);
     byte[] endRow = codec.createEndRowKey(scan.getTagValues(), scan.getMeasureName(), scan.getEndTs(), false);
+    byte[][] columns = null;
+    if (Arrays.equals(startRow, endRow)) {
+      // If on the same timebase, we only need subset of columns
+      long timeBase = scan.getStartTs() / rollTime * rollTime;
+      int startCol = (int) (scan.getStartTs() - timeBase) / resolution;
+      int endCol = (int) (scan.getEndTs() - timeBase) / resolution;
+      columns = new byte[endCol - startCol + 1][];
+      for (int i = 0; i < columns.length; i++) {
+        columns[i] = Bytes.toBytes((short) (startCol + i));
+      }
+    }
     endRow = Bytes.stopKeyForPrefix(endRow);
-
-    // todo: if searching within same row, we can also provide start and end columns or list of columns
-
     FuzzyRowFilter fuzzyRowFilter = createFuzzyRowFilter(scan, startRow, false);
 
     if (LOG.isTraceEnabled()) {
@@ -129,6 +141,33 @@ public final class FactTable {
                              scan.getStartTs(), scan.getEndTs());
   }
 
+  /**
+   * Delete entries in fact table.
+   * @param scan
+   * @throws Exception
+   */
+  public void delete(FactScan scan) throws Exception {
+    byte[] startRow = codec.createStartRowKey(scan.getTagValues(), scan.getMeasureName(), scan.getStartTs(), false);
+    byte[] endRow = codec.createEndRowKey(scan.getTagValues(), scan.getMeasureName(), scan.getEndTs(), false);
+    byte[][] columns = null;
+    if (Arrays.equals(startRow, endRow)) {
+      // If on the same timebase, we only need subset of columns
+      long timeBase = scan.getStartTs() / rollTime * rollTime;
+      int startCol = (int) (scan.getStartTs() - timeBase) / resolution;
+      int endCol = (int) (scan.getEndTs() - timeBase) / resolution;
+      columns = new byte[endCol - startCol + 1][];
+      for (int i = 0; i < columns.length; i++) {
+        columns[i] = Bytes.toBytes((short) (startCol + i));
+      }
+    }
+    endRow = Bytes.stopKeyForPrefix(endRow);
+    FuzzyRowFilter fuzzyRowFilter = createFuzzyRowFilter(scan, startRow, false);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Deleting fact table {} with scan: {}; constructed startRow: {}, endRow: {}, fuzzyRowFilter: {}",
+                timeSeriesTable, scan, toPrettyLog(startRow), toPrettyLog(endRow), fuzzyRowFilter);
+    }
+    timeSeriesTable.deleteRange(startRow, endRow, columns, fuzzyRowFilter);
+  }
 
   /*
    * Given the list of tag values, return sorted collection of tagValues that appear next to the given tagValues
@@ -247,6 +286,7 @@ public final class FactTable {
       return false;
     }
     for (int i = 0; i < expected.size(); i++) {
+      // though we don't support null for tag-values while writing, during scan, we use that to match any.
       if (expected.get(i).getValue() != null && !expected.get(i).equals(actual.get(i))) {
         return false;
       }
@@ -255,10 +295,10 @@ public final class FactTable {
   }
 
   @Nullable
-  private FuzzyRowFilter createFuzzyRowFilter(FactScan scan, byte[] startRow, boolean isSearch) {
+  private FuzzyRowFilter createFuzzyRowFilter(FactScan scan, byte[] startRow, boolean anyAggGroup) {
     // we need to always use a fuzzy row filter as it is the only one to do the matching of values
 
-    byte[] fuzzyRowMask = codec.createFuzzyRowMask(scan.getTagValues(), scan.getMeasureName(), isSearch);
+    byte[] fuzzyRowMask = codec.createFuzzyRowMask(scan.getTagValues(), scan.getMeasureName(), anyAggGroup);
     // note: we can use startRow, as it will contain all "fixed" parts of the key needed
     return new FuzzyRowFilter(ImmutableList.of(new ImmutablePair<byte[], byte[]>(startRow, fuzzyRowMask)));
   }

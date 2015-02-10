@@ -152,7 +152,7 @@ public class DefaultMetricStore implements MetricStore {
   @Override
   public Collection<TagValue> getNextTags(CubeExploreQuery query) throws Exception {
     List<TagValue> originalTags = query.getTagValues();
-    for (int i = 0; i< originalTags.size(); i++) {
+    for (int i = 0; i < originalTags.size(); i++) {
       TagValue tagValue = originalTags.get(i);
       String tagNameReplacement = tagMapping.get(tagValue.getTagName());
       if (tagNameReplacement != null) {

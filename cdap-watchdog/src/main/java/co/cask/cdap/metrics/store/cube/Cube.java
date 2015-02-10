@@ -56,4 +56,12 @@ public interface Cube {
    * @throws Exception
    */
   Collection<String> getMeasureNames(CubeExploreQuery query) throws Exception;
+
+  /*
+   * Deletes the data specified by {@link CubeQuery} from all the fact tables.
+   * @param query query specifies parameters for deletion. groupByTags and resolution fields are not used.
+   * @throws Exception
+   */
+  //todo: create separate DeleteCubeQuery class
+  void delete(CubeQuery query) throws Exception;
 }
