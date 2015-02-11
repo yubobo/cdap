@@ -22,6 +22,7 @@ import co.cask.cdap.api.schedule.Schedule;
 import co.cask.cdap.api.schedule.StreamSizeSchedule;
 import co.cask.cdap.api.schedule.TimeSchedule;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.data2.transaction.stream.StreamAdmin;
 import co.cask.cdap.notifications.feeds.NotificationFeedManager;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.test.internal.AppFabricTestHelper;
@@ -36,28 +37,26 @@ import java.util.List;
 public class SchedulerServiceTest {
   public static SchedulerService schedulerService;
   public static NotificationFeedManager notificationFeedManager;
+  public static StreamAdmin streamAdmin;
 
   private static final Id.Namespace account = new Id.Namespace(Constants.DEFAULT_NAMESPACE);
   private static final Id.Application appId = new Id.Application(account, AppWithWorkflow.NAME);
   private static final Id.Program program = new Id.Program(appId, AppWithWorkflow.SampleWorkflow.NAME);
   private static final SchedulableProgramType programType = SchedulableProgramType.WORKFLOW;
+  private static final String STREAM_NAME = "stream";
   private static final Schedule timeSchedule1 = new TimeSchedule("Schedule1", "Every minute", "* * * * ?");
   private static final Schedule timeSchedule2 = new TimeSchedule("Schedule2", "Every Hour", "0 * * * ?");
   private static final Schedule dataSchedule1 =
-    new StreamSizeSchedule("Schedule3", "Every 1M", "myspace", "stream", 1);
+    new StreamSizeSchedule("Schedule3", "Every 1M", Constants.DEFAULT_NAMESPACE, STREAM_NAME, 1);
   private static final Schedule dataSchedule2 =
-    new StreamSizeSchedule("Schedule4", "Every 1M", "myspace", "stream", 10);
-  private static final Id.NotificationFeed streamFeed = new Id.NotificationFeed.Builder()
-    .setNamespaceId("myspace")
-    .setCategory(Constants.Notification.Stream.STREAM_FEED_CATEGORY)
-    .setName("streamSize")
-    .build();
+    new StreamSizeSchedule("Schedule4", "Every 1M", Constants.DEFAULT_NAMESPACE, STREAM_NAME, 10);
 
   @BeforeClass
   public static void set() throws Exception {
     schedulerService = AppFabricTestHelper.getInjector().getInstance(SchedulerService.class);
     notificationFeedManager = AppFabricTestHelper.getInjector().getInstance(NotificationFeedManager.class);
-    notificationFeedManager.createFeed(streamFeed);
+    streamAdmin = AppFabricTestHelper.getInjector().getInstance(StreamAdmin.class);
+    streamAdmin.create(STREAM_NAME);
   }
 
   @AfterClass
