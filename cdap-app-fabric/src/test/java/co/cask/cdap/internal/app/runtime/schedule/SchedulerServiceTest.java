@@ -17,9 +17,9 @@
 package co.cask.cdap.internal.app.runtime.schedule;
 
 import co.cask.cdap.AppWithWorkflow;
-import co.cask.cdap.api.schedule.DataSchedule;
 import co.cask.cdap.api.schedule.SchedulableProgramType;
 import co.cask.cdap.api.schedule.Schedule;
+import co.cask.cdap.api.schedule.StreamSizeSchedule;
 import co.cask.cdap.api.schedule.TimeSchedule;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.notifications.feeds.NotificationFeedManager;
@@ -44,9 +44,9 @@ public class SchedulerServiceTest {
   private static final Schedule timeSchedule1 = new TimeSchedule("Schedule1", "Every minute", "* * * * ?");
   private static final Schedule timeSchedule2 = new TimeSchedule("Schedule2", "Every Hour", "0 * * * ?");
   private static final Schedule dataSchedule1 =
-    new DataSchedule("Schedule3", "Every 1M", DataSchedule.SourceType.STREAM, "myspace", "stream", 1);
+    new StreamSizeSchedule("Schedule3", "Every 1M", "myspace", "stream", 1);
   private static final Schedule dataSchedule2 =
-    new DataSchedule("Schedule4", "Every 1M", DataSchedule.SourceType.STREAM, "myspace", "stream", 10);
+    new StreamSizeSchedule("Schedule4", "Every 1M", "myspace", "stream", 10);
   private static final Id.NotificationFeed streamFeed = new Id.NotificationFeed.Builder()
     .setNamespaceId("myspace")
     .setCategory(Constants.Notification.Stream.STREAM_FEED_CATEGORY)
