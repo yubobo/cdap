@@ -19,45 +19,36 @@ package co.cask.cdap.api.schedule;
 /**
  * Defines a schedule based on data availability in a stream for running a program.
  */
-public class StreamSizeSchedule implements NotificationSchedule {
+public class StreamSizeSchedule extends Schedule implements NotificationSchedule {
 
-  private final String name;
-
-  private final String description;
-
-  private final String sourceNamespaceId;
-
-  private final String sourceName;
+  private final String streamName;
 
   private final int dataTriggerMB;
 
-  public StreamSizeSchedule(String name, String description, String sourceNamespaceId, String sourceName,
-                            int dataTriggerMB) {
-    this.name = name;
-    this.description = description;
-    this.sourceNamespaceId = sourceNamespaceId;
-    this.sourceName = sourceName;
+  private final int pollingDelay;
+
+  public StreamSizeSchedule(String name, String description, String streamName, int dataTriggerMB, int pollingDelay) {
+    super(name, description);
+    this.streamName = streamName;
     this.dataTriggerMB = dataTriggerMB;
+    this.pollingDelay = pollingDelay;
   }
 
   @Override
-  public String getNotificationSourceNamespaceId() {
-    return sourceNamespaceId;
+  public String getFeedCategory() {
+    return "stream";
   }
 
   @Override
-  public String getNotificationSourceName() {
-    return sourceName;
+  public String getFeedName() {
+    return String.format("%sSize", streamName);
   }
 
-  @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public String getDescription() {
-    return description;
+  /**
+   * @return Name of the stream this {@link StreamSizeSchedule} is based on
+   */
+  public String getStreamName() {
+    return streamName;
   }
 
   /**
@@ -65,6 +56,14 @@ public class StreamSizeSchedule implements NotificationSchedule {
    */
   public int getDataTriggerMB() {
     return dataTriggerMB;
+  }
+
+  /**
+   * @return Delay, in minutes, after which the stream should be polled to retrieve the size of its data if
+   * no notifications has been received
+   */
+  public int getPollingDelay() {
+    return pollingDelay;
   }
 
   @Override
@@ -78,11 +77,11 @@ public class StreamSizeSchedule implements NotificationSchedule {
 
     StreamSizeSchedule schedule = (StreamSizeSchedule) o;
 
-    if (description.equals(description)
-      && name.equals(name)
-      && sourceNamespaceId.equals(schedule.sourceNamespaceId)
-      && sourceName.equals(schedule.sourceName)
-      && dataTriggerMB == schedule.dataTriggerMB) {
+    if (getDescription().equals(schedule.getDescription())
+      && getName().equals(schedule.getName())
+      && streamName.equals(schedule.streamName)
+      && dataTriggerMB == schedule.dataTriggerMB
+      && pollingDelay == schedule.pollingDelay) {
       return true;
     }
     return false;
@@ -90,22 +89,22 @@ public class StreamSizeSchedule implements NotificationSchedule {
 
   @Override
   public int hashCode() {
-    int result = name.hashCode();
-    result = 31 * result + description.hashCode();
-    result = 31 * result + sourceNamespaceId.hashCode();
-    result = 31 * result + sourceName.hashCode();
+    int result = getName().hashCode();
+    result = 31 * result + getDescription().hashCode();
+    result = 31 * result + streamName.hashCode();
     result = 31 * result + dataTriggerMB;
+    result = 31 * result + pollingDelay;
     return result;
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("DataSchedule{");
-    sb.append("name='").append(name).append('\'');
-    sb.append(", description='").append(description).append('\'');
-    sb.append(", sourceNamespaceId='").append(sourceNamespaceId).append('\'');
-    sb.append(", sourceName='").append(sourceName).append('\'');
+    sb.append("name='").append(getName()).append('\'');
+    sb.append(", description='").append(getDescription()).append('\'');
+    sb.append(", sourceName='").append(streamName).append('\'');
     sb.append(", dataTriggerMB='").append(dataTriggerMB).append('\'');
+    sb.append(", pollingDelay='").append(pollingDelay).append('\'');
     sb.append('}');
     return sb.toString();
   }

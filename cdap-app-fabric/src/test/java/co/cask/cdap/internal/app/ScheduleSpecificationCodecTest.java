@@ -17,6 +17,7 @@
 package co.cask.cdap.internal.app;
 
 import co.cask.cdap.api.schedule.SchedulableProgramType;
+import co.cask.cdap.api.schedule.Schedule;
 import co.cask.cdap.api.schedule.ScheduleSpecification;
 import co.cask.cdap.api.schedule.StreamSizeSchedule;
 import co.cask.cdap.api.schedule.TimeSchedule;
@@ -36,6 +37,20 @@ public class ScheduleSpecificationCodecTest {
     .create();
 
   @Test
+  public void testOriginalTimeSchedule() throws Exception {
+    @SuppressWarnings("deprecation")
+    Schedule schedule = new Schedule("foo", "bar", "cronEntry");
+    ScheduleProgramInfo programInfo = new ScheduleProgramInfo(SchedulableProgramType.WORKFLOW, "testWorkflow");
+    ImmutableMap<String, String> properties = ImmutableMap.of("a", "b", "c", "d");
+    ScheduleSpecification specification = new ScheduleSpecification(schedule, programInfo, properties);
+
+    String jsonStr = GSON.toJson(specification);
+    ScheduleSpecification deserialized = GSON.fromJson(jsonStr, ScheduleSpecification.class);
+
+    Assert.assertEquals(specification, deserialized);
+  }
+
+  @Test
   public void testTimeSchedule() throws Exception {
     TimeSchedule timeSchedule = new TimeSchedule("foo", "bar", "cronEntry");
     ScheduleProgramInfo programInfo = new ScheduleProgramInfo(SchedulableProgramType.WORKFLOW, "testWorkflow");
@@ -50,7 +65,7 @@ public class ScheduleSpecificationCodecTest {
 
   @Test
   public void testStreamSizeSchedule() throws Exception {
-    StreamSizeSchedule dataSchedule = new StreamSizeSchedule("foo", "bar", "namespace", "stream", 10);
+    StreamSizeSchedule dataSchedule = new StreamSizeSchedule("foo", "bar", "stream", 10, 10);
     ScheduleProgramInfo programInfo = new ScheduleProgramInfo(SchedulableProgramType.WORKFLOW, "testWorkflow");
     ImmutableMap<String, String> properties = ImmutableMap.of("a", "b", "c", "d");
     ScheduleSpecification specification = new ScheduleSpecification(dataSchedule, programInfo, properties);
@@ -64,12 +79,13 @@ public class ScheduleSpecificationCodecTest {
   @Test
   public void testBackwardsCompatibility() throws Exception {
     // Before 2.8, the ScheduleSpecificationCodec used to have the same behavior as what Gson would do by
-    // default, and only TimeSchedules existed. We make sure that ScheduleSpecification persisted before
+    // default, and only Schedules existed. We make sure that ScheduleSpecification persisted before
     // 2.8 can still be deserialized using the new codec.
-    TimeSchedule timeSchedule = new TimeSchedule("foo", "bar", "cronEntry");
+    @SuppressWarnings("deprecation")
+    Schedule schedule = new Schedule("foo", "bar", "cronEntry");
     ScheduleProgramInfo programInfo = new ScheduleProgramInfo(SchedulableProgramType.WORKFLOW, "testWorkflow");
     ImmutableMap<String, String> properties = ImmutableMap.of("a", "b", "c", "d");
-    ScheduleSpecification specification = new ScheduleSpecification(timeSchedule, programInfo, properties);
+    ScheduleSpecification specification = new ScheduleSpecification(schedule, programInfo, properties);
 
     // Use default Gson to serialize
     String jsonStr = new Gson().toJson(specification);
