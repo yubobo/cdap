@@ -67,7 +67,7 @@ import java.util.concurrent.TimeUnit;
 public class StreamSizeScheduler implements Scheduler {
   private static final Logger LOG = LoggerFactory.getLogger(StreamSizeScheduler.class);
   private static final int STREAM_POLLING_THREAD_POOL_SIZE = 10;
-  // TODO polling delay should be an attribute of a StreamSizeSchedule
+  // TODO use the polling delay coming from StreamSizeSchedule objects.
   private static final long STREAM_POLLING_DELAY = TimeUnit.MINUTES.toSeconds(10);
 
   private final NotificationService notificationService;
@@ -121,10 +121,9 @@ public class StreamSizeScheduler implements Scheduler {
     StreamSizeSchedule streamSizeSchedule = (StreamSizeSchedule) schedule;
     try {
       // Create a new StreamSubscriber, if one doesn't exist for the stream passed in the schedule
-      StreamSubscriber streamSubscriber = new StreamSubscriber(streamSizeSchedule.getNotificationSourceNamespaceId(),
-                                                               streamSizeSchedule.getNotificationSourceName());
-      StreamSubscriber previous = streamSubscribers.putIfAbsent(streamSizeSchedule.getNotificationSourceName(),
-                                                                streamSubscriber);
+      StreamSubscriber streamSubscriber = new StreamSubscriber(program.getNamespaceId(),
+                                                               streamSizeSchedule.getStreamName());
+      StreamSubscriber previous = streamSubscribers.putIfAbsent(streamSizeSchedule.getStreamName(), streamSubscriber);
       if (previous == null) {
         streamSubscriber.start();
       } else {

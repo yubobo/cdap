@@ -91,9 +91,15 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     }
   }
 
+  // TODO remove this annotation once Schedule becomes an abstract class
+  @SuppressWarnings("deprecation")
   @Override
   public void schedule(Id.Program programId, SchedulableProgramType programType, Schedule schedule) {
-    if (schedule instanceof TimeSchedule) {
+    if (schedule.isTimeSchedule()) {
+      timeScheduler.schedule(programId, programType,
+                             new TimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()));
+      scheduleNames.put(schedule.getName(), TimeSchedule.class);
+    } else if (schedule instanceof TimeSchedule) {
       timeScheduler.schedule(programId, programType, schedule);
       scheduleNames.put(schedule.getName(), TimeSchedule.class);
     } else if (schedule instanceof StreamSizeSchedule) {
@@ -102,12 +108,17 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     }
   }
 
+  // TODO remove this annotation once Schedule becomes an abstract class
+  @SuppressWarnings("deprecation")
   @Override
   public void schedule(Id.Program programId, SchedulableProgramType programType, Iterable<Schedule> schedules) {
     Set<Schedule> timeSchedules = Sets.newHashSet();
     Set<Schedule> streamSizeSchedules = Sets.newHashSet();
     for (Schedule schedule : schedules) {
-      if (schedule instanceof TimeSchedule) {
+      if (schedule.isTimeSchedule()) {
+        timeSchedules.add(new TimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()));
+        scheduleNames.put(schedule.getName(), TimeSchedule.class);
+      } else if (schedule instanceof TimeSchedule) {
         timeSchedules.add(schedule);
         scheduleNames.put(schedule.getName(), TimeSchedule.class);
       } else if (schedule instanceof StreamSizeSchedule) {

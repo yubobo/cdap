@@ -103,7 +103,7 @@ final class TimeScheduler implements Scheduler {
       Preconditions.checkArgument(schedule instanceof TimeSchedule);
       TimeSchedule timeSchedule = (TimeSchedule) schedule;
       String scheduleName = timeSchedule.getName();
-      String cronEntry = timeSchedule.getCronEntry();
+      String cronEntry = timeSchedule.getCronExpression();
       String triggerKey = getScheduleId(programId, programType, scheduleName);
 
       LOG.debug("Scheduling job {} with cron {}", scheduleName, cronEntry);
