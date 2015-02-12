@@ -168,7 +168,7 @@ public class LocalStreamService extends AbstractStreamService {
       this.streamFeed = new Id.NotificationFeed.Builder()
         .setNamespaceId(Constants.DEFAULT_NAMESPACE)
         .setCategory(Constants.Notification.Stream.STREAM_FEED_CATEGORY)
-        .setName(streamName)
+        .setName(String.format("%sSize", streamName))
         .build();
       this.streamThresholdMB = new AtomicInteger(streamThresholdMB);
     }

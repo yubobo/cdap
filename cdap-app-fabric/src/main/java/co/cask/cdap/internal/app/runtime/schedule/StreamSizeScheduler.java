@@ -512,9 +512,8 @@ public class StreamSizeScheduler implements Scheduler {
         Arguments args = new BasicArguments(ImmutableMap.of(
           ProgramOptionConstants.LOGICAL_START_TIME, Long.toString(System.currentTimeMillis()),
           ProgramOptionConstants.SCHEDULE_NAME, streamSizeSchedule.getName(),
-          ProgramOptionConstants.TOTAL_STREAM_SIZE, Long.toString(notification.getSize()),
-          ProgramOptionConstants.SCHEDULE_NAME, streamSizeSchedule.getName())
-        );
+          ProgramOptionConstants.TOTAL_STREAM_SIZE, Long.toString(notification.getSize())
+        ));
 
         try {
           LOG.info("About to start streamSizeSchedule {}", streamSizeSchedule);
