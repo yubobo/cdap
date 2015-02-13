@@ -22,6 +22,7 @@ import co.cask.cdap.api.schedule.StreamSizeSchedule;
 import co.cask.cdap.api.schedule.TimeSchedule;
 import co.cask.cdap.app.runtime.ProgramRuntimeService;
 import co.cask.cdap.app.store.StoreFactory;
+import co.cask.cdap.common.stream.notification.StreamSizeNotification;
 import co.cask.cdap.config.PreferencesStore;
 import co.cask.cdap.proto.Id;
 import com.google.common.base.Supplier;
@@ -95,16 +96,17 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   @SuppressWarnings("deprecation")
   @Override
   public void schedule(Id.Program programId, SchedulableProgramType programType, Schedule schedule) {
-    if (schedule.isTimeSchedule()) {
-      timeScheduler.schedule(programId, programType,
-                             new TimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()));
-      scheduleNames.put(schedule.getName(), TimeSchedule.class);
-    } else if (schedule instanceof TimeSchedule) {
+    if (schedule instanceof TimeSchedule) {
       timeScheduler.schedule(programId, programType, schedule);
       scheduleNames.put(schedule.getName(), TimeSchedule.class);
     } else if (schedule instanceof StreamSizeSchedule) {
       streamSizeScheduler.schedule(programId, programType, schedule);
       scheduleNames.put(schedule.getName(), StreamSizeSchedule.class);
+    } else {
+      // old usage of the Schedule class
+      timeScheduler.schedule(programId, programType,
+                             new TimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()));
+      scheduleNames.put(schedule.getName(), TimeSchedule.class);
     }
   }
 
@@ -115,15 +117,16 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     Set<Schedule> timeSchedules = Sets.newHashSet();
     Set<Schedule> streamSizeSchedules = Sets.newHashSet();
     for (Schedule schedule : schedules) {
-      if (schedule.isTimeSchedule()) {
-        timeSchedules.add(new TimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()));
-        scheduleNames.put(schedule.getName(), TimeSchedule.class);
-      } else if (schedule instanceof TimeSchedule) {
+      if (schedule instanceof TimeSchedule) {
         timeSchedules.add(schedule);
         scheduleNames.put(schedule.getName(), TimeSchedule.class);
       } else if (schedule instanceof StreamSizeSchedule) {
         streamSizeSchedules.add(schedule);
         scheduleNames.put(schedule.getName(), StreamSizeSchedule.class);
+      } else {
+        // old usage of the Schedule class
+        timeSchedules.add(new TimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()));
+        scheduleNames.put(schedule.getName(), TimeSchedule.class);
       }
     }
     if (!timeSchedules.isEmpty()) {
