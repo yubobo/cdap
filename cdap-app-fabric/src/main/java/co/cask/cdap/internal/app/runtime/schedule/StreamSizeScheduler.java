@@ -23,6 +23,7 @@ import co.cask.cdap.app.runtime.Arguments;
 import co.cask.cdap.app.runtime.ProgramRuntimeService;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.app.store.StoreFactory;
+import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.stream.notification.StreamSizeNotification;
 import co.cask.cdap.config.PreferencesStore;
@@ -67,9 +68,8 @@ import java.util.concurrent.TimeUnit;
 public class StreamSizeScheduler implements Scheduler {
   private static final Logger LOG = LoggerFactory.getLogger(StreamSizeScheduler.class);
   private static final int STREAM_POLLING_THREAD_POOL_SIZE = 10;
-  // TODO use the polling delay coming from StreamSizeSchedule objects.
-  private static final long STREAM_POLLING_DELAY = TimeUnit.MINUTES.toSeconds(10);
 
+  private final long pollingDelay;
   private final NotificationService notificationService;
   private final StreamAdmin streamAdmin;
   private final StoreFactory storeFactory;
@@ -85,9 +85,10 @@ public class StreamSizeScheduler implements Scheduler {
   private ScheduledExecutorService streamPollingExecutor;
 
   @Inject
-  public StreamSizeScheduler(NotificationService notificationService, StreamAdmin streamAdmin,
+  public StreamSizeScheduler(CConfiguration cConf, NotificationService notificationService, StreamAdmin streamAdmin,
                              StoreFactory storeFactory, ProgramRuntimeService programRuntimeService,
                              PreferencesStore preferencesStore) {
+    this.pollingDelay = cConf.getLong(Constants.Notification.Stream.STREAM_SIZE_SCHEDULE_POLLING_DELAY);
     this.notificationService = notificationService;
     this.streamAdmin = streamAdmin;
     this.storeFactory = storeFactory;
@@ -332,7 +333,7 @@ public class StreamSizeScheduler implements Scheduler {
           // lastNotification cannot be null, since when creating one scheduleTask, we update it
           if (lastNotification != null) {
             long lastNotificationTs = lastNotification.getTimestamp();
-            if (lastNotificationTs + TimeUnit.SECONDS.toMillis(STREAM_POLLING_DELAY) <= System.currentTimeMillis()) {
+            if (lastNotificationTs + TimeUnit.SECONDS.toMillis(pollingDelay) <= System.currentTimeMillis()) {
               long streamSize = pollStream();
               lastNotification = new StreamSizeNotification(System.currentTimeMillis(), streamSize);
             }
@@ -430,8 +431,7 @@ public class StreamSizeScheduler implements Scheduler {
       }
 
       // Regardless of whether cancelling was successful, we still want to schedule the next polling
-      scheduledPolling = streamPollingExecutor.schedule(createPollingRunnable(), STREAM_POLLING_DELAY,
-                                                        TimeUnit.SECONDS);
+      scheduledPolling = streamPollingExecutor.schedule(createPollingRunnable(), pollingDelay, TimeUnit.SECONDS);
     }
 
     /**
