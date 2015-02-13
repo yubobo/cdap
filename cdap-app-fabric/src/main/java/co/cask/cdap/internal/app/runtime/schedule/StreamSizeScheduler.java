@@ -75,10 +75,7 @@ public class StreamSizeScheduler implements Scheduler {
   private final StoreFactory storeFactory;
   private final ProgramRuntimeService programRuntimeService;
   private final PreferencesStore preferencesStore;
-
-  // Key is stream name
-  // TODO replace key with Id.Stream
-  private final ConcurrentMap<String, StreamSubscriber> streamSubscribers;
+  private final ConcurrentMap<Id.Stream, StreamSubscriber> streamSubscribers;
 
   // Key is scheduleId
   private final ConcurrentMap<String, StreamSubscriber> scheduleSubscribers;
@@ -121,9 +118,9 @@ public class StreamSizeScheduler implements Scheduler {
     StreamSizeSchedule streamSizeSchedule = (StreamSizeSchedule) schedule;
     try {
       // Create a new StreamSubscriber, if one doesn't exist for the stream passed in the schedule
-      StreamSubscriber streamSubscriber = new StreamSubscriber(program.getNamespaceId(),
-                                                               streamSizeSchedule.getStreamName());
-      StreamSubscriber previous = streamSubscribers.putIfAbsent(streamSizeSchedule.getStreamName(), streamSubscriber);
+      Id.Stream streamId = Id.Stream.from(program.getNamespaceId(), streamSizeSchedule.getStreamName());
+      StreamSubscriber streamSubscriber = new StreamSubscriber(streamId);
+      StreamSubscriber previous = streamSubscribers.putIfAbsent(streamId, streamSubscriber);
       if (previous == null) {
         streamSubscriber.start();
       } else {
@@ -194,8 +191,8 @@ public class StreamSizeScheduler implements Scheduler {
         subscriber.deleteSchedule(programId, programType, scheduleName);
         if (subscriber.isEmpty()) {
           subscriber.cancel();
-          String streamName = subscriber.getStreamName();
-          streamSubscribers.remove(streamName);
+          Id.Stream streamId = subscriber.getStreamId();
+          streamSubscribers.remove(streamId);
         }
       }
     }
@@ -251,8 +248,7 @@ public class StreamSizeScheduler implements Scheduler {
    */
   private final class StreamSubscriber implements NotificationHandler<StreamSizeNotification>, Cancellable {
 
-    private final String namespace;
-    private final String streamName;
+    private final Id.Stream streamId;
 
     // Key is the schedule ID
     private final ConcurrentMap<String, StreamSizeScheduleTask> scheduleTasks;
@@ -262,9 +258,8 @@ public class StreamSizeScheduler implements Scheduler {
     private StreamSizeNotification lastNotification;
     private int activeTasks;
 
-    private StreamSubscriber(String namespace, String streamName) {
-      this.namespace = namespace;
-      this.streamName = streamName;
+    private StreamSubscriber(Id.Stream streamId) {
+      this.streamId = streamId;
       this.scheduleTasks = Maps.newConcurrentMap();
       this.activeTasks = 0;
     }
@@ -377,9 +372,8 @@ public class StreamSizeScheduler implements Scheduler {
       return scheduleTasks.isEmpty();
     }
 
-    // TODO change with Id.Stream
-    public String getStreamName() {
-      return streamName;
+    public Id.Stream getStreamId() {
+      return streamId;
     }
 
     @Override
@@ -419,9 +413,9 @@ public class StreamSizeScheduler implements Scheduler {
 
     private Id.NotificationFeed getFeed() {
       return new Id.NotificationFeed.Builder()
-        .setNamespaceId(namespace)
+        .setNamespaceId(streamId.getNamespaceId())
         .setCategory(Constants.Notification.Stream.STREAM_FEED_CATEGORY)
-        .setName(String.format("%sSize", streamName))
+        .setName(String.format("%sSize", streamId.getName()))
         .build();
     }
 
@@ -465,9 +459,9 @@ public class StreamSizeScheduler implements Scheduler {
     private long pollStream() {
       try {
         // Note we can't store the stream config, because its generation might change at every moment
-        return streamAdmin.fetchStreamSize(streamAdmin.getConfig(streamName));
+        return streamAdmin.fetchStreamSize(streamAdmin.getConfig(streamId));
       } catch (IOException e) {
-        LOG.error("Could not poll size for stream {}", streamName);
+        LOG.error("Could not poll size for stream {}", streamId);
         throw Throwables.propagate(e);
       }
     }

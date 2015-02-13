@@ -43,18 +43,19 @@ public class SchedulerServiceTest {
   private static final Id.Application appId = new Id.Application(account, AppWithWorkflow.NAME);
   private static final Id.Program program = new Id.Program(appId, AppWithWorkflow.SampleWorkflow.NAME);
   private static final SchedulableProgramType programType = SchedulableProgramType.WORKFLOW;
-  private static final String STREAM_NAME = "stream";
+  private static final Id.Stream STREAM_ID = Id.Stream.from(account, "stream");
   private static final Schedule timeSchedule1 = new TimeSchedule("Schedule1", "Every minute", "* * * * ?");
   private static final Schedule timeSchedule2 = new TimeSchedule("Schedule2", "Every Hour", "0 * * * ?");
-  private static final Schedule dataSchedule1 = new StreamSizeSchedule("Schedule3", "Every 1M", STREAM_NAME, 1);
-  private static final Schedule dataSchedule2 = new StreamSizeSchedule("Schedule4", "Every 10M", STREAM_NAME, 10);
+  private static final Schedule dataSchedule1 = new StreamSizeSchedule("Schedule3", "Every 1M", STREAM_ID.getName(), 1);
+  private static final Schedule dataSchedule2 = new StreamSizeSchedule("Schedule4", "Every 10M", STREAM_ID.getName(),
+                                                                       10);
 
   @BeforeClass
   public static void set() throws Exception {
     schedulerService = AppFabricTestHelper.getInjector().getInstance(SchedulerService.class);
     notificationFeedManager = AppFabricTestHelper.getInjector().getInstance(NotificationFeedManager.class);
     streamAdmin = AppFabricTestHelper.getInjector().getInstance(StreamAdmin.class);
-    streamAdmin.create(STREAM_NAME);
+    streamAdmin.create(STREAM_ID);
   }
 
   @AfterClass
