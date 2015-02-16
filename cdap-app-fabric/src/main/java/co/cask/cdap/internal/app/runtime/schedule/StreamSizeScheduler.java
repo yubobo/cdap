@@ -296,7 +296,7 @@ public class StreamSizeScheduler implements Scheduler {
           long streamSize = pollStream();
           newTask.setBaseSize(streamSize);
           lastNotification = new StreamSizeNotification(System.currentTimeMillis(), streamSize);
-          sendNotificationToActiveTasks(lastNotification);
+          received(lastNotification, null);
         }
       }
     }
@@ -330,7 +330,7 @@ public class StreamSizeScheduler implements Scheduler {
           // We need to check if it is necessary to poll the stream at this time, if the last
           // notification received was too long ago
 
-          // lastNotification cannot be null, since when creating one scheduleTask, we update it
+          // lastNotification cannot be null, since when creating one scheduleTask, we instantiate it
           if (lastNotification != null) {
             long lastNotificationTs = lastNotification.getTimestamp();
             if (lastNotificationTs + TimeUnit.SECONDS.toMillis(pollingDelay) <= System.currentTimeMillis()) {
@@ -385,7 +385,9 @@ public class StreamSizeScheduler implements Scheduler {
     @Override
     public void received(StreamSizeNotification notification, NotificationContext notificationContext) {
       cancelPollingAndScheduleNext();
-      lastNotification = notification;
+      if (notification.getTimestamp() > lastNotification.getTimestamp()) {
+        lastNotification = notification;
+      }
       sendNotificationToActiveTasks(notification);
     }
 
@@ -496,8 +498,13 @@ public class StreamSizeScheduler implements Scheduler {
     }
 
     public void received(StreamSizeNotification notification) {
-      if (notification.getSize() < baseSize + toBytes(streamSizeSchedule.getDataTriggerMB())) {
-        return;
+      synchronized (this) {
+        if (notification.getSize() < baseSize + toBytes(streamSizeSchedule.getDataTriggerMB())) {
+          return;
+        }
+        // Update the baseSize as soon as possible to avoid races
+        baseSize = notification.getSize();
+        LOG.debug("Base size updated to {} for streamSizeSchedule {}", baseSize, streamSizeSchedule);
       }
 
       while (true) {
@@ -522,9 +529,6 @@ public class StreamSizeScheduler implements Scheduler {
           }
         }
       }
-
-      baseSize = notification.getSize();
-      LOG.debug("Base size updated to {} for streamSizeSchedule {}", baseSize, streamSizeSchedule);
     }
 
     public void suspend() {
