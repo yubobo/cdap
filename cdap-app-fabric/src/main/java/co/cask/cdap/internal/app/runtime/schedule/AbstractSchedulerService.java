@@ -18,17 +18,18 @@ package co.cask.cdap.internal.app.runtime.schedule;
 
 import co.cask.cdap.api.schedule.SchedulableProgramType;
 import co.cask.cdap.api.schedule.Schedule;
+import co.cask.cdap.api.schedule.ScheduleSpecification;
 import co.cask.cdap.api.schedule.StreamSizeSchedule;
 import co.cask.cdap.api.schedule.TimeSchedule;
+import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.runtime.ProgramRuntimeService;
+import co.cask.cdap.app.store.Store;
 import co.cask.cdap.app.store.StoreFactory;
-import co.cask.cdap.common.stream.notification.StreamSizeNotification;
 import co.cask.cdap.config.PreferencesStore;
 import co.cask.cdap.proto.Id;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.quartz.SchedulerException;
@@ -36,8 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Abstract scheduler service common scheduling functionality. For each {@link Schedule} implementation, there is
@@ -49,11 +50,8 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   private static final Logger LOG = LoggerFactory.getLogger(AbstractSchedulerService.class);
   private final TimeScheduler timeScheduler;
   private final StreamSizeScheduler streamSizeScheduler;
-
-  // This map is only here to know to which scheduler to route each operation on a schedule. It doesn't matter
-  // if it contains more schedule names than actually existing - in particular the call to deleteSchedules() does not
-  // modify the map.
-  private final ConcurrentMap<String, Class<? extends Schedule>> scheduleNames;
+  private final StoreFactory storeFactory;
+  private Store store;
 
   public AbstractSchedulerService(Supplier<org.quartz.Scheduler> schedulerSupplier,
                                   StreamSizeScheduler streamSizeScheduler,
@@ -61,7 +59,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
                                   PreferencesStore preferencesStore) {
     this.timeScheduler = new TimeScheduler(schedulerSupplier, storeFactory, programRuntimeService, preferencesStore);
     this.streamSizeScheduler = streamSizeScheduler;
-    this.scheduleNames = Maps.newConcurrentMap();
+    this.storeFactory = storeFactory;
   }
 
   /**
@@ -98,15 +96,12 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   public void schedule(Id.Program programId, SchedulableProgramType programType, Schedule schedule) {
     if (schedule instanceof TimeSchedule) {
       timeScheduler.schedule(programId, programType, schedule);
-      scheduleNames.put(schedule.getName(), TimeSchedule.class);
     } else if (schedule instanceof StreamSizeSchedule) {
       streamSizeScheduler.schedule(programId, programType, schedule);
-      scheduleNames.put(schedule.getName(), StreamSizeSchedule.class);
     } else {
       // old usage of the Schedule class
-      timeScheduler.schedule(programId, programType,
-                             new TimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()));
-      scheduleNames.put(schedule.getName(), TimeSchedule.class);
+      timeScheduler.schedule(programId, programType, new TimeSchedule(schedule.getName(), schedule.getDescription(),
+                                                                      schedule.getCronEntry()));
     }
   }
 
@@ -119,14 +114,11 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     for (Schedule schedule : schedules) {
       if (schedule instanceof TimeSchedule) {
         timeSchedules.add(schedule);
-        scheduleNames.put(schedule.getName(), TimeSchedule.class);
       } else if (schedule instanceof StreamSizeSchedule) {
         streamSizeSchedules.add(schedule);
-        scheduleNames.put(schedule.getName(), StreamSizeSchedule.class);
       } else {
         // old usage of the Schedule class
         timeSchedules.add(new TimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()));
-        scheduleNames.put(schedule.getName(), TimeSchedule.class);
       }
     }
     if (!timeSchedules.isEmpty()) {
@@ -152,31 +144,43 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
 
   @Override
   public void suspendSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
-    Class<? extends Schedule> clz = scheduleNames.get(scheduleName);
-    if (clz == TimeSchedule.class) {
-      timeScheduler.suspendSchedule(program, programType, scheduleName);
-    } else if (clz == StreamSizeSchedule.class) {
-      streamSizeScheduler.suspendSchedule(program, programType, scheduleName);
+    ScheduleType type = getScheduleType(program, programType, scheduleName);
+    if (type == null) {
+      return;
+    }
+    switch (type) {
+      case TIME:
+        timeScheduler.suspendSchedule(program, programType, scheduleName);
+      case STREAM_SIZE:
+        streamSizeScheduler.suspendSchedule(program, programType, scheduleName);
     }
   }
 
   @Override
   public void resumeSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
-    Class<? extends Schedule> clz = scheduleNames.get(scheduleName);
-    if (clz == TimeSchedule.class) {
-      timeScheduler.resumeSchedule(program, programType, scheduleName);
-    } else if (clz == StreamSizeSchedule.class) {
-      streamSizeScheduler.resumeSchedule(program, programType, scheduleName);
+    ScheduleType type = getScheduleType(program, programType, scheduleName);
+    if (type == null) {
+      return;
+    }
+    switch (type) {
+      case TIME:
+        timeScheduler.resumeSchedule(program, programType, scheduleName);
+      case STREAM_SIZE:
+        streamSizeScheduler.resumeSchedule(program, programType, scheduleName);
     }
   }
 
   @Override
   public void deleteSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
-    Class<? extends Schedule> clz = scheduleNames.remove(scheduleName);
-    if (clz == TimeSchedule.class) {
-      timeScheduler.deleteSchedule(program, programType, scheduleName);
-    } else if (clz == StreamSizeSchedule.class) {
-      streamSizeScheduler.deleteSchedule(program, programType, scheduleName);
+    ScheduleType type = getScheduleType(program, programType, scheduleName);
+    if (type == null) {
+      return;
+    }
+    switch (type) {
+      case TIME:
+        timeScheduler.deleteSchedule(program, programType, scheduleName);
+      case STREAM_SIZE:
+        streamSizeScheduler.deleteSchedule(program, programType, scheduleName);
     }
   }
 
@@ -188,13 +192,55 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
 
   @Override
   public ScheduleState scheduleState(Id.Program program, SchedulableProgramType programType, String scheduleName) {
-    Class<? extends Schedule> clz = scheduleNames.get(scheduleName);
-    if (clz == TimeSchedule.class) {
-      return timeScheduler.scheduleState(program, programType, scheduleName);
-    } else if (clz == StreamSizeSchedule.class) {
-      return streamSizeScheduler.scheduleState(program, programType, scheduleName);
-    } else {
-      throw new UnsupportedOperationException("Type of schedule unknown: " + clz.toString());
+    ScheduleType type = getScheduleType(program, programType, scheduleName);
+    if (type == null) {
+      throw new UnsupportedOperationException("Schedule could not be found in application specification");
     }
+    switch (type) {
+      case STREAM_SIZE:
+        return streamSizeScheduler.scheduleState(program, programType, scheduleName);
+      case TIME:
+      default:
+        return timeScheduler.scheduleState(program, programType, scheduleName);
+    }
+  }
+
+  private Store getStore() {
+    if (store == null) {
+      store = storeFactory.create();
+    }
+    return store;
+  }
+
+  public ScheduleType getScheduleType(Id.Program program, SchedulableProgramType programType,
+                                                   String scheduleName) {
+    ApplicationSpecification appSpec = getStore().getApplication(program.getApplication());
+    if (appSpec == null) {
+      return null;
+    }
+
+    Map<String, ScheduleSpecification> schedules = appSpec.getSchedules();
+    if (schedules == null || !schedules.containsKey(scheduleName)) {
+      return null;
+    }
+
+    ScheduleSpecification scheduleSpec = schedules.get(scheduleName);
+    Schedule schedule = scheduleSpec.getSchedule();
+    if (schedule instanceof TimeSchedule) {
+      return ScheduleType.TIME;
+    } else if (schedule instanceof StreamSizeSchedule) {
+      return ScheduleType.STREAM_SIZE;
+    } else {
+      // Backwards compatibility with CDAP prior to 2.8, when a Schedule object could only be time based
+      return ScheduleType.TIME;
+    }
+  }
+
+  /**
+   * Type of a schedule.
+   */
+  private static enum ScheduleType {
+    TIME,
+    STREAM_SIZE
   }
 }
