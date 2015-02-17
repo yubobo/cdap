@@ -14,10 +14,11 @@
  * the License.
  */
 
-package co.cask.cdap.internal.app.runtime.schedule;
+package co.cask.cdap.internal.app.runtime.schedule.store;
 
 import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.api.dataset.table.OrderedTable;
+import co.cask.cdap.internal.app.runtime.schedule.ScheduleStoreTableUtil;
 import co.cask.tephra.TransactionAware;
 import co.cask.tephra.TransactionExecutor;
 import co.cask.tephra.TransactionExecutorFactory;
@@ -48,9 +49,9 @@ import java.util.Set;
 /**
  * ScheduleStore extends from RAMJobStore and persists the trigger and schedule information into datasets.
  */
-public class DataSetBasedScheduleStore extends RAMJobStore {
+public class DatasetBasedTimeScheduleStore extends RAMJobStore {
 
-  private static final Logger LOG = LoggerFactory.getLogger(DataSetBasedScheduleStore.class);
+  private static final Logger LOG = LoggerFactory.getLogger(DatasetBasedTimeScheduleStore.class);
   private static final byte[] JOB_KEY = Bytes.toBytes("jobs");
   private static final byte[] TRIGGER_KEY = Bytes.toBytes("trigger");
 
@@ -59,7 +60,7 @@ public class DataSetBasedScheduleStore extends RAMJobStore {
   private OrderedTable table;
 
   @Inject
-  public DataSetBasedScheduleStore(TransactionExecutorFactory factory, ScheduleStoreTableUtil tableUtil) {
+  public DatasetBasedTimeScheduleStore(TransactionExecutorFactory factory, ScheduleStoreTableUtil tableUtil) {
     this.tableUtil = tableUtil;
     this.factory = factory;
   }

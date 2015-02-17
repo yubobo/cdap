@@ -22,13 +22,14 @@ import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.DatasetManagementException;
 import co.cask.cdap.data2.dataset2.lib.table.MetaTableUtil;
+import co.cask.cdap.internal.app.runtime.schedule.store.DatasetBasedTimeScheduleStore;
 import com.google.inject.Inject;
 
 import java.io.IOException;
 
 /**
  * Helper class for working with the dataset table used by
- * {@link co.cask.cdap.internal.app.runtime.schedule.DataSetBasedScheduleStore}.
+ * {@link DatasetBasedTimeScheduleStore}.
  */
 public class ScheduleStoreTableUtil extends MetaTableUtil {
   public static final String SCHEDULE_STORE_DATASET_NAME = "schedulestore";
