@@ -46,7 +46,7 @@ public final class StreamServiceRuntimeModule extends RuntimeModule {
         // For in memory stream, nothing to cleanup
         bind(StreamFileJanitorService.class).to(NoopStreamFileJanitorService.class).in(Scopes.SINGLETON);
         bind(StreamWriterSizeCollector.class).to(BasicStreamWriterSizeCollector.class).in(Scopes.SINGLETON);
-        bind(StreamService.class).to(NoopStreamService.class).in(Scopes.SINGLETON);
+        bind(StreamService.class).to(LocalStreamService.class).in(Scopes.SINGLETON);
       }
     };
   }
