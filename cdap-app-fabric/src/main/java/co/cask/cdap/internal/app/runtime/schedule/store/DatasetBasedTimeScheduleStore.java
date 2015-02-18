@@ -18,7 +18,6 @@ package co.cask.cdap.internal.app.runtime.schedule.store;
 
 import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.api.dataset.table.OrderedTable;
-import co.cask.cdap.internal.app.runtime.schedule.ScheduleStoreTableUtil;
 import co.cask.tephra.TransactionAware;
 import co.cask.tephra.TransactionExecutor;
 import co.cask.tephra.TransactionExecutorFactory;

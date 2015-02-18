@@ -19,14 +19,23 @@ package co.cask.cdap.internal.app.runtime.schedule;
 import co.cask.cdap.AppWithWorkflow;
 import co.cask.cdap.api.schedule.SchedulableProgramType;
 import co.cask.cdap.api.schedule.Schedule;
+import co.cask.cdap.api.schedule.ScheduleSpecification;
 import co.cask.cdap.api.schedule.StreamSizeSchedule;
 import co.cask.cdap.api.schedule.TimeSchedule;
+import co.cask.cdap.api.workflow.ScheduleProgramInfo;
+import co.cask.cdap.app.ApplicationSpecification;
+import co.cask.cdap.app.store.Store;
+import co.cask.cdap.app.store.StoreFactory;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data2.transaction.stream.StreamAdmin;
+import co.cask.cdap.internal.app.DefaultApplicationSpecification;
 import co.cask.cdap.notifications.feeds.NotificationFeedManager;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.test.internal.AppFabricTestHelper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import org.apache.twill.filesystem.LocalLocationFactory;
+import org.apache.twill.filesystem.LocationFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -38,6 +47,8 @@ public class SchedulerServiceTest {
   public static SchedulerService schedulerService;
   public static NotificationFeedManager notificationFeedManager;
   public static StreamAdmin streamAdmin;
+  public static Store store;
+  public static LocationFactory locationFactory;
 
   private static final Id.Namespace account = new Id.Namespace(Constants.DEFAULT_NAMESPACE);
   private static final Id.Application appId = new Id.Application(account, AppWithWorkflow.NAME);
@@ -56,6 +67,8 @@ public class SchedulerServiceTest {
     notificationFeedManager = AppFabricTestHelper.getInjector().getInstance(NotificationFeedManager.class);
     streamAdmin = AppFabricTestHelper.getInjector().getInstance(StreamAdmin.class);
     streamAdmin.create(STREAM_ID);
+    store = AppFabricTestHelper.getInjector().getInstance(StoreFactory.class).create();
+    locationFactory = new LocalLocationFactory();
   }
 
   @AfterClass
@@ -66,7 +79,11 @@ public class SchedulerServiceTest {
   @Test
   public void testSchedulesAcrossNamespace() throws Exception {
     AppFabricTestHelper.deployApplication(AppWithWorkflow.class);
+    ApplicationSpecification applicationSpecification = store.getApplication(appId);
+
     schedulerService.schedule(program, programType, ImmutableList.of(timeSchedule1));
+    store.addApplication(appId, createNewSpecification(applicationSpecification, program, programType, timeSchedule1),
+                         locationFactory.create("app"));
 
     Id.Program programInOtherNamespace =
       Id.Program.from(new Id.Application(new Id.Namespace("otherNamespace"), appId.getId()), program.getId());
@@ -78,6 +95,9 @@ public class SchedulerServiceTest {
     Assert.assertEquals(0, scheduleIdsOtherNamespace.size());
 
     schedulerService.schedule(programInOtherNamespace, programType, ImmutableList.of(timeSchedule2));
+    store.addApplication(appId, createNewSpecification(applicationSpecification, programInOtherNamespace, programType,
+                                                       timeSchedule2),
+                         locationFactory.create("app"));
 
     scheduleIdsOtherNamespace = schedulerService.getScheduleIds(programInOtherNamespace, programType);
     Assert.assertEquals(1, scheduleIdsOtherNamespace.size());
@@ -89,18 +109,26 @@ public class SchedulerServiceTest {
   @Test
   public void testSimpleSchedulerLifecycle() throws Exception {
     AppFabricTestHelper.deployApplication(AppWithWorkflow.class);
+    ApplicationSpecification applicationSpecification = store.getApplication(appId);
 
     schedulerService.schedule(program, programType, ImmutableList.of(timeSchedule1));
+    applicationSpecification = createNewSpecification(applicationSpecification, program, programType, timeSchedule1);
+    store.addApplication(appId, applicationSpecification, locationFactory.create("app"));
     List<String> scheduleIds = schedulerService.getScheduleIds(program, programType);
     Assert.assertEquals(1, scheduleIds.size());
     checkState(Scheduler.ScheduleState.SCHEDULED, scheduleIds);
 
     schedulerService.schedule(program, programType, timeSchedule2);
+    applicationSpecification = createNewSpecification(applicationSpecification, program, programType, timeSchedule2);
+    store.addApplication(appId, applicationSpecification, locationFactory.create("app"));
     scheduleIds = schedulerService.getScheduleIds(program, programType);
     Assert.assertEquals(2, scheduleIds.size());
     checkState(Scheduler.ScheduleState.SCHEDULED, scheduleIds);
 
     schedulerService.schedule(program, programType, ImmutableList.of(dataSchedule1, dataSchedule2));
+    applicationSpecification = createNewSpecification(applicationSpecification, program, programType, dataSchedule1);
+    applicationSpecification = createNewSpecification(applicationSpecification, program, programType, dataSchedule2);
+    store.addApplication(appId, applicationSpecification, locationFactory.create("app"));
     scheduleIds = schedulerService.getScheduleIds(program, programType);
     Assert.assertEquals(4, scheduleIds.size());
     checkState(Scheduler.ScheduleState.SCHEDULED, scheduleIds);
@@ -130,5 +158,28 @@ public class SchedulerServiceTest {
       Assert.assertEquals(expectedState, schedulerService.scheduleState(program, SchedulableProgramType.WORKFLOW,
                                                                         scheduleId.substring(i + 1)));
     }
+  }
+
+  private ApplicationSpecification createNewSpecification(ApplicationSpecification spec, Id.Program programId,
+                                                          SchedulableProgramType programType, Schedule schedule) {
+    ImmutableMap.Builder<String, ScheduleSpecification> builder = ImmutableMap.builder();
+    builder.putAll(spec.getSchedules());
+    builder.put(schedule.getName(), new ScheduleSpecification(schedule,
+                                                              new ScheduleProgramInfo(programType, programId.getId()),
+                                                              ImmutableMap.<String, String>of()));
+    return new DefaultApplicationSpecification(
+      spec.getName(),
+      spec.getDescription(),
+      spec.getStreams(),
+      spec.getDatasetModules(),
+      spec.getDatasets(),
+      spec.getFlows(),
+      spec.getProcedures(),
+      spec.getMapReduce(),
+      spec.getSpark(),
+      spec.getWorkflows(),
+      spec.getServices(),
+      builder.build()
+    );
   }
 }

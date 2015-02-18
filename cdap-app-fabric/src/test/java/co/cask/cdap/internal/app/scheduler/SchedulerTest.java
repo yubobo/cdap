@@ -30,7 +30,7 @@ import co.cask.cdap.data2.datafabric.dataset.service.executor.DatasetOpExecutor;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.explore.guice.ExploreClientModule;
 import co.cask.cdap.gateway.auth.AuthModule;
-import co.cask.cdap.internal.app.runtime.schedule.ScheduleStoreTableUtil;
+import co.cask.cdap.internal.app.runtime.schedule.store.ScheduleStoreTableUtil;
 import co.cask.cdap.internal.app.runtime.schedule.store.DatasetBasedTimeScheduleStore;
 import co.cask.cdap.metrics.guice.MetricsClientRuntimeModule;
 import co.cask.cdap.test.SlowTests;

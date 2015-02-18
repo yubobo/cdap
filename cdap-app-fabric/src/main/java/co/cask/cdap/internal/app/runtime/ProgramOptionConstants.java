@@ -39,5 +39,10 @@ public final class ProgramOptionConstants {
 
   public static final String CONCURRENT_RUNS_ENABLED = "concurrent.runs.enabled";
 
-  public static final String TOTAL_STREAM_SIZE = "total.stream.size";
+  public static final String RUN_DATA_SIZE = "run.data.size";
+
+  public static final String PAST_RUN_DATA_SIZE = "past.run.data.size";
+
+  public static final String PAST_RUN_LOGICAL_START_TIME = "past.run.logicalStartTime";
+
 }

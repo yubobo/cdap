@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.cdap.internal.app.runtime.schedule;
+package co.cask.cdap.internal.app.runtime.schedule.store;
 
 import co.cask.cdap.api.dataset.DatasetProperties;
 import co.cask.cdap.api.dataset.table.OrderedTable;
@@ -22,7 +22,6 @@ import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.DatasetManagementException;
 import co.cask.cdap.data2.dataset2.lib.table.MetaTableUtil;
-import co.cask.cdap.internal.app.runtime.schedule.store.DatasetBasedTimeScheduleStore;
 import com.google.inject.Inject;
 
 import java.io.IOException;

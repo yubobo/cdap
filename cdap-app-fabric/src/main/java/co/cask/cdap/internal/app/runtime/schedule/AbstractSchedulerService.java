@@ -212,8 +212,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     return store;
   }
 
-  private ScheduleType getScheduleType(Id.Program program, SchedulableProgramType programType,
-                                                   String scheduleName) {
+  private ScheduleType getScheduleType(Id.Program program, SchedulableProgramType programType, String scheduleName) {
     ApplicationSpecification appSpec = getStore().getApplication(program.getApplication());
     if (appSpec == null) {
       return null;
