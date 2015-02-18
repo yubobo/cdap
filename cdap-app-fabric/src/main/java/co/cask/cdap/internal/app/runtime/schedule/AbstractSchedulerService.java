@@ -151,8 +151,10 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     switch (type) {
       case TIME:
         timeScheduler.suspendSchedule(program, programType, scheduleName);
+        break;
       case STREAM_SIZE:
         streamSizeScheduler.suspendSchedule(program, programType, scheduleName);
+        break;
     }
   }
 
@@ -165,8 +167,10 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     switch (type) {
       case TIME:
         timeScheduler.resumeSchedule(program, programType, scheduleName);
+        break;
       case STREAM_SIZE:
         streamSizeScheduler.resumeSchedule(program, programType, scheduleName);
+        break;
     }
   }
 
@@ -179,8 +183,10 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
     switch (type) {
       case TIME:
         timeScheduler.deleteSchedule(program, programType, scheduleName);
+        break;
       case STREAM_SIZE:
         streamSizeScheduler.deleteSchedule(program, programType, scheduleName);
+        break;
     }
   }
 
@@ -200,9 +206,9 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
       case STREAM_SIZE:
         return streamSizeScheduler.scheduleState(program, programType, scheduleName);
       case TIME:
-      default:
         return timeScheduler.scheduleState(program, programType, scheduleName);
     }
+    throw new IllegalStateException("Unhandled type of schedule: " + type);
   }
 
   private Store getStore() {

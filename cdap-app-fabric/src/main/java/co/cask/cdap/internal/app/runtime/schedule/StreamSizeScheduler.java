@@ -106,6 +106,8 @@ public class StreamSizeScheduler implements Scheduler {
     notificationExecutor = Executors.newCachedThreadPool(Threads.createDaemonThreadFactory("stream-size-scheduler-%d"));
     streamPollingExecutor = Executors.newScheduledThreadPool(STREAM_POLLING_THREAD_POOL_SIZE,
                                                              Threads.createDaemonThreadFactory("stream-polling-%d"));
+    scheduleStore.initialize();
+
     // Reschedule the persisted schedules
     synchronized (this) {
       List<DatasetBasedStreamSizeScheduleStore.StreamSizeScheduleState> scheduleStates =
