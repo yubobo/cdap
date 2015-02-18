@@ -593,7 +593,6 @@ public class StreamSizeScheduler implements Scheduler {
      * @return true if we successfully suspended the schedule, false if it was already suspended
      */
     public boolean suspend() {
-      // TODO test suspending or resuming multiple times a schedule, and that nothing is messed up
       if (!running) {
         return false;
       }

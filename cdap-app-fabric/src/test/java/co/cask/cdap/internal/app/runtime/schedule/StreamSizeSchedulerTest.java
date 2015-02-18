@@ -102,6 +102,28 @@ public class StreamSizeSchedulerTest {
     // Both schedule should now be triggered
     notificationService.publish(FEED, new StreamSizeNotification(System.currentTimeMillis(), 2 * 1024 * 1025));
     waitForRuns(PROGRAM_ID, 3);
+
+    // Suspend a schedule multiple times, and make sur that it doesn't mess up anything
+    streamSizeScheduler.suspendSchedule(PROGRAM_ID, PROGRAM_TYPE, SCHEDULE_NAME_2);
+    streamSizeScheduler.suspendSchedule(PROGRAM_ID, PROGRAM_TYPE, SCHEDULE_NAME_2);
+    Assert.assertEquals(Scheduler.ScheduleState.SUSPENDED,
+                        streamSizeScheduler.scheduleState(PROGRAM_ID, PROGRAM_TYPE, SCHEDULE_NAME_2));
+
+    // The first schedule should trigger execution
+    notificationService.publish(FEED, new StreamSizeNotification(System.currentTimeMillis(), 3 * 1024 * 1025));
+    waitForRuns(PROGRAM_ID, 4);
+
+    streamSizeScheduler.resumeSchedule(PROGRAM_ID, PROGRAM_TYPE, SCHEDULE_NAME_2);
+    streamSizeScheduler.resumeSchedule(PROGRAM_ID, PROGRAM_TYPE, SCHEDULE_NAME_2);
+    Assert.assertEquals(Scheduler.ScheduleState.SCHEDULED,
+                        streamSizeScheduler.scheduleState(PROGRAM_ID, PROGRAM_TYPE, SCHEDULE_NAME_2));
+
+    // Both schedules should be trigger. In particular, the schedule that has just been resumed twice should
+    // only trigger once
+    notificationService.publish(FEED, new StreamSizeNotification(System.currentTimeMillis(), 4 * 1024 * 1025));
+    TimeUnit.SECONDS.sleep(5);
+    runs = store.getRuns(PROGRAM_ID, ProgramRunStatus.ALL, Long.MIN_VALUE, Long.MAX_VALUE, 100).size();
+    Assert.assertEquals(6, runs);
   }
 
   private void waitForRuns(Id.Program programId, int expectedRuns) throws Exception {
