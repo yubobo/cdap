@@ -20,9 +20,10 @@ import co.cask.cdap.api.app.AbstractApplication;
 import co.cask.cdap.api.data.schema.UnsupportedTypeException;
 import co.cask.cdap.api.data.stream.Stream;
 import co.cask.cdap.api.dataset.lib.ObjectStores;
-import co.cask.cdap.api.schedule.StreamSizeSchedule;
+import co.cask.cdap.api.schedule.Schedules;
 import co.cask.cdap.api.workflow.AbstractWorkflow;
 import co.cask.cdap.api.workflow.AbstractWorkflowAction;
+import co.cask.cdap.internal.schedule.StreamSizeSchedule;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
@@ -52,10 +53,10 @@ public class AppWithStreamSizeSchedule extends AbstractApplication {
       scheduleProperties.put("anotherKey", "anotherValue");
       scheduleProperties.put("someKey", "someValue");
 
-      scheduleWorkflow(new StreamSizeSchedule("SampleSchedule1", "", "stream", 1), "SampleWorkflow",
-                       scheduleProperties);
-      scheduleWorkflow(new StreamSizeSchedule("SampleSchedule2", "", "stream", 2), "SampleWorkflow",
-                       scheduleProperties);
+      scheduleWorkflow(Schedules.createDataSchedule("SampleSchedule1", "", Schedules.Source.STREAM, "stream", 1),
+                       "SampleWorkflow", scheduleProperties);
+      scheduleWorkflow(Schedules.createDataSchedule("SampleSchedule2", "", Schedules.Source.STREAM, "stream", 2),
+                       "SampleWorkflow", scheduleProperties);
     } catch (UnsupportedTypeException e) {
       throw Throwables.propagate(e);
     }

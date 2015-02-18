@@ -20,8 +20,7 @@ import co.cask.cdap.AppWithWorkflow;
 import co.cask.cdap.api.schedule.SchedulableProgramType;
 import co.cask.cdap.api.schedule.Schedule;
 import co.cask.cdap.api.schedule.ScheduleSpecification;
-import co.cask.cdap.api.schedule.StreamSizeSchedule;
-import co.cask.cdap.api.schedule.TimeSchedule;
+import co.cask.cdap.api.schedule.Schedules;
 import co.cask.cdap.api.workflow.ScheduleProgramInfo;
 import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.store.Store;
@@ -55,11 +54,12 @@ public class SchedulerServiceTest {
   private static final Id.Program program = new Id.Program(appId, AppWithWorkflow.SampleWorkflow.NAME);
   private static final SchedulableProgramType programType = SchedulableProgramType.WORKFLOW;
   private static final Id.Stream STREAM_ID = Id.Stream.from(account, "stream");
-  private static final Schedule timeSchedule1 = new TimeSchedule("Schedule1", "Every minute", "* * * * ?");
-  private static final Schedule timeSchedule2 = new TimeSchedule("Schedule2", "Every Hour", "0 * * * ?");
-  private static final Schedule dataSchedule1 = new StreamSizeSchedule("Schedule3", "Every 1M", STREAM_ID.getName(), 1);
-  private static final Schedule dataSchedule2 = new StreamSizeSchedule("Schedule4", "Every 10M", STREAM_ID.getName(),
-                                                                       10);
+  private static final Schedule timeSchedule1 = Schedules.createTimeSchedule("Schedule1", "Every minute", "* * * * ?");
+  private static final Schedule timeSchedule2 = Schedules.createTimeSchedule("Schedule2", "Every Hour", "0 * * * ?");
+  private static final Schedule dataSchedule1 =
+    Schedules.createDataSchedule("Schedule3", "Every 1M", Schedules.Source.STREAM, STREAM_ID.getName(), 1);
+  private static final Schedule dataSchedule2 =
+    Schedules.createDataSchedule("Schedule4", "Every 10M", Schedules.Source.STREAM, STREAM_ID.getName(), 10);
 
   @BeforeClass
   public static void set() throws Exception {

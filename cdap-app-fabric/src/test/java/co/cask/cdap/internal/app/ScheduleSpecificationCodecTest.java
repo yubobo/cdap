@@ -16,12 +16,19 @@
 
 package co.cask.cdap.internal.app;
 
+import co.cask.cdap.api.app.AbstractApplication;
+import co.cask.cdap.api.app.Application;
+import co.cask.cdap.api.app.ApplicationContext;
 import co.cask.cdap.api.schedule.SchedulableProgramType;
 import co.cask.cdap.api.schedule.Schedule;
 import co.cask.cdap.api.schedule.ScheduleSpecification;
-import co.cask.cdap.api.schedule.StreamSizeSchedule;
-import co.cask.cdap.api.schedule.TimeSchedule;
+import co.cask.cdap.api.schedule.Schedules;
 import co.cask.cdap.api.workflow.ScheduleProgramInfo;
+import co.cask.cdap.app.ApplicationSpecification;
+import co.cask.cdap.app.DefaultAppConfigurer;
+import co.cask.cdap.internal.io.ReflectionSchemaGenerator;
+import co.cask.cdap.internal.schedule.StreamSizeSchedule;
+import co.cask.cdap.internal.schedule.TimeSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -37,22 +44,8 @@ public class ScheduleSpecificationCodecTest {
     .create();
 
   @Test
-  public void testOriginalTimeSchedule() throws Exception {
-    @SuppressWarnings("deprecation")
-    Schedule schedule = new Schedule("foo", "bar", "cronEntry");
-    ScheduleProgramInfo programInfo = new ScheduleProgramInfo(SchedulableProgramType.WORKFLOW, "testWorkflow");
-    ImmutableMap<String, String> properties = ImmutableMap.of("a", "b", "c", "d");
-    ScheduleSpecification specification = new ScheduleSpecification(schedule, programInfo, properties);
-
-    String jsonStr = GSON.toJson(specification);
-    ScheduleSpecification deserialized = GSON.fromJson(jsonStr, ScheduleSpecification.class);
-
-    Assert.assertEquals(specification, deserialized);
-  }
-
-  @Test
   public void testTimeSchedule() throws Exception {
-    TimeSchedule timeSchedule = new TimeSchedule("foo", "bar", "cronEntry");
+    TimeSchedule timeSchedule = (TimeSchedule) Schedules.createTimeSchedule("foo", "bar", "cronEntry");
     ScheduleProgramInfo programInfo = new ScheduleProgramInfo(SchedulableProgramType.WORKFLOW, "testWorkflow");
     ImmutableMap<String, String> properties = ImmutableMap.of("a", "b", "c", "d");
     ScheduleSpecification specification = new ScheduleSpecification(timeSchedule, programInfo, properties);
@@ -65,7 +58,7 @@ public class ScheduleSpecificationCodecTest {
 
   @Test
   public void testStreamSizeSchedule() throws Exception {
-    StreamSizeSchedule dataSchedule = new StreamSizeSchedule("foo", "bar", "stream", 10);
+    Schedule dataSchedule = Schedules.createDataSchedule("foo", "bar", Schedules.Source.STREAM, "stream", 10);
     ScheduleProgramInfo programInfo = new ScheduleProgramInfo(SchedulableProgramType.WORKFLOW, "testWorkflow");
     ImmutableMap<String, String> properties = ImmutableMap.of("a", "b", "c", "d");
     ScheduleSpecification specification = new ScheduleSpecification(dataSchedule, programInfo, properties);
@@ -91,7 +84,39 @@ public class ScheduleSpecificationCodecTest {
     String jsonStr = new Gson().toJson(specification);
     
     ScheduleSpecification deserialized = GSON.fromJson(jsonStr, ScheduleSpecification.class);
+    ScheduleSpecification expectedSpec = new ScheduleSpecification(
+      Schedules.createTimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry()),
+      programInfo, properties);
 
-    Assert.assertEquals(specification, deserialized);
+    Assert.assertEquals(expectedSpec, deserialized);
+  }
+
+  @Test
+  public void testAppConfigurerRoute() throws Exception {
+    Application app = new AbstractApplication() {
+      @Override
+      @SuppressWarnings("deprecation")
+      public void configure() {
+        scheduleWorkflow(new Schedule("oldSchedule", "", "cronEntry"), "workflow");
+        scheduleWorkflow(Schedules.createTimeSchedule("timeSchedule", "", "cronEntry"), "workflow");
+        scheduleWorkflow(Schedules.createDataSchedule("streamSizeSchedule", "", Schedules.Source.STREAM, "stream", 1),
+                         "workflow");
+      }
+    };
+    DefaultAppConfigurer configurer = new DefaultAppConfigurer(app);
+    app.configure(configurer, new ApplicationContext());
+    ApplicationSpecification specification = configurer.createSpecification();
+
+    ApplicationSpecificationAdapter gsonAdapater =
+      ApplicationSpecificationAdapter.create(new ReflectionSchemaGenerator());
+    String jsonStr = gsonAdapater.toJson(specification);
+
+    ApplicationSpecification deserializedSpec = gsonAdapater.fromJson(jsonStr);
+    Assert.assertEquals(new TimeSchedule("oldSchedule", "", "cronEntry"),
+                        deserializedSpec.getSchedules().get("oldSchedule").getSchedule());
+    Assert.assertEquals(new TimeSchedule("timeSchedule", "", "cronEntry"),
+                        deserializedSpec.getSchedules().get("timeSchedule").getSchedule());
+    Assert.assertEquals(new StreamSizeSchedule("streamSizeSchedule", "", "stream", 1),
+                        deserializedSpec.getSchedules().get("streamSizeSchedule").getSchedule());
   }
 }

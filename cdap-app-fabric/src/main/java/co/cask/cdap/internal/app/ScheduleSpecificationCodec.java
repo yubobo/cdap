@@ -18,9 +18,10 @@ package co.cask.cdap.internal.app;
 
 import co.cask.cdap.api.schedule.Schedule;
 import co.cask.cdap.api.schedule.ScheduleSpecification;
-import co.cask.cdap.api.schedule.StreamSizeSchedule;
-import co.cask.cdap.api.schedule.TimeSchedule;
+import co.cask.cdap.api.schedule.Schedules;
 import co.cask.cdap.api.workflow.ScheduleProgramInfo;
+import co.cask.cdap.internal.schedule.StreamSizeSchedule;
+import co.cask.cdap.internal.schedule.TimeSchedule;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -39,8 +40,6 @@ public class ScheduleSpecificationCodec extends AbstractSpecificationCodec<Sched
    * Schedule Type.
    */
   private enum ScheduleType {
-    ORIGINAL_TIME,
-
     /**
      * Represents {@link TimeSchedule} objects.
      */
@@ -49,30 +48,30 @@ public class ScheduleSpecificationCodec extends AbstractSpecificationCodec<Sched
     /**
      * Represents {@link StreamSizeSchedule} objects.
      */
-    STREAM_DATA;
+    STREAM;
 
     private static ScheduleType fromSchedule(Schedule schedule) {
       if (schedule instanceof StreamSizeSchedule) {
-        return STREAM_DATA;
+        return STREAM;
       } else if (schedule instanceof TimeSchedule) {
         return TIME;
       } else {
-        return ORIGINAL_TIME;
+        throw new IllegalArgumentException("Unhandled type of schedule: " + schedule.getClass());
       }
     }
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public JsonElement serialize(ScheduleSpecification src, Type typeOfSrc, JsonSerializationContext context) {
     JsonObject jsonObj = new JsonObject();
 
     ScheduleType scheduleType = ScheduleType.fromSchedule(src.getSchedule());
-    jsonObj.add("scheduleType", context.serialize(scheduleType, ScheduleType.class));
-    if (scheduleType.equals(ScheduleType.ORIGINAL_TIME)) {
-      jsonObj.add("schedule", context.serialize(src.getSchedule(), Schedule.class));
-    } else if (scheduleType.equals(ScheduleType.TIME)) {
+    if (scheduleType.equals(ScheduleType.TIME)) {
+      jsonObj.add("scheduleType", context.serialize(ScheduleType.TIME, ScheduleType.class));
       jsonObj.add("schedule", context.serialize(src.getSchedule(), TimeSchedule.class));
-    } else if (scheduleType.equals(ScheduleType.STREAM_DATA)) {
+    } else if (scheduleType.equals(ScheduleType.STREAM)) {
+      jsonObj.add("scheduleType", context.serialize(ScheduleType.STREAM, ScheduleType.class));
       jsonObj.add("schedule", context.serialize(src.getSchedule(), StreamSizeSchedule.class));
     }
 
@@ -81,6 +80,7 @@ public class ScheduleSpecificationCodec extends AbstractSpecificationCodec<Sched
     return jsonObj;
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public ScheduleSpecification deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
     throws JsonParseException {
@@ -90,22 +90,24 @@ public class ScheduleSpecificationCodec extends AbstractSpecificationCodec<Sched
     ScheduleType scheduleType;
     if (scheduleTypeJson == null) {
       // For backwards compatibility with spec persisted with older versions than 2.8, we need these lines
-      scheduleType = ScheduleType.ORIGINAL_TIME;
+      scheduleType = null;
     } else {
       scheduleType = context.deserialize(jsonObj.get("scheduleType"), ScheduleType.class);
     }
 
     Schedule schedule = null;
-    switch (scheduleType) {
-      case ORIGINAL_TIME:
-        schedule = context.deserialize(jsonObj.get("schedule"), Schedule.class);
-        break;
-      case TIME:
-        schedule = context.deserialize(jsonObj.get("schedule"), TimeSchedule.class);
-        break;
-      case STREAM_DATA:
-        schedule = context.deserialize(jsonObj.get("schedule"), StreamSizeSchedule.class);
-        break;
+    if (scheduleType == null) {
+      schedule = context.deserialize(jsonObj.get("schedule"), Schedule.class);
+      schedule = Schedules.createTimeSchedule(schedule.getName(), schedule.getDescription(), schedule.getCronEntry());
+    } else {
+      switch (scheduleType) {
+        case TIME:
+          schedule = context.deserialize(jsonObj.get("schedule"), TimeSchedule.class);
+          break;
+        case STREAM:
+          schedule = context.deserialize(jsonObj.get("schedule"), StreamSizeSchedule.class);
+          break;
+      }
     }
 
     ScheduleProgramInfo program = context.deserialize(jsonObj.get("program"), ScheduleProgramInfo.class);

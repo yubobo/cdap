@@ -26,7 +26,7 @@ public class Schedule {
 
   private final String description;
 
-  // NOTE: the two below attributes are left for backwards compatibility
+  // NOTE: the below attribute is left for backwards compatibility
   private final String cronEntry;
 
   @Deprecated
@@ -36,7 +36,7 @@ public class Schedule {
     this.cronEntry = cronEntry;
   }
 
-  Schedule(String name, String description) {
+  protected Schedule(String name, String description) {
     this.name = name;
     this.description = description;
     this.cronEntry = null;
@@ -58,6 +58,7 @@ public class Schedule {
 
   /**
    * @return Cron expression for the schedule.
+   * @deprecated As of version 2.8.0, do not use this method anymore
    */
   @Deprecated
   public String getCronEntry() {
