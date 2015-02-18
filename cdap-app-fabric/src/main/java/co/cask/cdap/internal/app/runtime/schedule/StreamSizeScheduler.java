@@ -423,10 +423,10 @@ public class StreamSizeScheduler implements Scheduler {
     @Override
     public void received(StreamSizeNotification notification, NotificationContext notificationContext) {
       cancelPollingAndScheduleNext();
-      if (notification.getTimestamp() > lastNotification.getTimestamp()) {
+      if (lastNotification == null || notification.getTimestamp() > lastNotification.getTimestamp()) {
         lastNotification = notification;
+        sendNotificationToActiveTasks(notification);
       }
-      sendNotificationToActiveTasks(notification);
     }
 
     /**
@@ -528,6 +528,8 @@ public class StreamSizeScheduler implements Scheduler {
     }
 
     public void startSchedule(long baseSize, long baseTs, boolean active, boolean persist) {
+      LOG.debug("Starting schedule {} with baseSize {}, baseTs {}, active {}. Should be persisted: {}",
+                streamSizeSchedule.getName(), baseSize, baseTs, active, persist);
       this.baseSize = baseSize;
       this.baseTs = baseTs;
       this.running = active;
@@ -548,6 +550,13 @@ public class StreamSizeScheduler implements Scheduler {
       long pastRunSize;
       long pastRunTs;
       synchronized (this) {
+        if (notification.getSize() < baseSize) {
+          // This can happen when a stream is truncated: the baseSize is still the old size,
+          // but we receive notification with way less data
+          baseSize = notification.getSize();
+          baseTs = notification.getTimestamp();
+          return;
+        }
         if (notification.getSize() < baseSize + toBytes(streamSizeSchedule.getDataTriggerMB())) {
           return;
         }
@@ -556,7 +565,7 @@ public class StreamSizeScheduler implements Scheduler {
         pastRunSize = baseSize;
         pastRunTs = baseTs;
         baseSize = notification.getSize();
-        baseTs = System.currentTimeMillis();
+        baseTs = notification.getTimestamp();
         LOG.debug("Base size and ts updated to {}, {} for streamSizeSchedule {}",
                   baseSize, baseTs, streamSizeSchedule);
       }

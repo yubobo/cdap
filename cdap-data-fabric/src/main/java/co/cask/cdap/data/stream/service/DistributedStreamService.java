@@ -453,7 +453,8 @@ public class DistributedStreamService extends AbstractStreamService {
           for (StreamSpecification spec : streamMetaStore.listStreams(Id.Namespace.from(Constants.DEFAULT_NAMESPACE))) {
             LOG.debug("Adding {} stream as a resource to the coordinator to manager streams leaders.",
                       spec.getName());
-            builder.addPartition(new ResourceRequirement.Partition(spec.getName(), 1));
+            builder.addPartition(new ResourceRequirement.Partition(
+              String.format("%s.%s", Constants.DEFAULT_NAMESPACE, spec.getName()), 1));
           }
           return builder.build();
         } catch (Throwable e) {
