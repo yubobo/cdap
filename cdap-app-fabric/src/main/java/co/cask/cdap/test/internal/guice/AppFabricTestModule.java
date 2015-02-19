@@ -21,6 +21,7 @@ import co.cask.cdap.api.schedule.Schedule;
 import co.cask.cdap.app.guice.AppFabricServiceRuntimeModule;
 import co.cask.cdap.app.guice.ProgramRunnerRuntimeModule;
 import co.cask.cdap.app.guice.ServiceStoreModules;
+import co.cask.cdap.authorization.AuthorizationModule;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.guice.ConfigModule;
@@ -80,6 +81,7 @@ public final class AppFabricTestModule extends AbstractModule {
     install(new ConfigModule(cConf, hConf));
     install(new IOModule());
     install(new AuthModule());
+    install(new AuthorizationModule().getInMemoryModule());
     install(new DiscoveryRuntimeModule().getInMemoryModules());
     install(new AppFabricServiceRuntimeModule().getInMemoryModules());
     install(new ServiceStoreModules().getInMemoryModule());
