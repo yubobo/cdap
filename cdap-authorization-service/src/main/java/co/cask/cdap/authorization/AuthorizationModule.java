@@ -16,8 +16,6 @@
 
 package co.cask.cdap.authorization;
 
-import co.cask.common.authorization.ACLStore;
-import co.cask.common.authorization.InMemoryACLStore;
 import co.cask.common.authorization.client.ACLStoreSupplier;
 import co.cask.common.authorization.client.AuthorizationClient;
 import com.google.inject.AbstractModule;
@@ -32,7 +30,7 @@ public class AuthorizationModule {
     return new AbstractModule() {
       @Override
       protected void configure() {
-        bind(ACLStore.class).to(InMemoryACLStore.class);
+        bind(ACLStoreSupplier.class).to(InMemoryACLStoreTableSupplier.class);
         bind(AuthorizationClient.class).to(DefaultAuthorizationClient.class);
       }
     };
