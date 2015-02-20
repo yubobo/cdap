@@ -18,6 +18,7 @@ package co.cask.cdap.authorization;
 
 import co.cask.common.authorization.client.ACLStoreSupplier;
 import co.cask.common.authorization.client.AuthorizationClient;
+import co.cask.cdap.common.authorization.DefaultAuthorizationClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 

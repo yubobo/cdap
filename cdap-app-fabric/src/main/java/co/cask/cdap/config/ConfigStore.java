@@ -16,6 +16,8 @@
 
 package co.cask.cdap.config;
 
+import co.cask.common.authorization.UnauthorizedException;
+
 import java.util.List;
 
 /**

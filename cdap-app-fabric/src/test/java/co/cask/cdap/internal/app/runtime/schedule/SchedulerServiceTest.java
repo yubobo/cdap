@@ -29,6 +29,7 @@ import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.internal.app.DefaultApplicationSpecification;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.test.internal.AppFabricTestHelper;
+import co.cask.common.authorization.UnauthorizedException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.twill.filesystem.LocalLocationFactory;
@@ -104,7 +105,7 @@ public class SchedulerServiceTest {
     store.addApplication(appId, applicationSpecification, locationFactory.create("app"));
     List<String> scheduleIds = schedulerService.getScheduleIds(program, programType);
     Assert.assertEquals(1, scheduleIds.size());
-    checkState(Scheduler.ScheduleState.SCHEDULED, scheduleIds);
+    checkState(Scheduler.ScheduleState.SCHEDULED);
 
     schedulerService.schedule(program, programType, ImmutableList.of(schedule2));
     applicationSpecification = createNewSpecification(applicationSpecification, program, programType, schedule2);
@@ -112,22 +113,22 @@ public class SchedulerServiceTest {
     scheduleIds = schedulerService.getScheduleIds(program, programType);
     Assert.assertEquals(2, scheduleIds.size());
 
-    checkState(Scheduler.ScheduleState.SCHEDULED, scheduleIds);
+    checkState(Scheduler.ScheduleState.SCHEDULED);
 
     schedulerService.suspendSchedule(program, SchedulableProgramType.WORKFLOW, "Schedule1");
     schedulerService.suspendSchedule(program, SchedulableProgramType.WORKFLOW, "Schedule2");
 
-    checkState(Scheduler.ScheduleState.SUSPENDED, scheduleIds);
+    checkState(Scheduler.ScheduleState.SUSPENDED);
 
     schedulerService.deleteSchedules(program, programType);
     Assert.assertEquals(0, schedulerService.getScheduleIds(program, programType).size());
 
     // Check the state of the old scheduleIds
     // (which should be deleted by the call to SchedulerService#delete(Program, ProgramType)
-    checkState(Scheduler.ScheduleState.NOT_FOUND, scheduleIds);
+    checkState(Scheduler.ScheduleState.NOT_FOUND);
   }
 
-  private void checkState(Scheduler.ScheduleState expectedState, List<String> scheduleIds) {
+  private void checkState(Scheduler.ScheduleState expectedState) throws UnauthorizedException {
     Assert.assertEquals(expectedState, schedulerService.scheduleState(program, SchedulableProgramType.WORKFLOW,
                                                                       "Schedule1"));
     Assert.assertEquals(expectedState, schedulerService.scheduleState(program, SchedulableProgramType.WORKFLOW,

@@ -18,6 +18,7 @@ package co.cask.cdap.config;
 
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.internal.app.services.http.AppFabricTestBase;
+import co.cask.cdap.proto.ProgramType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.junit.Assert;
@@ -38,11 +39,11 @@ public class PreferencesStoreTest extends AppFabricTestBase {
     Assert.assertEquals(emptyMap, store.getProperties("somenamespace"));
     Assert.assertEquals(emptyMap, store.getProperties(Constants.DEFAULT_NAMESPACE));
     Assert.assertEquals(emptyMap, store.getResolvedProperties());
-    Assert.assertEquals(emptyMap, store.getResolvedProperties("a", "b", "c", "d"));
+    Assert.assertEquals(emptyMap, store.getResolvedProperties("a", "b", ProgramType.FLOW, "d"));
     // should not throw any exception if try to delete properties without storing anything
     store.deleteProperties();
     store.deleteProperties(Constants.DEFAULT_NAMESPACE);
-    store.deleteProperties("a", "x", "y", "z");
+    store.deleteProperties("a", "x", ProgramType.FLOW, "z");
   }
 
   @Test
@@ -52,13 +53,13 @@ public class PreferencesStoreTest extends AppFabricTestBase {
     PreferencesStore store = getInjector().getInstance(PreferencesStore.class);
     store.setProperties(propMap);
     Assert.assertEquals(propMap, store.getProperties());
-    Assert.assertEquals(propMap, store.getResolvedProperties("a", "b", "c", "d"));
+    Assert.assertEquals(propMap, store.getResolvedProperties("a", "b", ProgramType.FLOW, "d"));
     Assert.assertEquals(propMap, store.getResolvedProperties("myspace"));
     Assert.assertEquals(ImmutableMap.<String, String>of(), store.getProperties("myspace"));
     store.deleteProperties();
     propMap.clear();
     Assert.assertEquals(propMap, store.getProperties());
-    Assert.assertEquals(propMap, store.getResolvedProperties("a", "b", "c", "d"));
+    Assert.assertEquals(propMap, store.getResolvedProperties("a", "b", ProgramType.FLOW, "d"));
     Assert.assertEquals(propMap, store.getResolvedProperties("myspace"));
   }
 
@@ -82,14 +83,14 @@ public class PreferencesStoreTest extends AppFabricTestBase {
     store.deleteProperties("myspace", "app");
     Assert.assertTrue(store.getProperties("myspace", "app").isEmpty());
     propMap.put("key", "program");
-    store.setProperties("myspace", "app", "type", "prog", propMap);
-    Assert.assertEquals(propMap, store.getProperties("myspace", "app", "type", "prog"));
+    store.setProperties("myspace", "app", ProgramType.FLOW, "prog", propMap);
+    Assert.assertEquals(propMap, store.getProperties("myspace", "app", ProgramType.FLOW, "prog"));
     store.setProperties(ImmutableMap.of("key", "instance"));
-    Assert.assertEquals(propMap, store.getProperties("myspace", "app", "type", "prog"));
-    store.deleteProperties("myspace", "app", "type", "prog");
-    Assert.assertTrue(store.getProperties("myspace", "app", "type", "prog").isEmpty());
-    Assert.assertEquals("instance", store.getResolvedProperties("myspace", "app", "type", "prog").get("key"));
+    Assert.assertEquals(propMap, store.getProperties("myspace", "app", ProgramType.FLOW, "prog"));
+    store.deleteProperties("myspace", "app", ProgramType.FLOW, "prog");
+    Assert.assertTrue(store.getProperties("myspace", "app", ProgramType.FLOW, "prog").isEmpty());
+    Assert.assertEquals("instance", store.getResolvedProperties("myspace", "app", ProgramType.FLOW, "prog").get("key"));
     store.deleteProperties();
-    Assert.assertEquals(ImmutableMap.<String, String>of(), store.getProperties("myspace", "app", "type", "prog"));
+    Assert.assertEquals(ImmutableMap.<String, String>of(), store.getProperties("myspace", "app", ProgramType.FLOW, "prog"));
   }
 }

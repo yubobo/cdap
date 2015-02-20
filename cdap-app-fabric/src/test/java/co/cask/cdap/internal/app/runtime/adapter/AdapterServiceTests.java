@@ -32,6 +32,7 @@ import co.cask.cdap.proto.Source;
 import co.cask.cdap.test.internal.AppFabricClient;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import org.apache.twill.filesystem.LocationFactory;
 import org.junit.Assert;
@@ -40,7 +41,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -92,8 +92,9 @@ public class AdapterServiceTests extends AppFabricTestBase {
     Assert.assertEquals(adapterSpecification, actualAdapterSpec);
 
     // list all adapters
-    Collection<AdapterSpecification> adapters = adapterService.getAdapters(TEST_NAMESPACE1);
-    Assert.assertArrayEquals(new AdapterSpecification[] {adapterSpecification}, adapters.toArray());
+    Iterable<AdapterSpecification> adapters = adapterService.getAdapters(TEST_NAMESPACE1);
+    Assert.assertArrayEquals(new AdapterSpecification[] {adapterSpecification},
+                             Iterables.toArray(adapters, AdapterSpecification.class));
 
     // Delete Adapter
     adapterService.removeAdapter(TEST_NAMESPACE1, "myAdapter");
@@ -105,7 +106,7 @@ public class AdapterServiceTests extends AppFabricTestBase {
     }
 
     adapters = adapterService.getAdapters(TEST_NAMESPACE1);
-    Assert.assertTrue(adapters.isEmpty());
+    Assert.assertTrue(Iterables.isEmpty(adapters));
   }
 
   @Test

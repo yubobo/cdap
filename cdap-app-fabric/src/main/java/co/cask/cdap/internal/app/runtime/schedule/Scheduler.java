@@ -19,6 +19,7 @@ package co.cask.cdap.internal.app.runtime.schedule;
 import co.cask.cdap.api.schedule.SchedulableProgramType;
 import co.cask.cdap.api.schedule.Schedule;
 import co.cask.cdap.proto.Id;
+import co.cask.common.authorization.UnauthorizedException;
 
 import java.util.List;
 
@@ -34,7 +35,8 @@ public interface Scheduler {
    * @param programType type of program.
    * @param schedule Schedule with which the program runs.
    */
-  public void schedule(Id.Program program, SchedulableProgramType programType, Schedule schedule);
+  public void schedule(Id.Program program, SchedulableProgramType programType,
+                       Schedule schedule) throws UnauthorizedException;
 
   /**
    * Schedule a program to be run in a defined schedule.
@@ -43,7 +45,8 @@ public interface Scheduler {
    * @param programType type of program.
    * @param schedules Schedules with which the program runs.
    */
-  public void schedule(Id.Program program, SchedulableProgramType programType, Iterable<Schedule> schedules);
+  public void schedule(Id.Program program, SchedulableProgramType programType,
+                       Iterable<Schedule> schedules) throws UnauthorizedException;
 
   /**
    * Get the next scheduled run time of the program. A program may contain one or more schedules
@@ -54,7 +57,8 @@ public interface Scheduler {
    * @return list of Scheduled runtimes for the program. Empty list if there are no schedules
    *         or if the program is not found
    */
-  public List<ScheduledRuntime> nextScheduledRuntime(Id.Program program, SchedulableProgramType programType);
+  public List<ScheduledRuntime> nextScheduledRuntime(Id.Program program,
+                                                     SchedulableProgramType programType) throws UnauthorizedException;
 
   /**
    * Get Schedule ids for a given program and program type.
@@ -63,7 +67,8 @@ public interface Scheduler {
    * @param programType type of program.
    * @return List of scheduleIds, empty List if there are no matching schedules.
    */
-  public List<String> getScheduleIds(Id.Program program, SchedulableProgramType programType);
+  public List<String> getScheduleIds(Id.Program program,
+                                     SchedulableProgramType programType) throws UnauthorizedException;
 
   /**
    * Suspends a schedule. Sub-sequent schedules will not trigger for the job.
@@ -71,7 +76,8 @@ public interface Scheduler {
    * @param programType the type of the program
    * @param scheduleName the name of the schedule
    */
-  public void suspendSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName);
+  public void suspendSchedule(Id.Program program, SchedulableProgramType programType,
+                              String scheduleName) throws UnauthorizedException;
 
   /**
    * Resume given schedule. The scheduled job will trigger from the next possible runtime.
@@ -81,7 +87,8 @@ public interface Scheduler {
    * @param programType the type of the program
    * @param scheduleName the name of the schedule
    */
-  public void resumeSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName);
+  public void resumeSchedule(Id.Program program, SchedulableProgramType programType,
+                             String scheduleName) throws UnauthorizedException;
 
   /**
    * Deletes the schedule.
@@ -89,7 +96,8 @@ public interface Scheduler {
    *
    * @param scheduleName the name of the schedule
    */
-  public void deleteSchedule(Id.Program programId, SchedulableProgramType programType, String scheduleName);
+  public void deleteSchedule(Id.Program programId, SchedulableProgramType programType,
+                             String scheduleName) throws UnauthorizedException;
 
   /**
    * Delete all schedules associated with the given Program.
@@ -98,7 +106,7 @@ public interface Scheduler {
    * @param programId Id of program that needs to be run.
    * @param programType type of program that needs to be run.
    */
-  public void deleteSchedules(Id.Program programId, SchedulableProgramType programType);
+  public void deleteSchedules(Id.Program programId, SchedulableProgramType programType) throws UnauthorizedException;
 
   /**
    * Get state of a particular schedule.
@@ -108,7 +116,8 @@ public interface Scheduler {
    * @param scheduleName the name of the schedule
    * @return State of the schedule.
    */
-  public ScheduleState scheduleState (Id.Program program, SchedulableProgramType programType, String scheduleName);
+  public ScheduleState scheduleState (Id.Program program, SchedulableProgramType programType,
+                                      String scheduleName) throws UnauthorizedException;
 
   /**
    * Schedule state.

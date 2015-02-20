@@ -30,6 +30,7 @@ import co.cask.cdap.app.services.Data;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.common.authorization.ObjectIds;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.common.exception.UnauthorizedException;
 import co.cask.cdap.common.http.RESTMigrationUtils;
 import co.cask.cdap.common.http.SecurityRequestContext;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
@@ -206,22 +207,8 @@ public abstract class AbstractAppFabricHttpHandler extends AuthenticatedHttpHand
       if (programRecords == null) {
         responder.sendStatus(HttpResponseStatus.NOT_FOUND);
       } else {
-
-//        secureHandler.sendProtectedJsonList(responder, HttpResponseStatus.OK,
-//                                            ObjectIds.namespace(namespaceId),
-//                                            programRecords,
-//                                            ImmutableList.of(Permission.READ),
-//                                            new Function<ProgramRecord, ObjectId>() {
-//          @Nullable
-//          @Override
-//          public ObjectId apply(@Nullable ProgramRecord input) {
-//            Preconditions.checkNotNull(input);
-//            return ObjectIds.program(namespaceId, input.getApp(), input.getType(), input.getId());
-//          }
-//        });
+        responder.sendJson(HttpResponseStatus.OK, programRecords);
       }
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (Throwable e) {
       LOG.error("Got exception: ", e);
       responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
@@ -231,7 +218,7 @@ public abstract class AbstractAppFabricHttpHandler extends AuthenticatedHttpHand
   protected final List<ProgramRecord> listPrograms(Id.Namespace namespaceId, ProgramType type, Store store)
     throws Exception {
     try {
-      Collection<ApplicationSpecification> appSpecs = store.getAllApplications(namespaceId);
+      Iterable<ApplicationSpecification> appSpecs = store.getAllApplications(namespaceId);
       return listPrograms(appSpecs, type);
     } catch (Throwable throwable) {
       LOG.warn(throwable.getMessage(), throwable);
@@ -258,8 +245,8 @@ public abstract class AbstractAppFabricHttpHandler extends AuthenticatedHttpHand
     }
   }
 
-  protected final List<ProgramRecord> listPrograms(Collection<ApplicationSpecification> appSpecs,
-                                                   ProgramType type) throws Exception {
+  protected final List<ProgramRecord> listPrograms(Iterable<ApplicationSpecification> appSpecs,
+                                                       ProgramType type) throws Exception {
     List<ProgramRecord> programRecords = Lists.newArrayList();
     for (ApplicationSpecification appSpec : appSpecs) {
       switch (type) {
@@ -296,7 +283,7 @@ public abstract class AbstractAppFabricHttpHandler extends AuthenticatedHttpHand
     }
   }
 
-  protected static ProgramRecord makeProgramRecord(String appId, ProgramSpecification spec, ProgramType type) {
+  private static ProgramRecord makeProgramRecord(String appId, ProgramSpecification spec, ProgramType type) {
     return new ProgramRecord(type, appId, spec.getName(), spec.getName(), spec.getDescription());
   }
 
@@ -550,7 +537,7 @@ public abstract class AbstractAppFabricHttpHandler extends AuthenticatedHttpHand
     Id.Namespace namespaceId = programId.getApplication().getNamespace();
     // search all apps for programs that use this
     List<ProgramRecord> result = Lists.newArrayList();
-    Collection<ApplicationSpecification> appSpecs = store.getAllApplications(namespaceId);
+    Iterable<ApplicationSpecification> appSpecs = store.getAllApplications(namespaceId);
     if (appSpecs != null) {
       for (ApplicationSpecification appSpec : appSpecs) {
         if (type == ProgramType.FLOW) {

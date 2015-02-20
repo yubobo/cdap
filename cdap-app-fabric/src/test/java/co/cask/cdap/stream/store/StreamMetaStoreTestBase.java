@@ -21,6 +21,7 @@ import co.cask.cdap.common.exception.AlreadyExistsException;
 import co.cask.cdap.common.exception.NotFoundException;
 import co.cask.cdap.data.stream.service.StreamMetaStore;
 import co.cask.cdap.proto.Id;
+import co.cask.common.authorization.UnauthorizedException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import org.junit.After;
@@ -35,9 +36,9 @@ public abstract class StreamMetaStoreTestBase {
 
   protected abstract StreamMetaStore getStreamMetaStore();
 
-  protected abstract void createNamespace(String namespaceId) throws AlreadyExistsException;
+  protected abstract void createNamespace(String namespaceId) throws AlreadyExistsException, UnauthorizedException;
 
-  protected abstract void deleteNamespace(String namespaceId) throws NotFoundException;
+  protected abstract void deleteNamespace(String namespaceId) throws NotFoundException, UnauthorizedException;
 
   @Before
   public void beforeTests() throws Exception {

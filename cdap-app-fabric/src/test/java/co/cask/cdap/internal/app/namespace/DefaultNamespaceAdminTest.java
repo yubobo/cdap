@@ -21,6 +21,8 @@ import co.cask.cdap.common.exception.NotFoundException;
 import co.cask.cdap.internal.app.services.http.AppFabricTestBase;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.NamespaceMeta;
+import co.cask.common.authorization.UnauthorizedException;
+import com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -33,12 +35,12 @@ public class DefaultNamespaceAdminTest extends AppFabricTestBase {
   private static final NamespaceAdmin namespaceAdmin = getInjector().getInstance(NamespaceAdmin.class);
 
   @Test
-  public void testNamespaces() throws AlreadyExistsException, IOException {
+  public void testNamespaces() throws AlreadyExistsException, IOException, UnauthorizedException {
     String namespace = "namespace";
     Id.Namespace namespaceId = Id.Namespace.from(namespace);
     NamespaceMeta.Builder builder = new NamespaceMeta.Builder();
 
-    int initialCount = namespaceAdmin.listNamespaces().size();
+    int initialCount = Iterables.size(namespaceAdmin.listNamespaces());
 
     // TEST_NAMESPACE_META1 is already created in AppFabricTestBase#beforeClass
     Assert.assertTrue(namespaceAdmin.hasNamespace(Id.Namespace.from(TEST_NAMESPACE1)));
@@ -66,7 +68,7 @@ public class DefaultNamespaceAdminTest extends AppFabricTestBase {
       Assert.assertEquals("Namespace metadata cannot be null.", e.getMessage());
     }
 
-    Assert.assertEquals(initialCount, namespaceAdmin.listNamespaces().size());
+    Assert.assertEquals(initialCount, Iterables.size(namespaceAdmin.listNamespaces()));
     Assert.assertFalse(namespaceAdmin.hasNamespace(Id.Namespace.from(namespace)));
 
     try {
@@ -76,12 +78,12 @@ public class DefaultNamespaceAdminTest extends AppFabricTestBase {
       Assert.assertEquals("Namespace id cannot be null.", e.getMessage());
     }
 
-    Assert.assertEquals(initialCount, namespaceAdmin.listNamespaces().size());
+    Assert.assertEquals(initialCount, Iterables.size(namespaceAdmin.listNamespaces()));
     Assert.assertFalse(namespaceAdmin.hasNamespace(namespaceId));
 
     // namespace with default fields
     namespaceAdmin.createNamespace(builder.setId(namespace).build());
-    Assert.assertEquals(initialCount + 1, namespaceAdmin.listNamespaces().size());
+    Assert.assertEquals(initialCount + 1, Iterables.size(namespaceAdmin.listNamespaces()));
     Assert.assertTrue(namespaceAdmin.hasNamespace(namespaceId));
     try {
       NamespaceMeta namespaceMeta = namespaceAdmin.getNamespace(namespaceId);
@@ -95,7 +97,7 @@ public class DefaultNamespaceAdminTest extends AppFabricTestBase {
     }
 
     namespaceAdmin.createNamespace(builder.setName("name").setDescription("describes " + namespace).build());
-    Assert.assertEquals(initialCount + 1, namespaceAdmin.listNamespaces().size());
+    Assert.assertEquals(initialCount + 1, Iterables.size(namespaceAdmin.listNamespaces()));
     Assert.assertTrue(namespaceAdmin.hasNamespace(namespaceId));
 
     try {
@@ -113,7 +115,7 @@ public class DefaultNamespaceAdminTest extends AppFabricTestBase {
     verifyNotFound(namespaceId);
   }
 
-  private static void verifyNotFound(Id.Namespace namespaceId) {
+  private static void verifyNotFound(Id.Namespace namespaceId) throws UnauthorizedException {
     try {
       namespaceAdmin.getNamespace(namespaceId);
       Assert.fail(String.format("Namespace '%s' should not be found since it was just deleted", namespaceId.getId()));

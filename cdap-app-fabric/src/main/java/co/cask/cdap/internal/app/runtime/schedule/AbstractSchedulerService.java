@@ -23,11 +23,16 @@ import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.runtime.ProgramRuntimeService;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.app.store.StoreFactory;
+import co.cask.cdap.common.authorization.ObjectIds;
 import co.cask.cdap.common.exception.NotFoundException;
+import co.cask.cdap.common.http.SecurityRequestContext;
 import co.cask.cdap.config.PreferencesStore;
 import co.cask.cdap.internal.schedule.StreamSizeSchedule;
 import co.cask.cdap.internal.schedule.TimeSchedule;
 import co.cask.cdap.proto.Id;
+import co.cask.common.authorization.Permission;
+import co.cask.common.authorization.UnauthorizedException;
+import co.cask.common.authorization.client.AuthorizationClient;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -53,16 +58,18 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   private final TimeScheduler timeScheduler;
   private final StreamSizeScheduler streamSizeScheduler;
   private final StoreFactory storeFactory;
+  private final AuthorizationClient authorizationClient;
 
   private Store store;
 
   public AbstractSchedulerService(Supplier<org.quartz.Scheduler> schedulerSupplier,
                                   StreamSizeScheduler streamSizeScheduler,
                                   StoreFactory storeFactory, ProgramRuntimeService programRuntimeService,
-                                  PreferencesStore preferencesStore) {
+                                  PreferencesStore preferencesStore, AuthorizationClient authorizationClient) {
     this.timeScheduler = new TimeScheduler(schedulerSupplier, storeFactory, programRuntimeService, preferencesStore);
     this.streamSizeScheduler = streamSizeScheduler;
     this.storeFactory = storeFactory;
+    this.authorizationClient = authorizationClient;
   }
 
   /**
@@ -108,7 +115,12 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   }
 
   @Override
-  public void schedule(Id.Program programId, SchedulableProgramType programType, Schedule schedule) {
+  public void schedule(Id.Program programId, SchedulableProgramType programType,
+                       Schedule schedule) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(programId.getNamespaceId(), programId.getApplicationId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     if (schedule instanceof TimeSchedule) {
       timeScheduler.schedule(programId, programType, schedule);
     } else if (schedule instanceof StreamSizeSchedule) {
@@ -119,7 +131,12 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   }
 
   @Override
-  public void schedule(Id.Program programId, SchedulableProgramType programType, Iterable<Schedule> schedules) {
+  public void schedule(Id.Program programId, SchedulableProgramType programType,
+                       Iterable<Schedule> schedules) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(programId.getNamespaceId(), programId.getApplicationId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     Set<Schedule> timeSchedules = Sets.newHashSet();
     Set<Schedule> streamSizeSchedules = Sets.newHashSet();
     for (Schedule schedule : schedules) {
@@ -140,12 +157,20 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   }
 
   @Override
-  public List<ScheduledRuntime> nextScheduledRuntime(Id.Program program, SchedulableProgramType programType) {
+  public List<ScheduledRuntime> nextScheduledRuntime(Id.Program program,
+                                                     SchedulableProgramType programType) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(program.getNamespaceId(), program.getApplicationId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
    return timeScheduler.nextScheduledRuntime(program, programType);
   }
 
   @Override
-  public List<String> getScheduleIds(Id.Program program, SchedulableProgramType programType) {
+  public List<String> getScheduleIds(Id.Program program,
+                                     SchedulableProgramType programType) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(program.getNamespaceId(), program.getApplicationId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return ImmutableList.<String>builder()
       .addAll(timeScheduler.getScheduleIds(program, programType))
       .addAll(streamSizeScheduler.getScheduleIds(program, programType))
@@ -153,7 +178,8 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   }
 
   @Override
-  public void suspendSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
+  public void suspendSchedule(Id.Program program, SchedulableProgramType programType,
+                              String scheduleName) throws UnauthorizedException {
     try {
       Scheduler scheduler = getSchedulerForSchedule(program, programType, scheduleName);
       scheduler.suspendSchedule(program, programType, scheduleName);
@@ -163,7 +189,8 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   }
 
   @Override
-  public void resumeSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
+  public void resumeSchedule(Id.Program program, SchedulableProgramType programType,
+                             String scheduleName) throws UnauthorizedException {
     try {
       Scheduler scheduler = getSchedulerForSchedule(program, programType, scheduleName);
       scheduler.resumeSchedule(program, programType, scheduleName);
@@ -173,7 +200,8 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   }
 
   @Override
-  public void deleteSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) {
+  public void deleteSchedule(Id.Program program, SchedulableProgramType programType,
+                             String scheduleName) throws UnauthorizedException {
     try {
       Scheduler scheduler = getSchedulerForSchedule(program, programType, scheduleName);
       scheduler.deleteSchedule(program, programType, scheduleName);
@@ -183,13 +211,17 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   }
 
   @Override
-  public void deleteSchedules(Id.Program program, SchedulableProgramType programType) {
+  public void deleteSchedules(Id.Program program, SchedulableProgramType programType) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(program.getNamespaceId(), program.getApplicationId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     timeScheduler.deleteSchedules(program, programType);
     streamSizeScheduler.deleteSchedules(program, programType);
   }
 
   @Override
-  public ScheduleState scheduleState (Id.Program program, SchedulableProgramType programType, String scheduleName) {
+  public ScheduleState scheduleState(Id.Program program, SchedulableProgramType programType,
+                                     String scheduleName) throws UnauthorizedException {
     try {
       Scheduler scheduler = getSchedulerForSchedule(program, programType, scheduleName);
       return scheduler.scheduleState(program, programType, scheduleName);
@@ -206,7 +238,7 @@ public abstract class AbstractSchedulerService extends AbstractIdleService imple
   }
 
   private Scheduler getSchedulerForSchedule(Id.Program program, SchedulableProgramType programType,
-                                               String scheduleName) throws NotFoundException {
+                                            String scheduleName) throws NotFoundException, UnauthorizedException {
     ApplicationSpecification appSpec = getStore().getApplication(program.getApplication());
     if (appSpec == null) {
       throw new NotFoundException("application", program.getApplicationId());

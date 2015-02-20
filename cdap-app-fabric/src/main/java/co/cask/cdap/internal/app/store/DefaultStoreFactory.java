@@ -20,6 +20,7 @@ import co.cask.cdap.app.store.Store;
 import co.cask.cdap.app.store.StoreFactory;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
+import co.cask.common.authorization.client.AuthorizationClient;
 import co.cask.tephra.TransactionSystemClient;
 import com.google.inject.Inject;
 import org.apache.twill.filesystem.LocationFactory;
@@ -32,20 +33,23 @@ public class DefaultStoreFactory implements StoreFactory {
   private final LocationFactory lFactory;
   private final TransactionSystemClient txClient;
   private final DatasetFramework dsFramework;
+  private final AuthorizationClient authorizationClient;
 
   @Inject
   public DefaultStoreFactory(CConfiguration configuration,
                              TransactionSystemClient txClient,
                              LocationFactory lFactory,
-                             DatasetFramework dsFramework) {
+                             DatasetFramework dsFramework,
+                             AuthorizationClient authorizationClient) {
     this.configuration = configuration;
     this.lFactory = lFactory;
     this.txClient = txClient;
     this.dsFramework = dsFramework;
+    this.authorizationClient = authorizationClient;
   }
 
   @Override
   public Store create() {
-    return new DefaultStore(configuration, lFactory, txClient, dsFramework);
+    return new DefaultStore(configuration, lFactory, txClient, dsFramework, authorizationClient);
   }
 }

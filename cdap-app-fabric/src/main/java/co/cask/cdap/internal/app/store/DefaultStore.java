@@ -36,8 +36,10 @@ import co.cask.cdap.app.program.Programs;
 import co.cask.cdap.app.runtime.ProgramController;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.archive.ArchiveBundler;
+import co.cask.cdap.common.authorization.ObjectIds;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.common.http.SecurityRequestContext;
 import co.cask.cdap.data.Namespace;
 import co.cask.cdap.data2.datafabric.DefaultDatasetNamespace;
 import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
@@ -56,6 +58,10 @@ import co.cask.cdap.proto.NamespaceMeta;
 import co.cask.cdap.proto.ProgramRunStatus;
 import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.RunRecord;
+import co.cask.common.authorization.ObjectId;
+import co.cask.common.authorization.Permission;
+import co.cask.common.authorization.UnauthorizedException;
+import co.cask.common.authorization.client.AuthorizationClient;
 import co.cask.tephra.DefaultTransactionExecutor;
 import co.cask.tephra.TransactionAware;
 import co.cask.tephra.TransactionExecutor;
@@ -67,6 +73,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -99,6 +106,7 @@ public class DefaultStore implements Store {
   private final LocationFactory locationFactory;
   private final CConfiguration configuration;
   private final DatasetFramework dsFramework;
+  private final AuthorizationClient authorizationClient;
 
   private Transactional<AppMds, AppMetadataStore> txnl;
 
@@ -106,10 +114,12 @@ public class DefaultStore implements Store {
   public DefaultStore(CConfiguration conf,
                       LocationFactory locationFactory,
                       final TransactionSystemClient txClient,
-                      DatasetFramework framework) {
+                      DatasetFramework framework,
+                      AuthorizationClient authorizationClient) {
 
     this.locationFactory = locationFactory;
     this.configuration = conf;
+    this.authorizationClient = authorizationClient;
     this.dsFramework = new NamespacedDatasetFramework(framework, new DefaultDatasetNamespace(conf, Namespace.SYSTEM));
 
     txnl =
@@ -196,7 +206,11 @@ public class DefaultStore implements Store {
 
   @Override
   public List<RunRecord> getRuns(final Id.Program id, final ProgramRunStatus status,
-                                 final long startTime, final long endTime, final int limit) {
+                                 final long startTime, final long endTime,
+                                 final int limit) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(id.getNamespaceId(), id.getApplicationId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.READ));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, List<RunRecord>>() {
       @Override
       public List<RunRecord> apply(AppMds mds) throws Exception {
@@ -208,8 +222,12 @@ public class DefaultStore implements Store {
 
   @Override
   public void addApplication(final Id.Application id,
-                             final ApplicationSpecification spec, final Location appArchiveLocation) {
+                             final ApplicationSpecification spec,
+                             final Location appArchiveLocation) throws UnauthorizedException {
 
+    authorizationClient.authorize(ObjectIds.namespace(id.getNamespaceId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.READ));
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
       public Void apply(AppMds mds) throws Exception {
@@ -323,7 +341,11 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public int getFlowletInstances(final Id.Program id, final String flowletId) {
+  public int getFlowletInstances(final Id.Program id, final String flowletId) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.program(id.getNamespaceId(), id.getApplicationId(),
+                                                    ProgramType.FLOW, id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Integer>() {
       @Override
       public Integer apply(AppMds mds) throws Exception {
@@ -337,7 +359,11 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public int getProcedureInstances(final Id.Program id) {
+  public int getProcedureInstances(final Id.Program id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.program(id.getNamespaceId(), id.getApplicationId(),
+                                                    ProgramType.PROCEDURE, id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Integer>() {
       @Override
       public Integer apply(AppMds mds) throws Exception {
@@ -349,7 +375,12 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void setProcedureInstances(final Id.Program id, final int count) {
+  public void setProcedureInstances(final Id.Program id, final int count) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.program(id.getNamespaceId(), id.getApplicationId(),
+                                                    ProgramType.PROCEDURE, id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     Preconditions.checkArgument(count > 0, "cannot change number of program instances to negative number: " + count);
 
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
@@ -379,7 +410,12 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void setServiceInstances(final Id.Program id, final int instances) {
+  public void setServiceInstances(final Id.Program id, final int instances) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.program(id.getNamespaceId(), id.getApplicationId(),
+                                                    ProgramType.SERVICE, id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     Preconditions.checkArgument(instances > 0,
                                 "cannot change number of program instances to negative number: %s", instances);
 
@@ -407,7 +443,12 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public int getServiceInstances(final Id.Program id) {
+  public int getServiceInstances(final Id.Program id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.program(id.getNamespaceId(), id.getApplicationId(),
+                                                    ProgramType.SERVICE, id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Integer>() {
       @Override
       public Integer apply(AppMds mds) throws Exception {
@@ -420,7 +461,12 @@ public class DefaultStore implements Store {
 
   @Override
   public void setServiceWorkerInstances(final Id.Program id,
-                                        final String workerName, final int instances) {
+                                        final String workerName, final int instances) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.program(id.getNamespaceId(), id.getApplicationId(),
+                                                    ProgramType.SERVICE, id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     Preconditions.checkArgument(instances > 0,
                                 "cannot change number of program instances to negative number: %s", instances);
 
@@ -457,7 +503,12 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public int getServiceWorkerInstances(final Id.Program id, final String workerName) {
+  public int getServiceWorkerInstances(final Id.Program id, final String workerName) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.program(id.getNamespaceId(), id.getApplicationId(),
+                                                    ProgramType.SERVICE, id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Integer>() {
       @Override
       public Integer apply(AppMds mds) throws Exception {
@@ -470,7 +521,11 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void removeApplication(final Id.Application id) {
+  public void removeApplication(final Id.Application id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(id.getNamespaceId(), id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     LOG.trace("Removing application: namespace: {}, application: {}", id.getNamespaceId(), id.getId());
 
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
@@ -485,7 +540,11 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void removeAllApplications(final Id.Namespace id) {
+  public void removeAllApplications(final Id.Namespace id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.namespace(id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     LOG.trace("Removing all applications of namespace with id: {}", id.getId());
 
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
@@ -500,8 +559,12 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void removeAll(final Id.Namespace id) {
-    LOG.trace("Removing all applications of namespace with id: {}", id.getId());
+  public void removeAll(final Id.Namespace id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.namespace(id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
+    LOG.trace("Removing all components within namespace with id: {}", id.getId());
 
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
@@ -516,7 +579,11 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void storeRunArguments(final Id.Program id, final Map<String, String> arguments) {
+  public void storeRunArguments(final Id.Program id, final Map<String, String> arguments) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(id.getNamespaceId(), id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     LOG.trace("Updated program args in mds: id: {}, app: {}, prog: {}, args: {}",
               id.getId(), id.getApplicationId(), id.getId(), Joiner.on(",").withKeyValueSeparator("=").join(arguments));
 
@@ -530,7 +597,11 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public Map<String, String> getRunArguments(final Id.Program id) {
+  public Map<String, String> getRunArguments(final Id.Program id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(id.getNamespaceId(), id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Map<String, String>>() {
       @Override
       public Map<String, String> apply(AppMds mds) throws Exception {
@@ -542,36 +613,54 @@ public class DefaultStore implements Store {
 
   @Nullable
   @Override
-  public ApplicationSpecification getApplication(final Id.Application id) {
+  public ApplicationSpecification getApplication(final Id.Application id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(id.getNamespaceId(), id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, ApplicationSpecification>() {
       @Override
       public ApplicationSpecification apply(AppMds mds) throws Exception {
-        // TODO: authorize
         return getApplicationSpec(mds, id);
       }
     });
   }
 
   @Override
-  public Collection<ApplicationSpecification> getAllApplications(final Id.Namespace id) {
-    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Collection<ApplicationSpecification>>() {
+  public Iterable<ApplicationSpecification> getAllApplications(final Id.Namespace id) {
+    // TODO: select apps based on visibility instead of post-filter
+    Collection<ApplicationSpecification> apps = txnl.executeUnchecked(
+      new TransactionExecutor.Function<AppMds, Collection<ApplicationSpecification>>() {
       @Override
       public Collection<ApplicationSpecification> apply(AppMds mds) throws Exception {
-        // TODO: filter based on authorization
         return Lists.transform(mds.apps.getAllApplications(id.getId()),
                                new Function<ApplicationMeta, ApplicationSpecification>() {
-                                 @Override
-                                 public ApplicationSpecification apply(ApplicationMeta input) {
-                                   return input.getSpec();
-                                 }
-                               });
+          @Override
+          public ApplicationSpecification apply(ApplicationMeta input) {
+            return input.getSpec();
+          }
+        });
+      }
+    });
+    return authorizationClient.filter(apps, SecurityRequestContext.getSubjects(),
+                                      ImmutableList.of(Permission.LIFECYCLE),
+                                      new Function<ApplicationSpecification, ObjectId>() {
+      @Nullable
+      @Override
+      public ObjectId apply(@Nullable ApplicationSpecification input) {
+        if (input == null) {
+          return null;
+        }
+        return ObjectIds.application(id.getId(), input.getName());
       }
     });
   }
 
   @Nullable
   @Override
-  public Location getApplicationArchiveLocation(final Id.Application id) {
+  public Location getApplicationArchiveLocation(final Id.Application id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(id.getNamespaceId(), id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Location>() {
       @Override
       public Location apply(AppMds mds) throws Exception {
@@ -582,8 +671,15 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void changeFlowletSteamConnection(final Id.Program flow, final String flowletId,
-                                           final String oldValue, final String newValue) {
+  public void changeFlowletSteamConnection(final Id.Program flow,
+                                           final String flowletId,
+                                           final String oldValue,
+                                           final String newValue) throws UnauthorizedException {
+
+    authorizationClient.authorize(ObjectIds.program(flow.getNamespaceId(), flow.getApplicationId(),
+                                                    ProgramType.FLOW, flow.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
 
     Preconditions.checkArgument(flow != null, "flow cannot be null");
     Preconditions.checkArgument(flowletId != null, "flowletId cannot be null");
@@ -636,14 +732,19 @@ public class DefaultStore implements Store {
 
 
     LOG.trace("Changed flowlet stream connection: namespace: {}, application: {}, flow: {}, flowlet: {}," +
-                " old coonnected stream: {}, new connected stream: {}",
+                " old connected stream: {}, new connected stream: {}",
               flow.getNamespaceId(), flow.getApplicationId(), flow.getId(), flowletId, oldValue, newValue);
 
     // todo: change stream "used by" flow mapping in metadata?
   }
 
   @Override
-  public void addSchedule(final Id.Program program, final ScheduleSpecification scheduleSpecification) {
+  public void addSchedule(final Id.Program program,
+                          final ScheduleSpecification scheduleSpecification) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(program.getNamespaceId(), program.getApplicationId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
       public Void apply(AppMds mds) throws Exception {
@@ -665,7 +766,11 @@ public class DefaultStore implements Store {
 
   @Override
   public void deleteSchedule(final Id.Program program, final SchedulableProgramType programType,
-                             final String scheduleName) {
+                             final String scheduleName) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.application(program.getNamespaceId(), program.getApplicationId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
       public Void apply(AppMds mds) throws Exception {
@@ -744,8 +849,10 @@ public class DefaultStore implements Store {
 
   @Override
   @Nullable
-  public NamespaceMeta createNamespace(final NamespaceMeta metadata) {
+  public NamespaceMeta createNamespace(final NamespaceMeta metadata) throws UnauthorizedException {
     Preconditions.checkArgument(metadata != null, "Namespace metadata cannot be null.");
+    authorizationClient.authorize(ObjectId.GLOBAL, SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, NamespaceMeta>() {
       @Override
       public NamespaceMeta apply(AppMds input) throws Exception {
@@ -762,8 +869,11 @@ public class DefaultStore implements Store {
 
   @Override
   @Nullable
-  public NamespaceMeta getNamespace(final Id.Namespace id) {
+  public NamespaceMeta getNamespace(final Id.Namespace id) throws UnauthorizedException {
     Preconditions.checkArgument(id != null, "Namespace id cannot be null.");
+    authorizationClient.authorize(ObjectIds.namespace(id.getId()),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.ANY));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, NamespaceMeta>() {
       @Override
       public NamespaceMeta apply(AppMds input) throws Exception {
@@ -774,8 +884,10 @@ public class DefaultStore implements Store {
 
   @Override
   @Nullable
-  public NamespaceMeta deleteNamespace(final Id.Namespace id) {
+  public NamespaceMeta deleteNamespace(final Id.Namespace id) throws UnauthorizedException {
     Preconditions.checkArgument(id != null, "Namespace id cannot be null.");
+    authorizationClient.authorize(ObjectIds.namespace(id.getId()), SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, NamespaceMeta>() {
       @Override
       public NamespaceMeta apply(AppMds input) throws Exception {
@@ -789,18 +901,33 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public List<NamespaceMeta> listNamespaces() {
-    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, List<NamespaceMeta>>() {
+  public Iterable<NamespaceMeta> listNamespaces() {
+    // TODO: select namespaces based on visibility instead of post-filter
+    List<NamespaceMeta> namespaces = txnl.executeUnchecked(
+      new TransactionExecutor.Function<AppMds, List<NamespaceMeta>>() {
       @Override
       public List<NamespaceMeta> apply(AppMds input) throws Exception {
         return input.apps.listNamespaces();
+      }
+    });
+    return authorizationClient.filter(namespaces, SecurityRequestContext.getSubjects(),
+                                      ImmutableList.of(Permission.ANY), new Function<NamespaceMeta, ObjectId>() {
+      @Nullable
+      @Override
+      public ObjectId apply(@Nullable NamespaceMeta input) {
+        if (input == null) {
+          return null;
+        }
+        return ObjectIds.namespace(input.getId());
       }
     });
   }
 
 
   @Override
-  public void addAdapter(final Id.Namespace id, final AdapterSpecification adapterSpec) {
+  public void addAdapter(final Id.Namespace id, final AdapterSpecification adapterSpec) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.namespace(id.getId()), SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
       public Void apply(AppMds mds) throws Exception {
@@ -813,7 +940,9 @@ public class DefaultStore implements Store {
 
   @Nullable
   @Override
-  public AdapterSpecification getAdapter(final Id.Namespace id, final String name) {
+  public AdapterSpecification getAdapter(final Id.Namespace id, final String name) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.adapter(id.getId(), name), SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, AdapterSpecification>() {
       @Override
       public AdapterSpecification apply(AppMds mds) throws Exception {
@@ -825,7 +954,9 @@ public class DefaultStore implements Store {
 
   @Nullable
   @Override
-  public AdapterStatus getAdapterStatus(final Id.Namespace id, final String name) {
+  public AdapterStatus getAdapterStatus(final Id.Namespace id, final String name) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.adapter(id.getId(), name), SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, AdapterStatus>() {
       @Override
       public AdapterStatus apply(AppMds mds) throws Exception {
@@ -836,7 +967,10 @@ public class DefaultStore implements Store {
 
   @Nullable
   @Override
-  public AdapterStatus setAdapterStatus(final Id.Namespace id, final String name, final AdapterStatus status) {
+  public AdapterStatus setAdapterStatus(final Id.Namespace id, final String name,
+                                        final AdapterStatus status) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.adapter(id.getId(), name), SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, AdapterStatus>() {
       @Override
       public AdapterStatus apply(AppMds mds) throws Exception {
@@ -846,17 +980,32 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public Collection<AdapterSpecification> getAllAdapters(final Id.Namespace id) {
-    return txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Collection<AdapterSpecification>>() {
+  public Iterable<AdapterSpecification> getAllAdapters(final Id.Namespace id) {
+    Collection<AdapterSpecification> adapters = txnl.executeUnchecked(
+      new TransactionExecutor.Function<AppMds, Collection<AdapterSpecification>>() {
       @Override
       public Collection<AdapterSpecification> apply(AppMds mds) throws Exception {
         return mds.apps.getAllAdapters(id);
       }
     });
+    return authorizationClient.filter(adapters, SecurityRequestContext.getSubjects(),
+                                      ImmutableList.of(Permission.LIFECYCLE),
+                                      new Function<AdapterSpecification, ObjectId>() {
+      @Nullable
+      @Override
+      public ObjectId apply(@Nullable AdapterSpecification input) {
+        if (input == null) {
+          return null;
+        }
+        return ObjectIds.adapter(id.getId(), input.getName());
+      }
+    });
   }
 
   @Override
-  public void removeAdapter(final Id.Namespace id, final String name) {
+  public void removeAdapter(final Id.Namespace id, final String name) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.adapter(id.getId(), name), SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
       public Void apply(AppMds mds) throws Exception {
@@ -867,7 +1016,9 @@ public class DefaultStore implements Store {
   }
 
   @Override
-  public void removeAllAdapters(final Id.Namespace id) {
+  public void removeAllAdapters(final Id.Namespace id) throws UnauthorizedException {
+    authorizationClient.authorize(ObjectIds.namespace(id.getId()), SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
     txnl.executeUnchecked(new TransactionExecutor.Function<AppMds, Void>() {
       @Override
       public Void apply(AppMds mds) throws Exception {

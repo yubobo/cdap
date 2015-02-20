@@ -32,6 +32,7 @@ import co.cask.cdap.proto.NamespaceMeta;
 import co.cask.cdap.proto.ProgramRunStatus;
 import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.RunRecord;
+import co.cask.common.authorization.UnauthorizedException;
 import org.apache.twill.filesystem.Location;
 
 import java.io.IOException;
@@ -87,7 +88,7 @@ public interface Store {
    * @return          list of logged runs
    */
   List<RunRecord> getRuns(Id.Program id, ProgramRunStatus status,
-                          long startTime, long endTime, int limit);
+                          long startTime, long endTime, int limit) throws UnauthorizedException;
 
   /**
    * Creates a new stream if it does not exist.
@@ -119,7 +120,7 @@ public interface Store {
    * @param appArchiveLocation location of the deployed app archive
    */
   void addApplication(Id.Application id,
-                      ApplicationSpecification specification, Location appArchiveLocation);
+                      ApplicationSpecification specification, Location appArchiveLocation) throws UnauthorizedException;
 
 
   /**
@@ -140,12 +141,12 @@ public interface Store {
    * @return application specification
    */
   @Nullable
-  ApplicationSpecification getApplication(Id.Application id);
+  ApplicationSpecification getApplication(Id.Application id) throws UnauthorizedException;
 
   /**
    * Returns a collection of all application specs.
    */
-  Collection<ApplicationSpecification> getAllApplications(Id.Namespace id);
+  Iterable<ApplicationSpecification> getAllApplications(Id.Namespace id) throws UnauthorizedException;
 
   /**
    * Returns location of the application archive.
@@ -154,7 +155,7 @@ public interface Store {
    * @return application archive location
    */
   @Nullable
-  Location getApplicationArchiveLocation(Id.Application id);
+  Location getApplicationArchiveLocation(Id.Application id) throws UnauthorizedException;
 
   /**
    * Sets number of instances of specific flowlet.
@@ -171,7 +172,7 @@ public interface Store {
    * @param id flow id
    * @param flowletId flowlet id
    */
-  int getFlowletInstances(Id.Program id, String flowletId);
+  int getFlowletInstances(Id.Program id, String flowletId) throws UnauthorizedException;
 
   /**
    * Set the number of procedure instances.
@@ -181,7 +182,7 @@ public interface Store {
    * @deprecated As of version 2.6.0, replaced by {@link co.cask.cdap.api.service.Service}
    */
   @Deprecated
-  void setProcedureInstances(Id.Program id, int count);
+  void setProcedureInstances(Id.Program id, int count) throws UnauthorizedException;
 
   /**
    * Gets the number of procedure instances.
@@ -191,7 +192,7 @@ public interface Store {
    * @deprecated As of version 2.6.0, replaced by {@link co.cask.cdap.api.service.Service}
    */
   @Deprecated
-  int getProcedureInstances(Id.Program id);
+  int getProcedureInstances(Id.Program id) throws UnauthorizedException;
 
   /**
    * Sets the number of instances of a service.
@@ -199,14 +200,14 @@ public interface Store {
    * @param id program id
    * @param instances number of instances
    */
-  void setServiceInstances(Id.Program id, int instances);
+  void setServiceInstances(Id.Program id, int instances) throws UnauthorizedException;
 
   /**
    * Returns the number of instances of a service.
    * @param id program id
    * @return number of instances
    */
-  int getServiceInstances(Id.Program id);
+  int getServiceInstances(Id.Program id) throws UnauthorizedException;
 
   /**
    * Sets the number of instances of a {@link ServiceWorker}.
@@ -215,7 +216,7 @@ public interface Store {
    * @param workerName name of the {@link ServiceWorker}
    * @param instances number of instances
    */
-  void setServiceWorkerInstances(Id.Program id, String workerName, int instances);
+  void setServiceWorkerInstances(Id.Program id, String workerName, int instances) throws UnauthorizedException;
 
   /**
    * Returns the number of instances of a {@link ServiceWorker}.
@@ -224,28 +225,28 @@ public interface Store {
    * @param workerName name of the {@link ServiceWorker}.
    * @return number of instances
    */
-  int getServiceWorkerInstances(Id.Program id, String workerName);
+  int getServiceWorkerInstances(Id.Program id, String workerName) throws UnauthorizedException;
 
   /**
    * Removes all program under the given application and also the application itself.
    *
    * @param id Application id
    */
-  void removeApplication(Id.Application id);
+  void removeApplication(Id.Application id) throws UnauthorizedException;
 
   /**
    * Removes all applications (with programs) associated with the given namespace.
    *
    * @param id namespace id whose applications to remove
    */
-  void removeAllApplications(Id.Namespace id);
+  void removeAllApplications(Id.Namespace id) throws UnauthorizedException;
 
   /**
    * Remove all metadata associated with the given namespace.
    *
    * @param id namespace id whose items to remove
    */
-  void removeAll(Id.Namespace id);
+  void removeAll(Id.Namespace id) throws UnauthorizedException;
 
   /**
    * Store the user arguments needed in the run-time.
@@ -253,7 +254,7 @@ public interface Store {
    * @param programId id of program
    * @param arguments Map of key value arguments
    */
-  void storeRunArguments(Id.Program programId, Map<String, String> arguments);
+  void storeRunArguments(Id.Program programId, Map<String, String> arguments) throws UnauthorizedException;
 
   /**
    * Get run time arguments for a program.
@@ -261,7 +262,7 @@ public interface Store {
    * @param programId id of the program.
    * @return Map of key, value pairs
    */
-  Map<String, String> getRunArguments(Id.Program programId);
+  Map<String, String> getRunArguments(Id.Program programId) throws UnauthorizedException;
 
   /**
    * Changes input stream for a flowlet connection
@@ -270,14 +271,14 @@ public interface Store {
    * @param oldValue name of the stream in stream connection to change
    * @param newValue name of the new stream to connect to
    */
-  void changeFlowletSteamConnection(Id.Program flow, String flowletId, String oldValue, String newValue);
+  void changeFlowletSteamConnection(Id.Program flow, String flowletId, String oldValue, String newValue) throws UnauthorizedException;
   /**
    * Adds a schedule for a particular program. If the schedule with the name already exists, the method will
    * throw RuntimeException.
    * @param program defines program to which a schedule is being added
    * @param scheduleSpecification defines the schedule to be added for the program
    */
-  void addSchedule(Id.Program program, ScheduleSpecification scheduleSpecification);
+  void addSchedule(Id.Program program, ScheduleSpecification scheduleSpecification) throws UnauthorizedException;
 
   /**
    * Deletes a schedules from a particular program
@@ -285,7 +286,7 @@ public interface Store {
    * @param programType defines the type of the program
    * @param scheduleName the name of the schedule to be removed from the program
    */
-  void deleteSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName);
+  void deleteSchedule(Id.Program program, SchedulableProgramType programType, String scheduleName) throws UnauthorizedException;
 
   /**
    * Check if a program exists.
@@ -304,7 +305,7 @@ public interface Store {
    * These semantics of return type are borrowed from {@link java.util.concurrent.ConcurrentHashMap#putIfAbsent}
    */
   @Nullable
-  NamespaceMeta createNamespace(NamespaceMeta metadata);
+  NamespaceMeta createNamespace(NamespaceMeta metadata) throws UnauthorizedException;
 
   /**
    * Retrieves a namespace from the namespace metadata store.
@@ -313,7 +314,7 @@ public interface Store {
    * @return {@link NamespaceMeta} of the requested namespace
    */
   @Nullable
-  NamespaceMeta getNamespace(Id.Namespace id);
+  NamespaceMeta getNamespace(Id.Namespace id) throws UnauthorizedException;
 
   /**
    * Deletes a namespace from the namespace metadata store.
@@ -324,14 +325,14 @@ public interface Store {
    * These semantics of return type are borrowed from {@link java.util.concurrent.ConcurrentHashMap#remove}
    */
   @Nullable
-  NamespaceMeta deleteNamespace(Id.Namespace id);
+  NamespaceMeta deleteNamespace(Id.Namespace id) throws UnauthorizedException;
 
   /**
    * Lists all registered namespaces.
    *
    * @return a list of all registered namespaces
    */
-  List<NamespaceMeta> listNamespaces();
+  Iterable<NamespaceMeta> listNamespaces();
 
   /**
    * Adds adapter spec to the store, with status = {@link AdapterStatus.STARTED}. Will overwrite the existing spec.
@@ -339,7 +340,7 @@ public interface Store {
    * @param id Namespace id
    * @param adapterSpec adapter specification of the adapter being added
    */
-  void addAdapter(Id.Namespace id, AdapterSpecification adapterSpec);
+  void addAdapter(Id.Namespace id, AdapterSpecification adapterSpec) throws UnauthorizedException;
 
   /**
    * Fetch the adapter identified by the name in a give namespace.
@@ -349,7 +350,7 @@ public interface Store {
    * @return an instance of {@link AdapterSpecification}.
    */
   @Nullable
-  AdapterSpecification getAdapter(Id.Namespace id, String name);
+  AdapterSpecification getAdapter(Id.Namespace id, String name) throws UnauthorizedException;
 
   /**
    * Fetch the status for an adapter identified by the name in a give namespace.
@@ -359,7 +360,7 @@ public interface Store {
    * @return status of specified adapter.
    */
   @Nullable
-  AdapterStatus getAdapterStatus(Id.Namespace id, String name);
+  AdapterStatus getAdapterStatus(Id.Namespace id, String name) throws UnauthorizedException;
 
   /**
    * Set the status for an adapter identified by the name in a give namespace.
@@ -370,15 +371,16 @@ public interface Store {
    * @return previous status of adapter, or null if specified adapter is not found.
    */
   @Nullable
-  AdapterStatus setAdapterStatus(Id.Namespace id, String name, AdapterStatus status);
+  AdapterStatus setAdapterStatus(Id.Namespace id, String name, AdapterStatus status) throws UnauthorizedException;
 
   /**
    * Fetch all the adapters in a given namespace.
    *
+   *
    * @param id Namespace id.
    * @return {@link Collection} of Adapter Specifications.
    */
-  Collection<AdapterSpecification> getAllAdapters(Id.Namespace id);
+  Iterable<AdapterSpecification> getAllAdapters(Id.Namespace id);
 
   /**
    * Remove the adapter specified by the name in a given namespace.
@@ -386,13 +388,13 @@ public interface Store {
    * @param id Namespace id.
    * @param name Adapter name.
    */
-  void removeAdapter(Id.Namespace id, String name);
+  void removeAdapter(Id.Namespace id, String name) throws UnauthorizedException;
 
   /**
    * Remove all the adapters in a given namespace.
    *
    * @param id Namespace id.
    */
-  void removeAllAdapters(Id.Namespace id);
+  void removeAllAdapters(Id.Namespace id) throws UnauthorizedException;
 
 }

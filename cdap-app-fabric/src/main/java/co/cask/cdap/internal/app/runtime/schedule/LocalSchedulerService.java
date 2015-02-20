@@ -19,6 +19,7 @@ package co.cask.cdap.internal.app.runtime.schedule;
 import co.cask.cdap.app.runtime.ProgramRuntimeService;
 import co.cask.cdap.app.store.StoreFactory;
 import co.cask.cdap.config.PreferencesStore;
+import co.cask.common.authorization.client.AuthorizationClient;
 import com.google.common.base.Supplier;
 import com.google.inject.Inject;
 import org.quartz.Scheduler;
@@ -35,8 +36,10 @@ public final class LocalSchedulerService extends AbstractSchedulerService {
   @Inject
   public LocalSchedulerService(Supplier<Scheduler> schedulerSupplier,
                                StreamSizeScheduler streamSizeScheduler, StoreFactory storeFactory,
-                               ProgramRuntimeService programRuntimeService, PreferencesStore preferencesStore) {
-    super(schedulerSupplier, streamSizeScheduler, storeFactory, programRuntimeService, preferencesStore);
+                               ProgramRuntimeService programRuntimeService, PreferencesStore preferencesStore,
+                               AuthorizationClient authorizationClient) {
+    super(schedulerSupplier, streamSizeScheduler, storeFactory, programRuntimeService, preferencesStore,
+          authorizationClient);
   }
 
   @Override

@@ -20,6 +20,7 @@ import co.cask.cdap.common.exception.AlreadyExistsException;
 import co.cask.cdap.common.exception.NotFoundException;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.NamespaceMeta;
+import co.cask.common.authorization.UnauthorizedException;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,7 +35,7 @@ public interface NamespaceAdmin {
    *
    * @return a list of {@link NamespaceMeta} for all namespaces
    */
-  public List<NamespaceMeta> listNamespaces();
+  public Iterable<NamespaceMeta> listNamespaces();
 
   /**
    * Gets details of a namespace
@@ -43,7 +44,7 @@ public interface NamespaceAdmin {
    * @return the {@link NamespaceMeta} of the requested namespace
    * @throws NotFoundException if the requested namespace is not found
    */
-  public NamespaceMeta getNamespace(Id.Namespace namespaceId) throws NotFoundException;
+  public NamespaceMeta getNamespace(Id.Namespace namespaceId) throws NotFoundException, UnauthorizedException;
 
   /**
    * Checks if the specified namespace exists
@@ -51,7 +52,7 @@ public interface NamespaceAdmin {
    * @param namespaceId the {@link Id.Namespace} to check for existence
    * @return true, if the specifed namespace exists, false otherwise
    */
-  public boolean hasNamespace(Id.Namespace namespaceId);
+  public boolean hasNamespace(Id.Namespace namespaceId) throws UnauthorizedException;
 
   /**
    * Creates a new namespace
@@ -59,7 +60,7 @@ public interface NamespaceAdmin {
    * @param metadata the {@link NamespaceMeta} for the new namespace to be created
    * @throws AlreadyExistsException if the specified namespace already exists
    */
-  public void createNamespace(NamespaceMeta metadata) throws AlreadyExistsException, IOException;
+  public void createNamespace(NamespaceMeta metadata) throws AlreadyExistsException, IOException, UnauthorizedException;
 
   /**
    * Deletes the specified namespace
@@ -67,5 +68,5 @@ public interface NamespaceAdmin {
    * @param namespaceId the {@link Id.Namespace} of the specified namespace
    * @throws NotFoundException if the specified namespace does not exist
    */
-  public void deleteNamespace(Id.Namespace namespaceId) throws NotFoundException, IOException;
+  public void deleteNamespace(Id.Namespace namespaceId) throws NotFoundException, IOException, UnauthorizedException;
 }

@@ -25,6 +25,7 @@ import co.cask.cdap.config.DashboardStore;
 import co.cask.cdap.config.PreferencesStore;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.NamespaceMeta;
+import co.cask.common.authorization.UnauthorizedException;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
@@ -34,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * {@link AbstractIdleService} for managing namespaces
@@ -60,7 +60,7 @@ public final class DefaultNamespaceAdmin implements NamespaceAdmin {
   /**
    * This should be removed once we stop support for v2 APIs, since 'default' namespace is only reserved for v2 APIs.
    */
-  private void createDefaultNamespace() {
+  private void createDefaultNamespace() throws UnauthorizedException {
     NamespaceMeta.Builder builder = new NamespaceMeta.Builder();
     NamespaceMeta defaultNamespace = builder.setId(Constants.DEFAULT_NAMESPACE)
       .setName(Constants.DEFAULT_NAMESPACE)
@@ -85,7 +85,7 @@ public final class DefaultNamespaceAdmin implements NamespaceAdmin {
    *
    * @return a list of {@link NamespaceMeta} for all namespaces
    */
-  public List<NamespaceMeta> listNamespaces() {
+  public Iterable<NamespaceMeta> listNamespaces() {
     return store.listNamespaces();
   }
 
@@ -96,7 +96,7 @@ public final class DefaultNamespaceAdmin implements NamespaceAdmin {
    * @return the {@link NamespaceMeta} of the requested namespace
    * @throws NotFoundException if the requested namespace is not found
    */
-  public NamespaceMeta getNamespace(Id.Namespace namespaceId) throws NotFoundException {
+  public NamespaceMeta getNamespace(Id.Namespace namespaceId) throws NotFoundException, UnauthorizedException {
     NamespaceMeta ns = store.getNamespace(namespaceId);
     if (ns == null) {
       throw new NotFoundException(NAMESPACE_ELEMENT_TYPE, namespaceId.getId());
@@ -110,7 +110,7 @@ public final class DefaultNamespaceAdmin implements NamespaceAdmin {
    * @param namespaceId the {@link Id.Namespace} to check for existence
    * @return true, if the specifed namespace exists, false otherwise
    */
-  public boolean hasNamespace(Id.Namespace namespaceId) {
+  public boolean hasNamespace(Id.Namespace namespaceId) throws UnauthorizedException {
     boolean exists = true;
     try {
       getNamespace(namespaceId);
@@ -131,7 +131,8 @@ public final class DefaultNamespaceAdmin implements NamespaceAdmin {
    * @param metadata the {@link NamespaceMeta} for the new namespace to be created
    * @throws AlreadyExistsException if the specified namespace already exists
    */
-  public void createNamespace(NamespaceMeta metadata) throws AlreadyExistsException, IOException {
+  public void createNamespace(NamespaceMeta metadata)
+    throws AlreadyExistsException, IOException, UnauthorizedException {
     // TODO: CDAP-1427 - This should be transactional, but we don't support transactions on files yet
     NamespaceMeta existing = store.createNamespace(metadata);
     if (existing != null) {
@@ -153,7 +154,7 @@ public final class DefaultNamespaceAdmin implements NamespaceAdmin {
    * @param namespaceId the {@link Id.Namespace} of the specified namespace
    * @throws NotFoundException if the specified namespace does not exist
    */
-  public void deleteNamespace(Id.Namespace namespaceId) throws NotFoundException, IOException {
+  public void deleteNamespace(Id.Namespace namespaceId) throws NotFoundException, IOException, UnauthorizedException {
     //TODO: CDAP-870, CDAP-1427. Delete should be in a single transaction.
     // Delete Preferences associated with this namespace
     preferencesStore.deleteProperties(namespaceId.getId());

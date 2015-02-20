@@ -20,6 +20,7 @@ import co.cask.cdap.app.runtime.ProgramRuntimeService;
 import co.cask.cdap.app.store.StoreFactory;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.config.PreferencesStore;
+import co.cask.common.authorization.client.AuthorizationClient;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -48,8 +49,9 @@ public final class DistributedSchedulerService extends AbstractSchedulerService 
                                      StreamSizeScheduler streamSizeScheduler, StoreFactory storeFactory,
                                      ProgramRuntimeService programRuntimeService,
                                      DiscoveryServiceClient discoveryServiceClient,
-                                     PreferencesStore preferencesStore) {
-    super(schedulerSupplier, streamSizeScheduler, storeFactory, programRuntimeService, preferencesStore);
+                                     PreferencesStore preferencesStore, AuthorizationClient authorizationClient) {
+    super(schedulerSupplier, streamSizeScheduler, storeFactory, programRuntimeService, preferencesStore,
+          authorizationClient);
     this.discoveryServiceClient = discoveryServiceClient;
   }
 

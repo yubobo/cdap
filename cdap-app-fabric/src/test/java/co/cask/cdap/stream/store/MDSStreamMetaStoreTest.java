@@ -37,6 +37,8 @@ import co.cask.cdap.gateway.auth.AuthModule;
 import co.cask.cdap.internal.app.store.DefaultStore;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.NamespaceMeta;
+import co.cask.common.authorization.UnauthorizedException;
+import co.cask.common.authorization.client.AuthorizationClient;
 import co.cask.tephra.TransactionManager;
 import co.cask.tephra.TransactionSystemClient;
 import com.google.inject.AbstractModule;
@@ -85,7 +87,8 @@ public class MDSStreamMetaStoreTest extends StreamMetaStoreTestBase {
     datasetService.startAndWait();
     store = new DefaultStore(injector.getInstance(CConfiguration.class), injector.getInstance(LocationFactory.class),
                              injector.getInstance(TransactionSystemClient.class),
-                             injector.getInstance(DatasetFramework.class));
+                             injector.getInstance(DatasetFramework.class),
+                             injector.getInstance(AuthorizationClient.class));
   }
 
   @AfterClass
@@ -100,7 +103,7 @@ public class MDSStreamMetaStoreTest extends StreamMetaStoreTestBase {
   }
 
   @Override
-  protected void createNamespace(String namespaceId) throws AlreadyExistsException {
+  protected void createNamespace(String namespaceId) throws AlreadyExistsException, UnauthorizedException {
     store.createNamespace(new NamespaceMeta.Builder()
                             .setId(namespaceId)
                             .setName(namespaceId)
@@ -109,7 +112,7 @@ public class MDSStreamMetaStoreTest extends StreamMetaStoreTestBase {
   }
 
   @Override
-  protected void deleteNamespace(String namespaceId) throws NotFoundException {
+  protected void deleteNamespace(String namespaceId) throws NotFoundException, UnauthorizedException {
     store.deleteNamespace(new Id.Namespace(namespaceId));
   }
 }

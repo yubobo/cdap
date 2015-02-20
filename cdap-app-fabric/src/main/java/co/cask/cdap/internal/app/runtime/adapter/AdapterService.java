@@ -28,9 +28,11 @@ import co.cask.cdap.app.deploy.Manager;
 import co.cask.cdap.app.deploy.ManagerFactory;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.app.store.StoreFactory;
+import co.cask.cdap.common.authorization.ObjectIds;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.exception.AdapterNotFoundException;
+import co.cask.cdap.common.http.SecurityRequestContext;
 import co.cask.cdap.config.PreferencesStore;
 import co.cask.cdap.data.Namespace;
 import co.cask.cdap.data2.datafabric.DefaultDatasetNamespace;
@@ -49,9 +51,15 @@ import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.Sink;
 import co.cask.cdap.proto.Source;
+import co.cask.common.authorization.ObjectId;
+import co.cask.common.authorization.Permission;
+import co.cask.common.authorization.UnauthorizedException;
+import co.cask.common.authorization.client.AuthorizationClient;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -96,13 +104,14 @@ public class AdapterService extends AbstractIdleService {
   private final Scheduler scheduler;
   private final Store store;
   private final PreferencesStore preferencesStore;
+  private final AuthorizationClient authorizationClient;
   private Map<String, AdapterTypeInfo> adapterTypeInfos;
 
   @Inject
   public AdapterService(CConfiguration configuration, DatasetFramework datasetFramework, Scheduler scheduler,
                         StreamAdmin streamAdmin, StoreFactory storeFactory, LocationFactory locationFactory,
                         ManagerFactory<DeploymentInfo, ApplicationWithPrograms> managerFactory,
-                        PreferencesStore preferencesStore) {
+                        PreferencesStore preferencesStore, AuthorizationClient authorizationClient) {
     this.configuration = configuration;
     this.datasetFramework = new NamespacedDatasetFramework(datasetFramework,
                                                            new DefaultDatasetNamespace(configuration, Namespace.USER));
@@ -113,6 +122,7 @@ public class AdapterService extends AbstractIdleService {
     this.managerFactory = managerFactory;
     this.adapterTypeInfos = Maps.newHashMap();
     this.preferencesStore = preferencesStore;
+    this.authorizationClient = authorizationClient;
   }
 
   @Override
@@ -145,7 +155,13 @@ public class AdapterService extends AbstractIdleService {
    * @return requested {@link AdapterSpecification} or null if no such AdapterInfo exists
    * @throws AdapterNotFoundException if the requested adapter is not found
    */
-  public AdapterSpecification getAdapter(String namespace, String adapterName) throws AdapterNotFoundException {
+  public AdapterSpecification getAdapter(String namespace, String adapterName)
+    throws AdapterNotFoundException, UnauthorizedException {
+
+    authorizationClient.authorize(ObjectIds.adapter(namespace, adapterName),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.ANY));
+
     AdapterSpecification adapterSpec = store.getAdapter(Id.Namespace.from(namespace), adapterName);
     if (adapterSpec == null) {
       throw new AdapterNotFoundException(adapterName);
@@ -161,7 +177,13 @@ public class AdapterService extends AbstractIdleService {
    * @return requested Adapter's status
    * @throws AdapterNotFoundException if the requested adapter is not found
    */
-  public AdapterStatus getAdapterStatus(String namespace, String adapterName) throws AdapterNotFoundException {
+  public AdapterStatus getAdapterStatus(String namespace, String adapterName)
+    throws AdapterNotFoundException, UnauthorizedException {
+
+    authorizationClient.authorize(ObjectIds.adapter(namespace, adapterName),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     AdapterStatus adapterStatus = store.getAdapterStatus(Id.Namespace.from(namespace), adapterName);
     if (adapterStatus == null) {
       throw new AdapterNotFoundException(adapterName);
@@ -177,8 +199,9 @@ public class AdapterService extends AbstractIdleService {
    * @return specified Adapter's previous status
    * @throws AdapterNotFoundException if the specified adapter is not found
    */
-  public AdapterStatus setAdapterStatus(String namespace, String adapterName, AdapterStatus status)
-    throws AdapterNotFoundException {
+  private AdapterStatus setAdapterStatus(String namespace, String adapterName,
+                                         AdapterStatus status) throws AdapterNotFoundException, UnauthorizedException {
+
     AdapterStatus existingStatus = store.setAdapterStatus(Id.Namespace.from(namespace), adapterName, status);
     if (existingStatus == null) {
       throw new AdapterNotFoundException(adapterName);
@@ -192,9 +215,21 @@ public class AdapterService extends AbstractIdleService {
    * @param namespace namespace to look up the adapters
    * @return {@link Collection} of {@link AdapterSpecification}
    */
-  public Collection<AdapterSpecification> getAdapters(String namespace) {
-    // TODO: filter
-    return store.getAllAdapters(Id.Namespace.from(namespace));
+  public Iterable<AdapterSpecification> getAdapters(final String namespace) {
+    // TODO: instead of filtering, select only visible adapters
+    return authorizationClient.filter(store.getAllAdapters(Id.Namespace.from(namespace)),
+                                      SecurityRequestContext.getSubjects(),
+                                      ImmutableList.of(Permission.LIFECYCLE),
+                                      new Function<AdapterSpecification, ObjectId>() {
+      @Nullable
+      @Override
+      public ObjectId apply(@Nullable AdapterSpecification input) {
+        if (input == null) {
+          return null;
+        }
+        return ObjectIds.adapter(namespace, input.getName());
+      }
+    });
   }
 
   /**
@@ -208,7 +243,7 @@ public class AdapterService extends AbstractIdleService {
     // Alternative is to construct the key using adapterType as well, when storing the the adapterSpec. That approach
     // will make lookup by adapterType simpler, but it will increase the complexity of lookup by namespace + adapterName
     List<AdapterSpecification> adaptersByType = Lists.newArrayList();
-    Collection<AdapterSpecification> adapters = getAdapters(namespace);
+    Iterable<AdapterSpecification> adapters = getAdapters(namespace);
     for (AdapterSpecification adapterSpec : adapters) {
       if (adapterSpec.getType().equals(adapterType)) {
         adaptersByType.add(adapterSpec);
@@ -225,7 +260,11 @@ public class AdapterService extends AbstractIdleService {
    * @throws IllegalArgumentException on other input errors.
    */
   public void createAdapter(String namespaceId, AdapterSpecification adapterSpec)
-    throws IllegalArgumentException, AdapterAlreadyExistsException {
+    throws IllegalArgumentException, AdapterAlreadyExistsException, UnauthorizedException {
+
+    authorizationClient.authorize(ObjectIds.namespace(namespaceId),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
 
     AdapterTypeInfo adapterTypeInfo = adapterTypeInfos.get(adapterSpec.getType());
     Preconditions.checkArgument(adapterTypeInfo != null, "Adapter type %s not found", adapterSpec.getType());
@@ -253,8 +292,15 @@ public class AdapterService extends AbstractIdleService {
    * @param namespace namespace id
    * @param adapterName adapter name
    * @throws AdapterNotFoundException if the adapter to be removed is not found.
+   * @throws UnauthorizedException if the current user is not allowed to remove the adapter
    */
-  public void removeAdapter(String namespace, String adapterName) throws AdapterNotFoundException {
+  public void removeAdapter(String namespace, String adapterName)
+    throws AdapterNotFoundException, UnauthorizedException {
+
+    authorizationClient.authorize(ObjectIds.adapter(namespace, adapterName),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     Id.Namespace namespaceId = Id.Namespace.from(namespace);
     AdapterSpecification adapterSpec = getAdapter(namespace, adapterName);
     ApplicationSpecification appSpec = store.getApplication(Id.Application.from(namespaceId, adapterSpec.getType()));
@@ -266,7 +312,12 @@ public class AdapterService extends AbstractIdleService {
 
   // Suspends all schedules for this adapter
   public void stopAdapter(String namespace, String adapterName)
-    throws AdapterNotFoundException, InvalidAdapterOperationException {
+    throws AdapterNotFoundException, InvalidAdapterOperationException, UnauthorizedException {
+
+    authorizationClient.authorize(ObjectIds.adapter(namespace, adapterName),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     AdapterStatus adapterStatus = getAdapterStatus(namespace, adapterName);
     if (AdapterStatus.STOPPED.equals(adapterStatus)) {
       throw new InvalidAdapterOperationException("Adapter is already stopped.");
@@ -290,7 +341,12 @@ public class AdapterService extends AbstractIdleService {
 
   // Resumes all schedules for this adapter
   public void startAdapter(String namespace, String adapterName)
-    throws AdapterNotFoundException, InvalidAdapterOperationException {
+    throws AdapterNotFoundException, InvalidAdapterOperationException, UnauthorizedException {
+
+    authorizationClient.authorize(ObjectIds.adapter(namespace, adapterName),
+                                  SecurityRequestContext.getSubjects(),
+                                  ImmutableList.of(Permission.LIFECYCLE));
+
     AdapterStatus adapterStatus = getAdapterStatus(namespace, adapterName);
     if (AdapterStatus.STARTED.equals(adapterStatus)) {
       throw new InvalidAdapterOperationException("Adapter is already started.");
@@ -351,7 +407,7 @@ public class AdapterService extends AbstractIdleService {
 
   // Schedule all the programs needed for the adapter. Currently, only scheduling of workflow is supported.
   private void schedule(String namespaceId, ApplicationSpecification spec, AdapterTypeInfo adapterTypeInfo,
-                        AdapterSpecification adapterSpec) {
+                        AdapterSpecification adapterSpec) throws UnauthorizedException {
     ProgramType programType = adapterTypeInfo.getProgramType();
     // Only Workflows are supported to be scheduled in the current implementation
     Preconditions.checkArgument(programType.equals(ProgramType.WORKFLOW),
@@ -365,7 +421,7 @@ public class AdapterService extends AbstractIdleService {
 
   // Unschedule all the programs needed for the adapter. Currently, only unscheduling of workflow is supported.
   private void unschedule(String namespaceId, ApplicationSpecification spec, AdapterTypeInfo adapterTypeInfo,
-                          AdapterSpecification adapterSpec) {
+                          AdapterSpecification adapterSpec) throws UnauthorizedException {
     // Only Workflows are supported to be scheduled in the current implementation
     ProgramType programType = adapterTypeInfo.getProgramType();
     Preconditions.checkArgument(programType.equals(ProgramType.WORKFLOW),
@@ -379,7 +435,8 @@ public class AdapterService extends AbstractIdleService {
   }
 
   // Adds a schedule to the scheduler as well as to the appspec
-  private void addSchedule(Id.Program programId, SchedulableProgramType programType, AdapterSpecification adapterSpec) {
+  private void addSchedule(Id.Program programId, SchedulableProgramType programType,
+                           AdapterSpecification adapterSpec) throws UnauthorizedException {
     String frequency = adapterSpec.getProperties().get("frequency");
     Preconditions.checkArgument(frequency != null,
                                 "Frequency of running the adapter is missing from adapter properties." +
@@ -398,7 +455,8 @@ public class AdapterService extends AbstractIdleService {
   }
 
   // Deletes schedule from the scheduler as well as from the app spec
-  private void deleteSchedule(Id.Program programId, SchedulableProgramType programType, String scheduleName) {
+  private void deleteSchedule(Id.Program programId, SchedulableProgramType programType,
+                              String scheduleName) throws UnauthorizedException {
     scheduler.deleteSchedule(programId, programType, scheduleName);
     //TODO: Scheduler API should also manage the MDS.
     store.deleteSchedule(programId, programType, scheduleName);

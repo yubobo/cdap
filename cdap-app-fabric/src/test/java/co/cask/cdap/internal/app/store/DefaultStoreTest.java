@@ -63,6 +63,7 @@ import co.cask.cdap.proto.Sink;
 import co.cask.cdap.proto.Source;
 import co.cask.cdap.test.internal.AppFabricTestHelper;
 import co.cask.cdap.test.internal.DefaultId;
+import co.cask.common.authorization.UnauthorizedException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -606,7 +607,7 @@ public class DefaultStoreTest {
     verifyRunHistory(flowProgramId2, 0);
   }
 
-  private void verifyRunHistory(Id.Program programId, int count) {
+  private void verifyRunHistory(Id.Program programId, int count) throws UnauthorizedException {
     List<RunRecord> history = store.getRuns(programId, ProgramRunStatus.ALL,
                                             Long.MIN_VALUE, Long.MAX_VALUE, Integer.MAX_VALUE);
     Assert.assertEquals(count, history.size());
@@ -741,7 +742,7 @@ public class DefaultStoreTest {
     Assert.assertEquals(null, schedules.get("Schedule2"));
   }
 
-  private Map<String, ScheduleSpecification> getSchedules(Id.Application appId) {
+  private Map<String, ScheduleSpecification> getSchedules(Id.Application appId) throws UnauthorizedException {
     ApplicationSpecification application = store.getApplication(appId);
     Assert.assertNotNull(application);
     return application.getSchedules();
