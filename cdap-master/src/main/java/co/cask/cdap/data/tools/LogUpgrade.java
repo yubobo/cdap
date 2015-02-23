@@ -20,6 +20,7 @@ import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.api.dataset.table.OrderedTable;
 import co.cask.cdap.api.dataset.table.Row;
 import co.cask.cdap.api.dataset.table.Scanner;
+import co.cask.cdap.api.dataset.table.Table;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data2.dataset2.tx.DatasetContext;
 import co.cask.cdap.data2.dataset2.tx.Transactional;
@@ -47,7 +48,7 @@ public class LogUpgrade extends AbstractUpgrade implements Upgrade {
   private static final Logger LOG = LoggerFactory.getLogger(LogUpgrade.class);
   private static final String[] OTHERS = {"logs", Constants.SYSTEM_NAMESPACE, Constants.DEFAULT_NAMESPACE};
 
-  private final Transactional<DatasetContext<OrderedTable>, OrderedTable> logMDS;
+  private final Transactional<DatasetContext<Table>, Table> logMDS;
 
   public LogUpgrade() {
     this.logMDS = Transactional.of(
@@ -57,9 +58,9 @@ public class LogUpgrade extends AbstractUpgrade implements Upgrade {
           return new DefaultTransactionExecutor(txClient, txAwares);
         }
       },
-      new Supplier<DatasetContext<OrderedTable>>() {
+      new Supplier<DatasetContext<Table>>() {
         @Override
-        public DatasetContext<OrderedTable> get() {
+        public DatasetContext<Table> get() {
           try {
             return DatasetContext.of(new LogSaverTableUtil(nonNamespaedFramework, cConf).getMetaTable());
           } catch (Exception e) {
@@ -73,9 +74,9 @@ public class LogUpgrade extends AbstractUpgrade implements Upgrade {
   public void upgrade(Injector injector) throws Exception {
     final FileMetaDataManager fileMetaDataManager = new FileMetaDataManager(new LogSaverTableUtil(
       nonNamespaedFramework, cConf), txClient, locationFactory);
-    logMDS.execute(new TransactionExecutor.Function<DatasetContext<OrderedTable>, Void>() {
+    logMDS.execute(new TransactionExecutor.Function<DatasetContext<Table>, Void>() {
       @Override
-      public Void apply(DatasetContext<OrderedTable> ctx) throws Exception {
+      public Void apply(DatasetContext<Table> ctx) throws Exception {
         Scanner rows = ctx.get().scan(null, null);
         Row row;
         while ((row = rows.next()) != null) {

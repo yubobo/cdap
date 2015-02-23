@@ -18,12 +18,12 @@ package co.cask.cdap.data.tools;
 
 import co.cask.cdap.api.dataset.DatasetAdmin;
 import co.cask.cdap.api.dataset.DatasetSpecification;
-import co.cask.cdap.api.dataset.table.OrderedTable;
+import co.cask.cdap.api.dataset.table.Table;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data2.datafabric.DefaultDatasetNamespace;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
-import co.cask.cdap.data2.dataset2.lib.table.hbase.HBaseOrderedTableAdmin;
+import co.cask.cdap.data2.dataset2.lib.table.hbase.HBaseTableAdmin;
 import co.cask.cdap.data2.transaction.queue.QueueAdmin;
 import co.cask.cdap.data2.util.hbase.HBaseTableUtil;
 import co.cask.cdap.data2.util.hbase.TableId;
@@ -72,8 +72,8 @@ public class DatasetUpgrade extends AbstractUpgrade implements Upgrade {
   }
 
   private static void upgradeUserTables(final Injector injector) throws Exception {
-    // We assume that all tables in USER namespace belong to OrderedTable type datasets. So we loop thru them
-    // and upgrading with the help of HBaseOrderedTableAdmin
+    // We assume that all tables in USER namespace belong to Table type datasets. So we loop thru them
+    // and upgrading with the help of HBaseTableAdmin
     DefaultDatasetNamespace namespace = new DefaultDatasetNamespace(cConf);
 
     Configuration hConf = injector.getInstance(Configuration.class);
@@ -89,14 +89,14 @@ public class DatasetUpgrade extends AbstractUpgrade implements Upgrade {
         System.out.println(String.format("Upgrading hbase table: %s, desc: %s", tableName, desc.toString()));
 
         final boolean supportsIncrement =
-          "true".equalsIgnoreCase(desc.getValue(OrderedTable.PROPERTY_READLESS_INCREMENT));
+          "true".equalsIgnoreCase(desc.getValue(Table.PROPERTY_READLESS_INCREMENT));
         DatasetAdmin admin = new AbstractHBaseDataSetAdmin(tableName, hConf, hBaseTableUtil) {
           @Override
           protected CoprocessorJar createCoprocessorJar() throws IOException {
-            return HBaseOrderedTableAdmin.createCoprocessorJarInternal(cConf,
-                                                                       injector.getInstance(LocationFactory.class),
-                                                                       hBaseTableUtil,
-                                                                       supportsIncrement);
+            return HBaseTableAdmin.createCoprocessorJarInternal(cConf,
+                                                                injector.getInstance(LocationFactory.class),
+                                                                hBaseTableUtil,
+                                                                supportsIncrement);
           }
 
           @Override
