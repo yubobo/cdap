@@ -31,7 +31,7 @@ public final class Constants {
    * Global Service names.
    */
   public static final class Service {
-    public static final String ACL = "acl";
+    public static final String ACL_MANAGER = "acl.manager";
     public static final String APP_FABRIC_HTTP = "appfabric";
     public static final String TRANSACTION = "transaction";
     public static final String METRICS = "metrics";
@@ -479,7 +479,7 @@ public final class Constants {
     public static final String ENABLED = "security.enabled";
     /** Enables authorization. */
     public static final String AUTHORIZATION_ENABLED = "security.authorization.enabled";
-    /** Admin users. Grants full access to these users or groups.*/
+    /** Admin users. Grants full access to these users. */
     public static final String ADMINS = "security.admins";
     /** Enables Kerberos authentication. */
     public static final String KERBEROS_ENABLED = "kerberos.auth.enabled";

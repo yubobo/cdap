@@ -16,6 +16,7 @@
 package co.cask.common.authorization;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 
 import java.util.Iterator;
 
@@ -24,31 +25,70 @@ import java.util.Iterator;
  */
 public class ObjectId extends TypedId {
 
-  public static final ObjectId GLOBAL = new ObjectId(null, "global", "");
+  private static final String GLOBAL_TYPE = "global";
+  public static final ObjectId GLOBAL = new ObjectId(null, GLOBAL_TYPE, "");
 
   private ObjectId parent;
 
   public ObjectId(ObjectId parent, String type, String id) {
     super(type, id);
+    if (!type.equals(GLOBAL_TYPE)) {
+      Preconditions.checkNotNull("null parent is only allowed for ObjectId.GLOBAL", parent);
+    }
     this.parent = parent;
   }
 
   public ObjectId(String type, String id) {
-    super(type, id);
-    this.parent = ObjectId.GLOBAL;
+    this(ObjectId.GLOBAL, type, id);
   }
 
   public ObjectId(TypedId typedId) {
-    super(typedId.getType(), typedId.getId());
+    this(typedId.getType(), typedId.getId());
   }
 
+  public ObjectId(ObjectId parent, TypedId typedId) {
+    this(parent, typedId.getType(), typedId.getId());
+  }
+
+  public static ObjectId fromRep(String rep) {
+    if (GLOBAL_TYPE.equals(rep)) {
+      return ObjectId.GLOBAL;
+    }
+
+    String[] tokens = rep.split(";");
+    if (tokens.length == 0) {
+      throw new IllegalArgumentException("Invalid rep format: " + rep);
+    }
+
+    ObjectId result = GLOBAL;
+    for (String token : tokens) {
+      if (GLOBAL_TYPE.equals(token)) {
+        continue;
+      }
+      result = new ObjectId(result, TypedId.fromRep(token));
+    }
+    return result;
+  }
+
+  /**
+   * @return unique string representation of this object, with type and id and prepended parent rep.
+   */
   public String getRep() {
     String id = getId();
+    String type = getType();
+
+    String rep;
     if (id == null || id.isEmpty()) {
-      return getType();
+      rep = type;
     } else {
-      return getType() + ":" + getId();
+      rep = type + ":" + getId();
     }
+
+    if (parent != null) {
+      rep = parent.getRep() + ";" + rep;
+    }
+
+    return rep;
   }
 
   public ObjectId getParent() {

@@ -49,7 +49,7 @@ public class ACLStoreTableSupplier implements ACLStoreSupplier {
       @Override
       public ACLStoreTable get() {
         try {
-          return DatasetsUtil.getOrCreateDataset(datasetFramework, TABLE_ID, ACLStoreTable.class.getName(),
+          return DatasetsUtil.getOrCreateDataset(datasetFramework, TABLE_ID, ACLStoreTable.TYPE,
                                                  DatasetProperties.EMPTY, ImmutableMap.<String, String>of(), null);
         } catch (Exception e) {
           throw Throwables.propagate(e);

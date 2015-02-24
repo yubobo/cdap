@@ -20,6 +20,7 @@ import co.cask.cdap.api.dataset.DatasetProperties;
 import co.cask.cdap.common.authorization.ObjectIds;
 import co.cask.cdap.common.authorization.SubjectIds;
 import co.cask.cdap.data2.dataset2.AbstractDatasetTest;
+import co.cask.cdap.data2.dataset2.module.lib.inmemory.InMemoryTableModule;
 import co.cask.cdap.proto.Id;
 import co.cask.common.authorization.ACLEntry;
 import co.cask.common.authorization.ACLStore;
@@ -43,7 +44,7 @@ public class ACLStoreTableDatasetTest extends AbstractDatasetTest {
   private static final ACLEntry NAMESPACE_ACL = new ACLEntry(
     ObjectIds.namespace("testNamespace"),
     SubjectIds.user("bob"),
-    Permission.LIFECYCLE
+    Permission.START
   );
 
   private static final ACLEntry SIMPLE_ACL = new ACLEntry(
@@ -67,7 +68,7 @@ public class ACLStoreTableDatasetTest extends AbstractDatasetTest {
   private static final ACLEntry OTHER_ACL2 = new ACLEntry(
     ObjectIds.application("otherNamespace", "otherApp"),
     SubjectIds.user("otherUser"),
-    Permission.LIFECYCLE
+    Permission.START
   );
 
   private static final ACLEntry UNRELATED_ACL = new ACLEntry(
@@ -83,14 +84,24 @@ public class ACLStoreTableDatasetTest extends AbstractDatasetTest {
     Permission.READ
   );
 
-  private static final Id.DatasetModule MODULE_ID = Id.DatasetModule.from(new Id.Namespace("default"),
-                                                                          ACLStoreTableModule.class.getName());
-  private static final Id.DatasetInstance DATASET_ID = Id.DatasetInstance.from(new Id.Namespace("default"),
-                                                                               "testACLStoreTable");
+  private static final Id.DatasetModule TABLE_MODULE_ID = Id.DatasetModule.from(
+    Id.Namespace.from("default"), InMemoryTableModule.class.getName());
+
+  private static final Id.DatasetModule CORE_MODULE_ID = Id.DatasetModule.from(
+    Id.Namespace.from("default"), CoreDatasetsModule.class.getName());
+
+  private static final Id.DatasetModule MODULE_ID = Id.DatasetModule.from(
+    Id.Namespace.from("default"), ACLStoreTableModule.class.getName());
+
+  private static final Id.DatasetInstance DATASET_ID = Id.DatasetInstance.from(
+    Id.Namespace.from("default"), "testACLStoreTable");
+
   private ACLStoreTable aclStore;
 
   @Before
   public void setUp() throws Exception {
+    addModule(TABLE_MODULE_ID, new InMemoryTableModule());
+    addModule(CORE_MODULE_ID, new CoreDatasetsModule());
     addModule(MODULE_ID, new ACLStoreTableModule());
     createInstance(ACLStoreTable.class.getName(), DATASET_ID, DatasetProperties.EMPTY);
     this.aclStore = getInstance(DATASET_ID);
@@ -102,6 +113,8 @@ public class ACLStoreTableDatasetTest extends AbstractDatasetTest {
   public void tearDown() throws Exception {
     deleteInstance(DATASET_ID);
     deleteModule(MODULE_ID);
+    deleteModule(CORE_MODULE_ID);
+    deleteModule(TABLE_MODULE_ID);
   }
 
   @Test
@@ -177,8 +190,8 @@ public class ACLStoreTableDatasetTest extends AbstractDatasetTest {
   public void testMultiSearchAndDelete() throws Exception {
     aclStore.write(SIMPLE_ACL_PARENT);
 
-    ACLEntry sameObjectAndSubject = new ACLEntry(SIMPLE_ACL);
-    sameObjectAndSubject.setPermission(Permission.LIFECYCLE);
+    ACLEntry sameObjectAndSubject = new ACLEntry(SIMPLE_ACL.getObject(), SIMPLE_ACL.getSubject(),
+                                                 Permission.START);
     Assert.assertNotEquals(sameObjectAndSubject.getPermission(), SIMPLE_ACL.getPermission());
 
     testSearchAndDelete(ImmutableList.of(SIMPLE_ACL, sameObjectAndSubject),
@@ -218,22 +231,6 @@ public class ACLStoreTableDatasetTest extends AbstractDatasetTest {
     for (ACLEntry entry : expectedEntriesAfterDelete) {
       Assert.assertTrue("Expected '" + entry + "' to exist", aclStore.exists(entry));
     }
-  }
-
-  @Test
-  public void testAnyPermission() throws Exception {
-    // asking for ANY permission gives ACL with ANY permission if any ACLs exist
-    // for the (object, subject) pair for any permissions
-    SubjectId currentUser = SubjectIds.user("bob");
-    String namespaceId = "someNamespace";
-    ObjectId objectId = ObjectIds.application(namespaceId, "someApp");
-
-    aclStore.write(new ACLEntry(objectId, currentUser, Permission.READ));
-
-    Assert.assertTrue(aclStore.exists(new ACLEntry(objectId, currentUser, Permission.ANY)));
-    Set<ACLEntry> searchResults = aclStore.search(new ACLStore.Query(objectId, currentUser, Permission.ANY));
-    Assert.assertEquals(1, searchResults.size());
-    Assert.assertTrue(searchResults.contains(new ACLEntry(objectId, currentUser, Permission.ANY)));
   }
 
   @Test

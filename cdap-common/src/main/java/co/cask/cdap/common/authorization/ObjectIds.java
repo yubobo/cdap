@@ -15,12 +15,8 @@
  */
 package co.cask.cdap.common.authorization;
 
-import co.cask.cdap.proto.ProgramType;
 import co.cask.common.authorization.ObjectId;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-
-import java.util.Map;
 
 /**
  * Various helper functions to construct {@link ObjectId}s.
@@ -30,28 +26,6 @@ public class ObjectIds {
   public static final String NAMESPACE = "namespace";
   public static final String APPLICATION = "app";
   public static final String ADAPTER = "adapter";
-  public static final String FLOW = "flow";
-  public static final String MAPREDUCE = "mapreduce";
-  public static final String PROCEDURE = "procedure";
-  public static final String SERVICE = "service";
-  public static final String SPARK = "spark";
-  public static final String WORKFLOW = "workflow";
-
-  public static final Map<ProgramType, String> PROGRAM_TYPE_MAP = ImmutableMap.<ProgramType, String>builder()
-    .put(ProgramType.FLOW, "flow")
-    .put(ProgramType.MAPREDUCE, "mapreduce")
-    .put(ProgramType.PROCEDURE, "procedure")
-    .put(ProgramType.SERVICE, "service")
-    .put(ProgramType.SPARK, "spark")
-    .put(ProgramType.WEBAPP, "webapp")
-    .put(ProgramType.WORKFLOW, "workflow")
-    .build();
-
-  static {
-    for (ProgramType programType : ProgramType.values()) {
-      Preconditions.checkState(PROGRAM_TYPE_MAP.containsKey(programType));
-    }
-  }
 
   public static ObjectId namespace(String id) {
     return new ObjectId(NAMESPACE, id);
@@ -61,16 +35,29 @@ public class ObjectIds {
     return new ObjectId(namespace(namespaceId), APPLICATION, id);
   }
 
-  public static ObjectId program(String namespaceId, String appId, ProgramType programType, String programId) {
-    return new ObjectId(application(namespaceId, appId), getTypeString(programType), programId);
-  }
-
-  private static String getTypeString(ProgramType programType) {
-    Preconditions.checkArgument(PROGRAM_TYPE_MAP.containsKey(programType));
-    return PROGRAM_TYPE_MAP.get(programType);
-  }
-
   public static ObjectId adapter(String namespaceId, String id) {
     return new ObjectId(namespace(namespaceId), ADAPTER, id);
+  }
+
+  public static ObjectId validate(ObjectId objectId) {
+    if (ObjectId.GLOBAL.getType().equals(objectId.getType())) {
+      return objectId;
+    } else if (NAMESPACE.equals(objectId.getType())) {
+      Preconditions.checkArgument(ObjectId.GLOBAL.equals(objectId.getParent()),
+                                  "Parent of namespace must be GLOBAL");
+      validate(objectId.getParent());
+    } else if (APPLICATION.equals(objectId.getType())) {
+      Preconditions.checkArgument(NAMESPACE.equals(objectId.getParent().getType()),
+                                  "Parent of app must be a NAMESPACE");
+      validate(objectId.getParent());
+    } else if (ADAPTER.equals(objectId.getType())) {
+      Preconditions.checkArgument(NAMESPACE.equals(objectId.getParent().getType()),
+                                  "Parent of adapter must be a NAMESPACE");
+      validate(objectId.getParent());
+    } else {
+      throw new IllegalArgumentException("Unknown object type: " + objectId.getType());
+    }
+
+    return objectId;
   }
 }

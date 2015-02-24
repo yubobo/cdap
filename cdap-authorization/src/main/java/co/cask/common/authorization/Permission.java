@@ -27,13 +27,17 @@ import java.util.Map;
  */
 public class Permission {
 
-  public static final Permission LIFECYCLE = new Permission("lifecycle", new byte[]{2});
-  public static final Permission READ = new Permission("read", new byte[]{3});
-  public static final Permission WRITE = new Permission("write", new byte[]{4});
-  public static final Permission ADMIN = new Permission("admin", new byte[]{6});
-  public static final Permission ANY = new Permission("any", new byte[]{8});
+  public static final Permission ADMIN = new Permission("admin", new byte[]{0});
+  public static final Permission VIEW = new Permission("lifecycle", new byte[]{1});
+  public static final Permission CREATE = new Permission("create", new byte[]{2});
+  public static final Permission DELETE = new Permission("delete", new byte[]{3});
+  public static final Permission CONFIGURE = new Permission("configure", new byte[]{4});
+  public static final Permission READ = new Permission("read", new byte[]{5});
+  public static final Permission WRITE = new Permission("write", new byte[]{6});
+  public static final Permission START = new Permission("start", new byte[]{7});
+  public static final Permission STOP = new Permission("stop", new byte[]{8});
 
-  public static final Permission[] ALL = { READ, LIFECYCLE, WRITE, ADMIN, ANY };
+  public static final Permission[] ALL = { ADMIN, VIEW, CREATE, DELETE, CONFIGURE, READ, WRITE, START, STOP};
 
   private static final Map<byte[], Permission> ID_INDEX;
   static {
@@ -56,7 +60,7 @@ public class Permission {
   private final String name;
   private final byte[] id;
 
-  public Permission(String name, byte[] id) {
+  private Permission(String name, byte[] id) {
     this.name = name;
     this.id = id;
   }
@@ -66,7 +70,7 @@ public class Permission {
       return ID_INDEX.get(id);
     }
 
-    throw new IllegalArgumentException("Unknown id: " + Arrays.toString(id));
+    throw new IllegalArgumentException("No Permission with id: " + Arrays.toString(id));
   }
 
   public static Permission fromName(String name) {
@@ -74,7 +78,7 @@ public class Permission {
       return NAME_INDEX.get(name);
     }
 
-    throw new IllegalArgumentException("Unknown name: " + name);
+    throw new IllegalArgumentException("No Permission with name: " + name);
   }
 
   public String getName() {

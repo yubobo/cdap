@@ -16,6 +16,7 @@
 package co.cask.common.authorization;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 
 /**
  * Represents an ID with an associated type.
@@ -26,8 +27,18 @@ public class TypedId {
   private final String type;
 
   public TypedId(String type, String id) {
+    Preconditions.checkNotNull("type cannot be null", type);
+    Preconditions.checkNotNull("id cannot be null", id);
     this.type = type;
     this.id = id;
+  }
+
+  public static TypedId fromRep(String rep) {
+    String[] tokens = rep.split(":");
+    if (tokens.length == 0) {
+      throw new IllegalArgumentException("Invalid rep format: " + rep);
+    }
+    return new TypedId(tokens[0], tokens.length <= 1 ? "" : tokens[1]);
   }
 
   public String getType() {

@@ -16,11 +16,15 @@
 package co.cask.cdap.authorization;
 
 import co.cask.cdap.common.conf.CConfiguration;
+import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.http.CommonNettyHttpServiceBuilder;
 import co.cask.common.authorization.ACLStore;
+import co.cask.common.authorization.client.ACLStoreSupplier;
+import co.cask.common.authorization.client.AuthorizationClient;
 import co.cask.http.NettyHttpService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.inject.Inject;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.discovery.Discoverable;
 import org.apache.twill.discovery.DiscoveryService;
@@ -32,17 +36,17 @@ import java.net.InetSocketAddress;
  */
 public class ACLManagerService extends AbstractIdleService {
 
-  public static final String DISCOVERABLE_NAME = "cdap.authorization.acl.manager";
-
   private final NettyHttpService httpService;
   private final DiscoveryService discoveryService;
 
   private Cancellable cancelDiscovery;
 
-  public ACLManagerService(CConfiguration configuration, DiscoveryService discoveryService, ACLStore aclStore) {
+  @Inject
+  public ACLManagerService(CConfiguration configuration, DiscoveryService discoveryService,
+                           ACLStoreSupplier aclStore, AuthorizationClient authorizationClient) {
     this.discoveryService = discoveryService;
     this.httpService = new CommonNettyHttpServiceBuilder(configuration)
-      .addHttpHandlers(ImmutableList.of(new ACLManagerHandler(aclStore)))
+      .addHttpHandlers(ImmutableList.of(new ACLManagerHandler(aclStore, authorizationClient)))
       .build();
   }
 
@@ -52,7 +56,7 @@ public class ACLManagerService extends AbstractIdleService {
     cancelDiscovery = discoveryService.register(new Discoverable() {
       @Override
       public String getName() {
-        return DISCOVERABLE_NAME;
+        return Constants.Service.ACL_MANAGER;
       }
 
       @Override
