@@ -29,9 +29,9 @@ import java.util.List;
 /**
  * Class to Upgrade the archive directories
  */
-public class ArchiveUpgrade extends AbstractUpgrade implements Upgrade {
+public class ArchiveUpgrader extends AbstractUpgrader implements Upgrade {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ArchiveUpgrade.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ArchiveUpgrader.class);
 
   @Override
   public void upgrade(Injector injector) throws Exception {
@@ -42,9 +42,8 @@ public class ArchiveUpgrade extends AbstractUpgrade implements Upgrade {
    * Upgrades the streams archive path
    */
   private void upgradeStreamFilepath() throws IOException {
-    List<Location> streamLocations = locationFactory.create(EMPTY_STRING).append(FORWARD_SLASH +
-                                                                                   Constants.Service.STREAMS +
-                                                                                   FORWARD_SLASH).list();
+    List<Location> streamLocations = locationFactory.create(cConf.get(Constants.Stream.BASE_DIR)).list();
+    
     for (Location oldLocation : streamLocations) {
       Location newLocation = locationFactory.create(FORWARD_SLASH + Constants.DEFAULT_NAMESPACE + FORWARD_SLASH +
                                                       Constants.Service.STREAMS + FORWARD_SLASH +

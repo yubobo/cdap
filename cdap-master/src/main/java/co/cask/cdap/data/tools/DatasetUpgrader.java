@@ -41,9 +41,9 @@ import java.io.IOException;
 /**
  * Handles upgrade for System and User Datasets
  */
-public class DatasetUpgrade extends AbstractUpgrade implements Upgrade {
+public class DatasetUpgrader extends AbstractUpgrader implements Upgrade {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MDSUpgrade.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MDSUpgrader.class);
 
   @Override
   public void upgrade(Injector injector) throws Exception {
@@ -63,15 +63,15 @@ public class DatasetUpgrade extends AbstractUpgrade implements Upgrade {
     // Upgrade all datasets in system namespace
     Id.Namespace systemNamespace = Id.Namespace.from(Constants.SYSTEM_NAMESPACE);
     for (DatasetSpecification spec : framework.getInstances(systemNamespace)) {
-      System.out.println(String.format("Upgrading dataset: %s, spec: %s", spec.getName(), spec.toString()));
+      LOG.info("Upgrading dataset: {}, spec: {}", spec.getName(), spec.toString());
       DatasetAdmin admin = framework.getAdmin(Id.DatasetInstance.from(systemNamespace, spec.getName()), null);
       // we know admin is not null, since we are looping over existing datasets
       admin.upgrade();
-      System.out.println(String.format("Upgraded dataset: %s", spec.getName()));
+      LOG.info("Upgraded dataset: {}", spec.getName());
     }
   }
 
-  private static void upgradeUserTables(final Injector injector) throws Exception {
+  private static void upgradeUserTables(final Injector injector) throws Exception  {
     // We assume that all tables in USER namespace belong to Table type datasets. So we loop thru them
     // and upgrading with the help of HBaseTableAdmin
     DefaultDatasetNamespace namespace = new DefaultDatasetNamespace(cConf);
@@ -86,16 +86,19 @@ public class DatasetUpgrade extends AbstractUpgrade implements Upgrade {
       Id.DatasetInstance datasetInstanceId = Id.DatasetInstance.from(tableId.getNamespace(), tableId.getTableName());
       // todo: it works now, but we will want to change it if namespacing of datasets in HBase is more than +prefix
       if (namespace.fromNamespaced(datasetInstanceId) != null) {
-        System.out.println(String.format("Upgrading hbase table: %s, desc: %s", tableName, desc.toString()));
+        LOG.info("Upgrading hbase table: {}, desc: {}", tableName, desc.toString());
 
         final boolean supportsIncrement =
           "true".equalsIgnoreCase(desc.getValue(Table.PROPERTY_READLESS_INCREMENT));
+        final boolean transactional =
+          !"true".equalsIgnoreCase(desc.getValue(Constants.Dataset.TABLE_TX_DISABLED));
         DatasetAdmin admin = new AbstractHBaseDataSetAdmin(tableName, hConf, hBaseTableUtil) {
           @Override
           protected CoprocessorJar createCoprocessorJar() throws IOException {
             return HBaseTableAdmin.createCoprocessorJarInternal(cConf,
                                                                 injector.getInstance(LocationFactory.class),
                                                                 hBaseTableUtil,
+                                                                transactional,
                                                                 supportsIncrement);
           }
 
@@ -112,7 +115,7 @@ public class DatasetUpgrade extends AbstractUpgrade implements Upgrade {
           }
         };
         admin.upgrade();
-        System.out.println(String.format("Upgraded hbase table: %s", tableName));
+        LOG.info("Upgraded hbase table: {}", tableName);
       }
     }
   }

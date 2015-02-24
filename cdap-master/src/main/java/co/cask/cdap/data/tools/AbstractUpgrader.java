@@ -46,30 +46,29 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * Abstract class for Upgrade
  */
-public abstract class AbstractUpgrade {
+public abstract class AbstractUpgrader {
 
-  public static final String EMPTY_STRING = "";
-  private static final Logger LOG = LoggerFactory.getLogger(AbstractUpgrade.class);
-  static final byte[] COLUMN = Bytes.toBytes("c");
-  static final String FORWARD_SLASH = "/";
-  static final String CDAP_WITH_FORWARD_SLASH = Constants.Logging.SYSTEM_NAME + FORWARD_SLASH;
-  static final String DEVELOPER_STRING = "developer";
+  protected static final String EMPTY_STRING = "";
+  protected static final Logger LOG = LoggerFactory.getLogger(AbstractUpgrader.class);
+  protected static final byte[] COLUMN = Bytes.toBytes("c");
+  protected static final String FORWARD_SLASH = "/";
+  protected static final String CDAP_WITH_FORWARD_SLASH = Constants.Logging.SYSTEM_NAME + FORWARD_SLASH;
+  protected static final String DEVELOPER_STRING = "developer";
 
-  static DatasetFramework namespacedFramework;
-  static DatasetFramework nonNamespaedFramework;
-  static TransactionExecutorFactory executorFactory;
-  static CConfiguration cConf;
-  static TransactionService txService;
-  static ZKClientService zkClientService;
-  static LocationFactory locationFactory;
-  static TransactionSystemClient txClient;
-  static DefaultStore defaultStore;
-  static final Gson GSON;
+  protected static DatasetFramework namespacedFramework;
+  protected static DatasetFramework nonNamespaedFramework;
+  protected static TransactionExecutorFactory executorFactory;
+  protected static CConfiguration cConf;
+  protected static TransactionService txService;
+  protected static ZKClientService zkClientService;
+  protected static LocationFactory locationFactory;
+  protected static TransactionSystemClient txClient;
+  protected static DefaultStore defaultStore;
+  protected static final Gson GSON;
 
   static {
     GsonBuilder builder = new GsonBuilder();
@@ -80,7 +79,7 @@ public abstract class AbstractUpgrade {
   /**
    * Sets up a {@link DatasetFramework} instance for standalone usage.  NOTE: should NOT be used by applications!!!
    */
-  public static DatasetFramework createRegisteredDatasetFramework(Injector injector)
+  protected static DatasetFramework createRegisteredDatasetFramework(Injector injector)
     throws DatasetManagementException, IOException {
     CConfiguration cConf = injector.getInstance(CConfiguration.class);
 
@@ -88,7 +87,6 @@ public abstract class AbstractUpgrade {
     DatasetFramework datasetFramework =
       new NamespacedDatasetFramework(new InMemoryDatasetFramework(registryFactory),
                                      new DefaultDatasetNamespace(cConf));
-    // TODO: this doesn't sound right. find out why its needed.
     datasetFramework.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE, "table"),
                                new HBaseTableModule());
     datasetFramework.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE, "metricsTable"),
@@ -102,24 +100,20 @@ public abstract class AbstractUpgrade {
   /**
    * Creates a non-namespaced {@link DatasetFramework} to access existing datasets which are not namespaced
    */
-  public DatasetFramework createNonNamespaceDSFramework(Injector injector) throws DatasetManagementException {
+  protected DatasetFramework createNonNamespaceDSFramework(Injector injector) throws DatasetManagementException {
     DatasetDefinitionRegistryFactory registryFactory = injector.getInstance(DatasetDefinitionRegistryFactory.class);
     DatasetFramework nonNamespacedFramework = new InMemoryDatasetFramework(registryFactory);
     nonNamespacedFramework.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE, "table"),
                                      new HBaseTableModule());
     nonNamespacedFramework.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE, "metricsTable"),
                                      new HBaseMetricsTableModule());
-    nonNamespacedFramework.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE, "core"), 
+    nonNamespacedFramework.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE, "core"),
                                      new CoreDatasetsModule());
     nonNamespacedFramework.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE, "fileSet"), new FileSetModule());
     return nonNamespacedFramework;
   }
 
-  Location renameLocation(String oldLocation, String newLocation) throws URISyntaxException, IOException {
-    return renameLocation(new URI(oldLocation), new URI(newLocation));
-  }
-
-  Location renameLocation(URI oldLocation, URI newLocation) throws IOException {
+  protected Location renameLocation(URI oldLocation, URI newLocation) throws IOException {
     return renameLocation(locationFactory.create(oldLocation), locationFactory.create(newLocation));
   }
 
@@ -131,7 +125,7 @@ public abstract class AbstractUpgrade {
    * @return new location if and only if the file or directory is successfully moved; null otherwise.
    * @throws IOException
    */
-  Location renameLocation(Location oldLocation, Location newLocation) throws IOException {
+  protected Location renameLocation(Location oldLocation, Location newLocation) throws IOException {
     if (!newLocation.exists() && oldLocation.exists()) {
       newLocation.mkdirs();
       return oldLocation.renameTo(newLocation);
@@ -146,7 +140,7 @@ public abstract class AbstractUpgrade {
    * @param validPrefixes the valid prefixes
    * @return boolean which is true if the key start with validPrefixes else false
    */
-  boolean checkKeyValidality(String key, String[] validPrefixes) {
+  protected boolean isKeyValid(String key, String[] validPrefixes) {
     for (String validPrefix : validPrefixes) {
       if (key.startsWith(validPrefix)) {
         return true;
