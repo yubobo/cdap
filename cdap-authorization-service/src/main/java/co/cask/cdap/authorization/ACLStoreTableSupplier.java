@@ -37,7 +37,7 @@ import com.google.inject.Singleton;
 public class ACLStoreTableSupplier implements ACLStoreSupplier {
 
   private static final String TABLE_NAME = "aclStoreTable";
-  private static final Id.DatasetInstance TABLE_ID = new Id.DatasetInstance(
+  private static final Id.DatasetInstance TABLE_ID = Id.DatasetInstance.from(
     new Id.Namespace(Constants.SYSTEM_NAMESPACE), TABLE_NAME);
 
   private final Supplier<ACLStoreTable> supplier;

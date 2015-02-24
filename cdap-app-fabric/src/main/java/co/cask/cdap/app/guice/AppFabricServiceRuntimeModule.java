@@ -18,6 +18,7 @@ package co.cask.cdap.app.guice;
 import co.cask.cdap.app.deploy.Manager;
 import co.cask.cdap.app.deploy.ManagerFactory;
 import co.cask.cdap.app.store.StoreFactory;
+import co.cask.cdap.authorization.AuthorizationModule;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.runtime.RuntimeModule;
@@ -114,6 +115,7 @@ public final class AppFabricServiceRuntimeModule extends RuntimeModule {
     return Modules.combine(new AppFabricServiceModule(StreamHandlerV2.class, StreamFetchHandlerV2.class,
                                                       StreamHandler.class, StreamFetchHandler.class),
                            new ConfigStoreModule().getInMemoryModule(),
+                           new AuthorizationModule().getInMemoryModule(),
                            new AbstractModule() {
                              @Override
                              protected void configure() {
@@ -160,6 +162,7 @@ public final class AppFabricServiceRuntimeModule extends RuntimeModule {
     return Modules.combine(new AppFabricServiceModule(StreamHandlerV2.class, StreamFetchHandlerV2.class,
                                                       StreamHandler.class, StreamFetchHandler.class),
                            new ConfigStoreModule().getStandaloneModule(),
+                           new AuthorizationModule().getStandaloneModule(),
                            new AbstractModule() {
                              @Override
                              protected void configure() {
@@ -205,6 +208,7 @@ public final class AppFabricServiceRuntimeModule extends RuntimeModule {
 
     return Modules.combine(new AppFabricServiceModule(),
                            new ConfigStoreModule().getDistributedModule(),
+                           new AuthorizationModule().getDistributedModule(),
                            new AbstractModule() {
                              @Override
                              protected void configure() {

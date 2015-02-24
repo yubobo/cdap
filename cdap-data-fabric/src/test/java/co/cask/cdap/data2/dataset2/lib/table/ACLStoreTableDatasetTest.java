@@ -83,10 +83,10 @@ public class ACLStoreTableDatasetTest extends AbstractDatasetTest {
     Permission.READ
   );
 
-  private static final Id.DatasetModule MODULE_ID = new Id.DatasetModule(new Id.Namespace("default"),
-                                                                         ACLStoreTableModule.class.getName());
-  private static final Id.DatasetInstance DATASET_ID = new Id.DatasetInstance(new Id.Namespace("default"),
-                                                                             "testACLStoreTable");
+  private static final Id.DatasetModule MODULE_ID = Id.DatasetModule.from(new Id.Namespace("default"),
+                                                                          ACLStoreTableModule.class.getName());
+  private static final Id.DatasetInstance DATASET_ID = Id.DatasetInstance.from(new Id.Namespace("default"),
+                                                                               "testACLStoreTable");
   private ACLStoreTable aclStore;
 
   @Before

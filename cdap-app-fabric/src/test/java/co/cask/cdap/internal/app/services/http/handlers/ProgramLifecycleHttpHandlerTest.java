@@ -42,6 +42,7 @@ import co.cask.cdap.gateway.handlers.ProgramLifecycleHttpHandler;
 import co.cask.cdap.internal.app.ScheduleSpecificationCodec;
 import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
 import co.cask.cdap.internal.app.services.http.AppFabricTestBase;
+import co.cask.cdap.proto.ApplicationRecord;
 import co.cask.cdap.proto.Instances;
 import co.cask.cdap.proto.ProgramRunStatus;
 import co.cask.cdap.proto.ProgramType;
@@ -55,6 +56,7 @@ import co.cask.tephra.TransactionExecutorFactory;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -89,6 +91,7 @@ public class ProgramLifecycleHttpHandlerTest extends AppFabricTestBase {
   private static final String WORDCOUNT_FLOW_NAME = "WordCountFlow";
   private static final String WORDCOUNT_MAPREDUCE_NAME = "VoidMapReduceJob";
   private static final String WORDCOUNT_FLOWLET_NAME = "StreamSource";
+  private static final String WORDCOUNT_STREAM_NAME = "text";
   private static final String DUMMY_APP_ID = "dummy";
   private static final String DUMMY_RUNNABLE_ID = "dummy-batch";
   private static final String SLEEP_WORKFLOW_APP_ID = "SleepWorkflowApp";
@@ -878,7 +881,7 @@ public class ProgramLifecycleHttpHandlerTest extends AppFabricTestBase {
   public void testServices() throws Exception {
     HttpResponse response = deploy(AppWithServices.class, Constants.Gateway.API_VERSION_3_TOKEN, TEST_NAMESPACE2);
     Assert.assertEquals(200, response.getStatusLine().getStatusCode());
-    
+
     // start service in wrong namespace
     int code = getRunnableStartStop(TEST_NAMESPACE1, APP_WITH_SERVICES_APP_ID,
                                     ProgramType.SERVICE.getCategoryName(), APP_WITH_SERVICES_SERVICE_NAME, "start");
@@ -1356,5 +1359,85 @@ public class ProgramLifecycleHttpHandlerTest extends AppFabricTestBase {
                              new TypeToken<Map<String, String>>() {
                              }.getType());
     Assert.assertEquals(0, argsRead.size());
+  }
+
+  @Test
+  public void testAuthorization() throws Exception {
+    String appId = WORDCOUNT_APP_NAME;
+    String namespace = TEST_NAMESPACE1;
+
+    // deploy app
+    HttpResponse response = deploy(WordCountApp.class, Constants.Gateway.API_VERSION_3_TOKEN, namespace);
+    Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+
+    response = deploy(AppWithWorkflow.class, Constants.Gateway.API_VERSION_3_TOKEN, namespace);
+    Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+
+    response = deploy(AppWithServices.class, Constants.Gateway.API_VERSION_3_TOKEN, namespace);
+    Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+
+    String baseUrl = getVersionedAPIPath("", Constants.Gateway.API_VERSION_3_TOKEN, namespace);
+    String appBaseUrl = getVersionedAPIPath("apps/" + appId, Constants.Gateway.API_VERSION_3_TOKEN, namespace);
+    String flowBaseUrl = getVersionedAPIPath("apps/" + appId + "/" + ProgramType.FLOW.getCategoryName()
+                                               + "/" + WORDCOUNT_FLOW_NAME, Constants.Gateway.API_VERSION_3_TOKEN,
+                                             namespace);
+    String flowletBaseUrl = flowBaseUrl + "/flowlets/" + WORDCOUNT_FLOWLET_NAME;
+    String workflowBaseUrl = baseUrl + "/apps/" + APP_WITH_WORKFLOW_APP_ID
+      + "/workflows/" + APP_WITH_WORKFLOW_WORKFLOW_NAME;
+    String serviceBaseUrl = baseUrl + "/apps/" + APP_WITH_SERVICES_APP_ID
+      + "/services/" + APP_WITH_SERVICES_SERVICE_NAME;
+    String serviceRunnableBaseUrl = serviceBaseUrl + "/runnables/" + APP_WITH_SERVICES_SERVICE_NAME;
+
+    response = doGet(baseUrl + "/apps");
+    List<ApplicationRecord> apps = GSON.fromJson(EntityUtils.toString(response.getEntity()),
+                                                 new TypeToken<List<ApplicationRecord>>() { }.getType());
+    List<String> appIds = Lists.newArrayList();
+    for (ApplicationRecord applicationRecord : apps) {
+      appIds.add(applicationRecord.getId());
+    }
+    Assert.assertTrue(appIds.contains(WORDCOUNT_APP_NAME));
+    Assert.assertTrue(appIds.contains(APP_WITH_WORKFLOW_APP_ID));
+    Assert.assertTrue(appIds.contains(APP_WITH_SERVICES_APP_ID));
+
+    usePowerlessUser();
+    // TODO: check that batch status/instances are filtered?
+    Assert.assertEquals(200, doPost(baseUrl + "/status", "[]").getStatusLine().getStatusCode());
+    Assert.assertEquals(200, doPost(baseUrl + "/instances", "[]").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doDelete(baseUrl + "/queues").getStatusLine().getStatusCode());
+
+    String[] programTypes = new String[] { "flows", "procedures", "mapreduce", "spark", "workflows", "services"};
+    for (String programType : programTypes) {
+      // TODO: check that programs are filtered?
+      // TODO: unauthorized user shouldn't be able to view this endpoint
+      Assert.assertEquals(200, doGet(baseUrl + "/" + programType).getStatusLine().getStatusCode());
+      Assert.assertEquals(200, doGet(appBaseUrl + "/" + programType).getStatusLine().getStatusCode());
+    }
+
+    Assert.assertEquals(401, doPost(flowBaseUrl + "/start").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doPost(flowBaseUrl + "/stop").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doGet(flowBaseUrl + "/runs").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doGet(flowBaseUrl + "/runtimeargs").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doGet(flowBaseUrl).getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doGet(flowletBaseUrl + "/instances").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doPut(flowletBaseUrl + "/instances",
+                                   GSON.toJson(new Instances(3))).getStatusLine().getStatusCode());
+    String oldStreamId = GSON.toJson(ImmutableMap.of("oldStreamId", WORDCOUNT_STREAM_NAME));
+    Assert.assertEquals(401, doPut(flowletBaseUrl + "/connections/" + WORDCOUNT_STREAM_NAME, oldStreamId)
+      .getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doGet(flowBaseUrl + "/live-info").getStatusLine().getStatusCode());
+
+    // workflow/schedule APIs
+    Assert.assertEquals(401, doGet(workflowBaseUrl + "/current").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doGet(workflowBaseUrl + "/nextruntime").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doGet(workflowBaseUrl + "/schedules").getStatusLine().getStatusCode());
+
+    // service APIs
+    Assert.assertEquals(401, doGet(serviceRunnableBaseUrl + "/instances").getStatusLine().getStatusCode());
+    Assert.assertEquals(401, doPut(serviceRunnableBaseUrl + "/instances").getStatusLine().getStatusCode());
+
+    useAdminUser();
+
+    response = doDelete(getVersionedAPIPath("apps/", Constants.Gateway.API_VERSION_3_TOKEN, namespace));
+    Assert.assertEquals(200, response.getStatusLine().getStatusCode());
   }
 }
