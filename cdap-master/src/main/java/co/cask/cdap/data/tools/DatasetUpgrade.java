@@ -16,18 +16,38 @@
 
 package co.cask.cdap.data.tools;
 
+import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.api.dataset.DatasetAdmin;
+import co.cask.cdap.api.dataset.DatasetDefinition;
+import co.cask.cdap.api.dataset.DatasetProperties;
 import co.cask.cdap.api.dataset.DatasetSpecification;
+import co.cask.cdap.api.dataset.table.Row;
+import co.cask.cdap.api.dataset.table.Scanner;
 import co.cask.cdap.api.dataset.table.Table;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data2.datafabric.DefaultDatasetNamespace;
+import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
+import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
+import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetTypeMDS;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
+import co.cask.cdap.data2.dataset2.DatasetManagementException;
 import co.cask.cdap.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
 import co.cask.cdap.data2.dataset2.lib.table.hbase.HBaseTableAdmin;
+import co.cask.cdap.data2.dataset2.tx.DatasetContext;
+import co.cask.cdap.data2.dataset2.tx.Transactional;
 import co.cask.cdap.data2.transaction.queue.QueueAdmin;
 import co.cask.cdap.data2.util.hbase.HBaseTableUtil;
 import co.cask.cdap.data2.util.hbase.TableId;
+import co.cask.cdap.internal.app.store.DefaultStore;
+import co.cask.cdap.proto.DatasetModuleMeta;
 import co.cask.cdap.proto.Id;
+import co.cask.tephra.DefaultTransactionExecutor;
+import co.cask.tephra.TransactionAware;
+import co.cask.tephra.TransactionExecutor;
+import co.cask.tephra.TransactionExecutorFactory;
+import co.cask.tephra.TransactionFailureException;
+import com.google.common.base.Supplier;
+import com.google.common.base.Throwables;
 import com.google.inject.Injector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -37,6 +57,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Handles upgrade for System and User Datasets
@@ -44,6 +66,34 @@ import java.io.IOException;
 public class DatasetUpgrade extends AbstractUpgrade implements Upgrade {
 
   private static final Logger LOG = LoggerFactory.getLogger(MDSUpgrade.class);
+
+  private final Transactional<DatasetContext<Table>, Table> datasetTypeMDS;
+
+  public DatasetUpgrade() {
+    this.datasetTypeMDS = Transactional.of(
+      new TransactionExecutorFactory() {
+        @Override
+        public TransactionExecutor createExecutor(Iterable<TransactionAware> txAwares) {
+          return new DefaultTransactionExecutor(txClient, txAwares);
+        }
+      },
+      new Supplier<DatasetContext<Table>>() {
+        @Override
+        public DatasetContext<Table> get() {
+          try {
+            Table table = DatasetsUtil.getOrCreateDataset(namespacedFramework, Id.DatasetInstance.from
+                                                            (Constants.SYSTEM_NAMESPACE_ID, 
+                                                             DatasetMetaTableUtil.META_TABLE_NAME), "table",
+                                                          DatasetProperties.EMPTY, 
+                                                          DatasetDefinition.NO_ARGUMENTS, null);
+            return DatasetContext.of(table);
+          } catch (Exception e) {
+            LOG.error("Failed to access {} table", DefaultStore.APP_META_TABLE, e);
+            throw Throwables.propagate(e);
+          }
+        }
+      });
+  }
 
   @Override
   public void upgrade(Injector injector) throws Exception {
@@ -69,6 +119,56 @@ public class DatasetUpgrade extends AbstractUpgrade implements Upgrade {
       admin.upgrade();
       System.out.println(String.format("Upgraded dataset: %s", spec.getName()));
     }
+    upgradeDatasetTypeMDS();
+  }
+
+  private void upgradeDatasetTypeMDS() throws TransactionFailureException,
+    InterruptedException, IOException {
+    LOG.info("YOO! In function");
+    datasetTypeMDS.execute(new TransactionExecutor.Function<DatasetContext<Table>, Void>() {
+      @Override
+      public Void apply(DatasetContext<Table> ctx) throws Exception {
+        Scanner rows = ctx.get().scan(null, null);
+        Row row;
+        while ((row = rows.next()) != null) {
+          LOG.info("YOO! Inside While");
+          String key = Bytes.toString(row.getRow()).trim();
+          LOG.info("The key is {}", key);
+          if (key.startsWith(DatasetTypeMDS.MODULES_PREFIX)) {
+            LOG.info("Upgrading dataset type {} meta data", key);
+            datasetModuleUpgrader(row);
+          }
+        }
+        return null;
+      }
+    });
+  }
+
+  private void datasetModuleUpgrader(Row row) throws IOException, DatasetManagementException, URISyntaxException {
+    DatasetTypeMDS datasetTypeMDS = new DatasetMetaTableUtil(namespacedFramework).getTypeMetaTable();
+    DatasetModuleMeta datasetModuleMeta = GSON.fromJson(Bytes.toString(row.get(COLUMN)), DatasetModuleMeta.class);
+    DatasetModuleMeta newDatasetModuleMeta;
+    if (datasetModuleMeta.getJarLocation() == null) {
+      LOG.info("YOO! Inside system");
+      //system module
+      newDatasetModuleMeta = new DatasetModuleMeta((Constants.SYSTEM_NAMESPACE + "_" +
+        datasetModuleMeta.getName()), datasetModuleMeta.getClassName(), datasetModuleMeta.getJarLocation(),
+                                                   datasetModuleMeta.getTypes(),
+                                                   datasetModuleMeta.getUsesModules());
+    } else {
+      LOG.info("YOO! Inside user");
+      String jarLocation = datasetModuleMeta.getJarLocation().toString();
+
+      URI newJarLocation = new URI(jarLocation.substring(0, (jarLocation.lastIndexOf(CDAP_WITH_FORWARD_SLASH) +
+        CDAP_WITH_FORWARD_SLASH.length())) + Constants.DEFAULT_NAMESPACE + FORWARD_SLASH +
+        jarLocation.substring(jarLocation.lastIndexOf(CDAP_WITH_FORWARD_SLASH) + CDAP_WITH_FORWARD_SLASH.length()));
+      
+      newDatasetModuleMeta = new DatasetModuleMeta((Constants.DEFAULT_NAMESPACE + "_" + datasetModuleMeta.getName()),
+                                                   datasetModuleMeta.getClassName(), newJarLocation,
+                                                   datasetModuleMeta.getTypes(), datasetModuleMeta.getUsesModules());
+      
+    }
+    datasetTypeMDS.writeModule(Id.Namespace.from(Constants.SYSTEM_NAMESPACE), newDatasetModuleMeta);
   }
 
   private static void upgradeUserTables(final Injector injector) throws Exception {
