@@ -41,12 +41,16 @@ import java.io.IOException;
 /**
  * Handles upgrade for System and User Datasets
  */
-public class DatasetUpgrader extends AbstractUpgrader implements Upgrade {
+public class DatasetUpgrader extends AbstractUpgrader {
 
   private static final Logger LOG = LoggerFactory.getLogger(MDSUpgrader.class);
 
+  public DatasetUpgrader(Injector injector) {
+    this.injector = injector;
+  }
+
   @Override
-  public void upgrade(Injector injector) throws Exception {
+  public void upgrade() throws Exception {
     // Upgrade system dataset
     upgradeSystemDatasets(injector, namespacedFramework);
 

@@ -70,7 +70,7 @@ public class LogUpgrader extends AbstractUpgrader implements Upgrade {
   }
 
   @Override
-  public void upgrade(Injector injector) throws Exception {
+  public void upgrade() throws Exception {
     final FileMetaDataManager fileMetaDataManager = new FileMetaDataManager(new LogSaverTableUtil(
       nonNamespaedFramework, cConf), txClient, locationFactory);
     logMDS.execute(new TransactionExecutor.Function<DatasetContext<Table>, Void>() {

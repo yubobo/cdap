@@ -35,10 +35,14 @@ import org.apache.twill.zookeeper.ZKClientService;
 /**
  * Does the necessary initial setup before Upgrading difference Services and Modules
  */
-public class UpgraderSetup extends AbstractUpgrader implements Upgrade {
+public class UpgraderSetup extends AbstractUpgrader {
+
+  public UpgraderSetup(Injector injector) {
+    this.injector = injector;
+  }
 
   @Override
-  public void upgrade(Injector injector) throws Exception {
+  public void upgrade() throws Exception {
 
     // Setting up all system datasets to be upgraded, collecting them from respective components
     namespacedFramework = createRegisteredDatasetFramework(injector);

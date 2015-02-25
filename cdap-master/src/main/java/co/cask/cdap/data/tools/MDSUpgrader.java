@@ -75,7 +75,7 @@ public class MDSUpgrader extends AbstractUpgrader implements Upgrade {
   }
 
   @Override
-  public void upgrade(Injector injector) throws Exception {
+  public void upgrade() throws Exception {
     appMDS.executeUnchecked(new TransactionExecutor.
       Function<UpgradeTable, Void>() {
       @Override

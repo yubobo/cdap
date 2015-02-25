@@ -52,6 +52,7 @@ import java.net.URI;
  */
 public abstract class AbstractUpgrader {
 
+  protected Injector injector;
   protected static final String EMPTY_STRING = "";
   protected static final Logger LOG = LoggerFactory.getLogger(AbstractUpgrader.class);
   protected static final byte[] COLUMN = Bytes.toBytes("c");
@@ -75,6 +76,8 @@ public abstract class AbstractUpgrader {
     ApplicationSpecificationAdapter.addTypeAdapters(builder);
     GSON = builder.create();
   }
+
+  abstract void upgrade() throws Exception;
 
   /**
    * Sets up a {@link DatasetFramework} instance for standalone usage.  NOTE: should NOT be used by applications!!!

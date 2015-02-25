@@ -22,5 +22,5 @@ import com.google.inject.Injector;
  * An interface to define Upgrade. Modules which needs to be upgraded should implement this.
  */
 public interface Upgrade {
-  void upgrade(Injector injector) throws Exception;
+
 }

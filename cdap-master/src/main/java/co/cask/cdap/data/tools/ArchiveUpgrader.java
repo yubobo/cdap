@@ -34,7 +34,7 @@ public class ArchiveUpgrader extends AbstractUpgrader implements Upgrade {
   private static final Logger LOG = LoggerFactory.getLogger(ArchiveUpgrader.class);
 
   @Override
-  public void upgrade(Injector injector) throws Exception {
+  public void upgrade() throws Exception {
     upgradeStreamFilepath();
   }
 
