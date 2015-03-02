@@ -23,9 +23,11 @@ import co.cask.cdap.api.dataset.DatasetSpecification;
 import co.cask.cdap.api.dataset.lib.AbstractDatasetDefinition;
 import co.cask.cdap.api.dataset.lib.KeyValueTable;
 import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
 
 import java.io.IOException;
 import java.util.Map;
+import javax.inject.Named;
 
 /**
  *
@@ -34,10 +36,18 @@ public class FakeDatasetDefinition extends AbstractDatasetDefinition<FakeDataset
 
   private final DatasetDefinition<? extends KeyValueTable, ?> tableDef;
 
+  @Inject
+  @Named("testBinding")
+  private String testBinding;
+
   public FakeDatasetDefinition(String name, DatasetDefinition<? extends KeyValueTable, ?> keyValueDef) {
     super(name);
     Preconditions.checkArgument(keyValueDef != null, "KeyValueTable definition is required");
     this.tableDef = keyValueDef;
+  }
+
+  public String getTestBinding() {
+    return testBinding;
   }
 
   @Override

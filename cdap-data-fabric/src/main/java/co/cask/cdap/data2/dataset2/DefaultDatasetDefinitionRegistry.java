@@ -17,8 +17,10 @@
 package co.cask.cdap.data2.dataset2;
 
 import co.cask.cdap.api.dataset.DatasetDefinition;
+import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.name.Names;
 
 /**
  * this is a hack for initializing system-level datasets for now
@@ -29,7 +31,13 @@ public class DefaultDatasetDefinitionRegistry extends InMemoryDatasetDefinitionR
 
   @Override
   public void add(DatasetDefinition def) {
-    injector.injectMembers(def);
+    Injector childInjector = injector.createChildInjector(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(String.class).annotatedWith(Names.named("testBinding")).toInstance("HelloWorld");
+      }
+    });
+    childInjector.injectMembers(def);
     super.add(def);
   }
 }

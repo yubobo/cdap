@@ -21,6 +21,7 @@ import co.cask.cdap.api.dataset.DatasetDefinition;
 import co.cask.cdap.api.dataset.lib.KeyValueTable;
 import co.cask.cdap.api.dataset.module.DatasetDefinitionRegistry;
 import co.cask.cdap.api.dataset.module.DatasetModule;
+import co.cask.cdap.data2.dataset2.DefaultDatasetDefinitionRegistry;
 
 /**
  *
@@ -32,7 +33,11 @@ public class FakeDatasetModule implements DatasetModule {
   @Override
   public void register(DatasetDefinitionRegistry registry) {
     DatasetDefinition<KeyValueTable, DatasetAdmin> kvTableDef = registry.get("keyValueTable");
-    registry.add(new FakeDatasetDefinition(FakeDataset.TYPE_NAME, kvTableDef));
+    FakeDatasetDefinition fakeDatasetDefinition = new FakeDatasetDefinition(FakeDataset.TYPE_NAME, kvTableDef);
+    registry.add(fakeDatasetDefinition);
+    if (registry instanceof DefaultDatasetDefinitionRegistry) {
+      System.out.println("fakeDatasetDefinition#testBinding = " + fakeDatasetDefinition.getTestBinding());
+    }
     registry.add(new FakeDatasetDefinition(FakeDataset.class.getName(), kvTableDef));
   }
 }
