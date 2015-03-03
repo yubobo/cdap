@@ -103,12 +103,10 @@ public class DatasetUpgrader extends AbstractUpgrader {
       Id.DatasetInstance datasetInstanceId = Id.DatasetInstance.from(tableId.getNamespace(), tableId.getTableName());
       // todo: it works now, but we will want to change it if namespacing of datasets in HBase is more than +prefix
       if (namespace.fromNamespaced(datasetInstanceId) != null) {
-        LOG.info("Upgrading hbase table: {}, desc: {}", tableName, desc.toString());
+        LOG.info("Upgrading hbase table: {}, desc: {}", tableName, desc);
 
-        final boolean supportsIncrement =
-          "true".equalsIgnoreCase(desc.getValue(Table.PROPERTY_READLESS_INCREMENT));
-        final boolean transactional =
-          !"true".equalsIgnoreCase(desc.getValue(Constants.Dataset.TABLE_TX_DISABLED));
+        final boolean supportsIncrement = HBaseTableAdmin.supportsReadlessIncrements(desc);
+        final boolean transactional = HBaseTableAdmin.isTransactional(desc);
         DatasetAdmin admin = new AbstractHBaseDataSetAdmin(tableName, hConf, hBaseTableUtil) {
           @Override
           protected CoprocessorJar createCoprocessorJar() throws IOException {

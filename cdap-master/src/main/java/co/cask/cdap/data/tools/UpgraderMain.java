@@ -29,6 +29,9 @@ import co.cask.cdap.config.ConfigStore;
 import co.cask.cdap.config.DefaultConfigStore;
 import co.cask.cdap.data2.datafabric.DefaultDatasetNamespace;
 import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
+import co.cask.cdap.data2.datafabric.dataset.RemoteDatasetFramework;
+import co.cask.cdap.data2.datafabric.dataset.type.DatasetTypeClassLoaderFactory;
+import co.cask.cdap.data2.datafabric.dataset.type.DistributedDatasetTypeClassLoaderFactory;
 import co.cask.cdap.data2.dataset2.DatasetDefinitionRegistryFactory;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.DatasetManagementException;
@@ -72,7 +75,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
- * Command line tool.
+ * Command line tool for the Upgrade tool
  */
 public class UpgraderMain {
 
@@ -136,6 +139,8 @@ public class UpgraderMain {
           bind(HBaseTableUtil.class).toProvider(HBaseTableUtilFactory.class);
           bind(QueueAdmin.class).to(HBaseQueueAdmin.class).in(Singleton.class);
           install(new TransactionModules().getDistributedModules());
+          bind(DatasetFramework.class).to(RemoteDatasetFramework.class);
+          bind(DatasetTypeClassLoaderFactory.class).to(DistributedDatasetTypeClassLoaderFactory.class);
           install(new FactoryModuleBuilder()
                     .implement(DatasetDefinitionRegistry.class, DefaultDatasetDefinitionRegistry.class)
                     .build(DatasetDefinitionRegistryFactory.class));
