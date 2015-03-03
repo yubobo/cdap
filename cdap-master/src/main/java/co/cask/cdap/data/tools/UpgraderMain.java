@@ -264,10 +264,13 @@ public class UpgraderMain {
     DatasetUpgrader dsUpgrade = injector.getInstance(DatasetUpgrader.class);
     dsUpgrade.upgrade();
 
-    LOG.info("Upgrading archives and files");
+    LOG.info("Upgrading application metadata ...");
+    MDSUpgrader mdsUpgrader = injector.getInstance(MDSUpgrader.class);
+    mdsUpgrader.upgrade();
+
+    LOG.info("Upgrading archives and files ...");
     ArchiveUpgrader archiveUpgrader = injector.getInstance(ArchiveUpgrader.class);
     archiveUpgrader.upgrade();
-
   }
 
   public static void main(String[] args) throws Exception {

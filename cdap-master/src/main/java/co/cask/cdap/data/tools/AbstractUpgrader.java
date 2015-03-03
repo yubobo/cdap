@@ -16,7 +16,11 @@
 
 package co.cask.cdap.data.tools;
 
+import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.common.io.Locations;
+import co.cask.cdap.internal.app.ApplicationSpecificationAdapter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.twill.filesystem.Location;
 import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
@@ -32,7 +36,16 @@ public abstract class AbstractUpgrader {
 
   private static final Logger LOG = LoggerFactory.getLogger(AbstractUpgrader.class);
   protected static final String DEVELOPER_ACCOUNT = "developer";
+  protected static final Gson GSON;
+  protected static final byte[] COLUMN = Bytes.toBytes("c");
+  
   protected final LocationFactory locationFactory;
+
+  static {
+    GsonBuilder builder = new GsonBuilder();
+    ApplicationSpecificationAdapter.addTypeAdapters(builder);
+    GSON = builder.create();
+  }
 
   public AbstractUpgrader(LocationFactory locationFactory) {
     this.locationFactory = locationFactory;
@@ -71,5 +84,21 @@ public abstract class AbstractUpgrader {
                   "updated.", newLocation, oldLocation);
       return null;
     }
+  }
+
+  /**
+   * Checks if they given key to be valid from the supplied key prefixes
+   *
+   * @param key           the key to be validated
+   * @param validPrefixes the valid prefixes
+   * @return boolean which is true if the key start with validPrefixes else false
+   */
+  protected boolean isKeyValid(String key, String[] validPrefixes) {
+    for (String validPrefix : validPrefixes) {
+      if (key.startsWith(validPrefix)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
