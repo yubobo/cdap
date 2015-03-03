@@ -24,9 +24,12 @@ import co.cask.cdap.common.guice.ConfigModule;
 import co.cask.cdap.common.guice.DiscoveryRuntimeModule;
 import co.cask.cdap.common.guice.LocationRuntimeModule;
 import co.cask.cdap.common.guice.ZKClientModule;
+import co.cask.cdap.common.metrics.MetricsCollectionService;
+import co.cask.cdap.common.metrics.NoOpMetricsCollectionService;
 import co.cask.cdap.common.utils.ProjectInfo;
 import co.cask.cdap.config.ConfigStore;
 import co.cask.cdap.config.DefaultConfigStore;
+import co.cask.cdap.data.runtime.DataFabricDistributedModule;
 import co.cask.cdap.data2.datafabric.DefaultDatasetNamespace;
 import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
 import co.cask.cdap.data2.datafabric.dataset.RemoteDatasetFramework;
@@ -42,10 +45,6 @@ import co.cask.cdap.data2.dataset2.lib.file.FileSetModule;
 import co.cask.cdap.data2.dataset2.lib.table.CoreDatasetsModule;
 import co.cask.cdap.data2.dataset2.module.lib.hbase.HBaseMetricsTableModule;
 import co.cask.cdap.data2.dataset2.module.lib.hbase.HBaseTableModule;
-import co.cask.cdap.data2.transaction.queue.QueueAdmin;
-import co.cask.cdap.data2.transaction.queue.hbase.HBaseQueueAdmin;
-import co.cask.cdap.data2.util.hbase.HBaseTableUtil;
-import co.cask.cdap.data2.util.hbase.HBaseTableUtilFactory;
 import co.cask.cdap.internal.app.namespace.DefaultNamespaceAdmin;
 import co.cask.cdap.internal.app.namespace.NamespaceAdmin;
 import co.cask.cdap.internal.app.runtime.schedule.store.ScheduleStoreTableUtil;
@@ -55,19 +54,21 @@ import co.cask.cdap.logging.save.LogSaverTableUtil;
 import co.cask.cdap.metrics.store.DefaultMetricDatasetFactory;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.NamespaceMeta;
+import co.cask.tephra.TransactionSystemClient;
 import co.cask.tephra.distributed.TransactionService;
-import co.cask.tephra.runtime.TransactionModules;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.twill.filesystem.LocationFactory;
 import org.apache.twill.zookeeper.ZKClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,9 +137,10 @@ public class UpgraderMain {
       new AbstractModule() {
         @Override
         protected void configure() {
-          bind(HBaseTableUtil.class).toProvider(HBaseTableUtilFactory.class);
-          bind(QueueAdmin.class).to(HBaseQueueAdmin.class).in(Singleton.class);
-          install(new TransactionModules().getDistributedModules());
+          install(new DataFabricDistributedModule());
+          // the DataFabricDistributedModule needs MetricsCollectionService binding and since Upgrade tool does not do
+          // anything with Metrics we just bind it to NoOpMetricsCollectionService
+          bind(MetricsCollectionService.class).to(NoOpMetricsCollectionService.class).in(Scopes.SINGLETON);
           bind(DatasetFramework.class).to(RemoteDatasetFramework.class);
           bind(DatasetTypeClassLoaderFactory.class).to(DistributedDatasetTypeClassLoaderFactory.class);
           install(new FactoryModuleBuilder()
@@ -156,6 +158,23 @@ public class UpgraderMain {
                                                          DatasetDefinitionRegistryFactory registryFactory)
           throws IOException, DatasetManagementException {
           return createRegisteredDatasetFramework(cConf, registryFactory);
+        }
+
+        @Provides
+        @Singleton
+        @Named("nonNamespacedDSFramework")
+        public DatasetFramework getNonNamespacedDSFramework(DatasetDefinitionRegistryFactory registryFactory)
+          throws DatasetManagementException {
+          return createNonNamespaceDSFramework(registryFactory);
+        }
+
+        @Provides
+        @Singleton
+        @Named("nonNamespacedStore")
+        public Store getNonNamespacedStore(@Named("nonNamespacedDSFramework") DatasetFramework nonNamespacedFramework,
+                                           CConfiguration cConf, LocationFactory locationFactory,
+                                           TransactionSystemClient txClient) {
+          return new DefaultStore(cConf, locationFactory, txClient, nonNamespacedFramework);
         }
       });
   }
@@ -254,7 +273,6 @@ public class UpgraderMain {
       thisUpgraderMain.doMain(args);
     } catch (Throwable t) {
       LOG.error("Failed to upgrade ...", t);
-      
     } finally {
       thisUpgraderMain.stop();
     }
@@ -310,6 +328,16 @@ public class UpgraderMain {
                                  .setName(Constants.DEFAULT_NAMESPACE)
                                  .setDescription(Constants.DEFAULT_NAMESPACE)
                                  .build());
+  }
+
+  /**
+   * Creates a non-namespaced {@link DatasetFramework} to access existing datasets which are not namespaced
+   */
+  private DatasetFramework createNonNamespaceDSFramework(DatasetDefinitionRegistryFactory registryFactory)
+    throws DatasetManagementException {
+    DatasetFramework nonNamespacedFramework = new InMemoryDatasetFramework(registryFactory);
+    addModules(nonNamespacedFramework);
+    return nonNamespacedFramework;
   }
 
   /**

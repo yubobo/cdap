@@ -18,7 +18,6 @@ package co.cask.cdap.data.tools;
 
 import co.cask.cdap.api.dataset.DatasetAdmin;
 import co.cask.cdap.api.dataset.DatasetSpecification;
-import co.cask.cdap.api.dataset.table.Table;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data2.datafabric.DefaultDatasetNamespace;
@@ -56,8 +55,8 @@ public class DatasetUpgrader extends AbstractUpgrader {
 
   @Inject
   private DatasetUpgrader(CConfiguration cConf, Configuration hConf, LocationFactory locationFactory,
-                         QueueAdmin queueAdmin, HBaseTableUtil hBaseTableUtil,
-                         @Named("namespacedDSFramework") DatasetFramework namespacedFramework) {
+                          QueueAdmin queueAdmin, HBaseTableUtil hBaseTableUtil,
+                          @Named("namespacedDSFramework") DatasetFramework namespacedFramework) {
 
     this.cConf = cConf;
     this.hConf = hConf;
