@@ -55,7 +55,7 @@ public class DatasetUpgrader extends AbstractUpgrader {
   private final DatasetFramework namespacedFramework;
 
   @Inject
-  public DatasetUpgrader(CConfiguration cConf, Configuration hConf, LocationFactory locationFactory,
+  private DatasetUpgrader(CConfiguration cConf, Configuration hConf, LocationFactory locationFactory,
                          QueueAdmin queueAdmin, HBaseTableUtil hBaseTableUtil,
                          @Named("namespacedDSFramework") DatasetFramework namespacedFramework) {
 

@@ -74,9 +74,9 @@ import java.io.IOException;
 /**
  * Command line tool.
  */
-public class Main {
+public class UpgraderMain {
 
-  private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+  private static final Logger LOG = LoggerFactory.getLogger(UpgraderMain.class);
 
   private final CConfiguration cConf;
   private final Configuration hConf;
@@ -104,7 +104,7 @@ public class Main {
     }
   }
 
-  public Main() {
+  public UpgraderMain() {
     cConf = CConfiguration.create();
     hConf = HBaseConfiguration.create();
 
@@ -116,7 +116,7 @@ public class Main {
       @Override
       public void run() {
         try {
-          Main.this.stop();
+          UpgraderMain.this.stop();
         } catch (Throwable e) {
           LOG.error("Failed to upgrade", e);
         }
@@ -243,14 +243,15 @@ public class Main {
   }
 
   public static void main(String[] args) throws Exception {
-    Main thisMain = new Main();
-    thisMain.startUp();
+    UpgraderMain thisUpgraderMain = new UpgraderMain();
+    thisUpgraderMain.startUp();
     try {
-      thisMain.doMain(args);
+      thisUpgraderMain.doMain(args);
     } catch (Throwable t) {
-      LOG.info("Failed to upgrade ...");
+      LOG.error("Failed to upgrade ...", t);
+      
     } finally {
-      thisMain.stop();
+      thisUpgraderMain.stop();
     }
   }
 
