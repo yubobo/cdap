@@ -22,6 +22,7 @@ import co.cask.cdap.api.dataset.DatasetProperties;
 import co.cask.cdap.api.dataset.table.Row;
 import co.cask.cdap.api.dataset.table.Scanner;
 import co.cask.cdap.api.dataset.table.Table;
+import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.runtime.ProgramController;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.common.conf.CConfiguration;
@@ -37,6 +38,7 @@ import co.cask.cdap.internal.app.store.ProgramArgs;
 import co.cask.cdap.notifications.feeds.service.MDSNotificationFeedStore;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.ProgramRunStatus;
+import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.RunRecord;
 import co.cask.tephra.TransactionExecutor;
 import co.cask.tephra.TransactionExecutorFactory;
@@ -54,6 +56,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Upgraded the Meta Data for applications
@@ -61,17 +64,14 @@ import java.util.Iterator;
 public class MDSUpgrader extends AbstractUpgrader {
 
   private static final Logger LOG = LoggerFactory.getLogger(MDSUpgrader.class);
-  private static final String[] OTHERS = {AppMetadataStore.TYPE_STREAM, AppMetadataStore.TYPE_NAMESPACE,
-    MDSNotificationFeedStore.TYPE_NOTIFICATION_FEED};
-
   private final Transactional<UpgradeTable, Table> appMDS;
   private final CConfiguration cConf;
   private final Store store;
 
   @Inject
   private MDSUpgrader(LocationFactory locationFactory, TransactionExecutorFactory executorFactory,
-                     @Named("namespacedDSFramework") final DatasetFramework namespacedFramework, CConfiguration cConf,
-                     @Named("nonNamespacedStore") final Store store) {
+                      @Named("namespacedDSFramework") final DatasetFramework namespacedFramework, CConfiguration cConf,
+                      @Named("nonNamespacedStore") final Store store) {
     super(locationFactory);
     this.cConf = cConf;
     this.store = store;
@@ -98,26 +98,68 @@ public class MDSUpgrader extends AbstractUpgrader {
       Function<UpgradeTable, Void>() {
       @Override
       public Void apply(UpgradeTable configTable) throws Exception {
-        Scanner rows = configTable.table.scan(null, null);
+        byte[] appMetaRecordPrefix = new MDSKey.Builder().add(AppMetadataStore.TYPE_APP_META).build().getKey();
+        Scanner rows = configTable.table.scan(appMetaRecordPrefix, Bytes.stopKeyForPrefix(appMetaRecordPrefix));
         Row row;
         while ((row = rows.next()) != null) {
-          String key = Bytes.toString(row.getRow()).trim();
+          ApplicationMeta appMeta = GSON.fromJson(Bytes.toString(row.get(COLUMN)), ApplicationMeta.class);
+          appSpecHandler(appMeta.getId(), appMeta.getSpec());
+          applicationMetadataHandler(row);
+        }
+        return null;
+      }
+    });
+  }
+
+  public void appSpecHandler(String appId, ApplicationSpecification appSpec) {
+    programSpecHandler(appId, appSpec.getFlows().keySet(), ProgramType.FLOW);
+    programSpecHandler(appId, appSpec.getMapReduce().keySet(), ProgramType.MAPREDUCE);
+    programSpecHandler(appId, appSpec.getSpark().keySet(), ProgramType.SPARK);
+    programSpecHandler(appId, appSpec.getWorkflows().keySet(), ProgramType.WORKFLOW);
+    programSpecHandler(appId, appSpec.getServices().keySet(), ProgramType.SERVICE);
+  }
+
+  private void programSpecHandler(String appId, Set<String> programIds, ProgramType programType) {
+    for (String programId : programIds) {
+      runRecordStartedHandler(appId, programId, programType);
+      runRecordCompletedHandler(appId, programId, programType);
+      programArgsHandler(appId, programId, programType);
+    }
+  }
+
+  /**
+   *
+   */
+
+  /**
+   * Handles the {@link AppMetadataStore#TYPE_PROGRAM_ARGS} meta data and writes it back with namespace
+   *
+   * @param appId       the application id to which this program belongs to
+   * @param programId   the program id of the program
+   * @param programType the {@link ProgramType} of the program
+   */
+  private void programArgsHandler(final String appId, final String programId, final ProgramType programType) {
+    final byte[] partialKey = new MDSKey.Builder().add(AppMetadataStore.TYPE_RUN_RECORD_STARTED, DEVELOPER_ACCOUNT,
+                                                       appId, programId).build().getKey();
+    appMDS.executeUnchecked(new TransactionExecutor.Function<UpgradeTable, Void>() {
+      @Override
+      public Void apply(UpgradeTable input) throws Exception {
+        Scanner rows = input.table.scan(partialKey, Bytes.stopKeyForPrefix(partialKey));
+        Row row;
+        while ((row = rows.next()) != null) {
           MDSKey.Splitter keyParts = new MDSKey(row.getRow()).split();
-          String metaType = keyParts.getString();
-          if (metaType.equalsIgnoreCase(AppMetadataStore.TYPE_APP_META)) {
-            // Application metadata
-            applicationMetadataHandler(row);
-          } else if (metaType.equalsIgnoreCase(AppMetadataStore.TYPE_RUN_RECORD_STARTED)) {
-            runRecordStartedHandler(row, keyParts);
-          } else if (metaType.equalsIgnoreCase(AppMetadataStore.TYPE_PROGRAM_ARGS)) {
-            programArgsHandler(row, keyParts);
-          } else if (metaType.equalsIgnoreCase(AppMetadataStore.TYPE_RUN_RECORD_COMPLETED)) {
-            // run record metadata
-            runRecordCompletedHandler(row, keyParts);
-          } else if (!isKeyValid(key, OTHERS)) {
-            LOG.warn("Invalid Metadata with key {} found in {}", key, DefaultStore.APP_META_TABLE);
-            throw new RuntimeException("Invalid metadata with key " + key);
-          }
+
+          ProgramArgs programArgs = GSON.fromJson(Bytes.toString(row.get(COLUMN)), ProgramArgs.class);
+
+//          // skip runRecordStarted
+//          keyParts.getString();
+//          // skip accountId
+//          keyParts.skipString();
+//          String appId = keyParts.getString();
+//          String programName = keyParts.getString();
+
+          store.storeRunArguments(Id.Program.from(Id.Application.from(Constants.DEFAULT_NAMESPACE, appId), programType,
+                                                  programId), programArgs.getArgs());
         }
         return null;
       }
@@ -125,66 +167,96 @@ public class MDSUpgrader extends AbstractUpgrader {
   }
 
   /**
-   * Handles the {@link AppMetadataStore#TYPE_PROGRAM_ARGS} meta data and writes it back with namespace
-   *
-   * @param row      : the {@link Row} containing the {@link AppMetadataStore#TYPE_PROGRAM_ARGS} metadata
-   * @param keyParts the {@link MDSKey.Splitter} for the key
+
    */
-  private void programArgsHandler(Row row, MDSKey.Splitter keyParts) {
-    ProgramArgs programArgs = GSON.fromJson(Bytes.toString(row.get(COLUMN)), ProgramArgs.class);
-
-    // skip accountId
-    keyParts.skipString();
-    String appId = keyParts.getString();
-    String programName = keyParts.getString();
-
-    store.storeRunArguments(Id.Program.from(Constants.DEFAULT_NAMESPACE, appId, programName), programArgs.getArgs());
-  }
-
   /**
    * Handled the {@link AppMetadataStore#TYPE_RUN_RECORD_STARTED} meta data and writes it back with namespace
    *
-   * @param row      the {@link Row} containing the {@link AppMetadataStore#TYPE_RUN_RECORD_STARTED} metadata
-   * @param keyParts the {@link MDSKey.Splitter} for the key
+   * @param appId       the application id to which this program belongs to
+   * @param programId   the program id of the program
+   * @param programType the {@link ProgramType} of the program
    */
-  private void runRecordStartedHandler(Row row, MDSKey.Splitter keyParts) {
-    RunRecord runRecord = GSON.fromJson(Bytes.toString(row.get(COLUMN)), RunRecord.class);
+  private void runRecordStartedHandler(final String appId, final String programId, final ProgramType programType) {
+    final byte[] partialKey = new MDSKey.Builder().add(AppMetadataStore.TYPE_RUN_RECORD_STARTED, DEVELOPER_ACCOUNT,
+                                                       appId, programId).build().getKey();
+    appMDS.executeUnchecked(new TransactionExecutor.Function<UpgradeTable, Void>() {
+      @Override
+      public Void apply(UpgradeTable input) throws Exception {
+        Scanner rows = input.table.scan(partialKey, Bytes.stopKeyForPrefix(partialKey));
+        Row row;
+        while ((row = rows.next()) != null) {
+          MDSKey.Splitter keyParts = new MDSKey(row.getRow()).split();
 
-    // skip default
-    keyParts.skipString();
-    String appId = keyParts.getString();
-    String programId = keyParts.getString();
-    String pId = keyParts.getString();
+          RunRecord runRecord = GSON.fromJson(Bytes.toString(row.get(COLUMN)), RunRecord.class);
 
-    store.setStart(Id.Program.from(Constants.DEFAULT_NAMESPACE, appId, programId), pId, runRecord.getStartTs());
+          // skip runRecordStarted
+          keyParts.getString();
+          // skip default
+          keyParts.skipString();
+          // skip appId
+          keyParts.skipString();
+          // skip programId
+          keyParts.skipString();
+          String pId = keyParts.getString();
+
+          //store.setStart(Id.Program.from(Constants.DEFAULT_NAMESPACE, appId, programId), pId, runRecord.getStartTs());
+          store.setStart(Id.Program.from(Id.Application.from(Constants.DEFAULT_NAMESPACE, appId), programType,
+                                         programId), pId, runRecord.getStartTs());
+        }
+        return null;
+      }
+    });
   }
 
   /**
-   * Handled the {@link AppMetadataStore#TYPE_RUN_RECORD_COMPLETED} meta data and writes it back with namespace
+   * Handles the {@link AppMetadataStore#TYPE_RUN_RECORD_COMPLETED} meta data and writes it back with namespace
    *
-   * @param row      the {@link Row} containing the {@link AppMetadataStore#TYPE_RUN_RECORD_COMPLETED} metadata
-   * @param keyParts the {@link MDSKey.Splitter} for the key
+   * @param appId       the application id to which this program belongs to
+   * @param programId   the program id of the program
+   * @param programType the {@link ProgramType} of the program
    */
-  private void runRecordCompletedHandler(Row row, MDSKey.Splitter keyParts) {
-    RunRecord runRecord = GSON.fromJson(Bytes.toString(row.get(COLUMN)), RunRecord.class);
-    // skip default
-    keyParts.skipString();
-    String appId = keyParts.getString();
-    String programId = keyParts.getString();
-    long startTs = keyParts.getLong();
-    String pId = keyParts.getString();
+  private void runRecordCompletedHandler(final String appId, final String programId, final ProgramType programType) {
 
-    writeTempRunRecordStart(appId, programId, pId, startTs);
-    store.setStop(Id.Program.from(Constants.DEFAULT_NAMESPACE, appId, programId), pId, runRecord.getStopTs(), getControllerStateByStatus(runRecord.getStatus()));
+    final byte[] partialKey = new MDSKey.Builder().add(AppMetadataStore.TYPE_RUN_RECORD_STARTED, DEVELOPER_ACCOUNT,
+                                                       appId, programId).build().getKey();
+    appMDS.executeUnchecked(new TransactionExecutor.Function<UpgradeTable, Void>() {
+      @Override
+      public Void apply(UpgradeTable input) throws Exception {
+        Scanner rows = input.table.scan(partialKey, Bytes.stopKeyForPrefix(partialKey));
+        Row row;
+        while ((row = rows.next()) != null) {
+          RunRecord runRecord = GSON.fromJson(Bytes.toString(row.get(COLUMN)), RunRecord.class);
+
+          MDSKey.Splitter keyParts = new MDSKey(row.getRow()).split();
+          // skip runRecordStarted
+          keyParts.getString();
+          // skip default
+          keyParts.skipString();
+          // skip appId
+          keyParts.skipString();
+          // skip programId
+          keyParts.skipString();
+          long startTs = keyParts.getLong();
+          String pId = keyParts.getString();
+
+          writeTempRunRecordStart(appId, programType, programId, pId, startTs);
+          store.setStop(Id.Program.from(Id.Application.from(Constants.DEFAULT_NAMESPACE, appId), programType,
+                                        programId), pId, runRecord.getStopTs(),
+                        getControllerStateByStatus(runRecord.getStatus()));
+        }
+        return null;
+      }
+    });
   }
 
   /**
    * Writes the {@link AppMetadataStore#TYPE_RUN_RECORD_STARTED} entry in the app meta table so that
    * {@link AppMetadataStore#TYPE_RUN_RECORD_COMPLETED} can be written which deleted the started record.
    */
-  private void writeTempRunRecordStart(String appId, String programId, String pId, long startTs) {
-    store.setStart(Id.Program.from(Constants.DEFAULT_NAMESPACE, appId, programId), pId,
-                   Long.MAX_VALUE - startTs);
+  private void writeTempRunRecordStart(String appId, ProgramType programType, String programId, String pId,
+                                       long startTs) {
+    store.setStart(Id.Program.from(Id.Application.from(Constants.DEFAULT_NAMESPACE, appId), programType, programId),
+                   pId, Long.MAX_VALUE - startTs);
   }
 
   /**
