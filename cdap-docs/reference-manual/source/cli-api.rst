@@ -229,6 +229,7 @@ These are the available commands:
    ``set worker preferences <runtime-args> [<app-id.worker-id>]``,"Sets the preferences of a Workers. <runtime-args> is specified in the format ""key1=v1, key2=v2""."
    ``set worker runtimeargs <app-id.worker-id> <runtime-args>``,"Sets the runtime arguments of a Worker. <runtime-args> is specified in the format ""key1=a key2=b""."
    ``set workflow preferences <runtime-args> [<app-id.workflow-id>]``,"Sets the preferences of a Workflows. <runtime-args> is specified in the format ""key1=v1, key2=v2""."
+   ``set stream notification-threshold <stream-id> <notification-threshold-mb>``,"Sets the Notification Threshold of a Stream."
    ``set workflow runtimeargs <app-id.workflow-id> <runtime-args>``,"Sets the runtime arguments of a Workflow. <runtime-args> is specified in the format ""key1=a key2=b""."
    ``start flow <app-id.flow-id> [<runtime-args>]``,"Starts a Flow. <runtime-args> is specified in the format ""key1=a key2=b""."
    ``start mapreduce <app-id.mapreduce-id> [<runtime-args>]``,"Starts a MapReduce Program. <runtime-args> is specified in the format ""key1=a key2=b""."
