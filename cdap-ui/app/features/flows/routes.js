@@ -69,7 +69,7 @@ angular.module(PKG.name + '.feature.flows')
                 }
               })
               .state('flows.detail.runs.tabs.status.streamsDetail', {
-                url: '/:streamId',
+                url: '/:streamId', // Doesn't work with ngStrap
                 onEnter: function ($rootScope, $stateParams, $state, $modal) {
                   var scope = $rootScope.$new();
                   scope.streamId = $stateParams.streamId;
