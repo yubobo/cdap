@@ -44,7 +44,7 @@ module.directive('myFlowGraph', function (d3, dagreD3, $state, $filter) {
         var metricCircleRadius = 25;
         var instanceCircleRadius = 10;
         var flowletCircleRadius = 60;
-        // Since names are padded inside of shapes, this needs the same padding to be center aligned.
+        // Since names are padded inside of shapes, this needs the same padding to be vertically center aligned.
         var metricCountPadding = 5;
 
         var streamDiagramWidth = 40;
