@@ -35,6 +35,7 @@ import co.cask.cdap.data.runtime.DataFabricDistributedModule;
 import co.cask.cdap.data.stream.StreamAdminModules;
 import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
 import co.cask.cdap.data2.datafabric.dataset.RemoteDatasetFramework;
+import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetTypeMDS;
 import co.cask.cdap.data2.datafabric.dataset.type.DatasetTypeClassLoaderFactory;
 import co.cask.cdap.data2.datafabric.dataset.type.DistributedDatasetTypeClassLoaderFactory;
 import co.cask.cdap.data2.dataset2.DatasetDefinitionRegistryFactory;
@@ -194,6 +195,13 @@ public class UpgraderMain {
                                                           TransactionExecutorFactory txExecutorFactory,
                                                           LocationFactory locationFactory) {
           return new FileMetaDataManager(tableUtil, txExecutorFactory, locationFactory, dsFramework);
+        }
+        @Provides
+        @Singleton
+        @Named("datasetTypeMDS")
+        public DatasetTypeMDS getDatasetTypeMDS(@Named("dsFramework") DatasetFramework dsFramework)
+          throws IOException, DatasetManagementException {
+          return new DatasetMetaTableUtil(dsFramework).getTypeMetaTable();
         }
       });
   }

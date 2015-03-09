@@ -17,28 +17,49 @@
 package co.cask.cdap.data.tools;
 
 import co.cask.cdap.api.dataset.DatasetAdmin;
+import co.cask.cdap.api.dataset.DatasetDefinition;
+import co.cask.cdap.api.dataset.DatasetProperties;
+import co.cask.cdap.api.dataset.table.Table;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.common.io.Locations;
+import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
+import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
+import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetTypeMDS;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
+import co.cask.cdap.data2.dataset2.lib.table.MDSKey;
+import co.cask.cdap.data2.dataset2.lib.table.MetadataStoreDataset;
 import co.cask.cdap.data2.dataset2.lib.table.hbase.HBaseTableAdmin;
+import co.cask.cdap.data2.dataset2.tx.Transactional;
 import co.cask.cdap.data2.transaction.queue.QueueAdmin;
 import co.cask.cdap.data2.util.TableId;
 import co.cask.cdap.data2.util.hbase.HBaseTableUtil;
 import co.cask.cdap.data2.util.hbase.HTableNameConverter;
 import co.cask.cdap.data2.util.hbase.HTableNameConverterFactory;
+import co.cask.cdap.proto.DatasetModuleMeta;
 import co.cask.cdap.proto.DatasetSpecificationSummary;
 import co.cask.cdap.proto.Id;
+import co.cask.tephra.TransactionExecutor;
+import co.cask.tephra.TransactionExecutorFactory;
+import co.cask.tephra.TransactionFailureException;
+import com.google.common.base.Joiner;
+import com.google.common.base.Supplier;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.twill.filesystem.Location;
 import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -53,13 +74,17 @@ public class DatasetUpgrader extends AbstractUpgrader {
   private final LocationFactory locationFactory;
   private final QueueAdmin queueAdmin;
   private final HBaseTableUtil hBaseTableUtil;
-  private final DatasetFramework namespacedFramework;
+  private final DatasetFramework dsFramework;
+  private final DatasetTypeMDS newDatasetTypeMDS;
   private static final Pattern USER_TABLE_PREFIX = Pattern.compile("^cdap\\.user\\..*");
+  private final Transactional<UpgradeMDS, MetadataStoreDataset> oldDatasetTypeMDS;
 
   @Inject
   private DatasetUpgrader(CConfiguration cConf, Configuration hConf, LocationFactory locationFactory,
                           QueueAdmin queueAdmin, HBaseTableUtil hBaseTableUtil,
-                          @Named("dsFramework") DatasetFramework dsFramework) {
+                          final TransactionExecutorFactory executorFactory,
+                          @Named("dsFramework") final DatasetFramework dsFramework,
+                          @Named("datasetTypeMDS") final DatasetTypeMDS newDatasetTypeMDS) {
 
     super(locationFactory);
     this.cConf = cConf;
@@ -67,19 +92,41 @@ public class DatasetUpgrader extends AbstractUpgrader {
     this.locationFactory = locationFactory;
     this.queueAdmin = queueAdmin;
     this.hBaseTableUtil = hBaseTableUtil;
-    this.namespacedFramework = dsFramework;
+    this.dsFramework = dsFramework;
+    this.newDatasetTypeMDS = newDatasetTypeMDS;
+    this.oldDatasetTypeMDS = Transactional.of(executorFactory, new Supplier<UpgradeMDS>() {
+      @Override
+      public UpgradeMDS get() {
+        try {
+          Table table = DatasetsUtil.getOrCreateDataset(dsFramework, Id.DatasetInstance.from
+                                                          (Constants.DEFAULT_NAMESPACE_ID, Joiner.on(".").join(
+                                                            Constants.SYSTEM_NAMESPACE,
+                                                            DatasetMetaTableUtil.META_TABLE_NAME)),
+                                                        "table", DatasetProperties.EMPTY,
+                                                        DatasetDefinition.NO_ARGUMENTS, null);
+          return new UpgradeMDS(new MetadataStoreDataset(table));
+        } catch (Exception e) {
+          LOG.error("Failed to access {} table", Joiner.on(".").join(Constants.SYSTEM_NAMESPACE,
+                                                                     DatasetMetaTableUtil.META_TABLE_NAME), e);
+          throw Throwables.propagate(e);
+        }
+      }
+    });
   }
 
   @Override
   public void upgrade() throws Exception {
     // Upgrade system dataset
-    upgradeSystemDatasets(namespacedFramework);
+    upgradeSystemDatasets(dsFramework);
 
     // Upgrade all user hbase tables
     upgradeUserTables();
 
     // Upgrade all queue and stream tables.
     queueAdmin.upgrade();
+
+    // upgrade dataset type meta
+    upgradeDatasetTypeMDS();
   }
 
   private void upgradeSystemDatasets(DatasetFramework framework) throws Exception {
@@ -130,6 +177,86 @@ public class DatasetUpgrader extends AbstractUpgrader {
       };
       admin.upgrade();
       LOG.info("Upgraded hbase table: {}", tableName);
+    }
+  }
+
+  private void upgradeDatasetTypeMDS() throws TransactionFailureException,
+    InterruptedException, IOException {
+    LOG.info("YOO! In function");
+    final MDSKey streamRecordPrefix = new MDSKey.Builder().add(DatasetTypeMDS.MODULES_PREFIX).build();
+    oldDatasetTypeMDS.execute(new TransactionExecutor.Function<UpgradeMDS, Void>() {
+      @Override
+      public Void apply(UpgradeMDS ctx) throws Exception {
+        List<DatasetModuleMeta> dsModuleMetas = ctx.mds.list(streamRecordPrefix, DatasetModuleMeta.class);
+        for (DatasetModuleMeta curDSModuleMeta : dsModuleMetas) {
+          datasetModuleUpgrader(curDSModuleMeta);
+        }
+        return null;
+      }
+    });
+  }
+
+  private void datasetModuleUpgrader(DatasetModuleMeta datasetModuleMeta) throws IOException {
+    DatasetModuleMeta newDatasetModuleMeta;
+    if (datasetModuleMeta.getJarLocation() == null) {
+      LOG.info("YOO! Inside system");
+      //system module
+      newDatasetModuleMeta = new DatasetModuleMeta(Joiner.on("_").join(Constants.DEFAULT_NAMESPACE,
+                                                                       datasetModuleMeta.getName()),
+                                                   datasetModuleMeta.getClassName(), datasetModuleMeta.getJarLocation(),
+                                                   datasetModuleMeta.getTypes(),
+                                                   datasetModuleMeta.getUsesModules());
+    } else {
+      LOG.info("YOO! Inside user");
+      Location oldJarLocation = locationFactory.create(datasetModuleMeta.getJarLocation());
+
+      newDatasetModuleMeta = new DatasetModuleMeta(Joiner.on("_").join(Constants.DEFAULT_NAMESPACE,
+                                                                       datasetModuleMeta.getName()),
+                                                   datasetModuleMeta.getClassName(),
+                                                   updateUserDatasetModuleJarLocation(oldJarLocation,
+                                                                                      datasetModuleMeta.getClassName(),
+                                                                                      Constants.DEFAULT_NAMESPACE)
+                                                     .toURI(),
+                                                   datasetModuleMeta.getTypes(), datasetModuleMeta.getUsesModules());
+
+    }
+    newDatasetTypeMDS.writeModule(Id.Namespace.from(Constants.SYSTEM_NAMESPACE), newDatasetModuleMeta);
+  }
+
+  /**
+   * Strips different parts from the old jar location and creates a new one
+   *
+   * @param location the old log {@link Location}
+   * @param datasetClassname the dataset class name
+   * @param namespace the namespace which will be added to the new jar location
+   * @return the log {@link Location}
+   * @throws IOException
+   */
+  private Location updateUserDatasetModuleJarLocation(Location location, String datasetClassname,
+                                                      String namespace) throws IOException {
+    String jarFilename = location.getName();
+    Location parentLocation = Locations.getParent(location);  // strip jarFilename
+    String accountPlaceholder = parentLocation != null ? parentLocation.getName() : null;
+    parentLocation = Locations.getParent(parentLocation); // strip account_placeholder
+    String archive = parentLocation != null ? parentLocation.getName() : null;
+    parentLocation = Locations.getParent(parentLocation); // strip archive
+    String datasets = parentLocation != null ? parentLocation.getName() : null;
+
+    return locationFactory.create(namespace).append(datasets).append(datasetClassname).append(archive)
+      .append(jarFilename);
+  }
+
+
+  private static final class UpgradeMDS implements Iterable<MetadataStoreDataset> {
+    private final MetadataStoreDataset mds;
+
+    private UpgradeMDS(MetadataStoreDataset metaTable) {
+      this.mds = metaTable;
+    }
+
+    @Override
+    public Iterator<MetadataStoreDataset> iterator() {
+      return Iterators.singletonIterator(mds);
     }
   }
 }
