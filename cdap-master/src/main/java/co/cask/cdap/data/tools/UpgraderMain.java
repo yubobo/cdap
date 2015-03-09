@@ -16,6 +16,7 @@
 package co.cask.cdap.data.tools;
 
 import co.cask.cdap.api.dataset.module.DatasetDefinitionRegistry;
+import co.cask.cdap.api.dataset.module.DatasetModule;
 import co.cask.cdap.app.guice.ProgramRunnerRuntimeModule;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.app.store.StoreFactory;
@@ -35,8 +36,9 @@ import co.cask.cdap.data.runtime.DataFabricDistributedModule;
 import co.cask.cdap.data.stream.StreamAdminModules;
 import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
 import co.cask.cdap.data2.datafabric.dataset.RemoteDatasetFramework;
-import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetTypeMDS;
+import co.cask.cdap.data2.datafabric.dataset.service.mds.MDSDatasetsRegistry;
 import co.cask.cdap.data2.datafabric.dataset.type.DatasetTypeClassLoaderFactory;
+import co.cask.cdap.data2.datafabric.dataset.type.DatasetTypeManager;
 import co.cask.cdap.data2.datafabric.dataset.type.DistributedDatasetTypeClassLoaderFactory;
 import co.cask.cdap.data2.dataset2.DatasetDefinitionRegistryFactory;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
@@ -58,6 +60,7 @@ import co.cask.cdap.notifications.feeds.client.NotificationFeedClientModule;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.NamespaceMeta;
 import co.cask.tephra.TransactionExecutorFactory;
+import co.cask.tephra.TransactionSystemClient;
 import co.cask.tephra.distributed.TransactionService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -77,6 +80,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Command line tool for the Upgrade tool
@@ -196,12 +201,22 @@ public class UpgraderMain {
                                                           LocationFactory locationFactory) {
           return new FileMetaDataManager(tableUtil, txExecutorFactory, locationFactory, dsFramework);
         }
+
         @Provides
         @Singleton
-        @Named("datasetTypeMDS")
-        public DatasetTypeMDS getDatasetTypeMDS(@Named("dsFramework") DatasetFramework dsFramework)
-          throws IOException, DatasetManagementException {
-          return new DatasetMetaTableUtil(dsFramework).getTypeMetaTable();
+        @Named("mdsDatasetsRegistry")
+        public MDSDatasetsRegistry getMDSDatasetsRegistry(@Named("dsFramework") DatasetFramework dsFramework,
+                                                          TransactionSystemClient txClient) {
+          return new MDSDatasetsRegistry(txClient, dsFramework);
+        }
+
+        @Provides
+        @Singleton
+        @Named("datasetTypeManager")
+        public DatasetTypeManager getDatasetTypeManager(CConfiguration cConf, LocationFactory locationFactory,
+                                                        @Named("mdsDatasetsRegistry") MDSDatasetsRegistry mdsDatasetsRegistry) {
+          Map<String, DatasetModule> defaultMap = new HashMap<String, DatasetModule>();
+          return new DatasetTypeManager(cConf, mdsDatasetsRegistry, locationFactory, defaultMap);
         }
       });
   }

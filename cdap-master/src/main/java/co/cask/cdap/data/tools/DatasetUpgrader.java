@@ -25,8 +25,10 @@ import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.io.Locations;
 import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
 import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
+import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetInstanceMDS;
 import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetTypeMDS;
 import co.cask.cdap.data2.datafabric.dataset.service.mds.MDSDatasets;
+import co.cask.cdap.data2.datafabric.dataset.type.DatasetTypeManager;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.DatasetManagementException;
 import co.cask.cdap.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
@@ -79,7 +81,7 @@ public class DatasetUpgrader extends AbstractUpgrader {
   private final QueueAdmin queueAdmin;
   private final HBaseTableUtil hBaseTableUtil;
   private final DatasetFramework dsFramework;
-  private final DatasetTypeMDS newDatasetTypeMDS;
+  private final DatasetTypeManager datasetTypeManager;
   private static final Pattern USER_TABLE_PREFIX = Pattern.compile("^cdap\\.user\\..*");
   private final Transactional<AppMDS, DatasetTypeMDS> oldDatasetTypeMDS;
 //  private final DatasetTypeMDS oldDatasetTypeMDS;
@@ -89,7 +91,7 @@ public class DatasetUpgrader extends AbstractUpgrader {
                           QueueAdmin queueAdmin, HBaseTableUtil hBaseTableUtil,
                           final TransactionExecutorFactory executorFactory,
                           @Named("dsFramework") final DatasetFramework dsFramework,
-                          @Named("datasetTypeMDS") final DatasetTypeMDS newDatasetTypeMDS)
+                          @Named("datasetTypeManager") DatasetTypeManager datasetTypeManager)
     throws IOException, DatasetManagementException {
 
     super(locationFactory);
@@ -99,7 +101,7 @@ public class DatasetUpgrader extends AbstractUpgrader {
     this.queueAdmin = queueAdmin;
     this.hBaseTableUtil = hBaseTableUtil;
     this.dsFramework = dsFramework;
-    this.newDatasetTypeMDS = newDatasetTypeMDS;
+    this.datasetTypeManager = datasetTypeManager;
     this.oldDatasetTypeMDS = Transactional.of(executorFactory, new Supplier<AppMDS>() {
       @Override
       public AppMDS get() {
@@ -191,8 +193,6 @@ public class DatasetUpgrader extends AbstractUpgrader {
     final MDSKey dsModulePrefix = new MDSKey(Bytes.toBytes(DatasetTypeMDS.MODULES_PREFIX));
 
 
-
-
     try {
       oldDatasetTypeMDS.execute(new TransactionExecutor.Function<AppMDS, Void>() {
         @Override
@@ -228,28 +228,34 @@ public class DatasetUpgrader extends AbstractUpgrader {
     DatasetModuleMeta newDatasetModuleMeta;
     if (datasetModuleMeta.getJarLocation() == null) {
       LOG.info("YOO! Inside system");
-      //system module
-      newDatasetModuleMeta = new DatasetModuleMeta(Joiner.on("_").join(Constants.DEFAULT_NAMESPACE,
-                                                                       datasetModuleMeta.getName()),
-                                                   datasetModuleMeta.getClassName(), datasetModuleMeta.getJarLocation(),
-                                                   datasetModuleMeta.getTypes(),
-                                                   datasetModuleMeta.getUsesModules());
-      newDatasetTypeMDS.writeModule(Id.Namespace.from(Constants.SYSTEM_NAMESPACE), newDatasetModuleMeta);
+      LOG.info("Writing new module meta {}", datasetModuleMeta);
+      try {
+        datasetTypeManager.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE_ID, datasetModuleMeta.getName()),
+                                     datasetModuleMeta.getClassName(),
+                                     null);
+      } catch (Throwable t) {
+        LOG.error("Failed to write system module meta to new table", t);
+      }
     } else {
       LOG.info("YOO! Inside user");
       Location oldJarLocation = locationFactory.create(datasetModuleMeta.getJarLocation());
 
-      newDatasetModuleMeta = new DatasetModuleMeta(Joiner.on("_").join(Constants.DEFAULT_NAMESPACE,
-                                                                       datasetModuleMeta.getName()),
-                                                   datasetModuleMeta.getClassName(),
+      newDatasetModuleMeta = new DatasetModuleMeta(datasetModuleMeta.getName(), datasetModuleMeta.getClassName(),
                                                    updateUserDatasetModuleJarLocation(oldJarLocation,
                                                                                       datasetModuleMeta.getClassName(),
                                                                                       Constants.DEFAULT_NAMESPACE)
                                                      .toURI(),
                                                    datasetModuleMeta.getTypes(), datasetModuleMeta.getUsesModules());
-      newDatasetTypeMDS.writeModule(Id.Namespace.from(Constants.DEFAULT_NAMESPACE), newDatasetModuleMeta);
+      LOG.info("Writing new module meta {}", newDatasetModuleMeta);
+      try {
+        datasetTypeManager.addModule(Id.DatasetModule.from(Constants.DEFAULT_NAMESPACE_ID,
+                                                           newDatasetModuleMeta.getName()),
+                                     newDatasetModuleMeta.getClassName(),
+                                     locationFactory.create(newDatasetModuleMeta.getJarLocation()));
+      } catch (Throwable t) {
+        LOG.error("Failed to write user module meta to new table", t);
+      }
     }
-
   }
 
   /**
