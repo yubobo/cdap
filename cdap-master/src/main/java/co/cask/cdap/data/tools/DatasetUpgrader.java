@@ -26,7 +26,6 @@ import co.cask.cdap.common.io.Locations;
 import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
 import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
 import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetTypeMDS;
-import co.cask.cdap.data2.datafabric.dataset.type.DatasetTypeManager;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.DatasetManagementException;
 import co.cask.cdap.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
@@ -48,7 +47,7 @@ import co.cask.tephra.TransactionFailureException;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Iterators;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.hadoop.conf.Configuration;
@@ -60,7 +59,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -77,17 +78,14 @@ public class DatasetUpgrader extends AbstractUpgrader {
   private final QueueAdmin queueAdmin;
   private final HBaseTableUtil hBaseTableUtil;
   private final DatasetFramework dsFramework;
-  private final DatasetTypeManager datasetTypeManager;
   private static final Pattern USER_TABLE_PREFIX = Pattern.compile("^cdap\\.user\\..*");
-  private final Transactional<AppMDS, DatasetTypeMDS> oldDatasetTypeMDS;
-//  private final DatasetTypeMDS oldDatasetTypeMDS;
+  private final Transactional<DatasetMDSStore, DatasetTypeMDS> datasetTypeStores;
 
   @Inject
   private DatasetUpgrader(CConfiguration cConf, Configuration hConf, LocationFactory locationFactory,
                           QueueAdmin queueAdmin, HBaseTableUtil hBaseTableUtil,
                           final TransactionExecutorFactory executorFactory,
-                          @Named("dsFramework") final DatasetFramework dsFramework,
-                          @Named("datasetTypeManager") DatasetTypeManager datasetTypeManager)
+                          @Named("dsFramework") final DatasetFramework dsFramework)
     throws IOException, DatasetManagementException {
 
     super(locationFactory);
@@ -97,17 +95,19 @@ public class DatasetUpgrader extends AbstractUpgrader {
     this.queueAdmin = queueAdmin;
     this.hBaseTableUtil = hBaseTableUtil;
     this.dsFramework = dsFramework;
-    this.datasetTypeManager = datasetTypeManager;
-    this.oldDatasetTypeMDS = Transactional.of(executorFactory, new Supplier<AppMDS>() {
+    this.datasetTypeStores = Transactional.of(executorFactory, new Supplier<DatasetMDSStore>() {
       @Override
-      public AppMDS get() {
+      public DatasetMDSStore get() {
         try {
-          DatasetTypeMDS table = DatasetsUtil.getOrCreateDataset(
+          DatasetTypeMDS oldMDS = DatasetsUtil.getOrCreateDataset(
             dsFramework, Id.DatasetInstance.from(Constants.DEFAULT_NAMESPACE_ID,
                                                  Joiner.on(".").join(Constants.SYSTEM_NAMESPACE,
                                                                      DatasetMetaTableUtil.META_TABLE_NAME)),
             DatasetTypeMDS.class.getName(), DatasetProperties.EMPTY, DatasetDefinition.NO_ARGUMENTS, null);
-          return new AppMDS(table);
+          // get the namespaced table
+          DatasetTypeMDS newMDS = new DatasetMetaTableUtil(dsFramework).getTypeMetaTable();
+
+          return new DatasetMDSStore(oldMDS, newMDS);
         } catch (Exception e) {
           LOG.error("Failed to access {} table", Joiner.on(".").join(Constants.SYSTEM_NAMESPACE,
                                                                      DefaultStore.APP_META_TABLE), e);
@@ -190,16 +190,16 @@ public class DatasetUpgrader extends AbstractUpgrader {
 
 
     try {
-      oldDatasetTypeMDS.execute(new TransactionExecutor.Function<AppMDS, Void>() {
+      datasetTypeStores.execute(new TransactionExecutor.Function<DatasetMDSStore, Void>() {
         @Override
-        public Void apply(AppMDS ctx) throws Exception {
-          Map<MDSKey, DatasetModuleMeta> mdsKeyDatasetModuleMetaMap = ctx.oldMDS.listKV(dsModulePrefix,
-                                                                                     DatasetModuleMeta.class);
+        public Void apply(DatasetMDSStore ctx) throws Exception {
+          Map<MDSKey, DatasetModuleMeta> mdsKeyDatasetModuleMetaMap = ctx.stores.get(0).listKV(dsModulePrefix,
+                                                                                               DatasetModuleMeta.class);
           for (DatasetModuleMeta datasetModuleMeta : mdsKeyDatasetModuleMetaMap.values()) {
             if (!(datasetModuleMeta.getClassName().equals(
               "co.cask.cdap.data2.dataset2.module.lib.hbase.HBaseOrderedTableModule") ||
               datasetModuleMeta.getClassName().equals("co.cask.cdap.data2.dataset2.lib.table.ACLTableModule"))) {
-              datasetModuleUpgrader(datasetModuleMeta);
+              datasetModuleUpgrader(datasetModuleMeta, ctx.stores.get(1));
             }
           }
           return null;
@@ -210,15 +210,14 @@ public class DatasetUpgrader extends AbstractUpgrader {
     }
   }
 
-  private void datasetModuleUpgrader(DatasetModuleMeta datasetModuleMeta) throws IOException {
+  private void datasetModuleUpgrader(DatasetModuleMeta datasetModuleMeta, DatasetTypeMDS datasetTypeMDS)
+    throws IOException {
     DatasetModuleMeta newDatasetModuleMeta;
     if (datasetModuleMeta.getJarLocation() == null) {
       LOG.info("YOO! Inside system");
       LOG.info("Writing new module meta {}", datasetModuleMeta);
       try {
-        datasetTypeManager.addModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE_ID, datasetModuleMeta.getName()),
-                                     datasetModuleMeta.getClassName(),
-                                     null);
+        datasetTypeMDS.writeModule(Constants.SYSTEM_NAMESPACE_ID, datasetModuleMeta);
       } catch (Throwable t) {
         LOG.error("Failed to write system module meta to new table", t);
       }
@@ -231,13 +230,14 @@ public class DatasetUpgrader extends AbstractUpgrader {
       newDatasetModuleMeta = new DatasetModuleMeta(datasetModuleMeta.getName(), datasetModuleMeta.getClassName(),
                                                    newJarLocation.toURI(), datasetModuleMeta.getTypes(),
                                                    datasetModuleMeta.getUsesModules());
+      Collection<String> usedByModules = datasetModuleMeta.getUsedByModules();
+      for (String moduleName : usedByModules) {
+        newDatasetModuleMeta.addUsedByModule(moduleName);
+      }
       LOG.info("Writing new module meta {}", newDatasetModuleMeta);
       renameLocation(oldJarLocation, newJarLocation);
       try {
-        datasetTypeManager.addModule(Id.DatasetModule.from(Constants.DEFAULT_NAMESPACE_ID,
-                                                           newDatasetModuleMeta.getName()),
-                                     newDatasetModuleMeta.getClassName(),
-                                     locationFactory.create(newDatasetModuleMeta.getJarLocation()));
+        datasetTypeMDS.writeModule(Constants.DEFAULT_NAMESPACE_ID, newDatasetModuleMeta);
       } catch (Throwable t) {
         LOG.error("Failed to write user module meta to new table", t);
       }
@@ -266,16 +266,16 @@ public class DatasetUpgrader extends AbstractUpgrader {
       .append(jarFilename);
   }
 
-  private static final class AppMDS implements Iterable<DatasetTypeMDS> {
-    private final DatasetTypeMDS oldMDS;
+  private static final class DatasetMDSStore implements Iterable<DatasetTypeMDS> {
+    private final List<DatasetTypeMDS> stores;
 
-    private AppMDS(DatasetTypeMDS metaTable) {
-      this.oldMDS = metaTable;
+    private DatasetMDSStore(DatasetTypeMDS oldMDS, DatasetTypeMDS newMDS) {
+      this.stores = ImmutableList.of(oldMDS, newMDS);
     }
 
     @Override
     public Iterator<DatasetTypeMDS> iterator() {
-      return Iterators.singletonIterator(oldMDS);
+      return stores.iterator();
     }
   }
 }
