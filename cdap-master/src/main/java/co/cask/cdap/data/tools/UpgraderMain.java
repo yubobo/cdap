@@ -208,13 +208,16 @@ public class UpgraderMain {
         public MDSDatasetsRegistry getMDSDatasetsRegistry(@Named("dsFramework") DatasetFramework dsFramework,
                                                           TransactionSystemClient txClient) {
           return new MDSDatasetsRegistry(txClient, dsFramework);
+
         }
 
         @Provides
         @Singleton
         @Named("datasetTypeManager")
         public DatasetTypeManager getDatasetTypeManager(CConfiguration cConf, LocationFactory locationFactory,
-                                                        @Named("mdsDatasetsRegistry") MDSDatasetsRegistry mdsDatasetsRegistry) {
+                                                        @Named("mdsDatasetsRegistry")
+                                                        MDSDatasetsRegistry mdsDatasetsRegistry) {
+          mdsDatasetsRegistry.startAndWait();
           Map<String, DatasetModule> defaultMap = new HashMap<String, DatasetModule>();
           return new DatasetTypeManager(cConf, mdsDatasetsRegistry, locationFactory, defaultMap);
         }

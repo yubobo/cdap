@@ -47,7 +47,7 @@ public class DatasetMetaTableUtil {
   }
 
   public void init() throws DatasetManagementException {
-    addTypes(framework);
+//    addTypes(framework);
   }
 
   public DatasetTypeMDS getTypeMetaTable() throws DatasetManagementException, IOException {

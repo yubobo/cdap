@@ -25,9 +25,7 @@ import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.io.Locations;
 import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
 import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
-import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetInstanceMDS;
 import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetTypeMDS;
-import co.cask.cdap.data2.datafabric.dataset.service.mds.MDSDatasets;
 import co.cask.cdap.data2.datafabric.dataset.type.DatasetTypeManager;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.DatasetManagementException;
@@ -35,7 +33,6 @@ import co.cask.cdap.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
 import co.cask.cdap.data2.dataset2.lib.table.MDSKey;
 import co.cask.cdap.data2.dataset2.lib.table.hbase.HBaseTableAdmin;
 import co.cask.cdap.data2.dataset2.tx.Transactional;
-import co.cask.cdap.data2.dataset2.tx.TxCallable;
 import co.cask.cdap.data2.transaction.queue.QueueAdmin;
 import co.cask.cdap.data2.util.TableId;
 import co.cask.cdap.data2.util.hbase.HBaseTableUtil;
@@ -63,7 +60,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -200,25 +196,15 @@ public class DatasetUpgrader extends AbstractUpgrader {
           Map<MDSKey, DatasetModuleMeta> mdsKeyDatasetModuleMetaMap = ctx.mds.listKV(dsModulePrefix,
                                                                                      DatasetModuleMeta.class);
           for (DatasetModuleMeta datasetModuleMeta : mdsKeyDatasetModuleMetaMap.values()) {
-            datasetModuleUpgrader(datasetModuleMeta);
+            if (!(datasetModuleMeta.getClassName().equals(
+              "co.cask.cdap.data2.dataset2.module.lib.hbase.HBaseOrderedTableModule") ||
+              datasetModuleMeta.getClassName().equals("co.cask.cdap.data2.dataset2.lib.table.ACLTableModule"))) {
+              datasetModuleUpgrader(datasetModuleMeta);
+            }
           }
           return null;
         }
       });
-//      oldDatasetTypeMDS.execute(new TxCallable<AppMDS, Void>() {
-//        @Override
-//        public Void call(AppMDS context) throws Exception {
-//          DatasetTypeMDS typeMDS = context.getTypeMDS();
-//          Collection<DatasetModuleMeta> allDatasets = typeMDS.getModules(Constants.SYSTEM_NAMESPACE_ID);
-//          for (DatasetModuleMeta ds : allDatasets) {
-//            if (ds.getJarLocation() == null) {
-//              LOG.info("Deleting system dataset module: {}", ds.toString());
-//              typeMDS.deleteModule(Id.DatasetModule.from(Constants.SYSTEM_NAMESPACE_ID, ds.getName()));
-//            }
-//          }
-//          return null;
-//        }
-//      });
     } catch (Exception e) {
       Throwables.propagate(e);
     }
@@ -271,7 +257,6 @@ public class DatasetUpgrader extends AbstractUpgrader {
                                                       String namespace) throws IOException {
     String jarFilename = location.getName();
     Location parentLocation = Locations.getParent(location);  // strip jarFilename
-    String accountPlaceholder = parentLocation != null ? parentLocation.getName() : null;
     parentLocation = Locations.getParent(parentLocation); // strip account_placeholder
     String archive = parentLocation != null ? parentLocation.getName() : null;
     parentLocation = Locations.getParent(parentLocation); // strip archive
