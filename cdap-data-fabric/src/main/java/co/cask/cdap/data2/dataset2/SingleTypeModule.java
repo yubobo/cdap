@@ -34,6 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Map;
 
 /**
@@ -104,7 +106,12 @@ public class SingleTypeModule implements DatasetModule {
 
   @Override
   public void register(DatasetDefinitionRegistry registry) {
-
+    URLClassLoader urlClassLoader = (URLClassLoader) dataSetClass.getClassLoader();
+    if (dataSetClass.getName().equals("co.cask.cdap.examples.purchase.PurchaseHistoryStore")) {
+      for (URL url : urlClassLoader.getURLs()) {
+        LOG.error("rsinha - url = {}.", url);
+      }
+    }
     final Constructor ctor = findSuitableCtorOrFail(dataSetClass);
 
     DatasetType typeAnn = dataSetClass.getAnnotation(DatasetType.class);

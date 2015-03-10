@@ -129,6 +129,7 @@ public class DatasetTypeManager extends AbstractIdleService {
             if (jarLocation != null) {
               BundleJarUtil.unpackProgramJar(jarLocation, unpackedLocation);
             }
+            LOG.error("rsinha - unpacked location = {}", unpackedLocation.getAbsolutePath());
             cl = jarLocation == null ? this.getClass().getClassLoader() :
               ProgramClassLoader.create(unpackedLocation, getClass().getClassLoader());
             @SuppressWarnings("unchecked")
@@ -141,11 +142,11 @@ public class DatasetTypeManager extends AbstractIdleService {
                       className, datasetModuleId, jarLocation);
             throw Throwables.propagate(e);
           } finally {
-            try {
+            /*try {
               DirUtils.deleteDirectoryContents(unpackedLocation);
             } catch (IOException e) {
               LOG.warn("Failed to delete directory {}", unpackedLocation, e);
-            }
+            }*/
           }
           // NOTE: we use set to avoid duplicated dependencies
           // NOTE: we use LinkedHashSet to preserve order in which dependencies must be loaded

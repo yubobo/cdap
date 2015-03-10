@@ -193,7 +193,7 @@ public class DatasetUpgrader extends AbstractUpgrader {
       oldDatasetTypeMDS.execute(new TransactionExecutor.Function<AppMDS, Void>() {
         @Override
         public Void apply(AppMDS ctx) throws Exception {
-          Map<MDSKey, DatasetModuleMeta> mdsKeyDatasetModuleMetaMap = ctx.mds.listKV(dsModulePrefix,
+          Map<MDSKey, DatasetModuleMeta> mdsKeyDatasetModuleMetaMap = ctx.oldMDS.listKV(dsModulePrefix,
                                                                                      DatasetModuleMeta.class);
           for (DatasetModuleMeta datasetModuleMeta : mdsKeyDatasetModuleMetaMap.values()) {
             if (!(datasetModuleMeta.getClassName().equals(
@@ -225,14 +225,14 @@ public class DatasetUpgrader extends AbstractUpgrader {
     } else {
       LOG.info("YOO! Inside user");
       Location oldJarLocation = locationFactory.create(datasetModuleMeta.getJarLocation());
+      Location newJarLocation = updateUserDatasetModuleJarLocation(oldJarLocation, datasetModuleMeta.getClassName(),
+                                                                   Constants.DEFAULT_NAMESPACE);
 
       newDatasetModuleMeta = new DatasetModuleMeta(datasetModuleMeta.getName(), datasetModuleMeta.getClassName(),
-                                                   updateUserDatasetModuleJarLocation(oldJarLocation,
-                                                                                      datasetModuleMeta.getClassName(),
-                                                                                      Constants.DEFAULT_NAMESPACE)
-                                                     .toURI(),
-                                                   datasetModuleMeta.getTypes(), datasetModuleMeta.getUsesModules());
+                                                   newJarLocation.toURI(), datasetModuleMeta.getTypes(),
+                                                   datasetModuleMeta.getUsesModules());
       LOG.info("Writing new module meta {}", newDatasetModuleMeta);
+      renameLocation(oldJarLocation, newJarLocation);
       try {
         datasetTypeManager.addModule(Id.DatasetModule.from(Constants.DEFAULT_NAMESPACE_ID,
                                                            newDatasetModuleMeta.getName()),
@@ -267,15 +267,15 @@ public class DatasetUpgrader extends AbstractUpgrader {
   }
 
   private static final class AppMDS implements Iterable<DatasetTypeMDS> {
-    private final DatasetTypeMDS mds;
+    private final DatasetTypeMDS oldMDS;
 
     private AppMDS(DatasetTypeMDS metaTable) {
-      this.mds = metaTable;
+      this.oldMDS = metaTable;
     }
 
     @Override
     public Iterator<DatasetTypeMDS> iterator() {
-      return Iterators.singletonIterator(mds);
+      return Iterators.singletonIterator(oldMDS);
     }
   }
 }
