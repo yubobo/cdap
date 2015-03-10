@@ -16,12 +16,22 @@
 
 package co.cask.cdap.data.tools;
 
+import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.api.dataset.DatasetAdmin;
+import co.cask.cdap.api.dataset.DatasetDefinition;
+import co.cask.cdap.api.dataset.DatasetProperties;
+import co.cask.cdap.api.dataset.DatasetSpecification;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.data2.datafabric.dataset.DatasetMetaTableUtil;
+import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
+import co.cask.cdap.data2.datafabric.dataset.service.mds.DatasetInstanceMDS;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
+import co.cask.cdap.data2.dataset2.DatasetManagementException;
 import co.cask.cdap.data2.dataset2.lib.hbase.AbstractHBaseDataSetAdmin;
+import co.cask.cdap.data2.dataset2.lib.table.MDSKey;
 import co.cask.cdap.data2.dataset2.lib.table.hbase.HBaseTableAdmin;
+import co.cask.cdap.data2.dataset2.tx.Transactional;
 import co.cask.cdap.data2.transaction.queue.QueueAdmin;
 import co.cask.cdap.data2.util.TableId;
 import co.cask.cdap.data2.util.hbase.HBaseTableUtil;
@@ -29,6 +39,14 @@ import co.cask.cdap.data2.util.hbase.HTableNameConverter;
 import co.cask.cdap.data2.util.hbase.HTableNameConverterFactory;
 import co.cask.cdap.proto.DatasetSpecificationSummary;
 import co.cask.cdap.proto.Id;
+import co.cask.tephra.TransactionExecutor;
+import co.cask.tephra.TransactionExecutorFactory;
+import co.cask.tephra.TransactionFailureException;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.hadoop.conf.Configuration;
@@ -39,6 +57,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -53,13 +74,16 @@ public class DatasetUpgrader extends AbstractUpgrader {
   private final LocationFactory locationFactory;
   private final QueueAdmin queueAdmin;
   private final HBaseTableUtil hBaseTableUtil;
-  private final DatasetFramework namespacedFramework;
+  private final DatasetFramework dsFramework;
   private static final Pattern USER_TABLE_PREFIX = Pattern.compile("^cdap\\.user\\..*");
+
+  private final Transactional<UpgradeMdsStores<DatasetInstanceMDS>, DatasetInstanceMDS> datasetInstanceMds;
 
   @Inject
   private DatasetUpgrader(CConfiguration cConf, Configuration hConf, LocationFactory locationFactory,
                           QueueAdmin queueAdmin, HBaseTableUtil hBaseTableUtil,
-                          @Named("dsFramework") DatasetFramework dsFramework) {
+                          final TransactionExecutorFactory executorFactory,
+                          @Named("dsFramework") final  DatasetFramework dsFramework) {
 
     super(locationFactory);
     this.cConf = cConf;
@@ -67,28 +91,51 @@ public class DatasetUpgrader extends AbstractUpgrader {
     this.locationFactory = locationFactory;
     this.queueAdmin = queueAdmin;
     this.hBaseTableUtil = hBaseTableUtil;
-    this.namespacedFramework = dsFramework;
+    this.dsFramework = dsFramework;
+
+
+    this.datasetInstanceMds = Transactional.of(executorFactory,
+                                                  new Supplier<UpgradeMdsStores<DatasetInstanceMDS>>() {
+      @Override
+      public UpgradeMdsStores<DatasetInstanceMDS> get() {
+        String dsName = Joiner.on(".").join(Constants.SYSTEM_NAMESPACE, DatasetMetaTableUtil.INSTANCE_TABLE_NAME);
+        Id.DatasetInstance datasetId = Id.DatasetInstance.from(Constants.DEFAULT_NAMESPACE_ID, dsName);
+        try {
+          DatasetInstanceMDS oldMds =
+            DatasetsUtil.getOrCreateDataset(dsFramework, datasetId, DatasetInstanceMDS.class.getName(),
+                                            DatasetProperties.EMPTY, DatasetDefinition.NO_ARGUMENTS, null);
+          DatasetInstanceMDS newMds = new DatasetMetaTableUtil(dsFramework).getInstanceMetaTable();
+          return new UpgradeMdsStores<DatasetInstanceMDS>(oldMds, newMds);
+        } catch (Exception e) {
+          LOG.error("Failed to access table: {}", datasetId, e);
+          throw Throwables.propagate(e);
+        }
+      }
+    });
   }
 
   @Override
   public void upgrade() throws Exception {
     // Upgrade system dataset
-    upgradeSystemDatasets(namespacedFramework);
+    upgradeSystemDatasets();
 
     // Upgrade all user hbase tables
     upgradeUserTables();
 
     // Upgrade all queue and stream tables.
     queueAdmin.upgrade();
+
+    // Upgrade the datasets instace meta table
+    upgradeDatasetInstanceMDS();
   }
 
-  private void upgradeSystemDatasets(DatasetFramework framework) throws Exception {
+  private void upgradeSystemDatasets() throws Exception {
 
     // Upgrade all datasets in system namespace
-    for (DatasetSpecificationSummary spec : framework.getInstances(Constants.DEFAULT_NAMESPACE_ID)) {
+    for (DatasetSpecificationSummary spec : dsFramework.getInstances(Constants.DEFAULT_NAMESPACE_ID)) {
       LOG.info("Upgrading dataset: {}, spec: {}", spec.getName(), spec.toString());
-      DatasetAdmin admin = framework.getAdmin(Id.DatasetInstance.from(Constants.DEFAULT_NAMESPACE_ID, spec.getName()),
-                                              null);
+      DatasetAdmin admin = dsFramework.getAdmin(Id.DatasetInstance.from(Constants.DEFAULT_NAMESPACE_ID, spec.getName()),
+                                                null);
       // we know admin is not null, since we are looping over existing datasets
       admin.upgrade();
       LOG.info("Upgraded dataset: {}", spec.getName());
@@ -130,6 +177,90 @@ public class DatasetUpgrader extends AbstractUpgrader {
       };
       admin.upgrade();
       LOG.info("Upgraded hbase table: {}", tableName);
+    }
+  }
+
+
+  // Moves dataset instance meta entries into new table (in system namespace)
+  // Also updates the spec's name ('cdap.user.foo' -> 'foo')
+  private void upgradeDatasetInstanceMDS() throws IOException, DatasetManagementException, InterruptedException,
+    TransactionFailureException {
+    LOG.info("Upgrading dataset instance mds.");
+    datasetInstanceMds.execute(new TransactionExecutor.Function<UpgradeMdsStores<DatasetInstanceMDS>, Void>() {
+      @Override
+      public Void apply(UpgradeMdsStores<DatasetInstanceMDS> ctx) throws Exception {
+        MDSKey key = new MDSKey(Bytes.toBytes(DatasetInstanceMDS.INSTANCE_PREFIX));
+        DatasetInstanceMDS newMds = ctx.getNewMds();
+        Map<MDSKey, DatasetSpecification> dsSpecs = ctx.getOldMds().listKV(key, DatasetSpecification.class);
+        for (Map.Entry<MDSKey, DatasetSpecification> dsSpecEntry : dsSpecs.entrySet()) {
+          DatasetSpecification dsSpec = dsSpecEntry.getValue();
+          LOG.info("Migrating dataset Spec: {}", dsSpec);
+          Id.Namespace namespace = namespaceFromDatasetName(dsSpec.getName());
+          DatasetSpecification migratedDsSpec = migrateDatasetSpec(dsSpec);
+          LOG.info("Writing new dataset Spec: {}", migratedDsSpec);
+          newMds.write(namespace, migratedDsSpec);
+        }
+        return null;
+      }
+    });
+  }
+
+  /**
+   * Construct a {@link TableId} from a dataset name
+   * TODO: CDAP-1593 - This is bad and should be removed, since it makes assumptions about the dataset name format.
+   *
+   * @param name the dataset/table name to construct the {@link TableId} from
+   * @return the {@link TableId} object for the specified dataset/table name
+   */
+  private static TableId from(String name) {
+    Preconditions.checkArgument(name != null, "Dataset name should not be null");
+    // Dataset/Table name is expected to be in the format <table-prefix>.<namespace>.<name>
+    String invalidFormatError = String.format("Invalid format for dataset/table name '%s'. " +
+                                                "Expected - <table-prefix>.<namespace>.<dataset/table-name>", name);
+    String [] parts = name.split("\\.", 3);
+    Preconditions.checkArgument(parts.length == 3, invalidFormatError);
+    // Ignore the prefix in the input name.
+    return TableId.from(Id.Namespace.from(parts[1]), parts[2]);
+  }
+
+  private DatasetSpecification migrateDatasetSpec(DatasetSpecification oldSpec) {
+    TableId from = from(oldSpec.getName());
+    String newDatasetName = from.getTableName();
+    return DatasetSpecification.changeName(oldSpec, newDatasetName);
+  }
+
+  private Id.Namespace namespaceFromDatasetName(String dsName) {
+    // input of the form: 'cdap.user.foo', or 'cdap.system.app.meta'
+    TableId tableId = from(dsName);
+    String namespace = tableId.getNamespace().getId();
+    if (Constants.SYSTEM_NAMESPACE.equals(namespace)) {
+      return Constants.SYSTEM_NAMESPACE_ID;
+    } else if ("user".equals(namespace)) {
+      return Constants.DEFAULT_NAMESPACE_ID;
+    } else {
+      throw new IllegalArgumentException(String.format("Expected dataset namespace to be either 'system' or 'user': %s",
+                                                       tableId));
+    }
+  }
+
+  private static final class UpgradeMdsStores<T> implements Iterable<T> {
+    private final List<T> stores;
+
+    private UpgradeMdsStores(T oldMds, T newMds) {
+      this.stores = ImmutableList.of(oldMds, newMds);
+    }
+
+    private T getOldMds() {
+      return stores.get(0);
+    }
+
+    private T getNewMds() {
+      return stores.get(1);
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+      return stores.iterator();
     }
   }
 }
