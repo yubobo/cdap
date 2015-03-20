@@ -19,7 +19,6 @@ package co.cask.cdap.explore.service.hive;
 import co.cask.cdap.api.dataset.Dataset;
 import co.cask.cdap.api.dataset.DatasetSpecification;
 import co.cask.cdap.api.dataset.lib.Partition;
-import co.cask.cdap.api.dataset.lib.PartitionKey;
 import co.cask.cdap.api.dataset.lib.TimePartitionedFileSet;
 import co.cask.cdap.app.runtime.scheduler.SchedulerQueueResolver;
 import co.cask.cdap.app.store.Store;
@@ -27,7 +26,6 @@ import co.cask.cdap.app.store.StoreFactory;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
-import co.cask.cdap.data2.dataset2.DatasetManagementException;
 import co.cask.cdap.data2.transaction.stream.StreamAdmin;
 import co.cask.cdap.explore.service.Explore;
 import co.cask.cdap.explore.service.ExploreException;
@@ -336,19 +334,22 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = openSession(sessionConf);
-
       try {
+        sessionHandle = openHiveSession(sessionConf);
+
         String database = getHiveDatabase(schemaPattern);
-        OperationHandle operationHandle = cliService.getColumns(sessionHandle, catalog, database,
-                                                                tableNamePattern, columnNamePattern);
+        operationHandle = cliService.getColumns(sessionHandle, catalog, database,
+                                                tableNamePattern, columnNamePattern);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, "", database);
         LOG.trace("Retrieving columns: catalog {}, schemaPattern {}, tableNamePattern {}, columnNamePattern {}",
                   catalog, database, tableNamePattern, columnNamePattern);
         return handle;
       } catch (Throwable e) {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
         throw e;
       }
     } catch (HiveSQLException e) {
@@ -363,16 +364,18 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = openSession(sessionConf);
-
       try {
-        OperationHandle operationHandle = cliService.getCatalogs(sessionHandle);
+        sessionHandle = openHiveSession(sessionConf);
+        operationHandle = cliService.getCatalogs(sessionHandle);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, "", "");
         LOG.trace("Retrieving catalogs");
         return handle;
       } catch (Throwable e) {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
         throw e;
       }
     } catch (HiveSQLException e) {
@@ -387,17 +390,19 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = openSession(sessionConf);
-
       try {
+        sessionHandle = openHiveSession(sessionConf);
         String database = getHiveDatabase(schemaPattern);
-        OperationHandle operationHandle = cliService.getSchemas(sessionHandle, catalog, database);
+        operationHandle = cliService.getSchemas(sessionHandle, catalog, database);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, "", database);
         LOG.trace("Retrieving schemas: catalog {}, schema {}", catalog, database);
         return handle;
       } catch (Throwable e) {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
         throw e;
       }
     } catch (HiveSQLException e) {
@@ -413,19 +418,21 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = openSession(sessionConf);
-
       try {
+        sessionHandle = openHiveSession(sessionConf);
         String database = getHiveDatabase(schemaPattern);
-        OperationHandle operationHandle = cliService.getFunctions(sessionHandle, catalog,
-                                                                  database, functionNamePattern);
+        operationHandle = cliService.getFunctions(sessionHandle, catalog,
+                                                  database, functionNamePattern);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, "", database);
         LOG.trace("Retrieving functions: catalog {}, schema {}, function {}",
                   catalog, database, functionNamePattern);
         return handle;
       } catch (Throwable e) {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
         throw e;
       }
     } catch (HiveSQLException e) {
@@ -445,10 +452,10 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
         return ret;
       }
 
+      SessionHandle sessionHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = openSession(sessionConf);
-
       try {
+        sessionHandle = openHiveSession(sessionConf);
         // Convert to GetInfoType
         GetInfoType hiveInfoType = null;
         for (GetInfoType t : GetInfoType.values()) {
@@ -466,11 +473,11 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
         LOG.trace("Retrieving info: {}, got value {}", infoType, val);
         return new MetaDataInfo(val.getStringValue(), val.getShortValue(), val.getIntValue(), val.getLongValue());
       } finally {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf), new OperationInfo(sessionHandle, null, sessionConf, "", ""));
       }
     } catch (HiveSQLException e) {
       throw getSqlException(e);
-    } catch (IOException e) {
+    } catch (Throwable e) {
       throw new ExploreException(e);
     }
   }
@@ -481,19 +488,21 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = openSession(sessionConf);
-
       try {
+        sessionHandle = openHiveSession(sessionConf);
         String database = getHiveDatabase(schemaPattern);
-        OperationHandle operationHandle = cliService.getTables(sessionHandle, catalog, database,
-                                                               tableNamePattern, tableTypes);
+        operationHandle = cliService.getTables(sessionHandle, catalog, database,
+                                               tableNamePattern, tableTypes);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, "", database);
         LOG.trace("Retrieving tables: catalog {}, schemaNamePattern {}, tableNamePattern {}, tableTypes {}",
                   catalog, database, tableNamePattern, tableTypes);
         return handle;
       } catch (Throwable e) {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
         throw e;
       }
     } catch (HiveSQLException e) {
@@ -598,16 +607,18 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = openSession(sessionConf);
-
       try {
-        OperationHandle operationHandle = cliService.getTableTypes(sessionHandle);
+        sessionHandle = openHiveSession(sessionConf);
+        operationHandle = cliService.getTableTypes(sessionHandle);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, "", "");
         LOG.trace("Retrieving table types");
         return handle;
       } catch (Throwable e) {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
         throw e;
       }
     } catch (HiveSQLException e) {
@@ -622,16 +633,18 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = openSession(sessionConf);
-
       try {
-        OperationHandle operationHandle = cliService.getTypeInfo(sessionHandle);
+        sessionHandle = openHiveSession(sessionConf);
+        operationHandle = cliService.getTypeInfo(sessionHandle);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, "", "");
         LOG.trace("Retrieving type info");
         return handle;
       } catch (Throwable e) {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
         throw e;
       }
     } catch (HiveSQLException e) {
@@ -655,16 +668,24 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
         return QueryHandle.NO_OP;
       }
 
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
+      try {
+        sessionHandle = cliService.openSession("", "", sessionConf);
 
-      String database = getHiveDatabase(namespace.getId());
-      // "IF NOT EXISTS" so that this operation is idempotent.
-      String statement = String.format("CREATE DATABASE IF NOT EXISTS %s", database);
-      OperationHandle operationHandle = doExecute(sessionHandle, statement);
-      QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, statement, database);
-      LOG.info("Creating database {} with handle {}", namespaceId, handle);
-      return handle;
+        String database = getHiveDatabase(namespace.getId());
+        // "IF NOT EXISTS" so that this operation is idempotent.
+        String statement = String.format("CREATE DATABASE IF NOT EXISTS %s", database);
+        operationHandle = doExecute(sessionHandle, statement);
+        QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, statement, database);
+        LOG.info("Creating database {} with handle {}", namespaceId, handle);
+        return handle;
+      } catch (Throwable e) {
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
+        throw e;
+      }
     } catch (HiveSQLException e) {
       throw getSqlException(e);
     } catch (Throwable e) {
@@ -677,16 +698,23 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession();
-      // It looks like the username and password below is not used when security is disabled in Hive Server2.
-      SessionHandle sessionHandle = openSession(sessionConf);
+      try {
+        sessionHandle = openHiveSession(sessionConf);
 
-      String database = getHiveDatabase(namespace.getId());
-      String statement = String.format("DROP DATABASE %s", database);
-      OperationHandle operationHandle = doExecute(sessionHandle, statement);
-      QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, statement, database);
-      LOG.info("Deleting database {} with handle {}", database, handle);
-      return handle;
+        String database = getHiveDatabase(namespace.getId());
+        String statement = String.format("DROP DATABASE %s", database);
+        operationHandle = doExecute(sessionHandle, statement);
+        QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf, statement, database);
+        LOG.info("Deleting database {} with handle {}", database, handle);
+        return handle;
+      } catch (Throwable e) {
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
+        throw e;
+      }
     } catch (HiveSQLException e) {
       throw getSqlException(e);
     } catch (Throwable e) {
@@ -699,21 +727,23 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     startAndWait();
 
     try {
+      SessionHandle sessionHandle = null;
+      OperationHandle operationHandle = null;
       Map<String, String> sessionConf = startSession(namespace);
-      // It looks like the username and password below is not used when security is disabled in Hive Server2.
-      SessionHandle sessionHandle = openSession(sessionConf);
       try {
+        sessionHandle = openHiveSession(sessionConf);
         String database = getHiveDatabase(namespace.getId());
         // Switch database to the one being passed in.
         setCurrentDatabase(database);
 
-        OperationHandle operationHandle = doExecute(sessionHandle, statement);
+        operationHandle = doExecute(sessionHandle, statement);
         QueryHandle handle = saveOperationInfo(operationHandle, sessionHandle, sessionConf,
                                                statement, database);
         LOG.trace("Executing statement: {} with handle {}", statement, handle);
         return handle;
       } catch (Throwable e) {
-        closeSession(sessionHandle);
+        closeInternal(getQueryHandle(sessionConf),
+                      new OperationInfo(sessionHandle, operationHandle, sessionConf, "", ""));
         throw e;
       }
     } catch (HiveSQLException e) {
@@ -918,7 +948,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     return listBuilder.build();
   }
 
-  protected void setCurrentDatabase(String dbName) throws Exception {
+  protected void setCurrentDatabase(String dbName) throws Throwable {
     SessionState.get().setCurrentDatabase(dbName);
   }
 
@@ -1150,19 +1180,23 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     throws ExploreException, HandleNotFoundException, SQLException {
     try {
       LOG.trace("Closing operation {}", handle);
-      cliService.closeOperation(opInfo.getOperationHandle());
+      if (opInfo.getOperationHandle() != null) {
+        cliService.closeOperation(opInfo.getOperationHandle());
+      }
     } catch (HiveSQLException e) {
       throw getSqlException(e);
     } finally {
       try {
-        closeSession(opInfo.getSessionHandle());
+        if (opInfo.getSessionHandle() != null) {
+          closeHiveSession(opInfo.getSessionHandle());
+        }
       } finally {
         cleanUp(handle, opInfo);
       }
     }
   }
 
-  private SessionHandle openSession(Map<String, String> sessionConf) throws HiveSQLException {
+  protected SessionHandle openHiveSession(Map<String, String> sessionConf) throws HiveSQLException {
     SessionHandle sessionHandle = cliService.openSession("", "", sessionConf);
     try {
       HiveStreamRedirector.redirectToLogger(SessionState.get());
@@ -1173,7 +1207,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     return sessionHandle;
   }
 
-  private void closeSession(SessionHandle sessionHandle) {
+  private void closeHiveSession(SessionHandle sessionHandle) {
     try {
       cliService.closeSession(sessionHandle);
     } catch (Throwable e) {
@@ -1221,7 +1255,9 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     return sessionConf;
   }
 
-
+  protected QueryHandle getQueryHandle(Map<String, String> sessionConf) throws HandleNotFoundException {
+    return QueryHandle.fromId(sessionConf.get(Constants.Explore.QUERY_ID));
+  }
 
   /**
    * Returns {@link OperationHandle} associated with Explore {@link QueryHandle}.
@@ -1313,15 +1349,14 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
                                              TxnCodec.INSTANCE);
       LOG.trace("Closing transaction {} for handle {}", tx, handle);
 
-      // Even if changes are empty, we still commit the tx to take care of
-      // any side effect changes that SplitReader may have.
       if (!(txClient.commit(tx))) {
         txClient.abort(tx);
         LOG.info("Aborting transaction: {}", tx);
       }
-      opInfo.getSessionConf().put(Constants.Explore.TX_QUERY_CLOSED, "true");
     } catch (Throwable e) {
       LOG.error("Got exception while closing transaction.", e);
+    } finally {
+      opInfo.getSessionConf().put(Constants.Explore.TX_QUERY_CLOSED, "true");
     }
   }
 

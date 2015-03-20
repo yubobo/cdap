@@ -41,10 +41,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -109,18 +109,23 @@ public class HiveCDH4ExploreService extends BaseHiveExploreService {
   }
 
   @Override
-  protected void setCurrentDatabase(String dbName) throws IOException, HiveSQLException, ExploreException {
-    final OperationHandle opHandle = doExecute(getCliService().openSession("", "", startSession()), "USE " + dbName);
+  protected void setCurrentDatabase(String dbName) throws Throwable {
+    SessionHandle sessionHandle = null;
+    OperationHandle opHandle = null;
+    Map<String, String> sessionConf = startSession();
     try {
+      sessionHandle = openHiveSession(sessionConf);
+      opHandle = doExecute(sessionHandle, "USE " + dbName);
+      final OperationHandle finalOpHandle = opHandle;
       Tasks.waitFor(QueryStatus.OpStatus.FINISHED, new Callable<QueryStatus.OpStatus>() {
         @Override
         public QueryStatus.OpStatus call() throws Exception {
-          return fetchStatus(opHandle).getStatus();
+          return fetchStatus(finalOpHandle).getStatus();
         }
       }, 5, TimeUnit.SECONDS, 200, TimeUnit.MILLISECONDS);
-    } catch (Exception e) {
-      // Rethrow exception and don't execute query i.e. return 500
-      throw Throwables.propagate(e);
+    } catch (Throwable e) {
+      closeInternal(getQueryHandle(sessionConf), new OperationInfo(sessionHandle, opHandle, sessionConf, "", ""));
+      throw e;
     }
   }
 
