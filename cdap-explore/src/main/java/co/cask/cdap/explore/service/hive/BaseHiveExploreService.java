@@ -163,7 +163,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
   private final Map<Reference<? extends Supplier<IMetaStoreClient>>, IMetaStoreClient> metastoreClientReferences;
   private final ReferenceQueue<Supplier<IMetaStoreClient>> metastoreClientReferenceQueue;
 
-  protected abstract QueryStatus fetchStatus(OperationHandle handle) throws HiveSQLException, ExploreException,
+  protected abstract QueryStatus doFetchStatus(OperationHandle handle) throws HiveSQLException, ExploreException,
     HandleNotFoundException;
   protected abstract OperationHandle doExecute(SessionHandle sessionHandle, String statement)
     throws HiveSQLException, ExploreException;
@@ -766,17 +766,17 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
 
     try {
       // Fetch status from Hive
-      QueryStatus status = fetchStatus(getOperationHandle(handle));
+      QueryStatus status = fetchStatus(getOperationInfo(handle));
       LOG.trace("Status of handle {} is {}", handle, status);
 
       // No results or error, so can be timed out aggressively
       if (status.getStatus() == QueryStatus.OpStatus.FINISHED && !status.hasResults()) {
         // In case of a query that writes to a Dataset, we will always fall into this condition,
         // and timing out aggressively will also close the transaction and make the writes visible
-        timeoutAggresively(handle, getResultSchema(handle), status);
+        timeoutAggresively(handle, getResultSchema(handle));
       } else if (status.getStatus() == QueryStatus.OpStatus.ERROR) {
         // getResultSchema will fail if the query is in error
-        timeoutAggresively(handle, ImmutableList.<ColumnDesc>of(), status);
+        timeoutAggresively(handle, ImmutableList.<ColumnDesc>of());
       }
       return status;
     } catch (HiveSQLException e) {
@@ -806,7 +806,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
       QueryStatus status = getStatus(handle);
       if (results.isEmpty() && status.getStatus() == QueryStatus.OpStatus.FINISHED) {
         // Since operation has fetched all the results, handle can be timed out aggressively.
-        timeoutAggresively(handle, getResultSchema(handle), status);
+        timeoutAggresively(handle, getResultSchema(handle));
       }
       return results;
     } catch (HiveSQLException e) {
@@ -1269,6 +1269,13 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     return getOperationInfo(handle).getOperationHandle();
   }
 
+  protected QueryStatus fetchStatus(OperationInfo operationInfo)
+    throws ExploreException, HandleNotFoundException, HiveSQLException {
+    QueryStatus queryStatus = doFetchStatus(operationInfo.getOperationHandle());
+    operationInfo.setStatus(queryStatus);
+    return queryStatus;
+  }
+
   /**
    * Saves information associated with an Hive operation.
    * @param operationHandle {@link OperationHandle} of the Hive operation running.
@@ -1290,7 +1297,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
    *
    * @param handle operation handle.
    */
-  private void timeoutAggresively(QueryHandle handle, List<ColumnDesc> schema, QueryStatus status)
+  private void timeoutAggresively(QueryHandle handle, List<ColumnDesc> schema)
     throws HandleNotFoundException {
     OperationInfo opInfo = activeHandleCache.getIfPresent(handle);
     if (opInfo == null) {
@@ -1302,7 +1309,7 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     closeTransaction(handle, opInfo);
 
     LOG.trace("Timing out handle {} aggressively", handle);
-    inactiveHandleCache.put(handle, new InactiveOperationInfo(opInfo, schema, status));
+    inactiveHandleCache.put(handle, new InactiveOperationInfo(opInfo, schema));
     activeHandleCache.invalidate(handle);
   }
 
@@ -1349,9 +1356,13 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
                                              TxnCodec.INSTANCE);
       LOG.trace("Closing transaction {} for handle {}", tx, handle);
 
-      if (!(txClient.commit(tx))) {
-        txClient.abort(tx);
-        LOG.info("Aborting transaction: {}", tx);
+      if (opInfo.isReadOnly() || opInfo.getStatus().getStatus() == QueryStatus.OpStatus.FINISHED)  {
+        if (!(txClient.commit(tx))) {
+          txClient.invalidate(tx.getWritePointer());
+          LOG.info("Invalidating transaction: {}", tx);
+        }
+      } else {
+        txClient.invalidate(tx.getWritePointer());
       }
     } catch (Throwable e) {
       LOG.error("Got exception while closing transaction.", e);
@@ -1406,30 +1417,41 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     private final String statement;
     private final long timestamp;
     private final String namespace;
+    /**
+     * Indicates whether this operation changes Datasets or not.
+     */
+    private final boolean readOnly;
     private final Lock nextLock = new ReentrantLock();
     private final Lock previewLock = new ReentrantLock();
 
     private File previewFile;
+    private QueryStatus status;
 
     OperationInfo(SessionHandle sessionHandle, OperationHandle operationHandle,
                   Map<String, String> sessionConf, String statement, String namespace) {
-      this.sessionHandle = sessionHandle;
-      this.operationHandle = operationHandle;
-      this.sessionConf = sessionConf;
-      this.statement = statement;
-      this.timestamp = System.currentTimeMillis();
-      this.previewFile = null;
-      this.namespace = namespace;
+      this(sessionHandle, operationHandle, sessionConf, statement, System.currentTimeMillis(), namespace, true);
+    }
+
+    OperationInfo(SessionHandle sessionHandle, OperationHandle operationHandle,
+                  Map<String, String> sessionConf, String statement, String namespace, boolean readOnly) {
+      this(sessionHandle, operationHandle, sessionConf, statement, System.currentTimeMillis(), namespace, readOnly);
     }
 
     OperationInfo(SessionHandle sessionHandle, OperationHandle operationHandle,
                   Map<String, String> sessionConf, String statement, long timestamp, String namespace) {
+      this(sessionHandle, operationHandle, sessionConf, statement, timestamp, namespace, true);
+    }
+
+    OperationInfo(SessionHandle sessionHandle, OperationHandle operationHandle,
+                  Map<String, String> sessionConf, String statement, long timestamp,
+                  String namespace, boolean readOnly) {
       this.sessionHandle = sessionHandle;
       this.operationHandle = operationHandle;
       this.sessionConf = sessionConf;
       this.statement = statement;
       this.timestamp = timestamp;
       this.namespace = namespace;
+      this.readOnly = readOnly;
     }
 
     public SessionHandle getSessionHandle() {
@@ -1471,26 +1493,32 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
     public String getNamespace() {
       return namespace;
     }
-  }
 
-  private static final class InactiveOperationInfo extends OperationInfo {
-    private final List<ColumnDesc> schema;
-    private final QueryStatus status;
-
-    private InactiveOperationInfo(OperationInfo operationInfo, List<ColumnDesc> schema, QueryStatus status) {
-      super(operationInfo.getSessionHandle(), operationInfo.getOperationHandle(),
-            operationInfo.getSessionConf(), operationInfo.getStatement(),
-            operationInfo.getTimestamp(), operationInfo.getNamespace());
-      this.schema = schema;
-      this.status = status;
-    }
-
-    public List<ColumnDesc> getSchema() {
-      return schema;
+    public boolean isReadOnly() {
+      return readOnly;
     }
 
     public QueryStatus getStatus() {
       return status;
+    }
+
+    public void setStatus(QueryStatus status) {
+      this.status = status;
+    }
+  }
+
+  private static final class InactiveOperationInfo extends OperationInfo {
+    private final List<ColumnDesc> schema;
+
+    private InactiveOperationInfo(OperationInfo operationInfo, List<ColumnDesc> schema) {
+      super(operationInfo.getSessionHandle(), operationInfo.getOperationHandle(),
+            operationInfo.getSessionConf(), operationInfo.getStatement(),
+            operationInfo.getTimestamp(), operationInfo.getNamespace());
+      this.schema = schema;
+    }
+
+    public List<ColumnDesc> getSchema() {
+      return schema;
     }
   }
 }

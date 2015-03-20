@@ -80,7 +80,7 @@ public class HiveCDH4ExploreService extends BaseHiveExploreService {
   }
 
   @Override
-  protected QueryStatus fetchStatus(OperationHandle operationHandle)
+  protected QueryStatus doFetchStatus(OperationHandle operationHandle)
     throws HiveSQLException, ExploreException, HandleNotFoundException {
     try {
       // In Hive patched for CDH4, CLIService.getOperationStatus returns OperationState.
@@ -116,16 +116,16 @@ public class HiveCDH4ExploreService extends BaseHiveExploreService {
     try {
       sessionHandle = openHiveSession(sessionConf);
       opHandle = doExecute(sessionHandle, "USE " + dbName);
-      final OperationHandle finalOpHandle = opHandle;
+      final OperationInfo operationInfo = new OperationInfo(sessionHandle, opHandle, sessionConf, "", "", true);
       Tasks.waitFor(QueryStatus.OpStatus.FINISHED, new Callable<QueryStatus.OpStatus>() {
         @Override
         public QueryStatus.OpStatus call() throws Exception {
-          return fetchStatus(finalOpHandle).getStatus();
+          return fetchStatus(operationInfo).getStatus();
         }
       }, 5, TimeUnit.SECONDS, 200, TimeUnit.MILLISECONDS);
-    } catch (Throwable e) {
-      closeInternal(getQueryHandle(sessionConf), new OperationInfo(sessionHandle, opHandle, sessionConf, "", ""));
-      throw e;
+    } finally {
+      // This operation does not change data in Datasets
+      closeInternal(getQueryHandle(sessionConf), new OperationInfo(sessionHandle, opHandle, sessionConf, "", "", true));
     }
   }
 
