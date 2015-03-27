@@ -116,7 +116,7 @@ public class HiveCDH4ExploreService extends BaseHiveExploreService {
     try {
       sessionHandle = openHiveSession(sessionConf);
       opHandle = doExecute(sessionHandle, "USE " + dbName);
-      final OperationInfo operationInfo = new OperationInfo(sessionHandle, opHandle, sessionConf, "", "", true);
+      final OperationInfo operationInfo = new ReadOnlyOperationInfo(sessionHandle, opHandle, sessionConf, "", "");
       Tasks.waitFor(QueryStatus.OpStatus.FINISHED, new Callable<QueryStatus.OpStatus>() {
         @Override
         public QueryStatus.OpStatus call() throws Exception {
@@ -125,7 +125,8 @@ public class HiveCDH4ExploreService extends BaseHiveExploreService {
       }, 5, TimeUnit.SECONDS, 200, TimeUnit.MILLISECONDS);
     } finally {
       // This operation does not change data in Datasets
-      closeInternal(getQueryHandle(sessionConf), new OperationInfo(sessionHandle, opHandle, sessionConf, "", "", true));
+      closeInternal(getQueryHandle(sessionConf),
+                    new ReadOnlyOperationInfo(sessionHandle, opHandle, sessionConf, "", ""));
     }
   }
 
