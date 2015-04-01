@@ -17,6 +17,7 @@
 package co.cask.cdap.internal.app.runtime;
 
 import co.cask.cdap.app.runtime.ProgramController;
+import co.cask.cdap.proto.Id;
 import com.google.common.util.concurrent.Service;
 import org.apache.twill.api.RunId;
 import org.apache.twill.common.ServiceListenerAdapter;
@@ -33,8 +34,8 @@ public class ProgramControllerServiceAdapter extends AbstractProgramController {
 
   private final Service service;
 
-  public ProgramControllerServiceAdapter(Service service, String programName, RunId runId) {
-    super(programName, runId);
+  public ProgramControllerServiceAdapter(Service service, Id.Program program, RunId runId) {
+    super(program, runId);
     this.service = service;
     listenToRuntimeState(service);
   }

@@ -232,7 +232,7 @@ public final class ProcedureProgramRunner implements ProgramRunner {
     private final Cancellable cancellable;
 
     ProcedureProgramController(Program program, RunId runId, Cancellable cancellable) {
-      super(program.getName(), runId);
+      super(program.getId(), runId);
       this.cancellable = cancellable;
       started();
     }

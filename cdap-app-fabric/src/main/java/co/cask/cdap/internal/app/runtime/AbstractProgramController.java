@@ -17,6 +17,7 @@
 package co.cask.cdap.internal.app.runtime;
 
 import co.cask.cdap.app.runtime.ProgramController;
+import co.cask.cdap.proto.Id;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -45,18 +46,20 @@ public abstract class AbstractProgramController implements ProgramController {
   private static final Logger LOG = LoggerFactory.getLogger(ProgramController.class);
 
   private final AtomicReference<State> state;
-  private final String programName;
+  private final Id.Program program;
   private final RunId runId;
   private final ConcurrentMap<ListenerCaller, Cancellable> listeners;
   private final Listener caller;
+  private final ProgramStateChangeRecorder stateChangeRecorder;
   private Throwable failureCause;
 
-  protected AbstractProgramController(String programName, RunId runId) {
+  protected AbstractProgramController(Id.Program program, RunId runId) {
     this.state = new AtomicReference<State>(State.STARTING);
-    this.programName = programName;
+    this.program = program;
     this.runId = runId;
     this.listeners = Maps.newConcurrentMap();
     this.caller = new MultiListenerCaller();
+    this.stateChangeRecorder = null;
   }
 
   @Override
@@ -76,6 +79,7 @@ public abstract class AbstractProgramController implements ProgramController {
         try {
           caller.suspending();
           doSuspend();
+          stateChangeRecorder.suspend(program, runId);
           state.set(State.SUSPENDED);
           result.set(AbstractProgramController.this);
           caller.suspended();
@@ -100,6 +104,7 @@ public abstract class AbstractProgramController implements ProgramController {
         try {
           caller.resuming();
           doResume();
+          stateChangeRecorder.resume(program, runId);
           state.set(State.ALIVE);
           result.set(AbstractProgramController.this);
           caller.alive();
@@ -125,6 +130,7 @@ public abstract class AbstractProgramController implements ProgramController {
         try {
           caller.stopping();
           doStop();
+          stateChangeRecorder.stop(program, runId, State.KILLED);
           state.set(State.KILLED);
           result.set(AbstractProgramController.this);
           caller.killed();
@@ -141,12 +147,13 @@ public abstract class AbstractProgramController implements ProgramController {
    */
   protected void complete() {
     if (!state.compareAndSet(State.ALIVE, State.COMPLETED)) {
-      LOG.debug("Cannot transit to COMPLETED state from {} state: {} {}", state.get(), programName, runId);
+      LOG.debug("Cannot transit to COMPLETED state from {} state: {} {}", state.get(), program, runId);
       return;
     }
     executor(State.COMPLETED).execute(new Runnable() {
       @Override
       public void run() {
+        stateChangeRecorder.stop(program, runId, State.COMPLETED);
         state.set(State.COMPLETED);
         caller.completed();
       }
@@ -216,6 +223,7 @@ public abstract class AbstractProgramController implements ProgramController {
     if (future != null) {
       future.setException(t);
     }
+    stateChangeRecorder.stop(program, runId, State.ERROR);
     caller.error(t);
   }
 
@@ -224,13 +232,14 @@ public abstract class AbstractProgramController implements ProgramController {
    */
   protected final void started() {
     if (!state.compareAndSet(State.STARTING, State.ALIVE)) {
-      LOG.debug("Cannot transit to ALIVE state from {} state: {} {}", state.get(), programName, runId);
+      LOG.debug("Cannot transit to ALIVE state from {} state: {} {}", state.get(), program, runId);
       return;
     }
-    LOG.debug("Program started: {} {}", programName, runId);
+    LOG.debug("Program started: {} {}", program, runId);
     executor(State.ALIVE).execute(new Runnable() {
       @Override
       public void run() {
+        stateChangeRecorder.start(program, runId, Stat);
         state.set(State.ALIVE);
         caller.alive();
       }
@@ -244,7 +253,7 @@ public abstract class AbstractProgramController implements ProgramController {
     return new Executor() {
       @Override
       public void execute(@Nonnull Runnable command) {
-        Thread t = new Thread(command, programName + "-" + state);
+        Thread t = new Thread(command, program + "-" + state);
         t.setDaemon(true);
         t.start();
       }
