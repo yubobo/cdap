@@ -1272,8 +1272,6 @@
             <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
             <reuseForks>false</reuseForks>
             <forkCount>3</forkCount>
-            <threadCount>1</threadCount>
-            <parallel>suitesAndClasses</parallel>
             <reportFormat>plain</reportFormat>
             <systemPropertyVariables>
               <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
