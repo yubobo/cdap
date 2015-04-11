@@ -73,6 +73,8 @@ public abstract class RowKeyDistributorTestBase {
 
     testingUtility = new HBaseTestingUtility();
     Configuration hConf = testingUtility.getConfiguration();
+    hConf.setInt("hbase.master.info.port", -1);
+    hConf.setInt("hbase.regionserver.info.port", -1);
     hConf.set("yarn.is.minicluster", "true");
 
     // Set the JAVA_HOME env for MapReduce. In case it is missing from the host.

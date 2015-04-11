@@ -57,6 +57,9 @@ public class HBase94Test extends HBaseTestBase {
 
   @Override
   public void startHBase() throws Exception {
+    Configuration hConf = testUtil.getConfiguration();
+    hConf.setInt("hbase.master.info.port", -1);
+    hConf.setInt("hbase.regionserver.info.port", -1);
     testUtil.startMiniCluster();
   }
 

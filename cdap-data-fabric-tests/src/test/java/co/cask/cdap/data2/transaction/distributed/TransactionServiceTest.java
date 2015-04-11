@@ -65,6 +65,8 @@ public class TransactionServiceTest {
     HBaseTestingUtility hBaseTestingUtility = new HBaseTestingUtility();
     hBaseTestingUtility.startMiniDFSCluster(1);
     Configuration hConf = hBaseTestingUtility.getConfiguration();
+    hConf.setInt("hbase.master.info.port", -1);
+    hConf.setInt("hbase.regionserver.info.port", -1);
     hConf.setBoolean("fs.hdfs.impl.disable.cache", true);
 
     InMemoryZKServer zkServer = InMemoryZKServer.builder().build();

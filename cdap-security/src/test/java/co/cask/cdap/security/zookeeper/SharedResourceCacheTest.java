@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.zookeeper.MiniZooKeeperCluster;
@@ -61,6 +62,9 @@ public class SharedResourceCacheTest {
   @BeforeClass
   public static void startUp() throws Exception {
     HBaseTestingUtility testUtil = new HBaseTestingUtility();
+    Configuration conf = testUtil.getConfiguration();
+    conf.setInt("hbase.master.info.port", -1);
+    conf.setInt("hbase.regionserver.info.port", -1);
     zkCluster = testUtil.startMiniZKCluster();
     zkConnectString = testUtil.getConfiguration().get(HConstants.ZOOKEEPER_QUORUM) + ":"
       + zkCluster.getClientPort();

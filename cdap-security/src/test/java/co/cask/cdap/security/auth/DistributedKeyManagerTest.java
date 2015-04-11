@@ -32,6 +32,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.zookeeper.MiniZooKeeperCluster;
@@ -61,6 +62,9 @@ public class DistributedKeyManagerTest extends TestTokenManager {
   @BeforeClass
   public static void setup() throws Exception {
     HBaseTestingUtility testUtil = new HBaseTestingUtility();
+    Configuration conf = testUtil.getConfiguration();
+    conf.setInt("hbase.master.info.port", -1);
+    conf.setInt("hbase.regionserver.info.port", -1);
     zkCluster = testUtil.startMiniZKCluster();
     String zkConnectString = testUtil.getConfiguration().get(HConstants.ZOOKEEPER_QUORUM) + ":"
       + zkCluster.getClientPort();

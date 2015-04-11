@@ -71,6 +71,8 @@ public class IncrementSummingScannerTest {
     testUtil = new HBaseTestingUtility();
     testUtil.startMiniCluster();
     conf = testUtil.getConfiguration();
+    conf.setInt("hbase.master.info.port", -1);
+    conf.setInt("hbase.regionserver.info.port", -1);
     cConf = CConfiguration.create();
   }
 
