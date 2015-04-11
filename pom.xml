@@ -1271,7 +1271,8 @@
             <argLine>-Xmx5000m -Djava.awt.headless=true -XX:MaxPermSize=256m -XX:+UseConcMarkSweepGC -XX:OnOutOfMemoryError="kill -9 %p"</argLine>
             <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
             <reuseForks>false</reuseForks>
-            <forkCount>2</forkCount>
+            <forkCount>3</forkCount>
+            <threadCount>1</threadCount>
             <parallel>suitesAndClasses</parallel>
             <reportFormat>plain</reportFormat>
             <systemPropertyVariables>
