@@ -1268,7 +1268,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.14.1</version>
           <configuration>
-            <argLine>-Xmx5000m -Djava.awt.headless=true -XX:MaxPermSize=256m -XX:OnOutOfMemoryError="kill -9 %p" -XX:NewSize=2048m -XX:MaxNewSize=2048m -XX:NewRatio=1 -XX:SurvivorRatio=15 -XX:+UseConcMarkSweepGC</argLine>
+            <argLine>-Xmx2048m -Djava.awt.headless=true -XX:MaxPermSize=256m -XX:OnOutOfMemoryError="kill -9 %p" -XX:NewSize=1792m -XX:MaxNewSize=1792m -XX:SurvivorRatio=50 -verbose:gc -Xloggc:gc.log -XX:+PrintGCDetails -XX:+PrintGCTimeStamps</argLine>
             <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
             <reuseForks>false</reuseForks>
             <forkCount>4</forkCount>
