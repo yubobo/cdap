@@ -1271,7 +1271,7 @@
             <argLine>-Xmx2048m -Djava.awt.headless=true -XX:MaxPermSize=256m -XX:OnOutOfMemoryError="kill -9 %p" -XX:NewSize=1792m -XX:MaxNewSize=1792m -XX:SurvivorRatio=50 -verbose:gc -Xloggc:gc.log -XX:+PrintGCDetails -XX:+PrintGCTimeStamps</argLine>
             <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
             <reuseForks>false</reuseForks>
-            <forkCount>4</forkCount>
+            <forkCount>3</forkCount>
             <runOrder>random</runOrder>
             <reportFormat>plain</reportFormat>
             <systemPropertyVariables>
