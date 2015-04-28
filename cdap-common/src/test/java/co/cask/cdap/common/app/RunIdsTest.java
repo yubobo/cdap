@@ -16,13 +16,24 @@
 
 package co.cask.cdap.common.app;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+import org.apache.twill.filesystem.LocalLocationFactory;
+import org.apache.twill.filesystem.Location;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class RunIdsTest {
+  private static final Logger LOG = LoggerFactory.getLogger(RunIdsTest.class);
+
   @Test
   public void testTimeBasedRunId() throws Exception {
     long time = System.currentTimeMillis();
@@ -45,5 +56,29 @@ public class RunIdsTest {
 
     // Time from a random UUID should be -1
     Assert.assertEquals(-1, RunIds.getTime(RunIds.fromString(UUID.randomUUID().toString()), TimeUnit.MILLISECONDS));
+  }
+
+  @Test
+  public void test() throws Exception {
+    String format = "'/data/users/'yyyy-MM-dd'/file'-HH-mm'.dat'";
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
+    System.out.println(simpleDateFormat.format(new Date(System.currentTimeMillis())));
+  }
+
+  @Test
+  public void createFiles() throws Exception {
+    long startTimeSecs = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + 10;
+//    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("'/tmp/file-'yyyy-MM-dd-HH-mm");
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("'file-'yyyy-MM-dd-HH-mm");
+    for (long begin = startTimeSecs - 1800; begin < startTimeSecs + 2400;
+         begin += 60) {
+      String file = simpleDateFormat.format(new Date(TimeUnit.SECONDS.toMillis(begin)));
+      Location location =
+        new LocalLocationFactory().create("/tmp/" + file);
+      File file1 = new File(location.toURI());
+      LOG.debug("Generating filename {}", file1);
+      Files.createParentDirs(file1);
+      Files.write("Test string " + begin, file1, Charsets.UTF_8);
+    }
   }
 }

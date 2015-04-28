@@ -32,4 +32,17 @@
   <properties>
     <app.main.class>co.cask.cdap.examples.countrandom.CountRandom</app.main.class>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.twill</groupId>
+      <artifactId>twill-core</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.kafka</groupId>
+          <artifactId>kafka_2.10</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
 </project>

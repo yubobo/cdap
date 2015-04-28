@@ -1,5 +1,5 @@
 /*
- * Copyright © 2014 Cask Data, Inc.
+ * Copyright © 2015 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,24 +13,23 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package co.cask.cdap.examples.countrandom;
 
-import co.cask.cdap.api.app.AbstractApplication;
-import co.cask.cdap.api.dataset.lib.KeyValueTable;
+import co.cask.cdap.api.dataset.lib.FileSet;
+import co.cask.cdap.api.dataset.module.DatasetDefinitionRegistry;
+import co.cask.cdap.api.dataset.module.DatasetModule;
 
 /**
- * CountRandomDemo application contains a Flow {@code CountRandom}.
+ * {@link DatasetModule} for {@link FileSet}.
  */
-public class CountRandom extends AbstractApplication {
-
-  public static final String TABLE_NAME = "randomTable";
+public class CustomFileSetModule implements DatasetModule {
+  public static final String NAME = "customFileSet";
 
   @Override
-  public void configure() {
-    setName("CountRandom");
-    setDescription("Example random count application");
-    createDataset(TABLE_NAME, KeyValueTable.class);
-    addDatasetModule(CustomFileSetModule.class.getName(), CustomFileSetModule.class);
-    addFlow(new CountRandomFlow());
+  public void register(DatasetDefinitionRegistry registry) {
+    // file dataset
+    registry.add(new FileSetDefinition(CustomFileSetDataset.class.getName()));
+    registry.add(new FileSetDefinition(NAME));
   }
 }

@@ -21,6 +21,7 @@ import java.sql.Driver;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Shim for JDBC driver as a better alternative to mere Class.forName to load the JDBC Driver class.
@@ -73,5 +74,9 @@ public class JDBCDriverShim implements Driver {
   @Override
   public boolean jdbcCompliant() {
     return delegate.jdbcCompliant();
+  }
+
+  public Logger getParentLogger() {
+    return null;
   }
 }
