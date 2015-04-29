@@ -16,8 +16,12 @@
 
 package co.cask.cdap.common.app;
 
-import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
+import org.apache.avro.Schema;
+import org.apache.avro.file.CodecFactory;
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.twill.filesystem.LocalLocationFactory;
 import org.apache.twill.filesystem.Location;
 import org.junit.Assert;
@@ -26,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -68,17 +73,57 @@ public class RunIdsTest {
   @Test
   public void createFiles() throws Exception {
     long startTimeSecs = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + 10;
-//    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("'/tmp/file-'yyyy-MM-dd-HH-mm");
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("'file-'yyyy-MM-dd-HH-mm");
     for (long begin = startTimeSecs - 1800; begin < startTimeSecs + 2400;
          begin += 60) {
       String file = simpleDateFormat.format(new Date(TimeUnit.SECONDS.toMillis(begin)));
       Location location =
-        new LocalLocationFactory().create("/tmp/" + file);
+        new LocalLocationFactory().create("/tmp/hdfs/" + file);
       File file1 = new File(location.toURI());
       LOG.debug("Generating filename {}", file1);
       Files.createParentDirs(file1);
-      Files.write("Test string " + begin, file1, Charsets.UTF_8);
+      generateAvroFile(file1, begin, 20);
     }
+  }
+
+  /**
+   * A POJO for serialization.
+   */
+  public static final class Record {
+    int id;
+    String name;
+
+    public Record() {
+      // Needed by Avro
+    }
+
+    public Record(int id, String name) {
+      this.id = id;
+      this.name = name;
+    }
+  }
+
+  private File generateAvroFile(File file, long start, int recordCount) throws IOException {
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    Schema schema = Schema.createRecord("Record", null, null, false);
+    schema.setFields(ImmutableList.of(
+      new Schema.Field("id", Schema.create(Schema.Type.INT), null, null),
+      new Schema.Field("name", Schema.createUnion(ImmutableList.of(Schema.create(Schema.Type.NULL),
+                                                                   Schema.create(Schema.Type.STRING))), null, null)
+    ));
+
+    DataFileWriter<Record> writer = new DataFileWriter<Record>(new ReflectDatumWriter<Record>(Record.class));
+    try {
+      writer.setCodec(CodecFactory.snappyCodec());
+      writer.create(schema, file);
+
+      for (long i = start; i < start + recordCount; i++) {
+        writer.append(new Record((int) i, "Record number " + simpleDateFormat.format(TimeUnit.SECONDS.toMillis(i))));
+      }
+    } finally {
+      writer.close();
+    }
+
+    return file;
   }
 }
