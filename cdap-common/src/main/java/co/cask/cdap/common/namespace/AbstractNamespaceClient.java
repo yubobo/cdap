@@ -39,7 +39,6 @@ import java.util.List;
  * Common implementation of methods to interact with namespace service.
  */
 public abstract class AbstractNamespaceClient {
-  private static final String NAMESPACE_ENTITY_TYPE = "namespace";
 
   protected abstract HttpResponse execute(HttpRequest request) throws IOException, UnauthorizedException;
   protected abstract URL resolve(String resource) throws IOException;

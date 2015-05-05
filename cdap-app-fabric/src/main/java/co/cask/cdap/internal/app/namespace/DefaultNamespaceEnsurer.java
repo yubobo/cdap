@@ -18,6 +18,7 @@ package co.cask.cdap.internal.app.namespace;
 
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.exception.AlreadyExistsException;
+import co.cask.cdap.internal.api.namespace.NamespaceAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

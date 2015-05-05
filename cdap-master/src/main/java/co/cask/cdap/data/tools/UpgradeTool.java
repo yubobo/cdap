@@ -48,7 +48,7 @@ import co.cask.cdap.data2.dataset2.lib.kv.HBaseKVTableDefinition;
 import co.cask.cdap.explore.guice.ExploreClientModule;
 import co.cask.cdap.gateway.auth.AuthModule;
 import co.cask.cdap.gateway.handlers.DatasetServiceStore;
-import co.cask.cdap.internal.app.namespace.NamespaceAdmin;
+import co.cask.cdap.internal.api.namespace.NamespaceAdmin;
 import co.cask.cdap.internal.app.runtime.adapter.AdapterService;
 import co.cask.cdap.internal.app.runtime.schedule.AbstractSchedulerService;
 import co.cask.cdap.internal.app.runtime.schedule.ExecutorThreadPool;
