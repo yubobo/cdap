@@ -86,12 +86,12 @@ public class AdapterHttpHandler extends AbstractAppFabricHttpHandler {
   public void deployTemplate(HttpRequest request, HttpResponder responder,
                              @PathParam("namespace-id") String namespaceId,
                              @PathParam("template-id") String templateId) {
-    if (!namespaceAdmin.hasNamespace(Id.Namespace.from(namespaceId))) {
-      responder.sendString(HttpResponseStatus.NOT_FOUND,
-                           String.format("Namespace '%s' does not exist.", namespaceId));
-      return;
-    }
     try {
+      if (!namespaceAdmin.hasNamespace(Id.Namespace.from(namespaceId))) {
+        responder.sendString(HttpResponseStatus.NOT_FOUND,
+                             String.format("Namespace '%s' does not exist.", namespaceId));
+        return;
+      }
       adapterService.deployTemplate(Id.Namespace.from(namespaceId), templateId);
       responder.sendString(HttpResponseStatus.OK, "Deploy Complete");
     } catch (NotFoundException e) {
@@ -114,7 +114,7 @@ public class AdapterHttpHandler extends AbstractAppFabricHttpHandler {
   @Path("/adapters")
   public void listAdapters(HttpRequest request, HttpResponder responder,
                            @PathParam("namespace-id") String namespaceId,
-                           @QueryParam("template") String template) {
+                           @QueryParam("template") String template) throws Exception {
     if (!namespaceAdmin.hasNamespace(Id.Namespace.from(namespaceId))) {
       responder.sendString(HttpResponseStatus.NOT_FOUND,
                            String.format("Namespace '%s' does not exist.", namespaceId));

@@ -24,7 +24,6 @@ import co.cask.cdap.api.metrics.MetricsCollector;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.exception.NotFoundException;
-import co.cask.cdap.common.namespace.AbstractNamespaceClient;
 import co.cask.cdap.data.format.RecordFormats;
 import co.cask.cdap.data.stream.StreamCoordinatorClient;
 import co.cask.cdap.data.stream.StreamFileWriterFactory;
@@ -35,6 +34,7 @@ import co.cask.cdap.data2.transaction.stream.StreamAdmin;
 import co.cask.cdap.data2.transaction.stream.StreamConfig;
 import co.cask.cdap.gateway.auth.Authenticator;
 import co.cask.cdap.gateway.handlers.AuthenticatedHttpHandler;
+import co.cask.cdap.internal.api.namespace.AbstractNamespaceClient;
 import co.cask.cdap.internal.io.SchemaTypeAdapter;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.StreamProperties;
@@ -199,7 +199,7 @@ public final class StreamHandler extends AuthenticatedHttpHandler {
       Id.Stream streamId = Id.Stream.from(namespaceId, stream);
 
       // Check for namespace existence. Throws NotFoundException if namespace doesn't exist
-      namespaceClient.get(namespaceId);
+      namespaceClient.getNamespace(Id.Namespace.from(namespaceId));
 
       // TODO: Modify the REST API to support custom configurations.
       streamAdmin.create(streamId);
