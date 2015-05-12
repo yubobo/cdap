@@ -149,6 +149,7 @@ public abstract class Id {
    */
   public static final class Namespace extends Id {
     public static final Namespace DEFAULT = Id.Namespace.from("default");
+    public static final Namespace SYSTEM = Id.Namespace.from("system");
 
     private final String id;
 

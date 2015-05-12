@@ -40,6 +40,7 @@ import co.cask.tephra.TransactionFailureException;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -195,11 +196,13 @@ public class DatasetTypeManager extends AbstractIdleService {
    * @param namespaceId the {@link Id.Namespace} to retrieve types from
    * @return collection of types available in the specified namespace
    */
-  public Collection<DatasetTypeMeta> getTypes(final Id.Namespace namespaceId) {
-    return mdsDatasets.executeUnchecked(new TxCallable<MDSDatasets, Collection<DatasetTypeMeta>>() {
+  public Iterable<DatasetTypeMeta> getTypes(final Id.Namespace namespaceId) {
+    return mdsDatasets.executeUnchecked(new TxCallable<MDSDatasets, Iterable<DatasetTypeMeta>>() {
       @Override
-      public Collection<DatasetTypeMeta> call(MDSDatasets datasets) throws DatasetModuleConflictException {
-        return datasets.getTypeMDS().getTypes(namespaceId);
+      public Iterable<DatasetTypeMeta> call(MDSDatasets datasets) throws DatasetModuleConflictException {
+        return Iterables.concat(
+          datasets.getTypeMDS().getTypes(Id.Namespace.DEFAULT),
+          datasets.getTypeMDS().getTypes(namespaceId));
       }
     });
   }
@@ -224,11 +227,13 @@ public class DatasetTypeManager extends AbstractIdleService {
    * @param namespaceId {@link Id.Namespace} to retrieve the module list from
    * @return list of dataset modules information from the specified namespace
    */
-  public Collection<DatasetModuleMeta> getModules(final Id.Namespace namespaceId) {
-    return mdsDatasets.executeUnchecked(new TxCallable<MDSDatasets, Collection<DatasetModuleMeta>>() {
+  public Iterable<DatasetModuleMeta> getModules(final Id.Namespace namespaceId) {
+    return mdsDatasets.executeUnchecked(new TxCallable<MDSDatasets, Iterable<DatasetModuleMeta>>() {
       @Override
-      public Collection<DatasetModuleMeta> call(MDSDatasets datasets) throws Exception {
-        return datasets.getTypeMDS().getModules(namespaceId);
+      public Iterable<DatasetModuleMeta> call(MDSDatasets datasets) throws Exception {
+        return Iterables.concat(
+          datasets.getTypeMDS().getModules(Id.Namespace.DEFAULT),
+          datasets.getTypeMDS().getModules(namespaceId));
       }
     });
   }
