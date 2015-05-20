@@ -104,6 +104,10 @@ public abstract class AbstractDistributedProgramRunner implements ProgramRunner 
     return new AbortOnTimeoutEventHandler(cConf.getLong(Constants.CFG_TWILL_NO_CONTAINER_TIMEOUT, Long.MAX_VALUE));
   }
 
+  protected Map<String, File> addLocalizeFiles(Map<String, File> localizeFiles) {
+    return localizeFiles;
+  }
+
   @Override
   public final ProgramController run(final Program program, final ProgramOptions options) {
     final Program copiedProgram;
@@ -118,7 +122,8 @@ public abstract class AbstractDistributedProgramRunner implements ProgramRunner 
         LOG.info("Setting scheduler queue to {}", schedulerQueueName);
       }
 
-      Map<String, File> localizeFiles = addAdapterPluginFiles(options, new HashMap<String, File>());
+      Map<String, File> localizeFiles = addLocalizeFiles(new HashMap<String, File>());
+      localizeFiles = addAdapterPluginFiles(options, localizeFiles);
 
       // Copy config files and program jar to local temp, and ask Twill to localize it to container.
       // What Twill does is to save those files in HDFS and keep using them during the lifetime of application.

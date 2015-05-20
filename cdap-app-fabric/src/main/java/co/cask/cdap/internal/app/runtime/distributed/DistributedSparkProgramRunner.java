@@ -21,17 +21,21 @@ import co.cask.cdap.app.ApplicationSpecification;
 import co.cask.cdap.app.program.Program;
 import co.cask.cdap.app.runtime.ProgramController;
 import co.cask.cdap.app.runtime.ProgramOptions;
+import co.cask.cdap.common.app.RunIds;
 import co.cask.cdap.common.conf.CConfiguration;
+import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
 import co.cask.cdap.proto.ProgramType;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.twill.api.RunId;
 import org.apache.twill.api.TwillController;
 import org.apache.twill.api.TwillRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Runs {@link Spark} program in distributed environment
@@ -47,7 +51,7 @@ public final class DistributedSparkProgramRunner extends AbstractDistributedProg
 
   @Override
   protected ProgramController launch(Program program, ProgramOptions options,
-                                     File hConfFile, File cConfFile, ApplicationLauncher launcher) {
+                                     Map<String, File> localizeFiles, ApplicationLauncher launcher) {
     // Extract and verify parameters
     ApplicationSpecification appSpec = program.getApplicationSpecification();
     Preconditions.checkNotNull(appSpec, "Missing application specification.");
@@ -60,9 +64,15 @@ public final class DistributedSparkProgramRunner extends AbstractDistributedProg
     Preconditions.checkNotNull(spec, "Missing Spark for %s", program.getName());
 
     LOG.info("Launching Spark program: " + program.getName() + ":" + spec.getName());
-    TwillController controller = launcher.launch(new SparkTwillApplication(program, spec, hConfFile, cConfFile,
-                                                                           eventHandler));
+    TwillController controller = launcher.launch(new SparkTwillApplication(program, spec, localizeFiles, eventHandler));
 
-    return new SparkTwillProgramController(program.getName(), controller).startListen();
+    RunId runId = RunIds.fromString(options.getArguments().getOption(ProgramOptionConstants.RUN_ID));
+    return new SparkTwillProgramController(program.getName(), controller, runId).startListen();
+  }
+
+  @Override
+  protected Map<String, File> addLocalizeFiles(Map<String, File> localizeFiles) {
+    localizeFiles.put(SparkTwillApplication.SPARK_JAR_FILE.getName(), SparkTwillApplication.SPARK_JAR_FILE);
+    return localizeFiles;
   }
 }
