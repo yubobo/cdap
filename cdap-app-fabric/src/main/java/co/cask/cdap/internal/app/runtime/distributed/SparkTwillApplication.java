@@ -34,34 +34,68 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * {@link TwillApplication} to run {@link MapReduceTwillRunnable}
  */
-public final class SparkTwillApplication implements TwillApplication {
+public final class SparkTwillApplication extends AbstractProgramTwillApplication {
 
   static final File SPARK_JAR_FILE =
-    new File("/home/rsinha/spark-1.3.1/assembly/target/scala-2.10/spark-assembly-1.3.1-hadoop2.4.0.jar");
+    new File("/var/spark-1.3.1/assembly/target/scala-2.10/spark-assembly-1.3.1-hadoop2.4.0.jar");
 
   private final SparkSpecification spec;
   private final Program program;
-  private final File hConfig;
-  private final File cConfig;
   private final EventHandler eventHandler;
 
   public SparkTwillApplication(Program program, SparkSpecification spec,
-                               File hConfig, File cConfig, EventHandler eventHandler) {
+                               Map<String, File> localizeFiles, EventHandler eventHandler) {
+    super(program, localizeFiles, eventHandler);
     this.spec = spec;
     this.program = program;
-    this.hConfig = hConfig;
-    this.cConfig = cConfig;
     this.eventHandler = eventHandler;
   }
 
+  /**
+   * Returns type of the program started by this {@link TwillApplication}.
+   */
   @Override
-  public TwillSpecification configure() {
-    // These resources are for the container that runs the spark driver that will launch the actual mapred job.
+  protected ProgramType getType() {
+    return ProgramType.SPARK;
+  }
+
+  //  @Override
+//  public TwillSpecification configure() {
+//    // These resources are for the container that runs the spark driver that will launch the actual mapred job.
+//    // It does not need much memory.  Memory for mappers and reduces are specified in the MapReduceSpecification,
+//    // which is configurable by the author of the job.
+//    ResourceSpecification resourceSpec = ResourceSpecification.Builder.with()
+//      .setVirtualCores(1)
+//      .setMemory(512, ResourceSpecification.SizeUnit.MEGA)
+//      .setInstances(1)
+//      .build();
+//
+//    Location programLocation = program.getJarLocation();
+//
+//    return TwillSpecification.Builder.with()
+//      .setName(String.format("%s.%s.%s.%s",
+//                             ProgramType.MAPREDUCE.name().toLowerCase(),
+//                             program.getNamespaceId(), program.getApplicationId(), spec.getName()))
+//      .withRunnable()
+//      .add(spec.getName(),
+//           new SparkTwillRunnable(spec.getName(), "hConf.xml", "cConf.xml"),
+//           resourceSpec)
+//      .withLocalFiles()
+//      .add(programLocation.getName(), programLocation.toURI())
+//      .add("hConf.xml", hConfig.toURI())
+//      .add("cConf.xml", cConfig.toURI())
+//      .add(SPARK_JAR_FILE.getName(), SPARK_JAR_FILE.toURI()).apply()
+//      .anyOrder().withEventHandler(eventHandler).build();
+//  }
+  @Override
+  protected void addRunnables(Map<String, RunnableResource> runnables) {
+    // These resources are for the container that runs the mapred client that will launch the actual mapred job.
     // It does not need much memory.  Memory for mappers and reduces are specified in the MapReduceSpecification,
     // which is configurable by the author of the job.
     ResourceSpecification resourceSpec = ResourceSpecification.Builder.with()
@@ -70,21 +104,9 @@ public final class SparkTwillApplication implements TwillApplication {
       .setInstances(1)
       .build();
 
-    Location programLocation = program.getJarLocation();
-
-    return TwillSpecification.Builder.with()
-      .setName(String.format("%s.%s.%s.%s",
-                             ProgramType.MAPREDUCE.name().toLowerCase(),
-                             program.getNamespaceId(), program.getApplicationId(), spec.getName()))
-      .withRunnable()
-      .add(spec.getName(),
-           new SparkTwillRunnable(spec.getName(), "hConf.xml", "cConf.xml"),
-           resourceSpec)
-      .withLocalFiles()
-      .add(programLocation.getName(), programLocation.toURI())
-      .add("hConf.xml", hConfig.toURI())
-      .add("cConf.xml", cConfig.toURI())
-      .add(SPARK_JAR_FILE.getName(), SPARK_JAR_FILE.toURI()).apply()
-      .anyOrder().withEventHandler(eventHandler).build();
+    runnables.put(spec.getName(), new RunnableResource(
+      new SparkTwillRunnable(spec.getName(), "hConf.xml", "cConf.xml"),
+      resourceSpec
+    ));
   }
 }
