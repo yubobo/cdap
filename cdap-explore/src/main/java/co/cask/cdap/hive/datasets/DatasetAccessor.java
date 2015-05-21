@@ -24,6 +24,7 @@ import co.cask.cdap.api.dataset.Dataset;
 import co.cask.cdap.api.dataset.DatasetDefinition;
 import co.cask.cdap.api.dataset.DatasetSpecification;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.common.lang.FilterClassLoader;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.DatasetManagementException;
 import co.cask.cdap.hive.context.ConfigurationUtil;
@@ -242,7 +243,7 @@ public class DatasetAccessor {
       ClassLoader classLoader = DATASET_CLASSLOADER_MAP.getUnchecked(queryHandle).get(datasetInstanceId);
       Dataset dataset;
       if (classLoader == null) {
-        classLoader = conf.getClassLoader();
+        classLoader = FilterClassLoader.create(conf.getClassLoader());
         dataset = firstLoad(framework, queryHandle, datasetInstanceId, classLoader);
       } else {
         dataset = framework.getDataset(datasetInstanceId, DatasetDefinition.NO_ARGUMENTS, classLoader);
