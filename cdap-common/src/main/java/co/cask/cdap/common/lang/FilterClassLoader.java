@@ -19,14 +19,14 @@ package co.cask.cdap.common.lang;
 import co.cask.cdap.proto.ProgramType;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
@@ -91,24 +91,6 @@ public final class FilterClassLoader extends ClassLoader {
   }
 
   @Override
-  public URL findResource(String name) {
-    if (isValidResource(name)) {
-      return super.findResource(name);
-    }
-
-    return null;
-  }
-
-  @Override
-  public Enumeration<URL> findResources(String name) throws IOException {
-    if (isValidResource(name)) {
-      return super.findResources(name);
-    }
-
-    return Iterators.asEnumeration(ImmutableList.<URL>of().iterator());
-  }
-
-  @Override
   protected Package[] getPackages() {
     List<Package> packages = Lists.newArrayList();
     for (Package pkg : super.getPackages()) {
@@ -127,6 +109,16 @@ public final class FilterClassLoader extends ClassLoader {
   @Override
   public URL getResource(String name) {
     return resourceAcceptor.apply(name) ? super.getResource(name) : null;
+  }
+
+  @Override
+  public Enumeration<URL> getResources(String name) throws IOException {
+    return resourceAcceptor.apply(name) ? super.getResources(name) : Collections.<URL>emptyEnumeration();
+  }
+
+  @Override
+  public InputStream getResourceAsStream(String name) {
+    return resourceAcceptor.apply(name) ? super.getResourceAsStream(name) : null;
   }
 
   private String classNameToResourceName(String className) {
