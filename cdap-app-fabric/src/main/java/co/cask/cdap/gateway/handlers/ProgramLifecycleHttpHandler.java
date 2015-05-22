@@ -30,6 +30,7 @@ import co.cask.cdap.app.runtime.ProgramRuntimeService;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.common.exception.BadRequestException;
 import co.cask.cdap.common.exception.NotFoundException;
 import co.cask.cdap.common.exception.ProgramNotFoundException;
 import co.cask.cdap.common.namespace.NamespacedLocationFactory;
@@ -44,6 +45,7 @@ import co.cask.cdap.internal.app.runtime.ProgramOptionConstants;
 import co.cask.cdap.internal.app.runtime.adapter.AdapterService;
 import co.cask.cdap.internal.app.runtime.flow.FlowUtils;
 import co.cask.cdap.internal.app.runtime.schedule.Scheduler;
+import co.cask.cdap.internal.app.runtime.schedule.SchedulerException;
 import co.cask.cdap.internal.app.services.ProgramLifecycleService;
 import co.cask.cdap.internal.app.services.PropertiesResolver;
 import co.cask.cdap.proto.Containers;
@@ -217,41 +219,34 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
                                @PathParam("namespace-id") String namespaceId,
                                @PathParam("app-id") String appId,
                                @PathParam("mapreduce-id") String mapreduceId,
-                               @PathParam("run-id") String runId) {
-    try {
-      Id.Program programId = Id.Program.from(namespaceId, appId, ProgramType.MAPREDUCE, mapreduceId);
-      Id.Run run = new Id.Run(programId, runId);
-      ApplicationSpecification appSpec = store.getApplication(programId.getApplication());
-      if (appSpec == null) {
-        throw new NotFoundException(programId.getApplication());
-      }
-      if (!appSpec.getMapReduce().containsKey(mapreduceId)) {
-        throw new NotFoundException(programId);
-      }
-      RunRecord runRecord = store.getRun(programId, runId);
-      if (runRecord == null) {
-        throw new NotFoundException(run);
-      }
+                               @PathParam("run-id") String runId) throws Exception {
 
-      MRJobInfo mrJobInfo = mrJobInfoFetcher.getMRJobInfo(run);
-
-      mrJobInfo.setState(runRecord.getStatus().name());
-      // Multiple startTs / endTs by 1000, to be consistent with Task-level start/stop times returned by JobClient
-      // in milliseconds. RunRecord returns seconds value.
-      mrJobInfo.setStartTime(TimeUnit.SECONDS.toMillis(runRecord.getStartTs()));
-      Long stopTs = runRecord.getStopTs();
-      if (stopTs != null) {
-        mrJobInfo.setStopTime(TimeUnit.SECONDS.toMillis(stopTs));
-      }
-
-      responder.sendJson(HttpResponseStatus.OK, mrJobInfo);
-    } catch (NotFoundException e) {
-      LOG.warn("NotFoundException while getting MapReduce Run info.", e);
-      responder.sendString(HttpResponseStatus.NOT_FOUND, e.getMessage());
-    } catch (Exception e) {
-      LOG.error("Failed to get run history for runId: {}", runId, e);
-      responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+    Id.Program programId = Id.Program.from(namespaceId, appId, ProgramType.MAPREDUCE, mapreduceId);
+    Id.Run run = new Id.Run(programId, runId);
+    ApplicationSpecification appSpec = store.getApplication(programId.getApplication());
+    if (appSpec == null) {
+      throw new NotFoundException(programId.getApplication());
     }
+    if (!appSpec.getMapReduce().containsKey(mapreduceId)) {
+      throw new NotFoundException(programId);
+    }
+    RunRecord runRecord = store.getRun(programId, runId);
+    if (runRecord == null) {
+      throw new NotFoundException(run);
+    }
+
+    MRJobInfo mrJobInfo = mrJobInfoFetcher.getMRJobInfo(run);
+
+    mrJobInfo.setState(runRecord.getStatus().name());
+    // Multiple startTs / endTs by 1000, to be consistent with Task-level start/stop times returned by JobClient
+    // in milliseconds. RunRecord returns seconds value.
+    mrJobInfo.setStartTime(TimeUnit.SECONDS.toMillis(runRecord.getStartTs()));
+    Long stopTs = runRecord.getStopTs();
+    if (stopTs != null) {
+      mrJobInfo.setStopTime(TimeUnit.SECONDS.toMillis(stopTs));
+    }
+
+    responder.sendJson(HttpResponseStatus.OK, mrJobInfo);
   }
 
   /**
@@ -263,59 +258,46 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
                         @PathParam("namespace-id") String namespaceId,
                         @PathParam("app-id") String appId,
                         @PathParam("type") String type,
-                        @PathParam("id") String id) {
+                        @PathParam("id") String id) throws SchedulerException {
 
     if (type.equals("schedules")) {
       getScheduleStatus(responder, appId, namespaceId, id);
       return;
     }
 
-    try {
-      ProgramType programType = ProgramType.valueOfCategoryName(type);
-      Id.Program program = Id.Program.from(namespaceId, appId, programType, id);
-      StatusMap statusMap = getStatus(program, programType);
-      // If status is null, then there was an error
-      if (statusMap.getStatus() == null) {
-        responder.sendString(HttpResponseStatus.valueOf(statusMap.getStatusCode()), statusMap.getError());
-        return;
-      }
-      Map<String, String> status = ImmutableMap.of("status", statusMap.getStatus());
-      responder.sendJson(HttpResponseStatus.OK, status);
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    ProgramType programType = ProgramType.valueOfCategoryName(type);
+    Id.Program program = Id.Program.from(namespaceId, appId, programType, id);
+    StatusMap statusMap = getStatus(program, programType);
+    // If status is null, then there was an error
+    if (statusMap.getStatus() == null) {
+      responder.sendString(HttpResponseStatus.valueOf(statusMap.getStatusCode()), statusMap.getError());
+      return;
     }
+    Map<String, String> status = ImmutableMap.of("status", statusMap.getStatus());
+    responder.sendJson(HttpResponseStatus.OK, status);
   }
 
-  private void getScheduleStatus(HttpResponder responder, String appId, String namespaceId, String scheduleName) {
-    try {
-      ApplicationSpecification appSpec = store.getApplication(Id.Application.from(namespaceId, appId));
-      if (appSpec == null) {
-        responder.sendString(HttpResponseStatus.NOT_FOUND, "App: " + appId + " not found");
-        return;
-      }
-
-      ScheduleSpecification scheduleSpec = appSpec.getSchedules().get(scheduleName);
-      if (scheduleSpec == null) {
-        responder.sendString(HttpResponseStatus.NOT_FOUND, "Schedule: " + scheduleName + " not found");
-        return;
-      }
-
-      String programName = scheduleSpec.getProgram().getProgramName();
-      ProgramType programType = ProgramType.valueOfSchedulableType(scheduleSpec.getProgram().getProgramType());
-      Id.Program programId = Id.Program.from(namespaceId, appId, programType, programName);
-      JsonObject json = new JsonObject();
-      json.addProperty("status", scheduler.scheduleState(programId, programId.getType().getSchedulableType(),
-                                                         scheduleName).toString());
-      responder.sendJson(HttpResponseStatus.OK, json);
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+  private void getScheduleStatus(HttpResponder responder, String appId, String namespaceId,
+                                 String scheduleName) throws SchedulerException {
+    ApplicationSpecification appSpec = store.getApplication(Id.Application.from(namespaceId, appId));
+    if (appSpec == null) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "App: " + appId + " not found");
+      return;
     }
+
+    ScheduleSpecification scheduleSpec = appSpec.getSchedules().get(scheduleName);
+    if (scheduleSpec == null) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Schedule: " + scheduleName + " not found");
+      return;
+    }
+
+    String programName = scheduleSpec.getProgram().getProgramName();
+    ProgramType programType = ProgramType.valueOfSchedulableType(scheduleSpec.getProgram().getProgramType());
+    Id.Program programId = Id.Program.from(namespaceId, appId, programType, programName);
+    JsonObject json = new JsonObject();
+    json.addProperty("status", scheduler.scheduleState(programId, programId.getType().getSchedulableType(),
+                                                       scheduleName).toString());
+    responder.sendJson(HttpResponseStatus.OK, json);
   }
 
   @POST
@@ -325,7 +307,7 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
                             @PathParam("app-id") String appId,
                             @PathParam("type") String type,
                             @PathParam("id") String id,
-                            @PathParam("action") String action) {
+                            @PathParam("action") String action) throws NotFoundException, SchedulerException {
     // If the app is an Application Template, then don't allow any action.
     // Operations are only allowed through Adapter Lifecycle management.
     if (adapterService.getApplicationTemplateInfo(appId) != null) {
@@ -353,62 +335,52 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
   }
 
   private void suspendResumeSchedule(HttpResponder responder, String namespaceId, String appId, String scheduleName,
-                                     String action) {
-    try {
+                                     String action) throws SchedulerException, NotFoundException {
 
-      if (!action.equals("suspend") && !action.equals("resume")) {
-        responder.sendString(HttpResponseStatus.BAD_REQUEST, "Schedule can only be suspended or resumed.");
-        return;
-      }
+    if (!action.equals("suspend") && !action.equals("resume")) {
+      responder.sendString(HttpResponseStatus.BAD_REQUEST, "Schedule can only be suspended or resumed.");
+      return;
+    }
 
-      ApplicationSpecification appSpec = store.getApplication(Id.Application.from(namespaceId, appId));
-      if (appSpec == null) {
-        responder.sendString(HttpResponseStatus.NOT_FOUND, "App: " + appId + " not found");
-        return;
-      }
+    ApplicationSpecification appSpec = store.getApplication(Id.Application.from(namespaceId, appId));
+    if (appSpec == null) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "App: " + appId + " not found");
+      return;
+    }
 
-      ScheduleSpecification scheduleSpec = appSpec.getSchedules().get(scheduleName);
-      if (scheduleSpec == null) {
-        responder.sendString(HttpResponseStatus.NOT_FOUND, "Schedule: " + scheduleName + " not found");
-        return;
-      }
+    ScheduleSpecification scheduleSpec = appSpec.getSchedules().get(scheduleName);
+    if (scheduleSpec == null) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Schedule: " + scheduleName + " not found");
+      return;
+    }
 
-      String programName = scheduleSpec.getProgram().getProgramName();
-      ProgramType programType = ProgramType.valueOfSchedulableType(scheduleSpec.getProgram().getProgramType());
-      Id.Program programId = Id.Program.from(namespaceId, appId, programType, programName);
-      Scheduler.ScheduleState state = scheduler.scheduleState(programId, scheduleSpec.getProgram().getProgramType(),
-                                                              scheduleName);
-      switch (state) {
-        case NOT_FOUND:
-          responder.sendStatus(HttpResponseStatus.NOT_FOUND);
-          break;
-        case SCHEDULED:
-          if (action.equals("suspend")) {
-            scheduler.suspendSchedule(programId, scheduleSpec.getProgram().getProgramType(), scheduleName);
-            responder.sendJson(HttpResponseStatus.OK, "OK");
-          } else {
-            // attempt to resume already resumed schedule
-            responder.sendJson(HttpResponseStatus.CONFLICT, "Already resumed");
-          }
-          break;
-        case SUSPENDED:
-          if (action.equals("suspend")) {
-            // attempt to suspend already suspended schedule
-            responder.sendJson(HttpResponseStatus.CONFLICT, "Schedule already suspended");
-          } else {
-            scheduler.resumeSchedule(programId, scheduleSpec.getProgram().getProgramType(), scheduleName);
-            responder.sendJson(HttpResponseStatus.OK, "OK");
-          }
-          break;
-      }
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (NotFoundException e) {
-      responder.sendString(HttpResponseStatus.NOT_FOUND, e.getMessage());
-    } catch (Throwable e) {
-      LOG.error("Got exception when performing action '{}' on schedule '{}' for app '{}'",
-                action, scheduleName, appId, e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    String programName = scheduleSpec.getProgram().getProgramName();
+    ProgramType programType = ProgramType.valueOfSchedulableType(scheduleSpec.getProgram().getProgramType());
+    Id.Program programId = Id.Program.from(namespaceId, appId, programType, programName);
+    Scheduler.ScheduleState state = scheduler.scheduleState(programId, scheduleSpec.getProgram().getProgramType(),
+                                                            scheduleName);
+    switch (state) {
+      case NOT_FOUND:
+        responder.sendStatus(HttpResponseStatus.NOT_FOUND);
+        break;
+      case SCHEDULED:
+        if (action.equals("suspend")) {
+          scheduler.suspendSchedule(programId, scheduleSpec.getProgram().getProgramType(), scheduleName);
+          responder.sendJson(HttpResponseStatus.OK, "OK");
+        } else {
+          // attempt to resume already resumed schedule
+          responder.sendJson(HttpResponseStatus.CONFLICT, "Already resumed");
+        }
+        break;
+      case SUSPENDED:
+        if (action.equals("suspend")) {
+          // attempt to suspend already suspended schedule
+          responder.sendJson(HttpResponseStatus.CONFLICT, "Schedule already suspended");
+        } else {
+          scheduler.resumeSchedule(programId, scheduleSpec.getProgram().getProgramType(), scheduleName);
+          responder.sendJson(HttpResponseStatus.OK, "OK");
+        }
+        break;
     }
   }
 
@@ -426,7 +398,9 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
                              @QueryParam("status") String status,
                              @QueryParam("start") String startTs,
                              @QueryParam("end") String endTs,
-                             @QueryParam("limit") @DefaultValue("100") final int resultLimit) {
+                             @QueryParam("limit") @DefaultValue("100") final int resultLimit)
+    throws BadRequestException {
+
     ProgramType type = ProgramType.valueOfCategoryName(programType);
     if (type == null || type == ProgramType.WEBAPP) {
       responder.sendStatus(HttpResponseStatus.NOT_FOUND);
@@ -454,19 +428,12 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
       return;
     }
 
-    try {
-      RunRecord runRecord = store.getRun(Id.Program.from(namespaceId, appId, type, programId), runid);
-      if (runRecord != null) {
-        responder.sendJson(HttpResponseStatus.OK, runRecord);
-        return;
-      }
-      responder.sendStatus(HttpResponseStatus.NOT_FOUND);
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    RunRecord runRecord = store.getRun(Id.Program.from(namespaceId, appId, type, programId), runid);
+    if (runRecord != null) {
+      responder.sendJson(HttpResponseStatus.OK, runRecord);
+      return;
     }
+    responder.sendStatus(HttpResponseStatus.NOT_FOUND);
   }
 
   /**
@@ -487,18 +454,13 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
 
     Id.Program id = Id.Program.from(namespaceId, appId, type, programId);
 
-    try {
-      if (!store.programExists(id, type)) {
-        responder.sendString(HttpResponseStatus.NOT_FOUND, "Program not found");
-        return;
-      }
-      Map<String, String> runtimeArgs = preferencesStore.getProperties(id.getNamespaceId(), appId,
-                                                                       programType, programId);
-      responder.sendJson(HttpResponseStatus.OK, runtimeArgs);
-    } catch (Throwable e) {
-      LOG.error("Error getting runtime args {}", e.getMessage(), e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    if (!store.programExists(id, type)) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Program not found");
+      return;
     }
+    Map<String, String> runtimeArgs = preferencesStore.getProperties(id.getNamespaceId(), appId,
+                                                                     programType, programId);
+    responder.sendJson(HttpResponseStatus.OK, runtimeArgs);
   }
 
   /**
@@ -518,27 +480,22 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
     }
 
     Id.Program id = Id.Program.from(namespaceId, appId, type, programId);
-
-    try {
-      if (!store.programExists(id, type)) {
-        responder.sendString(HttpResponseStatus.NOT_FOUND, "Program not found");
-        return;
-      }
-      Map<String, String> args = decodeArguments(request);
-      preferencesStore.setProperties(namespaceId, appId, programType, programId, args);
-      responder.sendStatus(HttpResponseStatus.OK);
-    } catch (Throwable e) {
-      LOG.error("Error getting runtime args {}", e.getMessage(), e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    if (!store.programExists(id, type)) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Program not found");
+      return;
     }
+    Map<String, String> args = decodeArguments(request);
+    preferencesStore.setProperties(namespaceId, appId, programType, programId, args);
+    responder.sendStatus(HttpResponseStatus.OK);
   }
 
   @GET
   @Path("/apps/{app-id}/{program-type}/{program-id}")
   public void programSpecification(HttpRequest request, HttpResponder responder,
-                                   @PathParam("namespace-id") String namespaceId, @PathParam("app-id") String appId,
+                                   @PathParam("namespace-id") String namespaceId,
+                                   @PathParam("app-id") String appId,
                                    @PathParam("program-type") String programType,
-                                   @PathParam("program-id") String programId) {
+                                   @PathParam("program-id") String programId) throws Exception {
 
     ProgramType type = getProgramType(programType);
     if (type == null) {
@@ -547,19 +504,12 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
       return;
     }
 
-    try {
-      Id.Program id = Id.Program.from(namespaceId, appId, type, programId);
-      ProgramSpecification specification = getProgramSpecification(id, type);
-      if (specification == null) {
-        responder.sendStatus(HttpResponseStatus.NOT_FOUND);
-      } else {
-        responder.sendJson(HttpResponseStatus.OK, specification);
-      }
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    Id.Program id = Id.Program.from(namespaceId, appId, type, programId);
+    ProgramSpecification specification = getProgramSpecification(id, type);
+    if (specification == null) {
+      responder.sendStatus(HttpResponseStatus.NOT_FOUND);
+    } else {
+      responder.sendJson(HttpResponseStatus.OK, specification);
     }
   }
 
@@ -594,36 +544,29 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
   @POST
   @Path("/status")
   public void getStatuses(HttpRequest request, HttpResponder responder,
-                          @PathParam("namespace-id") String namespaceId) {
-    try {
-      List<BatchEndpointStatus> args = statusFromBatchArgs(decodeArrayArguments(request, responder));
-      // if args is null, then there was an error in decoding args and response was already sent
-      if (args == null) {
-        return;
-      }
-      for (BatchEndpointStatus requestedObj : args) {
-        ProgramType programType = ProgramType.valueOfPrettyName(requestedObj.getProgramType());
-        Id.Program progId = Id.Program.from(namespaceId, requestedObj.getAppId(), programType,
-                                            requestedObj.getProgramId());
-        // get th statuses
-        StatusMap statusMap = getStatus(progId, programType);
-        if (statusMap.getStatus() != null) {
-          requestedObj.setStatusCode(HttpResponseStatus.OK.getCode());
-          requestedObj.setStatus(statusMap.getStatus());
-        } else {
-          requestedObj.setStatusCode(statusMap.getStatusCode());
-          requestedObj.setError(statusMap.getError());
-        }
-        // set the program type to the pretty name in case the request originally didn't have pretty name
-        requestedObj.setProgramType(programType.getPrettyName());
-      }
-      responder.sendJson(HttpResponseStatus.OK, args);
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                          @PathParam("namespace-id") String namespaceId) throws IOException, BadRequestException {
+    List<BatchEndpointStatus> args = statusFromBatchArgs(decodeArrayArguments(request, responder));
+    // if args is null, then there was an error in decoding args and response was already sent
+    if (args == null) {
+      return;
     }
+    for (BatchEndpointStatus requestedObj : args) {
+      ProgramType programType = ProgramType.valueOfPrettyName(requestedObj.getProgramType());
+      Id.Program progId = Id.Program.from(namespaceId, requestedObj.getAppId(), programType,
+                                          requestedObj.getProgramId());
+      // get th statuses
+      StatusMap statusMap = getStatus(progId, programType);
+      if (statusMap.getStatus() != null) {
+        requestedObj.setStatusCode(HttpResponseStatus.OK.getCode());
+        requestedObj.setStatus(statusMap.getStatus());
+      } else {
+        requestedObj.setStatusCode(statusMap.getStatusCode());
+        requestedObj.setError(statusMap.getError());
+      }
+      // set the program type to the pretty name in case the request originally didn't have pretty name
+      requestedObj.setProgramType(programType.getPrettyName());
+    }
+    responder.sendJson(HttpResponseStatus.OK, args);
   }
 
   /**
@@ -666,7 +609,7 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
   @POST
   @Path("/instances")
   public void getInstances(HttpRequest request, HttpResponder responder,
-                           @PathParam("namespace-id") String namespaceId) {
+                           @PathParam("namespace-id") String namespaceId) throws BadRequestException, IOException {
     try {
       List<BatchEndpointInstances> args = instancesFromBatchArgs(decodeArrayArguments(request, responder));
       // if args is null then the response has already been sent
@@ -693,13 +636,8 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
         populateProgramInstances(requestedObj, namespaceId, appId, spec, programType, requestedObj.getProgramId());
       }
       responder.sendJson(HttpResponseStatus.OK, args);
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (JsonSyntaxException e) {
-      responder.sendStatus(HttpResponseStatus.BAD_REQUEST);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+      throw new BadRequestException(e);
     }
   }
 
@@ -776,9 +714,8 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
     try {
       int count = store.getWorkerInstances(Id.Program.from(namespaceId, appId, ProgramType.WORKER, workerId));
       responder.sendJson(HttpResponseStatus.OK, new Instances(count));
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (Throwable e) {
+      // TODO: remove this hack
       if (respondIfElementNotFound(e, responder)) {
         return;
       }
@@ -829,9 +766,8 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
         }
       }
       responder.sendStatus(HttpResponseStatus.OK);
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (Throwable e) {
+      // TODO: remove this hack
       if (respondIfElementNotFound(e, responder)) {
         return;
       }
@@ -853,9 +789,8 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
     try {
       int count = store.getFlowletInstances(Id.Program.from(namespaceId, appId, ProgramType.FLOW, flowId), flowletId);
       responder.sendJson(HttpResponseStatus.OK, new Instances(count));
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (Throwable e) {
+      // TODO: remove this hack
       if (respondIfElementNotFound(e, responder)) {
         return;
       }
@@ -909,9 +844,8 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
         }
       }
       responder.sendStatus(HttpResponseStatus.OK);
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (Throwable e) {
+      // TODO: remove this hack
       if (respondIfElementNotFound(e, responder)) {
         return;
       }
@@ -944,24 +878,17 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
   public void deleteFlowQueues(HttpRequest request, HttpResponder responder,
                                @PathParam("namespace-id") String namespaceId,
                                @PathParam("app-id") String appId,
-                               @PathParam("flow-id") String flowId) {
+                               @PathParam("flow-id") String flowId) throws Exception {
     Id.Program programId = Id.Program.from(namespaceId, appId, ProgramType.FLOW, flowId);
-    try {
-      ProgramStatus status = getProgramStatus(programId, ProgramType.FLOW);
-      if (status.getStatus().equals(HttpResponseStatus.NOT_FOUND.toString())) {
-        responder.sendStatus(HttpResponseStatus.NOT_FOUND);
-      } else if (status.getStatus().equals("RUNNING")) {
-        responder.sendString(HttpResponseStatus.FORBIDDEN, "Flow is running, please stop it first.");
-      } else {
-        queueAdmin.dropAllForFlow(Id.Flow.from(programId.getApplication(), programId.getId()));
-        FlowUtils.deleteFlowPendingMetrics(metricStore, namespaceId, appId, flowId);
-        responder.sendStatus(HttpResponseStatus.OK);
-      }
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    ProgramStatus status = getProgramStatus(programId, ProgramType.FLOW);
+    if (status.getStatus().equals(HttpResponseStatus.NOT_FOUND.toString())) {
+      responder.sendStatus(HttpResponseStatus.NOT_FOUND);
+    } else if (status.getStatus().equals("RUNNING")) {
+      responder.sendString(HttpResponseStatus.FORBIDDEN, "Flow is running, please stop it first.");
+    } else {
+      queueAdmin.dropAllForFlow(Id.Flow.from(programId.getApplication(), programId.getId()));
+      FlowUtils.deleteFlowPendingMetrics(metricStore, namespaceId, appId, flowId);
+      responder.sendStatus(HttpResponseStatus.OK);
     }
   }
 
@@ -973,31 +900,25 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
   public void getServiceInstances(HttpRequest request, HttpResponder responder,
                                   @PathParam("namespace-id") String namespaceId,
                                   @PathParam("app-id") String appId,
-                                  @PathParam("service-id") String serviceId)  {
-    try {
-      Id.Program programId = Id.Program.from(namespaceId, appId, ProgramType.SERVICE, serviceId);
-      if (!store.programExists(programId, ProgramType.SERVICE)) {
-        responder.sendString(HttpResponseStatus.NOT_FOUND, "Service not found");
-        return;
-      }
-
-      ServiceSpecification specification = (ServiceSpecification) getProgramSpecification(programId,
-                                                                                          ProgramType.SERVICE);
-      if (specification == null) {
-        responder.sendStatus(HttpResponseStatus.NOT_FOUND);
-        return;
-      }
-
-      int instances = specification.getInstances();
-      responder.sendJson(HttpResponseStatus.OK,
-                         new ServiceInstances(instances, getInstanceCount(namespaceId, appId, ProgramType.SERVICE,
-                                                                          serviceId, serviceId)));
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                                  @PathParam("service-id") String serviceId) throws Exception {
+    Id.Program programId = Id.Program.from(namespaceId, appId, ProgramType.SERVICE, serviceId);
+    if (!store.programExists(programId, ProgramType.SERVICE)) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Service not found");
+      return;
     }
+
+    ServiceSpecification specification = (ServiceSpecification) getProgramSpecification(
+      programId, ProgramType.SERVICE);
+
+    if (specification == null) {
+      responder.sendStatus(HttpResponseStatus.NOT_FOUND);
+      return;
+    }
+
+    int instances = specification.getInstances();
+    responder.sendJson(HttpResponseStatus.OK,
+                       new ServiceInstances(instances, getInstanceCount(namespaceId, appId, ProgramType.SERVICE,
+                                                                        serviceId, serviceId)));
   }
 
   /**
@@ -1042,9 +963,8 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
         }
       }
       responder.sendStatus(HttpResponseStatus.OK);
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
     } catch (Throwable throwable) {
+      // TODO: remove this hack
       if (respondIfElementNotFound(throwable, responder)) {
         return;
       }
@@ -1056,7 +976,7 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
   @DELETE
   @Path("/queues")
   public synchronized void deleteQueues(HttpRequest request, HttpResponder responder,
-                                        @PathParam("namespace-id") String namespaceId) {
+                                        @PathParam("namespace-id") String namespaceId) throws Exception {
     // synchronized to avoid a potential race condition here:
     // 1. the check for state returns that all flows are STOPPED
     // 2. The API deletes queues because
@@ -1066,28 +986,23 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
     // synchronized on this.
     // This synchronization works in HA mode because even in HA mode there is only one leader at a time.
     Id.Namespace namespace = Id.Namespace.from(namespaceId);
-    try {
-      List<ProgramRecord> flows = listPrograms(namespace, ProgramType.FLOW, store);
-      for (ProgramRecord flow : flows) {
-        String appId = flow.getApp();
-        String flowId = flow.getName();
-        Id.Program programId = Id.Program.from(namespace, appId, ProgramType.FLOW, flowId);
-        ProgramStatus status = getProgramStatus(programId, ProgramType.FLOW);
-        if (!"STOPPED".equals(status.getStatus())) {
-          responder.sendString(HttpResponseStatus.FORBIDDEN,
-                               String.format("Flow '%s' from application '%s' in namespace '%s' is running, " +
-                                               "please stop it first.", flowId, appId, namespaceId));
-          return;
-        }
+    List<ProgramRecord> flows = listPrograms(namespace, ProgramType.FLOW, store);
+    for (ProgramRecord flow : flows) {
+      String appId = flow.getApp();
+      String flowId = flow.getName();
+      Id.Program programId = Id.Program.from(namespace, appId, ProgramType.FLOW, flowId);
+      ProgramStatus status = getProgramStatus(programId, ProgramType.FLOW);
+      if (!"STOPPED".equals(status.getStatus())) {
+        responder.sendString(HttpResponseStatus.FORBIDDEN,
+                             String.format("Flow '%s' from application '%s' in namespace '%s' is running, " +
+                                             "please stop it first.", flowId, appId, namespaceId));
+        return;
       }
-      queueAdmin.dropAllInNamespace(namespace);
-      // delete process metrics that are used to calculate the queue size (system.queue.pending metric)
-      FlowUtils.deleteFlowPendingMetrics(metricStore, namespaceId, null, null);
-      responder.sendStatus(HttpResponseStatus.OK);
-    } catch (Exception e) {
-      LOG.error("Error while deleting queues in namespace " + namespace, e);
-      responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
     }
+    queueAdmin.dropAllInNamespace(namespace);
+    // delete process metrics that are used to calculate the queue size (system.queue.pending metric)
+    FlowUtils.deleteFlowPendingMetrics(metricStore, namespaceId, null, null);
+    responder.sendStatus(HttpResponseStatus.OK);
   }
 
   /**
@@ -1180,7 +1095,7 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
     }
   }
 
-  private StatusMap getProgramStatus(Id.Program id, ProgramType type, StatusMap statusMap) {
+  private StatusMap getProgramStatus(Id.Program id, ProgramType type, StatusMap statusMap) throws Exception {
     // getProgramStatus returns program status or http response status NOT_FOUND
     String programStatus = getProgramStatus(id, type).getStatus();
     if (programStatus.equals(HttpResponseStatus.NOT_FOUND.toString())) {
@@ -1196,48 +1111,43 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
   /**
    * 'protected' for the workflow handler to use
    */
-  protected ProgramStatus getProgramStatus(Id.Program id, ProgramType type) {
-    try {
-      ProgramRuntimeService.RuntimeInfo runtimeInfo = findRuntimeInfo(id, type);
+  protected ProgramStatus getProgramStatus(Id.Program id, ProgramType type) throws Exception {
+    ProgramRuntimeService.RuntimeInfo runtimeInfo = findRuntimeInfo(id, type);
 
-      if (runtimeInfo == null) {
-        if (type != ProgramType.WEBAPP) {
-          //Runtime info not found. Check to see if the program exists.
-          ProgramSpecification spec = getProgramSpecification(id, type);
-          if (spec == null) {
-            // program doesn't exist
-            return new ProgramStatus(id.getApplicationId(), id.getId(), HttpResponseStatus.NOT_FOUND.toString());
-          }
-          if (type == ProgramType.MAPREDUCE && !store.getRuns(id, ProgramRunStatus.RUNNING, 0,
-                                                              Long.MAX_VALUE, 1).isEmpty()) {
-            // MapReduce program exists and running as a part of Workflow
-            return new ProgramStatus(id.getApplicationId(), id.getId(), "RUNNING");
-          }
-          return new ProgramStatus(id.getApplicationId(), id.getId(), "STOPPED");
+    if (runtimeInfo == null) {
+      if (type != ProgramType.WEBAPP) {
+        //Runtime info not found. Check to see if the program exists.
+        ProgramSpecification spec = getProgramSpecification(id, type);
+        if (spec == null) {
+          // program doesn't exist
+          return new ProgramStatus(id.getApplicationId(), id.getId(), HttpResponseStatus.NOT_FOUND.toString());
         }
-        // TODO: Fetching webapp status is a hack. This will be fixed when webapp spec is added.
-        Location webappLoc = null;
-        try {
-          webappLoc = Programs.programLocation(namespacedLocationFactory, appFabricDir, id, ProgramType.WEBAPP);
-        } catch (FileNotFoundException e) {
-          // No location found for webapp, no need to log this exception
+        if (type == ProgramType.MAPREDUCE && !store.getRuns(id, ProgramRunStatus.RUNNING, 0,
+                                                            Long.MAX_VALUE, 1).isEmpty()) {
+          // MapReduce program exists and running as a part of Workflow
+          return new ProgramStatus(id.getApplicationId(), id.getId(), "RUNNING");
         }
-
-        if (webappLoc != null && webappLoc.exists()) {
-          // webapp exists and not running. so return stopped.
-          return new ProgramStatus(id.getApplicationId(), id.getId(), "STOPPED");
-        }
-
-        // webapp doesn't exist
-        return new ProgramStatus(id.getApplicationId(), id.getId(), HttpResponseStatus.NOT_FOUND.toString());
+        return new ProgramStatus(id.getApplicationId(), id.getId(), "STOPPED");
+      }
+      // TODO: Fetching webapp status is a hack. This will be fixed when webapp spec is added.
+      Location webappLoc = null;
+      try {
+        webappLoc = Programs.programLocation(namespacedLocationFactory, appFabricDir, id, ProgramType.WEBAPP);
+      } catch (FileNotFoundException e) {
+        // No location found for webapp, no need to log this exception
       }
 
-      String status = controllerStateToString(runtimeInfo.getController().getState());
-      return new ProgramStatus(id.getApplicationId(), id.getId(), status);
-    } catch (Throwable throwable) {
-      LOG.warn(throwable.getMessage(), throwable);
-      throw Throwables.propagate(throwable);
+      if (webappLoc != null && webappLoc.exists()) {
+        // webapp exists and not running. so return stopped.
+        return new ProgramStatus(id.getApplicationId(), id.getId(), "STOPPED");
+      }
+
+      // webapp doesn't exist
+      return new ProgramStatus(id.getApplicationId(), id.getId(), HttpResponseStatus.NOT_FOUND.toString());
     }
+
+    String status = controllerStateToString(runtimeInfo.getController().getState());
+    return new ProgramStatus(id.getApplicationId(), id.getId(), status);
   }
 
   /**
@@ -1257,35 +1167,29 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
 
   @Nullable
   private ProgramSpecification getProgramSpecification(Id.Program id, ProgramType type) throws Exception {
-    ApplicationSpecification appSpec;
-    try {
-      appSpec = store.getApplication(id.getApplication());
-      if (appSpec == null) {
-        return null;
-      }
-
-      String programId = id.getId();
-      ProgramSpecification programSpec;
-      if (type == ProgramType.FLOW && appSpec.getFlows().containsKey(programId)) {
-        programSpec = appSpec.getFlows().get(id.getId());
-      } else if (type == ProgramType.MAPREDUCE && appSpec.getMapReduce().containsKey(programId)) {
-        programSpec = appSpec.getMapReduce().get(id.getId());
-      } else if (type == ProgramType.SPARK && appSpec.getSpark().containsKey(programId)) {
-        programSpec = appSpec.getSpark().get(id.getId());
-      } else if (type == ProgramType.WORKFLOW && appSpec.getWorkflows().containsKey(programId)) {
-        programSpec = appSpec.getWorkflows().get(id.getId());
-      } else if (type == ProgramType.SERVICE && appSpec.getServices().containsKey(programId)) {
-        programSpec = appSpec.getServices().get(id.getId());
-      } else if (type == ProgramType.WORKER && appSpec.getWorkers().containsKey(programId)) {
-        programSpec = appSpec.getWorkers().get(id.getId());
-      } else {
-        programSpec = null;
-      }
-      return programSpec;
-    } catch (Throwable throwable) {
-      LOG.warn(throwable.getMessage(), throwable);
-      throw new Exception(throwable.getMessage());
+    ApplicationSpecification appSpec = store.getApplication(id.getApplication());
+    if (appSpec == null) {
+      return null;
     }
+
+    String programId = id.getId();
+    ProgramSpecification programSpec;
+    if (type == ProgramType.FLOW && appSpec.getFlows().containsKey(programId)) {
+      programSpec = appSpec.getFlows().get(id.getId());
+    } else if (type == ProgramType.MAPREDUCE && appSpec.getMapReduce().containsKey(programId)) {
+      programSpec = appSpec.getMapReduce().get(id.getId());
+    } else if (type == ProgramType.SPARK && appSpec.getSpark().containsKey(programId)) {
+      programSpec = appSpec.getSpark().get(id.getId());
+    } else if (type == ProgramType.WORKFLOW && appSpec.getWorkflows().containsKey(programId)) {
+      programSpec = appSpec.getWorkflows().get(id.getId());
+    } else if (type == ProgramType.SERVICE && appSpec.getServices().containsKey(programId)) {
+      programSpec = appSpec.getServices().get(id.getId());
+    } else if (type == ProgramType.WORKER && appSpec.getWorkers().containsKey(programId)) {
+      programSpec = appSpec.getWorkers().get(id.getId());
+    } else {
+      programSpec = null;
+    }
+    return programSpec;
   }
 
   /** NOTE: This was a temporary hack done to map the status to something that is
@@ -1308,32 +1212,24 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
     if (type == null) {
       responder.sendStatus(HttpResponseStatus.NOT_FOUND);
     } else {
-      LOG.trace("{} call from AppFabricHttpHandler for app {}, flow type {} id {}",
-                action, appId, type, programId);
-      try {
-        Id.Program id = Id.Program.from(namespaceId, appId, type, programId);
-        AppFabricServiceStatus status;
-        if ("start".equals(action)) {
-          status = start(id, type, decodeArguments(request), false);
-        } else if ("debug".equals(action)) {
-          status = start(id, type, decodeArguments(request), true);
-        } else if ("stop".equals(action)) {
-          status = stop(id, type);
-        } else {
-          throw new IllegalArgumentException("action must be start, stop, or debug, but is: " + action);
-        }
-        if (status == AppFabricServiceStatus.INTERNAL_ERROR) {
-          responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-          return;
-        }
-
-        responder.sendString(status.getCode(), status.getMessage());
-      } catch (SecurityException e) {
-        responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-      } catch (Throwable e) {
-        LOG.error("Got exception:", e);
-        responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+      LOG.trace("{} call from AppFabricHttpHandler for app {}, flow type {} id {}", action, appId, type, programId);
+      Id.Program id = Id.Program.from(namespaceId, appId, type, programId);
+      AppFabricServiceStatus status;
+      if ("start".equals(action)) {
+        status = start(id, type, decodeArguments(request), false);
+      } else if ("debug".equals(action)) {
+        status = start(id, type, decodeArguments(request), true);
+      } else if ("stop".equals(action)) {
+        status = stop(id, type);
+      } else {
+        throw new IllegalArgumentException("action must be start, stop, or debug, but is: " + action);
       }
+      if (status == AppFabricServiceStatus.INTERNAL_ERROR) {
+        responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        return;
+      }
+
+      responder.sendString(status.getCode(), status.getMessage());
     }
   }
 
@@ -1403,21 +1299,13 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
   }
 
   private void getRuns(HttpResponder responder, Id.Program programId, String status,
-                       long start, long end, int limit) {
+                       long start, long end, int limit) throws BadRequestException {
     try {
-      try {
-        ProgramRunStatus runStatus = (status == null) ? ProgramRunStatus.ALL :
-          ProgramRunStatus.valueOf(status.toUpperCase());
-        responder.sendJson(HttpResponseStatus.OK, store.getRuns(programId, runStatus, start, end, limit));
-      } catch (IllegalArgumentException e) {
-        responder.sendString(HttpResponseStatus.BAD_REQUEST,
-                             "Supported options for status of runs are running/completed/failed");
-      }
-    } catch (SecurityException e) {
-      responder.sendStatus(HttpResponseStatus.UNAUTHORIZED);
-    } catch (Throwable e) {
-      LOG.error("Got exception:", e);
-      responder.sendStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+      ProgramRunStatus runStatus = (status == null) ? ProgramRunStatus.ALL :
+        ProgramRunStatus.valueOf(status.toUpperCase());
+      responder.sendJson(HttpResponseStatus.OK, store.getRuns(programId, runStatus, start, end, limit));
+    } catch (IllegalArgumentException e) {
+      throw new BadRequestException("Supported options for status of runs are running/completed/failed");
     }
   }
 
@@ -1434,7 +1322,7 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
    */
   @Nullable
   private List<BatchEndpointArgs> decodeArrayArguments(HttpRequest request, HttpResponder responder)
-    throws IOException {
+    throws IOException, BadRequestException {
     ChannelBuffer content = request.getContent();
     if (!content.readable()) {
       responder.sendString(HttpResponseStatus.BAD_REQUEST, "Cannot read request");
@@ -1466,8 +1354,7 @@ public class ProgramLifecycleHttpHandler extends AbstractAppFabricHttpHandler {
       }
       return input;
     } catch (JsonSyntaxException e) {
-      responder.sendJson(HttpResponseStatus.BAD_REQUEST, "Invalid Json object provided");
-      return null;
+      throw new BadRequestException("Invalid Json object provided");
     }
   }
 
