@@ -41,6 +41,7 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.MRConfig;
 import org.apache.spark.deploy.SparkSubmit;
+import org.apache.twill.filesystem.LocalLocationFactory;
 import org.apache.twill.filesystem.Location;
 import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
@@ -79,6 +80,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
   private final Location programJarLocation;
   private final BasicSparkContext context;
   private final LocationFactory locationFactory;
+  private final LocationFactory localLocationFactory;
   private final TransactionSystemClient txClient;
   private Transaction transaction;
   private Runnable cleanupTask;
@@ -96,6 +98,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
     this.context = context;
     this.locationFactory = locationFactory;
     this.txClient = txClient;
+    this.localLocationFactory = new LocalLocationFactory(new File(System.getProperty("user.dir")));
   }
 
   @Override
@@ -358,7 +361,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
   private Location buildDependencyJar(BasicSparkContext context, Configuration conf) throws IOException {
     Id.Program programId = context.getProgram().getId();
 
-    Location jobJarLocation = locationFactory.create(String.format("%s.%s.%s.%s.%s.jar",
+    Location jobJarLocation = localLocationFactory.create(String.format("%s.%s.%s.%s.%s.jar",
                                                                    ProgramType.SPARK.name().toLowerCase(),
                                                                    programId.getNamespaceId(),
                                                                    programId.getApplicationId(), programId.getId(),
@@ -384,7 +387,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
    */
   private Location copyProgramJar(Location jobJarLocation, BasicSparkContext context) throws IOException {
     Id.Program programId = context.getProgram().getId();
-    Location programJarCopy = locationFactory.create(String.format("%s.%s.%s.%s.%s.program.jar",
+    Location programJarCopy = localLocationFactory.create(String.format("%s.%s.%s.%s.%s.program.jar",
                                                                    ProgramType.SPARK.name().toLowerCase(),
                                                                    programId.getNamespaceId(),
                                                                    programId.getApplicationId(), programId.getId(),

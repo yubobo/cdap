@@ -107,7 +107,7 @@ public class SparkMetricsSink implements Sink {
    */
   private static void writeSparkMetricsProperties(BufferedWriter writer) throws IOException {
     writer.write(SPARK_METRICS_SINK_NAME);
-    writer.write(SparkMetricsSink.class.getName());
+    writer.write(org.apache.spark.metrics.sink.ConsoleSink.class.getName());
     writer.newLine();
     writer.write(SPARK_METRICS_SINK_PERIOD);
     writer.write(String.valueOf(SparkMetricsSink.CONSOLE_DEFAULT_PERIOD));
