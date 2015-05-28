@@ -75,9 +75,9 @@ public class ApplicationClient {
    * @throws IOException
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public List<ApplicationRecord> list() throws IOException, UnauthorizedException {
+  public List<ApplicationRecord> list(Id.Namespace namespace) throws IOException, UnauthorizedException {
     HttpResponse response = restClient.execute(HttpMethod.GET,
-                                               config.resolveNamespacedURLV3("apps"),
+                                               config.resolveNamespacedURLV3(namespace, "apps"),
                                                config.getAccessToken());
     return ObjectResponse.fromJsonBody(response, new TypeToken<List<ApplicationRecord>>() { }).getResponseObject();
   }
@@ -85,15 +85,14 @@ public class ApplicationClient {
   /**
    * Deletes an application.
    *
-   * @param appId ID of the application to delete
+   * @param app the application to delete
    * @throws ApplicationNotFoundException if the application with the given ID was not found
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public void delete(String appId) throws ApplicationNotFoundException, IOException, UnauthorizedException {
-    Id.Application app = Id.Application.from(config.getNamespace(), appId);
+  public void delete(Id.Application app) throws ApplicationNotFoundException, IOException, UnauthorizedException {
     HttpResponse response = restClient.execute(HttpMethod.DELETE,
-                                               config.resolveNamespacedURLV3("apps/" + app.getId()),
+                                               config.resolveNamespacedURLV3(app.getNamespace(), "apps/" + app.getId()),
                                                config.getAccessToken(), HttpURLConnection.HTTP_NOT_FOUND);
     if (response.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
       throw new ApplicationNotFoundException(app);
@@ -101,25 +100,26 @@ public class ApplicationClient {
   }
 
   /**
-   * Deletes all applications.
+   * Deletes all applications in a namespace.
    *
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public void deleteAll() throws IOException, UnauthorizedException {
-    restClient.execute(HttpMethod.DELETE, config.resolveNamespacedURLV3("apps"), config.getAccessToken());
+  public void deleteAll(Id.Namespace namespace) throws IOException, UnauthorizedException {
+    restClient.execute(HttpMethod.DELETE, config.resolveNamespacedURLV3(namespace, "apps"), config.getAccessToken());
   }
 
   /**
    * Checks if an application exists.
    *
-   * @param appId ID of the application to check
+   * @param app the application to check
    * @return true if the application exists
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public boolean exists(String appId) throws IOException, UnauthorizedException {
-    HttpResponse response = restClient.execute(HttpMethod.GET, config.resolveNamespacedURLV3("apps/" + appId),
+  public boolean exists(Id.Application app) throws IOException, UnauthorizedException {
+    HttpResponse response = restClient.execute(HttpMethod.GET,
+                                               config.resolveNamespacedURLV3(app.getNamespace(), "apps/" + app.getId()),
                                                config.getAccessToken(), HttpURLConnection.HTTP_NOT_FOUND);
     return response.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND;
   }
@@ -127,7 +127,7 @@ public class ApplicationClient {
   /**
    * Waits for an application to be deployed.
    *
-   * @param appId ID of the application to check
+   * @param app the application to check
    * @param timeout time to wait before timing out
    * @param timeoutUnit time unit of timeout
    * @throws IOException if a network error occurred
@@ -135,14 +135,14 @@ public class ApplicationClient {
    * @throws TimeoutException if the application was not yet deployed before {@code timeout} milliseconds
    * @throws InterruptedException if interrupted while waiting
    */
-  public void waitForDeployed(final String appId, long timeout, TimeUnit timeoutUnit)
+  public void waitForDeployed(final Id.Application app, long timeout, TimeUnit timeoutUnit)
     throws IOException, UnauthorizedException, TimeoutException, InterruptedException {
 
     try {
       Tasks.waitFor(true, new Callable<Boolean>() {
         @Override
         public Boolean call() throws Exception {
-          return exists(appId);
+          return exists(app);
         }
       }, timeout, timeoutUnit, 1, TimeUnit.SECONDS);
     } catch (ExecutionException e) {
@@ -153,7 +153,7 @@ public class ApplicationClient {
   /**
    * Waits for an application to be deleted.
    *
-   * @param appId ID of the application to check
+   * @param app the application to check
    * @param timeout time to wait before timing out
    * @param timeoutUnit time unit of timeout
    * @throws IOException if a network error occurred
@@ -161,14 +161,14 @@ public class ApplicationClient {
    * @throws TimeoutException if the application was not yet deleted before {@code timeout} milliseconds
    * @throws InterruptedException if interrupted while waiting
    */
-  public void waitForDeleted(final String appId, long timeout, TimeUnit timeoutUnit)
+  public void waitForDeleted(final Id.Application app, long timeout, TimeUnit timeoutUnit)
     throws IOException, UnauthorizedException, TimeoutException, InterruptedException {
 
     try {
       Tasks.waitFor(false, new Callable<Boolean>() {
         @Override
         public Boolean call() throws Exception {
-          return exists(appId);
+          return exists(app);
         }
       }, timeout, timeoutUnit, 1, TimeUnit.SECONDS);
     } catch (ExecutionException e) {
@@ -182,8 +182,8 @@ public class ApplicationClient {
    * @param jarFile jar file of the application to deploy
    * @throws IOException if a network error occurred
    */
-  public void deploy(File jarFile) throws IOException, UnauthorizedException {
-    URL url = config.resolveNamespacedURLV3("apps");
+  public void deploy(Id.Namespace namespace, File jarFile) throws IOException, UnauthorizedException {
+    URL url = config.resolveNamespacedURLV3(namespace, "apps");
     Map<String, String> headers = ImmutableMap.of("X-Archive-Name", jarFile.getName());
 
     HttpRequest request = HttpRequest.post(url).addHeaders(headers).withBody(jarFile).build();
@@ -198,11 +198,13 @@ public class ApplicationClient {
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public List<ProgramRecord> listAllPrograms(ProgramType programType) throws IOException, UnauthorizedException {
+  public List<ProgramRecord> listAllPrograms(Id.Namespace namespace, ProgramType programType)
+    throws IOException, UnauthorizedException {
+
     Preconditions.checkArgument(programType.isListable());
 
     String path = programType.getCategoryName();
-    URL url = config.resolveNamespacedURLV3(path);
+    URL url = config.resolveNamespacedURLV3(namespace, path);
     HttpRequest request = HttpRequest.get(url).build();
 
     ObjectResponse<List<ProgramRecord>> response = ObjectResponse.fromJsonBody(
@@ -218,13 +220,14 @@ public class ApplicationClient {
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public Map<ProgramType, List<ProgramRecord>> listAllPrograms() throws IOException, UnauthorizedException {
+  public Map<ProgramType, List<ProgramRecord>> listAllPrograms(Id.Namespace namespace)
+    throws IOException, UnauthorizedException {
 
     ImmutableMap.Builder<ProgramType, List<ProgramRecord>> allPrograms = ImmutableMap.builder();
     for (ProgramType programType : ProgramType.values()) {
       if (programType.isListable()) {
         List<ProgramRecord> programRecords = Lists.newArrayList();
-        programRecords.addAll(listAllPrograms(programType));
+        programRecords.addAll(listAllPrograms(namespace, programType));
         allPrograms.put(programType, programRecords);
       }
     }
@@ -234,20 +237,20 @@ public class ApplicationClient {
   /**
    * Lists programs of some type belonging to an application.
    *
-   * @param appId ID of the application
+   * @param app the application
    * @param programType type of the programs to list
    * @return list of {@link ProgramRecord}s
    * @throws ApplicationNotFoundException if the application with the given ID was not found
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public List<ProgramRecord> listPrograms(String appId, ProgramType programType)
+  public List<ProgramRecord> listPrograms(Id.Application app, ProgramType programType)
     throws ApplicationNotFoundException, IOException, UnauthorizedException {
 
     Preconditions.checkArgument(programType.isListable());
 
     List<ProgramRecord> programs = Lists.newArrayList();
-    for (ProgramRecord program : listPrograms(appId)) {
+    for (ProgramRecord program : listPrograms(app)) {
       if (programType.equals(program.getType())) {
         programs.add(program);
       }
@@ -258,20 +261,20 @@ public class ApplicationClient {
   /**
    * Lists programs of some type belonging to an application.
    *
-   * @param appId ID of the application
+   * @param app the application
    * @return Map of {@link ProgramType} to list of {@link ProgramRecord}s
    * @throws ApplicationNotFoundException if the application with the given ID was not found
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public Map<ProgramType, List<ProgramRecord>> listProgramsByType(String appId)
+  public Map<ProgramType, List<ProgramRecord>> listProgramsByType(Id.Application app)
     throws ApplicationNotFoundException, IOException, UnauthorizedException {
 
     Map<ProgramType, List<ProgramRecord>> result = Maps.newHashMap();
     for (ProgramType type : ProgramType.values()) {
       result.put(type, Lists.<ProgramRecord>newArrayList());
     }
-    for (ProgramRecord program : listPrograms(appId)) {
+    for (ProgramRecord program : listPrograms(app)) {
       result.get(program.getType()).add(program);
     }
     return result;
@@ -280,17 +283,17 @@ public class ApplicationClient {
   /**
    * Lists programs belonging to an application.
    *
-   * @param appId ID of the application
+   * @param app the application
    * @return List of all {@link ProgramRecord}s
    * @throws ApplicationNotFoundException if the application with the given ID was not found
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public List<ProgramRecord> listPrograms(String appId)
+  public List<ProgramRecord> listPrograms(Id.Application app)
     throws ApplicationNotFoundException, IOException, UnauthorizedException {
 
-    String path = String.format("apps/%s", appId);
-    URL url = config.resolveNamespacedURLV3(path);
+    String path = String.format("apps/%s", app.getId());
+    URL url = config.resolveNamespacedURLV3(app.getNamespace(), path);
     HttpRequest request = HttpRequest.get(url).build();
 
     ObjectResponse<ApplicationDetail> response = ObjectResponse.fromJsonBody(
@@ -298,7 +301,7 @@ public class ApplicationClient {
       new TypeToken<ApplicationDetail>() { });
 
     if (response.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-      throw new ApplicationNotFoundException(Id.Application.from(config.getNamespace(), appId));
+      throw new ApplicationNotFoundException(app);
     }
 
     return response.getResponseObject().getPrograms();
