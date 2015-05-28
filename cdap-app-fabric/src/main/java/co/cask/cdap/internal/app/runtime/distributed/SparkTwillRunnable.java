@@ -33,7 +33,7 @@ final class SparkTwillRunnable extends AbstractProgramTwillRunnable<SparkProgram
   // NOTE: DO NOT REMOVE.  Though it is unused, the dependency is needed when submitting the Spark job.
   private YarnClientProtocolProvider provider;
 
-  SparkTwillRunnable(String name, String hConfName, String cConfName) {
+   SparkTwillRunnable(String name, String hConfName, String cConfName) {
     super(name, hConfName, cConfName);
   }
 
@@ -42,15 +42,15 @@ final class SparkTwillRunnable extends AbstractProgramTwillRunnable<SparkProgram
     return SparkProgramRunner.class;
   }
 
-  @Override
-  protected Module createModule(TwillContext context) {
-    Module module = super.createModule(context);
-    return Modules.override(module).with(new AbstractModule() {
-
-      @Override
-      protected void configure() {
-        bind(LocationFactory.class).toInstance(new LocalLocationFactory(new File(System.getProperty("user.dir"))));
-      }
-    });
-  }
+//  @Override
+//  protected Module createModule(TwillContext context) {
+//    Module module = super.createModule(context);
+//    return Modules.override(module).with(new AbstractModule() {
+//
+//      @Override
+//      protected void configure() {
+//        bind(LocationFactory.class).toInstance(new LocalLocationFactory(new File(System.getProperty("user.dir"))));
+//      }
+//    });
+//  }
 }
