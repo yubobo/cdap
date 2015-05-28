@@ -25,7 +25,7 @@ public class AuthenticatedConnectionConfig extends ConnectionConfig {
   private final String username;
 
   public AuthenticatedConnectionConfig(ConnectionConfig connectInfo, String username) {
-    super(connectInfo.getNamespace(), connectInfo.getHostname(), connectInfo.getPort(), connectInfo.isSSLEnabled());
+    super(connectInfo.getHostname(), connectInfo.getPort(), connectInfo.isSSLEnabled());
     this.username = username + "@";
   }
 
