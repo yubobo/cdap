@@ -18,13 +18,13 @@ package co.cask.cdap.client;
 
 import co.cask.cdap.client.app.DummyWorkerTemplate;
 import co.cask.cdap.client.common.ClientTestBase;
-import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.exception.AdapterNotFoundException;
 import co.cask.cdap.common.exception.NotFoundException;
 import co.cask.cdap.common.exception.UnauthorizedException;
 import co.cask.cdap.proto.AdapterConfig;
 import co.cask.cdap.proto.AdapterDetail;
 import co.cask.cdap.proto.AdapterStatus;
+import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.ProgramRunStatus;
 import co.cask.cdap.proto.RunRecord;
 import co.cask.cdap.proto.template.ApplicationTemplateMeta;
@@ -56,58 +56,59 @@ public class AdapterClientTestRun extends ClientTestBase {
   @Before
   public void setUp() throws Throwable {
     super.setUp();
-    clientConfig.setNamespace(Constants.DEFAULT_NAMESPACE_ID);
     adapterClient = new AdapterClient(clientConfig);
     appTemplateClient = new ApplicationTemplateClient(clientConfig);
   }
 
   @Test
   public void testAdapters() throws Exception {
-    List<AdapterDetail> initialList = adapterClient.list();
+    Id.Namespace namespace = Id.Namespace.DEFAULT;
+    Id.Adapter adapter = Id.Adapter.from(namespace, "realtimeAdapter");
+
+    List<AdapterDetail> initialList = adapterClient.list(namespace);
     Assert.assertEquals(0, initialList.size());
 
     DummyWorkerTemplate.Config config = new DummyWorkerTemplate.Config(2);
-    String adapterName = "realtimeAdapter";
     AdapterConfig adapterConfig = new AdapterConfig("description", DummyWorkerTemplate.NAME, GSON.toJsonTree(config));
 
     // Create Adapter
-    adapterClient.create(adapterName, adapterConfig);
+    adapterClient.create(namespace, adapter.getId(), adapterConfig);
 
     // Check that the created adapter is present
-    adapterClient.waitForExists(adapterName, 30, TimeUnit.SECONDS);
-    Assert.assertTrue(adapterClient.exists(adapterName));
-    AdapterDetail someAdapter = adapterClient.get(adapterName);
+    adapterClient.waitForExists(adapter, 30, TimeUnit.SECONDS);
+    Assert.assertTrue(adapterClient.exists(adapter));
+    AdapterDetail someAdapter = adapterClient.get(adapter);
     Assert.assertNotNull(someAdapter);
 
     // list all adapters
-    List<AdapterDetail> list = adapterClient.list();
+    List<AdapterDetail> list = adapterClient.list(namespace);
     Assert.assertArrayEquals(new AdapterDetail[] {someAdapter}, list.toArray());
 
-    adapterClient.waitForStatus(adapterName, AdapterStatus.STOPPED, 30, TimeUnit.SECONDS);
-    adapterClient.start(adapterName);
-    adapterClient.waitForStatus(adapterName, AdapterStatus.STARTED, 30, TimeUnit.SECONDS);
-    adapterClient.stop(adapterName);
-    adapterClient.waitForStatus(adapterName, AdapterStatus.STOPPED, 30, TimeUnit.SECONDS);
+    adapterClient.waitForStatus(adapter, AdapterStatus.STOPPED, 30, TimeUnit.SECONDS);
+    adapterClient.start(adapter);
+    adapterClient.waitForStatus(adapter, AdapterStatus.STARTED, 30, TimeUnit.SECONDS);
+    adapterClient.stop(adapter);
+    adapterClient.waitForStatus(adapter, AdapterStatus.STOPPED, 30, TimeUnit.SECONDS);
 
-    List<RunRecord> runs = adapterClient.getRuns(adapterName, ProgramRunStatus.ALL, 0, Long.MAX_VALUE, 10);
+    List<RunRecord> runs = adapterClient.getRuns(adapter, ProgramRunStatus.ALL, 0, Long.MAX_VALUE, 10);
     Assert.assertEquals(1, runs.size());
 
-    String logs = adapterClient.getLogs(adapterName);
+    String logs = adapterClient.getLogs(adapter);
     Assert.assertNotNull(logs);
 
     // Delete Adapter
-    adapterClient.delete(adapterName);
+    adapterClient.delete(adapter);
 
     // verify that the adapter is deleted
-    Assert.assertFalse(adapterClient.exists(adapterName));
+    Assert.assertFalse(adapterClient.exists(adapter));
     try {
-      adapterClient.get(adapterName);
+      adapterClient.get(adapter);
       Assert.fail();
     } catch (AdapterNotFoundException e) {
       // Expected
     }
 
-    List<AdapterDetail> finalList = adapterClient.list();
+    List<AdapterDetail> finalList = adapterClient.list(namespace);
     Assert.assertEquals(0, finalList.size());
   }
 
