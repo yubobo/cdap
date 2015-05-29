@@ -631,6 +631,20 @@ public abstract class Id {
   }
 
   /**
+   * Uniquely identifies a Workflow.
+   */
+  public static class Workflow extends Program {
+
+    private Workflow(Application application, String id) {
+      super(application, ProgramType.WORKFLOW, id);
+    }
+
+    public static Workflow from(Application application, String id) {
+      return new Workflow(application, id);
+    }
+  }
+
+  /**
    * Uniquely identifies a Flow.
    */
   public static class Flow extends Program {
@@ -757,6 +771,10 @@ public abstract class Id {
     @Override
     public Namespace getNamespace() {
       return application.getNamespace();
+    }
+
+    public Application getApplication() {
+      return application;
     }
 
     @Override
