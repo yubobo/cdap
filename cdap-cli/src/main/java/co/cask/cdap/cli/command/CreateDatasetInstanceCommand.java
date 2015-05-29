@@ -54,7 +54,7 @@ public class CreateDatasetInstanceCommand extends AbstractAuthCommand {
     Map<String, String> datasetProperties = ArgumentParser.parseMap(datasetPropertiesString);
     DatasetInstanceConfiguration datasetConfig = new DatasetInstanceConfiguration(datasetType, datasetProperties);
 
-    datasetClient.create(datasetName, datasetConfig);
+    datasetClient.create(cliConfig.getCurrentNamespace(), datasetName, datasetConfig);
     output.printf("Successfully created dataset named '%s' with type '%s' and properties '%s'",
                   datasetName, datasetType, GSON.toJson(datasetProperties));
     output.println();
