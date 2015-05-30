@@ -95,6 +95,7 @@ abstract class AbstractSparkContext implements SparkContext {
     sparkConf.setAppName(basicSparkContext.getProgramName());
     sparkConf.set(SPARK_METRICS_CONF_KEY, basicSparkContext.getMetricsPropertyFile().getAbsolutePath());
     sparkConf.set("spark.driver.userClassPathFirst", "true");
+    sparkConf.set("spark.executor.extraClassPath", "program.jar");
     sparkConf.set("spark.executor.userClassPathFirst", "true");
     return sparkConf;
   }
