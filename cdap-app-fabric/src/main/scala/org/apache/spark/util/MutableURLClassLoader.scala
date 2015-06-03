@@ -25,6 +25,8 @@ import java.net.{URL, URLClassLoader}
 private[spark] class MutableURLClassLoader(urls: Array[URL], parent: ClassLoader)
   extends URLClassLoader(urls, parent) {
 
+  println("Constructing classloader from CDAP class")
+
   override def addURL(url: URL): Unit = {
     print("Poop: Adding URL from MutableURLClassLoader")
     super.addURL(url)

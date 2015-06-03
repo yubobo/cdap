@@ -335,7 +335,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
     ClassLoader programClassLoader = spark.getClass().getClassLoader();
     if (programClassLoader instanceof URLClassLoader) {
       for (URL url : ((URLClassLoader) programClassLoader).getURLs()) {
-        File file = new File(url.toURI()).getAbsoluteFile();
+        File file = new File(url.toURI().getPath().replace(" ", "%20")).getAbsoluteFile();
         if (file.isFile() && file.getName().endsWith(".jar")) {
           jars.add(file.getAbsolutePath());
         }
@@ -345,7 +345,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     if (classLoader instanceof URLClassLoader) {
       for (URL url : ((URLClassLoader) classLoader).getURLs()) {
-        File file = new File(url.toURI()).getAbsoluteFile();
+        File file = new File(url.toURI().getPath().replace(" ", "%20")).getAbsoluteFile();
         if (file.isFile() && file.getName().endsWith(".jar")) {
           jars.add(file.getAbsolutePath());
         }
@@ -372,10 +372,10 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
     Id.Program programId = context.getProgram().getId();
 
     Location jobJarLocation = localLocationFactory.create(String.format("%s.%s.%s.%s.%s.jar",
-                                                                   ProgramType.SPARK.name().toLowerCase(),
-                                                                   programId.getNamespaceId(),
-                                                                   programId.getApplicationId(), programId.getId(),
-                                                                   context.getRunId().getId()));
+                                                                        ProgramType.SPARK.name().toLowerCase(),
+                                                                        programId.getNamespaceId(),
+                                                                        programId.getApplicationId(), programId.getId(),
+                                                                        context.getRunId().getId()));
 
     LOG.debug("Creating Spark Job Jar: {}", jobJarLocation.toURI());
     try (JarOutputStream jarOut = new JarOutputStream(jobJarLocation.getOutputStream())) {
@@ -425,7 +425,8 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
   private SparkProgramWrapper.CloseableClassLoader createProgramClassloader(Location templateJar) throws IOException {
     final File unpackDir = DirUtils.createTempDir(tmpDir);
     BundleJarUtil.unpackProgramJar(Locations.newInputSupplier(templateJar), unpackDir);
-    ProgramClassLoader programClassLoader = ProgramClassLoader.create(unpackDir, getClass().getClassLoader());
+    ProgramClassLoader programClassLoader = ProgramClassLoader.create(unpackDir, getClass().getClassLoader(),
+                                                                      ProgramType.SPARK);
     return new SparkProgramWrapper.CloseableClassLoader(programClassLoader, new Closeable() {
       @Override
       public void close() throws IOException {

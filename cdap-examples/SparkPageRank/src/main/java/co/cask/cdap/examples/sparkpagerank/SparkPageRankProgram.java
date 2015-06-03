@@ -104,6 +104,10 @@ public class SparkPageRankProgram implements JavaSparkProgram {
           @Override
           public Iterable<Tuple2<String, Double>> call(Tuple2<Iterable<String>, Double> s) {
             LOG.debug("Processing {} with rank {}", s._1(), s._2());
+            ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+            System.out.println("Curent loader: " + ccl.toString());
+            System.out.println("Curent loader parent: " + ccl.getParent().toString());
+            System.out.println("Classpath: " + System.getProperty("java.class.path"));
             int urlCount = Iterables.size(s._1());
             List<Tuple2<String, Double>> results = new ArrayList<>();
             for (String n : s._1()) {
