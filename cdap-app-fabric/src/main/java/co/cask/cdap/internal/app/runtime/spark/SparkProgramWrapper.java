@@ -25,6 +25,9 @@ import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 /**
  * Class which wraps around user's program class to integrate the spark program with CDAP.
  * This first command line argument to this class is the name of the user's Spark program class
@@ -56,6 +59,7 @@ public class SparkProgramWrapper {
   private static BasicSparkContext basicSparkContext;
   private static SparkContext sparkContext;
   private static boolean scalaProgram;
+  private static CloseableClassLoader programClassLoader;
 
   // TODO: Get around Spark's limitation of only one SparkContext in a JVM and support multiple spark context:
   // CDAP-4
@@ -154,8 +158,8 @@ public class SparkProgramWrapper {
   }
 
   private Class<? extends SparkProgram> loadUserSparkClass(String className) throws ClassNotFoundException {
-    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    Class<?> cls = classLoader.loadClass(className);
+//    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    Class<?> cls = programClassLoader.loadClass(className);
     if (!SparkProgram.class.isAssignableFrom(cls)) {
       throw new IllegalArgumentException("User class " + arguments[0] +
                                            " does not implements " + SparkProgram.class.getName());
@@ -229,10 +233,33 @@ public class SparkProgramWrapper {
     SparkProgramWrapper.basicSparkContext = basicSparkContext;
   }
 
+  public static void setProgramClassLoader (CloseableClassLoader programClassLoader) {
+    SparkProgramWrapper.programClassLoader = programClassLoader;
+  }
+
   /**
    * @return The {@link BasicSparkContext} which will be used to run the user's {@link Spark} program
    */
   public static BasicSparkContext getBasicSparkContext() {
     return basicSparkContext;
+  }
+
+  /**
+   * A {@link ClassLoader} that implements {@link Closeable} for resource cleanup. All classloading is done
+   * by the delegate {@link ClassLoader}.
+   */
+  static final class CloseableClassLoader extends ClassLoader implements Closeable {
+
+    private final Closeable closeable;
+
+    public CloseableClassLoader(ClassLoader delegate, Closeable closeable) {
+      super(delegate);
+      this.closeable = closeable;
+    }
+
+    @Override
+    public void close() throws IOException {
+      closeable.close();
+    }
   }
 }

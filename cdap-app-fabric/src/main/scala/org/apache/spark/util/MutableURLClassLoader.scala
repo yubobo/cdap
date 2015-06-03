@@ -16,21 +16,23 @@
 
 package org.apache.spark.util
 
+import java.net.{URL, URLClassLoader}
+
+
 /**
- * A class loader which makes some protected methods in ClassLoader accesible.
+ * URL class loader that exposes the `addURL` and `getURLs` methods in URLClassLoader.
  */
-private[spark] class ParentClassLoader(parent: ClassLoader) extends ClassLoader(parent) {
+private[spark] class MutableURLClassLoader(urls: Array[URL], parent: ClassLoader)
+  extends URLClassLoader(urls, parent) {
 
-  override def findClass(name: String): Class[_] = {
-    super.findClass(name)
+  override def addURL(url: URL): Unit = {
+    print("Poop: Adding URL from MutableURLClassLoader")
+    super.addURL(url)
   }
 
-  override def loadClass(name: String): Class[_] = {
-    super.loadClass(name)
-  }
-
-  override def loadClass(name: String, resolve: Boolean): Class[_] = {
-    super.loadClass(name, resolve)
+  override def getURLs(): Array[URL] = {
+    print("Poop: Getting URL from MutableURLClassLoader")
+    super.getURLs()
   }
 
 }

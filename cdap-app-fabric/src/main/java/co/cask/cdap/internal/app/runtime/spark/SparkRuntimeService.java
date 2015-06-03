@@ -21,7 +21,10 @@ import co.cask.cdap.api.spark.SparkSpecification;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.io.Locations;
+import co.cask.cdap.common.lang.ProgramClassLoader;
+import co.cask.cdap.common.lang.jar.BundleJarUtil;
 import co.cask.cdap.common.logging.LoggingContextAccessor;
+import co.cask.cdap.common.utils.DirUtils;
 import co.cask.cdap.data2.transaction.Transactions;
 import co.cask.cdap.internal.app.runtime.spark.metrics.SparkMetricsSink;
 import co.cask.cdap.proto.Id;
@@ -47,6 +50,7 @@ import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -86,6 +90,8 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
   private Runnable cleanupTask;
   private String[] sparkSubmitArgs;
   private volatile boolean stopRequested;
+  private final File tmpDir;
+  private SparkProgramWrapper.CloseableClassLoader programClassLoader;
 
   SparkRuntimeService(CConfiguration cConf, Configuration hConf, Spark spark, SparkSpecification sparkSpecification,
                       BasicSparkContext context, Location programJarLocation, LocationFactory locationFactory,
@@ -99,6 +105,8 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
     this.locationFactory = locationFactory;
     this.txClient = txClient;
     this.localLocationFactory = new LocalLocationFactory(new File(System.getProperty("user.dir")));
+    this.tmpDir = new File(cConf.get(Constants.CFG_LOCAL_DATA_DIR),
+                           cConf.get(Constants.AppFabric.TEMP_DIR)).getAbsoluteFile();
   }
 
   @Override
@@ -131,6 +139,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
             File tmpFile = File.createTempFile(SparkMetricsSink.SPARK_METRICS_PROPERTIES_FILENAME,
                                                Location.TEMP_FILE_SUFFIX,
                                                tmpDir);
+            programClassLoader = createProgramClassloader(programJarCopy);
             try {
               SparkMetricsSink.generateSparkMetricsConfig(tmpFile);
               context.setMetricsPropertyFile(tmpFile);
@@ -182,6 +191,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
       try {
         SparkProgramWrapper.setBasicSparkContext(context);
         SparkProgramWrapper.setSparkProgramRunning(true);
+        SparkProgramWrapper.setProgramClassLoader(programClassLoader);
         SparkSubmit.main(sparkSubmitArgs);
       } catch (Exception e) {
         LOG.error("Failed to submit Spark program {}", context, e);
@@ -410,5 +420,17 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
         }
       }
     };
+  }
+
+  private SparkProgramWrapper.CloseableClassLoader createProgramClassloader(Location templateJar) throws IOException {
+    final File unpackDir = DirUtils.createTempDir(tmpDir);
+    BundleJarUtil.unpackProgramJar(Locations.newInputSupplier(templateJar), unpackDir);
+    ProgramClassLoader programClassLoader = ProgramClassLoader.create(unpackDir, getClass().getClassLoader());
+    return new SparkProgramWrapper.CloseableClassLoader(programClassLoader, new Closeable() {
+      @Override
+      public void close() throws IOException {
+        DirUtils.deleteDirectoryContents(unpackDir);
+      }
+    });
   }
 }
