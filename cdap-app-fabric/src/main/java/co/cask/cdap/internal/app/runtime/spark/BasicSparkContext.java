@@ -92,8 +92,8 @@ public class BasicSparkContext extends AbstractContext implements SparkContext {
     this.logicalStartTime = logicalStartTime;
     this.workflowBatch = workflowBatch;
     this.streamAdmin = streamAdmin;
-    SerializableServiceDiscoverer.setDiscoveryServiceClient(getDiscoveryServiceClient());
-    this.serializableServiceDiscoverer = new SerializableServiceDiscoverer(getProgram());
+    this.serializableServiceDiscoverer = new SerializableServiceDiscoverer(getProgram().getId().getApplication(),
+                                                                           getDiscoveryServiceClient());
     SparkUserMetrics.setMetricsCollector(getProgramMetrics());
     this.userMetrics = new SparkUserMetrics();
     this.loggingContext = new SparkLoggingContext(getNamespaceId(), getApplicationId(), getProgramName(),

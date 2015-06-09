@@ -19,6 +19,7 @@ package co.cask.cdap.app.services;
 import co.cask.cdap.api.ServiceDiscoverer;
 import co.cask.cdap.api.spark.Spark;
 import co.cask.cdap.app.program.Program;
+import co.cask.cdap.proto.Id;
 import org.apache.twill.discovery.DiscoveryServiceClient;
 
 import java.io.Externalizable;
@@ -34,18 +35,15 @@ import java.io.Serializable;
 public class SerializableServiceDiscoverer extends AbstractServiceDiscoverer implements Externalizable {
 
   private static final long serialVersionUID = 6547316362453719580L;
-  private static DiscoveryServiceClient discoveryServiceClient;
+  private DiscoveryServiceClient discoveryServiceClient;
 
   // no-arg constructor required for serialization/deserialization to work
   public SerializableServiceDiscoverer() {
   }
 
-  public static void setDiscoveryServiceClient(DiscoveryServiceClient discoveryServiceClient) {
-    SerializableServiceDiscoverer.discoveryServiceClient = discoveryServiceClient;
-  }
-
-  public SerializableServiceDiscoverer(Program program) {
-    super(program);
+  public SerializableServiceDiscoverer(Id.Application application, DiscoveryServiceClient discoveryServiceClient) {
+    super(application);
+    this.discoveryServiceClient = discoveryServiceClient;
   }
 
   @Override
@@ -63,5 +61,13 @@ public class SerializableServiceDiscoverer extends AbstractServiceDiscoverer imp
   @Override
   public DiscoveryServiceClient getDiscoveryServiceClient() {
     return discoveryServiceClient;
+  }
+
+  public String getNamespaceId() {
+    return namespaceId;
+  }
+
+  public String getApplicationId() {
+    return applicationId;
   }
 }
