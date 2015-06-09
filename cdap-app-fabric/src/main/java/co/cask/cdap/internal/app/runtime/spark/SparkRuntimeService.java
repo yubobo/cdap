@@ -92,6 +92,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
   private volatile boolean stopRequested;
   private final File tmpDir;
   private SparkProgramWrapper.CloseableClassLoader programClassLoader;
+  private String sparkDepJars;
 
   SparkRuntimeService(CConfiguration cConf, Configuration hConf, Spark spark, SparkSpecification sparkSpecification,
                       BasicSparkContext context, Location programJarLocation, LocationFactory locationFactory,
@@ -192,6 +193,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
         SparkProgramWrapper.setBasicSparkContext(context);
         SparkProgramWrapper.setSparkProgramRunning(true);
         SparkProgramWrapper.setProgramClassLoader(programClassLoader);
+        SparkProgramWrapper.setSparkDepJar(sparkDepJars);
         SparkSubmit.main(sparkSubmitArgs);
       } catch (Exception e) {
         LOG.error("Failed to submit Spark program {}", context, e);
@@ -337,7 +339,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
       for (URL url : ((URLClassLoader) programClassLoader).getURLs()) {
         File file = new File(url.toURI().getPath().replace(" ", "%20")).getAbsoluteFile();
         if (file.isFile() && file.getName().endsWith(".jar")) {
-          jars.add(file.getAbsolutePath());
+          jars.add(file.toURI().toString());
         }
       }
     }
@@ -347,7 +349,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
       for (URL url : ((URLClassLoader) classLoader).getURLs()) {
         File file = new File(url.toURI().getPath().replace(" ", "%20")).getAbsoluteFile();
         if (file.isFile() && file.getName().endsWith(".jar")) {
-          jars.add(file.getAbsolutePath());
+          jars.add(file.toURI().toString());
         }
       }
     }
@@ -355,9 +357,12 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
 
     String mode = conf.get(MRConfig.FRAMEWORK_NAME).equalsIgnoreCase("local") ?
       conf.get(MRConfig.FRAMEWORK_NAME) : "yarn-client";
-    
+
+    sparkDepJars = Joiner.on(',').join(jars);
     return new String[]{"--class", SparkProgramWrapper.class.getCanonicalName(), "--jars",
-      Joiner.on(',').join(jars), "--master", mode, jobJarCopy.toURI().getPath(), sparkSpec.getMainClassName()};
+      dependencyJar.toURI().getPath(),
+      "--files", Joiner.on(',').join(jars), "--master", mode,
+      jobJarCopy.toURI().getPath(), sparkSpec.getMainClassName()};
   }
 
   /**
@@ -434,4 +439,17 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
       }
     });
   }
+//
+//  private Location localizeReplaceJar(BasicSparkContext context) throws IOException {
+//    Id.Program programId = context.getProgram().getId();
+//    Location replaceJarCopy = localLocationFactory.create(String.format("%s.%s.%s.%s.%s.replace.jar",
+//                                                                        ProgramType.SPARK.name().toLowerCase(),
+//                                                                        programId.getNamespaceId(),
+//                                                                        programId.getApplicationId(),
+// programId.getId(),
+//                                                                        context.getRunId().getId()));
+//
+//    ByteStreams.copy(new FileInputStream(new File("/tmp/replace.jar")), Locations.newOutputSupplier(replaceJarCopy));
+//    return replaceJarCopy;
+//  }
 }

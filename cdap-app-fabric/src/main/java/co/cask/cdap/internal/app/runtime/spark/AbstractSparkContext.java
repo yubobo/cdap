@@ -72,13 +72,15 @@ abstract class AbstractSparkContext implements SparkContext {
   private final SparkSpecification spec;
   private final Map<String, String> runtimeArguments;
   private final SparkConf sparkConf;
+  private final String sparkDepJars;
 
-  public AbstractSparkContext(BasicSparkContext basicSparkContext) {
+  public AbstractSparkContext(BasicSparkContext basicSparkContext, String sparkDepJars) {
     hConf = loadHConf();
     this.basicSparkContext = basicSparkContext;
     this.logicalStartTime = basicSparkContext.getLogicalStartTime();
     this.spec = basicSparkContext.getSpecification();
     this.runtimeArguments = basicSparkContext.getRuntimeArguments();
+    this.sparkDepJars = sparkDepJars;
     this.sparkConf = initializeSparkConf();
   }
 
@@ -95,16 +97,18 @@ abstract class AbstractSparkContext implements SparkContext {
     sparkConf.setAppName(basicSparkContext.getProgramName());
     sparkConf.set(SPARK_METRICS_CONF_KEY, basicSparkContext.getMetricsPropertyFile().getAbsolutePath());
     sparkConf.set("spark.driver.userClassPathFirst", "true");
-    sparkConf.set("spark.executor.extraClassPath", "$PWD/co.cask.cdap.cdap-api-3.1.0-SNAPSHOT.jar" +
-      ":$PWD/co.cask.cdap.cdap-app-fabric-3.1.0-SNAPSHOT.jar:$PWD/co.cask.cdap.cdap-common-3.1.0-SNAPSHOT.jar:" +
-      "$PWD/co.cask.cdap.cdap-data-fabric-3.1.0-SNAPSHOT.jar:$PWD/" +
-      "co.cask.cdap.cdap-explore-client-3.1.0-SNAPSHOT.jar:" +
-      "$PWD/co.cask.cdap.cdap-hbase-compat-0.98-3.1.0-SNAPSHOT.jar:" +
-      "$PWD/co.cask.cdap.cdap-notifications-3.1.0-SNAPSHOT.jar:" +
-      "$PWD/co.cask.cdap.cdap-notifications-api-3.1.0-SNAPSHOT.jar:$PWD/co.cask.cdap.cdap-proto-3.1.0-SNAPSHOT.jar:" +
-      "$PWD/co.cask.cdap.cdap-watchdog-3.1.0-SNAPSHOT.jar:$PWD/co.cask.cdap.cdap-watchdog-api-3.1.0-SNAPSHOT.jar:" +
-      "$PWD/co.cask.common.common-http-0.6.1.jar");
-    sparkConf.set("spark.executor.userClassPathFirst", "false");
+//    sparkConf.set("spark.executor.extraClassPath", "$PWD/co.cask.cdap.cdap-api-3.1.0-SNAPSHOT.jar" +
+//      ":$PWD/co.cask.cdap.cdap-app-fabric-3.1.0-SNAPSHOT.jar:$PWD/co.cask.cdap.cdap-common-3.1.0-SNAPSHOT.jar:" +
+//      "$PWD/co.cask.cdap.cdap-data-fabric-3.1.0-SNAPSHOT.jar:$PWD/" +
+//      "co.cask.cdap.cdap-explore-client-3.1.0-SNAPSHOT.jar:" +
+//      "$PWD/co.cask.cdap.cdap-hbase-compat-0.98-3.1.0-SNAPSHOT.jar:" +
+//      "$PWD/co.cask.cdap.cdap-notifications-3.1.0-SNAPSHOT.jar:" +
+//      "$PWD/co.cask.cdap.cdap-notifications-api-3.1.0-SNAPSHOT.jar:$PWD/co.cask.cdap.cdap-proto-3.1.0-SNAPSHOT.jar:" +
+//      "$PWD/co.cask.cdap.cdap-watchdog-3.1.0-SNAPSHOT.jar:$PWD/co.cask.cdap.cdap-watchdog-api-3.1.0-SNAPSHOT.jar:" +
+//      "$PWD/co.cask.common.common-http-0.6.1.jar");
+    sparkConf.set("spark.executor.extraClassPath", sparkDepJars);
+    sparkConf.set("spark.driver.extraClassPath", sparkDepJars);
+//    sparkConf.set("spark.executor.userClassPathFirst", "false");
     return sparkConf;
   }
 

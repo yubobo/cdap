@@ -41,11 +41,13 @@ class JavaSparkContext extends AbstractSparkContext {
 
   org.apache.spark.api.java.JavaSparkContext originalSparkContext;
 
-  public JavaSparkContext(BasicSparkContext basicSparkContext) {
-    super(basicSparkContext);
+  public JavaSparkContext(BasicSparkContext basicSparkContext, String sparkDepJars) {
+    super(basicSparkContext, sparkDepJars);
     this.originalSparkContext = new org.apache.spark.api.java.JavaSparkContext(getSparkConf());
     originalSparkContext.sc().addSparkListener(new SparkProgramListener());
   }
+
+
 
   /**
    * Gets a {@link Dataset} as a {@link JavaPairRDD}

@@ -60,6 +60,7 @@ public class SparkProgramWrapper {
   private static SparkContext sparkContext;
   private static boolean scalaProgram;
   private static CloseableClassLoader programClassLoader;
+  private static String sparkDepJar;
 
   // TODO: Get around Spark's limitation of only one SparkContext in a JVM and support multiple spark context:
   // CDAP-4
@@ -131,10 +132,10 @@ public class SparkProgramWrapper {
    */
   private SparkContext createSparkContext() {
     if (JavaSparkProgram.class.isAssignableFrom(userProgramClass)) {
-      return new JavaSparkContext(basicSparkContext);
+      return new JavaSparkContext(basicSparkContext, sparkDepJar);
     } else if (ScalaSparkProgram.class.isAssignableFrom(userProgramClass)) {
       scalaProgram = true;
-      return new ScalaSparkContext(basicSparkContext);
+      return new ScalaSparkContext(basicSparkContext, sparkDepJar);
     } else {
       String error = "Spark program must implement either JavaSparkProgram or ScalaSparkProgram";
       throw new IllegalArgumentException(error);
@@ -235,6 +236,10 @@ public class SparkProgramWrapper {
 
   public static void setProgramClassLoader (CloseableClassLoader programClassLoader) {
     SparkProgramWrapper.programClassLoader = programClassLoader;
+  }
+
+  public static void setSparkDepJar(String sparkDepJar) {
+    SparkProgramWrapper.sparkDepJar = sparkDepJar;
   }
 
   /**

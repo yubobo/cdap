@@ -14,27 +14,30 @@
  * the License.
  */
 
-package org.apache.spark.util
+package org.apache.spark.util;
 
-import java.net.{URL, URLClassLoader}
-
+import java.net.URL;
+import java.net.URLClassLoader;
 
 /**
- * URL class loader that exposes the `addURL` and `getURLs` methods in URLClassLoader.
+ * Created by rsinha on 6/4/15.
  */
-private[spark] class MutableURLClassLoader(urls: Array[URL], parent: ClassLoader)
-  extends URLClassLoader(urls, parent) {
+public class MutableURLClassLoader extends URLClassLoader {
 
-  println("Constructing classloader from CDAP class")
-
-  override def addURL(url: URL): Unit = {
-    print("Poop: Adding URL from MutableURLClassLoader")
-    super.addURL(url)
+  public MutableURLClassLoader(URL[] urls, ClassLoader parent) {
+    super(urls, parent);
+    System.out.println("Intercepted MutableURLClassLoader");
   }
 
-  override def getURLs(): Array[URL] = {
-    print("Poop: Getting URL from MutableURLClassLoader")
-    super.getURLs()
+  @Override
+  public void addURL(URL url) {
+    System.out.println("Intercepted MutableURLClassLoader.add");
+    super.addURL(url);
   }
 
+  @Override
+  public URL[] getURLs() {
+    System.out.println("Intercepted MutableURLClassLoader.get");
+    return super.getURLs();
+  }
 }
