@@ -37,6 +37,7 @@ import co.cask.cdap.api.dataset.table.Table;
 import co.cask.cdap.explore.client.ExploreFacade;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -101,11 +102,21 @@ public class TimePartitionedFileSetDataset extends PartitionedFileSetDataset imp
 
   @Override
   public void addPartition(long time, String path) {
+    addPartition(time, path, ImmutableMap.<String, String>of());
+  }
+
+  @Override
+  public void addPartition(long time, String path, Map<String, String> properties) {
     if (isLegacyDataset && getLegacyPartition(time) != null) {
       throw new DataSetException(String.format("Dataset '%s' already has a partition with the same time: %d",
                                                getName(), time));
     }
-    addPartition(partitionKeyForTime(time), path);
+    addPartition(partitionKeyForTime(time), path, properties);
+  }
+
+  @Override
+  public void updateProperties(long time, Map<String, String> properties) {
+    updateProperties(partitionKeyForTime(time), properties);
   }
 
   @Override
@@ -121,7 +132,7 @@ public class TimePartitionedFileSetDataset extends PartitionedFileSetDataset imp
   public TimePartition getPartitionByTime(long time) {
     Partition partition = getPartition(partitionKeyForTime(time));
     return partition == null ? null
-      : new BasicTimePartition(partition.getRelativePath(), partition.getPartitionKey());
+      : new BasicTimePartition(partition.getRelativePath(), partition.getPartitionKey(), partition.getProperties());
   }
 
   @Override
@@ -130,8 +141,8 @@ public class TimePartitionedFileSetDataset extends PartitionedFileSetDataset imp
     for (PartitionFilter filter : partitionFiltersForTimeRange(startTime, endTime)) {
       super.getPartitions(filter, new PartitionedFileSetDataset.PartitionConsumer() {
         @Override
-        public void consume(PartitionKey key, String path) {
-          partitions.add(new BasicTimePartition(path, key));
+        public void consume(PartitionKey key, String path, Map<String, String> properties) {
+          partitions.add(new BasicTimePartition(path, key, properties));
         }
       });
     }
@@ -139,7 +150,8 @@ public class TimePartitionedFileSetDataset extends PartitionedFileSetDataset imp
       getLegacyPartitions(startTime, endTime, new PartitionConsumer() {
         @Override
         public void consume(byte[] row, String path) {
-          partitions.add(new BasicTimePartition(path, Bytes.toLong(row)));
+          // legacy partitions had no properties
+          partitions.add(new BasicTimePartition(path, Bytes.toLong(row), ImmutableMap.<String, String>of()));
         }
       });
     }
@@ -567,7 +579,7 @@ public class TimePartitionedFileSetDataset extends PartitionedFileSetDataset imp
         if (pathBytes != null) {
           String path = Bytes.toString(pathBytes);
           addPartition(partitionKeyForTime(partitionTime), path,
-                       false); // do not register in explore - it is already there
+                       false, ImmutableMap.<String, String>of()); // do not register in explore - it is already there
           partitionsTable.delete(row.getRow());
         } else {
           LOG.info("Dropping legacy partition for time %d because it has no path.", partitionTime);
@@ -584,13 +596,13 @@ public class TimePartitionedFileSetDataset extends PartitionedFileSetDataset imp
 
     private final Long time;
 
-    private BasicTimePartition(String relativePath, PartitionKey key) {
-      super(relativePath, key);
+    private BasicTimePartition(String relativePath, PartitionKey key, Map<String, String> properties) {
+      super(relativePath, key, properties);
       this.time = timeForPartitionKey(key);
     }
 
-    private BasicTimePartition(String relativePath, long time) {
-      super(relativePath, partitionKeyForTime(time));
+    private BasicTimePartition(String relativePath, long time, Map<String, String> properties) {
+      super(relativePath, partitionKeyForTime(time), properties);
       this.time = time;
     }
 

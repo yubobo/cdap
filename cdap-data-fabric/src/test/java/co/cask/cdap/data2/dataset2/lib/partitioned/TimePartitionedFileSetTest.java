@@ -79,6 +79,24 @@ public class TimePartitionedFileSetTest {
   }
 
   @Test
+  public void testPartitionProperties() throws Exception {
+    // make sure the dataset has no partitions
+    final TimePartitionedFileSet tpfs = dsFrameworkUtil.getInstance(TPFS_INSTANCE);
+    validateTimePartitions(tpfs, 0L, MAX, Collections.<Long, String>emptyMap());
+
+    Date date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).parse("6/4/12 10:00 am");
+    final long time = date.getTime();
+
+    final ImmutableMap<String, String> properties = ImmutableMap.of("key1", "value1",
+                                                                    "key2", "value3",
+                                                                    "key100", "value4");
+    tpfs.addPartition(time, "file", properties);
+    TimePartition partitionByTime = tpfs.getPartitionByTime(time);
+    Assert.assertNotNull(partitionByTime);
+    Assert.assertEquals(properties, partitionByTime.getProperties());
+  }
+
+  @Test
   public void testAddGetPartitions() throws IOException, ParseException, DatasetManagementException {
     TimePartitionedFileSet fileSet = dsFrameworkUtil.getInstance(TPFS_INSTANCE);
 
@@ -205,6 +223,8 @@ public class TimePartitionedFileSetTest {
 
     Date date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).parse("6/4/12 10:00 am");
     final long time = date.getTime();
+
+    // TODO: why is this txExtr required?
     dsFrameworkUtil.newTransactionExecutor((TransactionAware) tpfs).execute(new TransactionExecutor.Subroutine() {
       @Override
       public void apply() throws Exception {

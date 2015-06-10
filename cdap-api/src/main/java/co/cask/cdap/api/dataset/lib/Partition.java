@@ -18,6 +18,8 @@ package co.cask.cdap.api.dataset.lib;
 
 import org.apache.twill.filesystem.Location;
 
+import java.util.Map;
+
 /**
  * Represents a partition of a partitioned file set.
  */
@@ -37,4 +39,9 @@ public interface Partition {
    * @return the partition key
    */
   PartitionKey getPartitionKey();
+
+  /**
+   * Gets the properties for the partition
+   */
+  Map<String, String> getProperties();
 }

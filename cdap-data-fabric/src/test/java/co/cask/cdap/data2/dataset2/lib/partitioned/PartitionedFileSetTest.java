@@ -29,6 +29,7 @@ import co.cask.cdap.test.SlowTests;
 import co.cask.tephra.TransactionAware;
 import co.cask.tephra.TransactionExecutor;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -41,6 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -113,6 +115,51 @@ public class PartitionedFileSetTest {
       .build();
     byte[] rowKey = PartitionedFileSetDataset.generateRowKey(key, PARTITIONING_1);
     PartitionedFileSetDataset.parseRowKey(rowKey, PARTITIONING_2);
+  }
+
+  @Test
+  public void testPartitionProperties() throws Exception {
+    final PartitionedFileSet dataset = dsFrameworkUtil.getInstance(pfsInstance);
+
+    PartitionKey partitionKey = PartitionKey.builder()
+      .addIntField("i", 42)
+      .addLongField("l", 17L)
+      .addStringField("s", "x")
+      .build();
+
+    ImmutableMap<String, String> properties = ImmutableMap.of("key1", "value",
+                                                              "key2", "value2",
+                                                              "key3", "value2");
+
+    PartitionOutput partitionOutput = dataset.getPartitionOutput(partitionKey);
+    partitionOutput.setProperties(properties);
+    partitionOutput.addPartition();
+
+    Partition partition = dataset.getPartition(partitionKey);
+    Assert.assertNotNull(partition);
+    Assert.assertEquals(properties, partition.getProperties());
+  }
+
+  @Test
+  public void testUpdateProperties() throws Exception {
+    final PartitionedFileSet dataset = dsFrameworkUtil.getInstance(pfsInstance);
+
+    PartitionKey partitionKey = PartitionKey.builder()
+      .addIntField("i", 42)
+      .addLongField("l", 17L)
+      .addStringField("s", "x")
+      .build();
+
+    PartitionOutput partitionOutput = dataset.getPartitionOutput(partitionKey);
+    partitionOutput.setProperties(ImmutableMap.of("key1", "value1"));
+    partitionOutput.addPartition();
+
+    Map<String, String> updatedProperties = ImmutableMap.of("key2", "value2");
+    dataset.updateProperties(partitionKey, updatedProperties);
+
+    Partition partition = dataset.getPartition(partitionKey);
+    Assert.assertNotNull(partition);
+    Assert.assertEquals(updatedProperties, partition.getProperties());
   }
 
   @Test

@@ -33,6 +33,7 @@ import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetArguments;
 import co.cask.cdap.api.dataset.lib.Partitioning;
 import co.cask.cdap.api.dataset.lib.Partitioning.FieldType;
+import co.cask.cdap.api.dataset.table.Delete;
 import co.cask.cdap.api.dataset.table.Put;
 import co.cask.cdap.api.dataset.table.Row;
 import co.cask.cdap.api.dataset.table.Scanner;
@@ -53,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -66,8 +68,10 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
 
   private static final Logger LOG = LoggerFactory.getLogger(PartitionedFileSetDataset.class);
 
+  // column keys
   protected static final byte[] RELATIVE_PATH = { 'p' };
   protected static final byte[] FIELD_PREFIX = { 'f', '.' };
+  protected static final byte[] PROPERTY_PREFIX = { 'm', '.' };
 
   protected final FileSet files;
   protected final Table partitionsTable;
@@ -80,7 +84,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
   private final Id.DatasetInstance datasetInstanceId;
 
   // In this map we keep track of the partitions that were added in the same transaction.
-  // If the exact same partition is added again, we will not throw an error but only log an message that
+  // If the exact same partition is added again, we will not throw an error but only log a message that
   // the partition already exists. The reason for this is to provide backward-compatibility for CDAP-1227:
   // by adding the partition in the onSuccess() of this dataset, map/reduce programs do not need to do that in
   // their onFinish() any longer. But existing map/reduce programs may still do that, and would now fail.
@@ -113,10 +117,37 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
 
   @Override
   public void addPartition(PartitionKey key, String path) {
-    addPartition(key, path, true);
+    addPartition(key, path, ImmutableMap.<String, String>of());
   }
 
-  protected void addPartition(PartitionKey key, String path, boolean addToExplore) {
+  @Override
+  public void addPartition(PartitionKey key, String path, Map<String, String> properties) {
+    addPartition(key, path, true, properties);
+  }
+
+  @Override
+  public void updateProperties(PartitionKey key, Map<String, String> properties) {
+    final byte[] rowKey = generateRowKey(key, partitioning);
+    Row row = partitionsTable.get(rowKey);
+    if (row == null) {
+      throw new DataSetException(String.format("Dataset '%s' does not have a partition for key: %s", getName(), key));
+    }
+
+    // delete all the old properties and then write the new set of properties
+    Delete delete = new Delete(rowKey);
+    for (Map.Entry<byte[], byte[]> entry : row.getColumns().entrySet()) {
+      if (Bytes.startsWith(entry.getKey(), PROPERTY_PREFIX)) {
+        delete.add(entry.getKey());
+      }
+    }
+    partitionsTable.delete(delete);
+
+    Put put = new Put(rowKey);
+    addPropertiesToPut(properties, put);
+    partitionsTable.put(put);
+  }
+
+  protected void addPartition(PartitionKey key, String path, boolean addToExplore, Map<String, String> properties) {
     final byte[] rowKey = generateRowKey(key, partitioning);
     Row row = partitionsTable.get(rowKey);
     if (row != null && !row.isEmpty()) {
@@ -136,11 +167,22 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
       put.add(Bytes.add(FIELD_PREFIX, Bytes.toBytes(entry.getKey())), // "f.<field name>"
               Bytes.toBytes(entry.getValue().toString()));            // "<string rep. of value>"
     }
+
+    addPropertiesToPut(properties, put);
+
     partitionsTable.put(put);
     partitionsAddedInSameTx.put(path, key);
+
     if (addToExplore) {
       addPartitionToExplore(key, path);
       // TODO: make DDL operations transactional [CDAP-1393]
+    }
+  }
+
+  private void addPropertiesToPut(Map<String, String> properties, Put put) {
+    for (Map.Entry<String, String> entry : properties.entrySet()) {
+      byte[] columnKey = Bytes.add(PROPERTY_PREFIX, Bytes.toBytes(entry.getKey()));
+      put.add(columnKey, Bytes.toBytes(entry.getValue()));
     }
   }
 
@@ -192,11 +234,13 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     if (row == null) {
       return null;
     }
+
     byte[] pathBytes = row.get(RELATIVE_PATH);
     if (pathBytes == null) {
+      // why a check for relativePath here?
       return null;
     }
-    return new BasicPartition(Bytes.toString(pathBytes), key);
+    return new BasicPartition(Bytes.toString(pathBytes), key, propertiesFromRow(row));
   }
 
   @Override
@@ -204,8 +248,8 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     final Set<Partition> partitions = Sets.newHashSet();
     getPartitions(filter, new PartitionConsumer() {
       @Override
-      public void consume(PartitionKey key, String path) {
-        partitions.add(new BasicPartition(path, key));
+      public void consume(PartitionKey key, String path, Map<String, String> properties) {
+        partitions.add(new BasicPartition(path, key, properties));
       }
     });
     return partitions;
@@ -217,7 +261,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     final Set<String> paths = Sets.newHashSet();
     getPartitions(filter, new PartitionConsumer() {
       @Override
-      public void consume(PartitionKey key, String path) {
+      public void consume(PartitionKey key, String path, Map<String, String> properties) {
         paths.add(path);
       }
     });
@@ -248,13 +292,26 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
           continue;
         }
         byte[] pathBytes = row.get(RELATIVE_PATH);
+        // why a check for relativePath here?
         if (pathBytes != null) {
-          consumer.consume(key, Bytes.toString(pathBytes));
+          consumer.consume(key, Bytes.toString(pathBytes), propertiesFromRow(row));
         }
       }
     } finally {
       scanner.close();
     }
+  }
+
+  private Map<String, String> propertiesFromRow(Row row) {
+    Map<String, String> properties = Maps.newHashMap();
+    for (Map.Entry<byte[], byte[]> entry : row.getColumns().entrySet()) {
+      if (Bytes.startsWith(entry.getKey(), PROPERTY_PREFIX)) {
+        byte[] columnKey = entry.getKey();
+        byte[] propertyKeyBytes = Arrays.copyOfRange(columnKey, PROPERTY_PREFIX.length, columnKey.length);
+        properties.put(Bytes.toString(propertyKeyBytes), Bytes.toString(entry.getValue()));
+      }
+    }
+    return properties;
   }
 
   /**
@@ -275,7 +332,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
    * Interface use internally to build different types of results when scanning partitions.
    */
   protected interface PartitionConsumer {
-    void consume(PartitionKey key, String path);
+    void consume(PartitionKey key, String path, Map<String, String> properties);
   }
 
   @Override
@@ -340,6 +397,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     }
     // we know for sure there is an output partition key (checked in getOutputFormatConfig())
     PartitionKey outputKey = PartitionedFileSetArguments.getOutputPartitionKey(runtimeArguments, getPartitioning());
+    // TODO: how will, from mapreduce, write properties to the partition?
     addPartition(outputKey, outputPath);
   }
 
@@ -532,10 +590,12 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
   protected class BasicPartition implements Partition {
     protected final String relativePath;
     protected final PartitionKey key;
+    protected Map<String, String> properties;
 
-    protected BasicPartition(String relativePath, PartitionKey key) {
+    protected BasicPartition(String relativePath, PartitionKey key, Map<String, String> properties) {
       this.relativePath = relativePath;
       this.key = key;
+      this.properties = properties;
     }
 
     @Override
@@ -551,6 +611,11 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     @Override
     public PartitionKey getPartitionKey() {
       return key;
+    }
+
+    @Override
+    public Map<String, String> getProperties() {
+      return properties;
     }
 
     @Override
@@ -577,12 +642,17 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
   protected class BasicPartitionOutput extends BasicPartition implements PartitionOutput {
 
     protected BasicPartitionOutput(String relativePath, PartitionKey key) {
-      super(relativePath, key);
+      super(relativePath, key, ImmutableMap.<String, String>of());
     }
 
     @Override
     public void addPartition() {
-      PartitionedFileSetDataset.this.addPartition(key, getRelativePath());
+      PartitionedFileSetDataset.this.addPartition(key, getRelativePath(), properties);
+    }
+
+    @Override
+    public void setProperties(Map<String, String> properties) {
+      this.properties = properties;
     }
   }
 }
