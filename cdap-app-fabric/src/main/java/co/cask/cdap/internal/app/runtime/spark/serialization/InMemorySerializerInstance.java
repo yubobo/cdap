@@ -60,7 +60,8 @@ final class InMemorySerializerInstance extends AbstractSerializerInstance {
       oos.writeUTF(discoverer.getApplicationId());
       DiscoveryServiceClient client = discoverer.getDiscoveryServiceClient();
       Id.Application appId = Id.Application.from(discoverer.getNamespaceId(), discoverer.getApplicationId());
-      discoveryServiceClients.putIfAbsent(appId, client);
+      // Presumes that if you get a newer DiscoveryServiceClient for an appId, it is the latest
+      discoveryServiceClients.put(appId, client);
     }
     // TODO: Metrics
   }

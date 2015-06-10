@@ -34,9 +34,10 @@ public final class DistributedSerializer extends Serializer {
   private final Serializer delegate;
 
   public DistributedSerializer() {
-    Injector injector = Guice.createInjector(new DiscoveryRuntimeModule().getDistributedModules());
+    Injector injector = Guice.createInjector(new DiscoveryRuntimeModule().getDistributedModules(),
+                                             new SparkRuntimeModule().getDistributedModules());
     this.discoveryServiceClient = injector.getInstance(DiscoveryServiceClient.class);
-    this.delegate = injector.getInstance(Key.get(Serializer.class, Names.named("distributed")));
+    this.delegate = injector.getInstance(Key.get(Serializer.class, Names.named("spark-serializer")));
   }
 
   @Override

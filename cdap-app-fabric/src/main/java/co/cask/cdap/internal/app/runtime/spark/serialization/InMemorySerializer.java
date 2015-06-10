@@ -32,8 +32,9 @@ public final class InMemorySerializer extends Serializer {
   private final Serializer delegate;
 
   public InMemorySerializer() {
-    Injector injector = Guice.createInjector(new DiscoveryRuntimeModule().getInMemoryModules());
-    this.delegate = injector.getInstance(Key.get(Serializer.class, Names.named("in-memory")));
+    Injector injector = Guice.createInjector(new DiscoveryRuntimeModule().getInMemoryModules(),
+                                             new SparkRuntimeModule().getInMemoryModules());
+    this.delegate = injector.getInstance(Key.get(Serializer.class, Names.named("spark-serializer")));
   }
 
   @Override

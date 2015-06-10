@@ -18,14 +18,11 @@ package co.cask.cdap.internal.app.runtime.spark.serialization;
 
 import co.cask.cdap.api.ServiceDiscoverer;
 import co.cask.cdap.api.metrics.MetricsCollector;
-import co.cask.cdap.app.services.SerializableServiceDiscoverer;
-import co.cask.cdap.proto.Id;
 import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;
 import org.apache.spark.serializer.DeserializationStream;
 import org.apache.spark.serializer.SerializationStream;
 import org.apache.spark.serializer.SerializerInstance;
-import org.apache.twill.discovery.DiscoveryServiceClient;
 import scala.reflect.ClassTag;
 
 import java.io.ByteArrayInputStream;
@@ -63,7 +60,7 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T deserialize(ByteBuffer bytes, ClassTag<T> evidence) {
-    Type genericType = getGenericReturnType("deserialize", ByteBuffer.class, ClassTag.class);
+    Type genericType = getGenericReturnType(this.getClass(), "deserialize", ByteBuffer.class, ClassTag.class);
     if (!(serviceDiscovererType.equals(genericType) || metricsCollectorType.equals(genericType))) {
       return delegate.deserialize(bytes, evidence);
     }
@@ -74,7 +71,7 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T deserialize(ByteBuffer bytes, ClassLoader loader, ClassTag<T> evidence) {
-    Type genericType = getGenericReturnType("deserialize", ByteBuffer.class, ClassLoader.class, ClassTag.class);
+    Type genericType = getGenericReturnType(this.getClass(), "deserialize", ByteBuffer.class, ClassLoader.class, ClassTag.class);
     if (!(genericType.equals(serviceDiscovererType) || genericType.equals(metricsCollectorType))) {
       return delegate.deserialize(bytes, loader, evidence);
     }
@@ -89,7 +86,7 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
   @Override
   public SerializationStream serializeStream(OutputStream s) {
     try {
-      return new CDAPSparkSerializationStream(this, s);
+      return new CDAPSparkSerializationStream(this, s, delegate);
     } catch (IOException e) {
       throw Throwables.propagate(e);
     }
@@ -98,15 +95,15 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
   @Override
   public DeserializationStream deserializeStream(InputStream s) {
     try {
-      return new CDAPSparkDeserializationStream(this, s);
+      return new CDAPSparkDeserializationStream(this, s, delegate);
     } catch (IOException e) {
       throw Throwables.propagate(e);
     }
   }
 
-  private Type getGenericReturnType(String methodName, Class... parameterTypes) {
+  private Type getGenericReturnType(Class<?> classz, String methodName, Class... parameterTypes) {
     try {
-      return this.getClass().getMethod(methodName, parameterTypes).getGenericReturnType();
+      return classz.getMethod(methodName, parameterTypes).getGenericReturnType();
     } catch (NoSuchMethodException e) {
       throw Throwables.propagate(e);
     }
@@ -145,16 +142,22 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
   class CDAPSparkSerializationStream extends SerializationStream {
 
     private final AbstractSerializerInstance serializerInstance;
+    private final SerializationStream delegate;
     private final ObjectOutputStream oos;
 
-    CDAPSparkSerializationStream(AbstractSerializerInstance serializerInstance, OutputStream outputStream)
+    CDAPSparkSerializationStream(AbstractSerializerInstance serializerInstance,
+                                 OutputStream outputStream, SerializerInstance delegateInstance)
       throws IOException {
       this.serializerInstance = serializerInstance;
       this.oos = new ObjectOutputStream(outputStream);
+      this.delegate = delegateInstance.serializeStream(oos);
     }
 
     @Override
     public <T> SerializationStream writeObject(T t, ClassTag<T> evidence) {
+      if (!(t instanceof ServiceDiscoverer || t instanceof MetricsCollector)) {
+        return delegate.writeObject(t, evidence);
+      }
       try {
         serializerInstance.writeObject(t, oos);
       } catch (IOException e) {
@@ -186,16 +189,23 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
 
     private final AbstractSerializerInstance serializerInstance;
     private final ObjectInputStream ois;
+    private final DeserializationStream delegate;
 
-    CDAPSparkDeserializationStream(AbstractSerializerInstance serializerInstance, InputStream inputStream)
+    CDAPSparkDeserializationStream(AbstractSerializerInstance serializerInstance, InputStream inputStream,
+                                   SerializerInstance delegateInstance)
       throws IOException {
       this.serializerInstance = serializerInstance;
       this.ois = new ObjectInputStream(inputStream);
+      this.delegate = delegateInstance.deserializeStream(ois);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T readObject(ClassTag<T> evidence) {
+      Type genericType = getGenericReturnType(this.getClass(), "readObject", ClassTag.class);
+      if (!(genericType.equals(serviceDiscovererType) || genericType.equals(metricsCollectorType))) {
+        return delegate.readObject(evidence);
+      }
       try {
         return (T) serializerInstance.readObject(ois, evidence.runtimeClass());
       } catch (IOException e) {

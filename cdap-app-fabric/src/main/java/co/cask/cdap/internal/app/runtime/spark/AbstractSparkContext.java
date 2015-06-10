@@ -33,6 +33,7 @@ import co.cask.cdap.internal.app.runtime.batch.dataset.DataSetInputFormat;
 import co.cask.cdap.internal.app.runtime.batch.dataset.DataSetOutputFormat;
 import co.cask.cdap.internal.app.runtime.spark.dataset.SparkDatasetInputFormat;
 import co.cask.cdap.internal.app.runtime.spark.dataset.SparkDatasetOutputFormat;
+import co.cask.cdap.internal.app.runtime.spark.serialization.InMemorySerializer;
 import co.cask.cdap.proto.Id;
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
@@ -65,6 +66,7 @@ abstract class AbstractSparkContext implements SparkContext {
   private static final Pattern SPACES = Pattern.compile("\\s+");
   private static final String[] NO_ARGS = {};
   private static final String SPARK_METRICS_CONF_KEY = "spark.metrics.conf";
+  private static final String SPARK_SERIALIZER_KEY = "spark.serializer";
 
   protected final BasicSparkContext basicSparkContext;
   private final Configuration hConf;
@@ -74,7 +76,7 @@ abstract class AbstractSparkContext implements SparkContext {
   private final SparkConf sparkConf;
 
   public AbstractSparkContext(BasicSparkContext basicSparkContext) {
-    hConf = loadHConf();
+    this.hConf = loadHConf();
     this.basicSparkContext = basicSparkContext;
     this.logicalStartTime = basicSparkContext.getLogicalStartTime();
     this.spec = basicSparkContext.getSpecification();
@@ -94,6 +96,7 @@ abstract class AbstractSparkContext implements SparkContext {
     SparkConf sparkConf = new SparkConf();
     sparkConf.setAppName(basicSparkContext.getProgramName());
     sparkConf.set(SPARK_METRICS_CONF_KEY, basicSparkContext.getMetricsPropertyFile().getAbsolutePath());
+    sparkConf.set(SPARK_SERIALIZER_KEY, InMemorySerializer.class.getName());
     return sparkConf;
   }
 
