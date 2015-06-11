@@ -33,7 +33,7 @@ import javax.annotation.Nullable;
 /**
  *
  */
-final class SparkRuntimeModule extends RuntimeModule {
+public final class SparkRuntimeModule extends RuntimeModule {
   @Override
   public Module getInMemoryModules() {
     return new SparkModule();

@@ -19,7 +19,6 @@ package co.cask.cdap.internal.app.runtime.spark.serialization;
 import co.cask.cdap.api.ServiceDiscoverer;
 import co.cask.cdap.api.metrics.MetricsCollector;
 import com.google.common.base.Throwables;
-import com.google.common.reflect.TypeToken;
 import org.apache.spark.serializer.DeserializationStream;
 import org.apache.spark.serializer.SerializationStream;
 import org.apache.spark.serializer.SerializerInstance;
@@ -39,8 +38,6 @@ import java.nio.ByteBuffer;
  *
  */
 abstract class AbstractSerializerInstance extends SerializerInstance {
-  private static final Type serviceDiscovererType = new TypeToken<ServiceDiscoverer>() { }.getType();
-  private static final Type metricsCollectorType = new TypeToken<MetricsCollector>() { }.getType();
 
   private final SerializerInstance delegate;
 
@@ -60,25 +57,25 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T deserialize(ByteBuffer bytes, ClassTag<T> evidence) {
-    Type genericType = getGenericReturnType(this.getClass(), "deserialize", ByteBuffer.class, ClassTag.class);
-    if (!(serviceDiscovererType.equals(genericType) || metricsCollectorType.equals(genericType))) {
+    Class<?> aClass = evidence.runtimeClass();
+    if (!(aClass.isAssignableFrom(ServiceDiscoverer.class) || aClass.isAssignableFrom(MetricsCollector.class))) {
       return delegate.deserialize(bytes, evidence);
     }
     // TODO: Verify second argument
-    return (T) readObject(bytes, evidence.runtimeClass());
+    return (T) readObject(bytes, aClass);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T> T deserialize(ByteBuffer bytes, ClassLoader loader, ClassTag<T> evidence) {
-    Type genericType = getGenericReturnType(this.getClass(), "deserialize", ByteBuffer.class, ClassLoader.class, ClassTag.class);
-    if (!(genericType.equals(serviceDiscovererType) || genericType.equals(metricsCollectorType))) {
+    Class<?> aClass = evidence.runtimeClass();
+    if (!(aClass.isAssignableFrom(ServiceDiscoverer.class) || aClass.isAssignableFrom(MetricsCollector.class))) {
       return delegate.deserialize(bytes, loader, evidence);
     }
     ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(loader);
     // TODO: Verify second argument
-    T toReturn = (T) readObject(bytes, evidence.runtimeClass());
+    T toReturn = (T) readObject(bytes, aClass);
     Thread.currentThread().setContextClassLoader(oldClassLoader);
     return toReturn;
   }
@@ -103,7 +100,7 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
 
   private Type getGenericReturnType(Class<?> classz, String methodName, Class... parameterTypes) {
     try {
-      return classz.getMethod(methodName, parameterTypes).getGenericReturnType();
+      return classz.getMethod(methodName, parameterTypes).getGenericReturnType().getClass();
     } catch (NoSuchMethodException e) {
       throw Throwables.propagate(e);
     }
@@ -202,12 +199,12 @@ abstract class AbstractSerializerInstance extends SerializerInstance {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T readObject(ClassTag<T> evidence) {
-      Type genericType = getGenericReturnType(this.getClass(), "readObject", ClassTag.class);
-      if (!(genericType.equals(serviceDiscovererType) || genericType.equals(metricsCollectorType))) {
+      Class<?> aClass = evidence.runtimeClass();
+      if (!(aClass.isAssignableFrom(ServiceDiscoverer.class) || aClass.isAssignableFrom(MetricsCollector.class))) {
         return delegate.readObject(evidence);
       }
       try {
-        return (T) serializerInstance.readObject(ois, evidence.runtimeClass());
+        return (T) serializerInstance.readObject(ois, aClass);
       } catch (IOException e) {
         throw Throwables.propagate(e);
       }
