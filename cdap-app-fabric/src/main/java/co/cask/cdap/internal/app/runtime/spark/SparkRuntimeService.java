@@ -329,7 +329,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
                                           Location dependencyJar) throws Exception {
 
     List<String> jars = Lists.newArrayList();
-    jars.add(dependencyJar.toURI().getPath());
+    jars.add(jobJarCopy.toURI().toString());
 
     // Spark doesn't support bundle jar. However, the ProgramClassLoader already has everything expanded.
     // We can just add those jars as dependency for spark submit.
@@ -338,7 +338,8 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
     if (programClassLoader instanceof URLClassLoader) {
       for (URL url : ((URLClassLoader) programClassLoader).getURLs()) {
         File file = new File(url.toURI().getPath().replace(" ", "%20")).getAbsoluteFile();
-        if (file.isFile() && file.getName().endsWith(".jar")) {
+        if (file.isFile() && file.getName().endsWith(".jar") && !file.getName().contains("spark-assembly")
+          && !file.getName().contains("scala")) {
           jars.add(file.toURI().toString());
         }
       }
@@ -348,7 +349,8 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
     if (classLoader instanceof URLClassLoader) {
       for (URL url : ((URLClassLoader) classLoader).getURLs()) {
         File file = new File(url.toURI().getPath().replace(" ", "%20")).getAbsoluteFile();
-        if (file.isFile() && file.getName().endsWith(".jar")) {
+        if (file.isFile() && file.getName().endsWith(".jar") && !file.getName().contains("spark-assembly") &&
+            !file.getName().contains("scala")) {
           jars.add(file.toURI().toString());
         }
       }
@@ -358,11 +360,14 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
     String mode = conf.get(MRConfig.FRAMEWORK_NAME).equalsIgnoreCase("local") ?
       conf.get(MRConfig.FRAMEWORK_NAME) : "yarn-client";
 
-    sparkDepJars = Joiner.on(',').join(jars);
-    return new String[]{"--class", SparkProgramWrapper.class.getCanonicalName(), "--jars",
-      dependencyJar.toURI().getPath(),
+    List<String> classPathjars = Lists.newArrayList();
+    for (String curJar : jars) {
+      classPathjars.add("$PWD/" + curJar);
+    }
+    sparkDepJars = Joiner.on(':').join(classPathjars);
+    return new String[]{"--class", SparkProgramWrapper.class.getCanonicalName(),
       "--files", Joiner.on(',').join(jars), "--master", mode,
-      jobJarCopy.toURI().getPath(), sparkSpec.getMainClassName()};
+      dependencyJar.toURI().getPath(), sparkSpec.getMainClassName()};
   }
 
   /**

@@ -107,7 +107,7 @@ abstract class AbstractSparkContext implements SparkContext {
 //      "$PWD/co.cask.cdap.cdap-watchdog-3.1.0-SNAPSHOT.jar:$PWD/co.cask.cdap.cdap-watchdog-api-3.1.0-SNAPSHOT.jar:" +
 //      "$PWD/co.cask.common.common-http-0.6.1.jar");
     sparkConf.set("spark.executor.extraClassPath", sparkDepJars);
-    sparkConf.set("spark.driver.extraClassPath", sparkDepJars);
+//    sparkConf.set("spark.driver.extraClassPath", sparkDepJars);
 //    sparkConf.set("spark.executor.userClassPathFirst", "false");
     return sparkConf;
   }

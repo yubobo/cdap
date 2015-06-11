@@ -105,9 +105,9 @@ public class SparkPageRankProgram implements JavaSparkProgram {
           public Iterable<Tuple2<String, Double>> call(Tuple2<Iterable<String>, Double> s) {
             LOG.debug("Processing {} with rank {}", s._1(), s._2());
             ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-            System.out.println("Curent loader: " + ccl.toString());
-            System.out.println("Curent loader parent: " + ccl.getParent().toString());
-            System.out.println("Classpath: " + System.getProperty("java.class.path"));
+//            System.out.println("Curent loader: " + ccl.toString());
+//            System.out.println("Curent loader parent: " + ccl.getParent().toString());
+//            System.out.println("Classpath: " + System.getProperty("java.class.path"));
             int urlCount = Iterables.size(s._1());
             List<Tuple2<String, Double>> results = new ArrayList<>();
             for (String n : s._1()) {
@@ -127,36 +127,37 @@ public class SparkPageRankProgram implements JavaSparkProgram {
 
     LOG.info("Writing ranks data");
 
-    final ServiceDiscoverer discoveryServiceContext = sc.getServiceDiscoverer();
+//    final ServiceDiscoverer discoveryServiceContext = sc.getServiceDiscoverer();
     final Metrics sparkMetrics = sc.getMetrics();
     JavaPairRDD<byte[], Integer> ranksRaw = ranks.mapToPair(new PairFunction<Tuple2<String, Double>, byte[],
       Integer>() {
       @Override
       public Tuple2<byte[], Integer> call(Tuple2<String, Double> tuple) throws Exception {
         LOG.debug("URL {} has rank {}", Arrays.toString(tuple._1().getBytes(Charsets.UTF_8)), tuple._2());
-        URL serviceURL = discoveryServiceContext.getServiceURL(SparkPageRankApp.GOOGLE_TYPE_PR_SERVICE_NAME);
-        if (serviceURL == null) {
-          throw new RuntimeException("Failed to discover service: " + SparkPageRankApp.GOOGLE_TYPE_PR_SERVICE_NAME);
-        }
-        try {
-          URLConnection connection = new URL(serviceURL, String.format("transform/%s",
-                                                                       tuple._2().toString())).openConnection();
-          try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(),
-                                                                                Charsets.UTF_8))) {
-            String pr = reader.readLine();
-            if ((Integer.parseInt(pr)) == POPULAR_PAGE_THRESHOLD) {
-              sparkMetrics.count(POPULAR_PAGES, 1);
-            } else if (Integer.parseInt(pr) <= UNPOPULAR_PAGE_THRESHOLD) {
-              sparkMetrics.count(UNPOPULAR_PAGES, 1);
-            } else {
-              sparkMetrics.count(REGULAR_PAGES, 1);
-            }
-            return new Tuple2(tuple._1().getBytes(Charsets.UTF_8), Integer.parseInt(pr));
-          }
-        } catch (Exception e) {
-          LOG.warn("Failed to read the Stream for service {}", SparkPageRankApp.GOOGLE_TYPE_PR_SERVICE_NAME, e);
-          throw Throwables.propagate(e);
-        }
+//        URL serviceURL = discoveryServiceContext.getServiceURL(SparkPageRankApp.GOOGLE_TYPE_PR_SERVICE_NAME);
+//        if (serviceURL == null) {
+//          throw new RuntimeException("Failed to discover service: " + SparkPageRankApp.GOOGLE_TYPE_PR_SERVICE_NAME);
+//        }
+//        try {
+//          URLConnection connection = new URL(serviceURL, String.format("transform/%s",
+//                                                                       tuple._2().toString())).openConnection();
+//          try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(),
+//                                                                                Charsets.UTF_8))) {
+//            String pr = reader.readLine();
+////            if ((Integer.parseInt(pr)) == POPULAR_PAGE_THRESHOLD) {
+////              sparkMetrics.count(POPULAR_PAGES, 1);
+////            } else if (Integer.parseInt(pr) <= UNPOPULAR_PAGE_THRESHOLD) {
+////              sparkMetrics.count(UNPOPULAR_PAGES, 1);
+////            } else {
+////              sparkMetrics.count(REGULAR_PAGES, 1);
+////            }
+//            return new Tuple2(tuple._1().getBytes(Charsets.UTF_8), Integer.parseInt(pr));
+//          }
+//        } catch (Exception e) {
+//          LOG.warn("Failed to read the Stream for service {}", SparkPageRankApp.GOOGLE_TYPE_PR_SERVICE_NAME, e);
+//          throw Throwables.propagate(e);
+//        }
+        return new Tuple2(tuple._1().getBytes(Charsets.UTF_8), tuple._2().intValue() * 10);
       }
     });
 
