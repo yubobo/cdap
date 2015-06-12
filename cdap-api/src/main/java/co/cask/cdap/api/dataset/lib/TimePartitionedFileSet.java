@@ -54,14 +54,14 @@ public interface TimePartitionedFileSet extends PartitionedFileSet {
   // (why are some suffixed by 'ByTime')
   /**
    * Add a partition for a given time, stored at a given path (relative to the file set's base path),
-   * with given properties.
+   * with given metadata.
    */
-  void addPartition(long time, String path, Map<String, String> properties);
+  void addPartition(long time, String path, PartitionMetadata metadata);
 
   /**
-   * Updates the properties for a particular partition.
+   * Updates the metadata for a particular partition.
    */
-  void updateProperties(long time, Map<String, String> properties);
+  void updateMetadata(long time, PartitionMetadata metadata);
 
   /**
    * Remove a partition for a given time.

@@ -19,6 +19,7 @@ package co.cask.cdap.data2.dataset2.lib.partitioned;
 import co.cask.cdap.api.dataset.lib.Partition;
 import co.cask.cdap.api.dataset.lib.PartitionFilter;
 import co.cask.cdap.api.dataset.lib.PartitionKey;
+import co.cask.cdap.api.dataset.lib.PartitionMetadata;
 import co.cask.cdap.api.dataset.lib.PartitionOutput;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetProperties;
@@ -42,7 +43,6 @@ import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -118,7 +118,7 @@ public class PartitionedFileSetTest {
   }
 
   @Test
-  public void testPartitionProperties() throws Exception {
+  public void testPartitionMetadata() throws Exception {
     final PartitionedFileSet dataset = dsFrameworkUtil.getInstance(pfsInstance);
 
     PartitionKey partitionKey = PartitionKey.builder()
@@ -127,21 +127,21 @@ public class PartitionedFileSetTest {
       .addStringField("s", "x")
       .build();
 
-    ImmutableMap<String, String> properties = ImmutableMap.of("key1", "value",
-                                                              "key2", "value2",
-                                                              "key3", "value2");
+    PartitionMetadata metadata = new PartitionMetadata(ImmutableMap.of("key1", "value",
+                                                                       "key2", "value2",
+                                                                       "key3", "value2"));
 
     PartitionOutput partitionOutput = dataset.getPartitionOutput(partitionKey);
-    partitionOutput.setProperties(properties);
+    partitionOutput.setMetadata(metadata);
     partitionOutput.addPartition();
 
     Partition partition = dataset.getPartition(partitionKey);
     Assert.assertNotNull(partition);
-    Assert.assertEquals(properties, partition.getProperties());
+    Assert.assertEquals(metadata, partition.getMetadata());
   }
 
   @Test
-  public void testUpdateProperties() throws Exception {
+  public void testUpdateMetadata() throws Exception {
     final PartitionedFileSet dataset = dsFrameworkUtil.getInstance(pfsInstance);
 
     PartitionKey partitionKey = PartitionKey.builder()
@@ -151,15 +151,15 @@ public class PartitionedFileSetTest {
       .build();
 
     PartitionOutput partitionOutput = dataset.getPartitionOutput(partitionKey);
-    partitionOutput.setProperties(ImmutableMap.of("key1", "value1"));
+    partitionOutput.setMetadata(new PartitionMetadata(ImmutableMap.of("key1", "value1")));
     partitionOutput.addPartition();
 
-    Map<String, String> updatedProperties = ImmutableMap.of("key2", "value2");
-    dataset.updateProperties(partitionKey, updatedProperties);
+    PartitionMetadata updatedMetadata = new PartitionMetadata(ImmutableMap.of("key2", "value2"));
+    dataset.updateMetadata(partitionKey, updatedMetadata);
 
     Partition partition = dataset.getPartition(partitionKey);
     Assert.assertNotNull(partition);
-    Assert.assertEquals(updatedProperties, partition.getProperties());
+    Assert.assertEquals(updatedMetadata, partition.getMetadata());
   }
 
   @Test

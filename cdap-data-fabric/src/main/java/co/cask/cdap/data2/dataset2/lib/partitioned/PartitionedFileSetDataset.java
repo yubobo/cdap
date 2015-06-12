@@ -28,6 +28,7 @@ import co.cask.cdap.api.dataset.lib.FileSetProperties;
 import co.cask.cdap.api.dataset.lib.Partition;
 import co.cask.cdap.api.dataset.lib.PartitionFilter;
 import co.cask.cdap.api.dataset.lib.PartitionKey;
+import co.cask.cdap.api.dataset.lib.PartitionMetadata;
 import co.cask.cdap.api.dataset.lib.PartitionOutput;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetArguments;
@@ -71,7 +72,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
   // column keys
   protected static final byte[] RELATIVE_PATH = { 'p' };
   protected static final byte[] FIELD_PREFIX = { 'f', '.' };
-  protected static final byte[] PROPERTY_PREFIX = { 'm', '.' };
+  protected static final byte[] METADATA_PREFIX = { 'm', '.' };
 
   protected final FileSet files;
   protected final Table partitionsTable;
@@ -117,37 +118,37 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
 
   @Override
   public void addPartition(PartitionKey key, String path) {
-    addPartition(key, path, ImmutableMap.<String, String>of());
+    addPartition(key, path, new PartitionMetadata(ImmutableMap.<String, String>of()));
   }
 
   @Override
-  public void addPartition(PartitionKey key, String path, Map<String, String> properties) {
-    addPartition(key, path, true, properties);
+  public void addPartition(PartitionKey key, String path, PartitionMetadata metadata) {
+    addPartition(key, path, true, metadata);
   }
 
   @Override
-  public void updateProperties(PartitionKey key, Map<String, String> properties) {
+  public void updateMetadata(PartitionKey key, PartitionMetadata metadata) {
     final byte[] rowKey = generateRowKey(key, partitioning);
     Row row = partitionsTable.get(rowKey);
     if (row == null) {
       throw new DataSetException(String.format("Dataset '%s' does not have a partition for key: %s", getName(), key));
     }
 
-    // delete all the old properties and then write the new set of properties
+    // delete all the old metadata and then write the new metadata
     Delete delete = new Delete(rowKey);
     for (Map.Entry<byte[], byte[]> entry : row.getColumns().entrySet()) {
-      if (Bytes.startsWith(entry.getKey(), PROPERTY_PREFIX)) {
+      if (Bytes.startsWith(entry.getKey(), METADATA_PREFIX)) {
         delete.add(entry.getKey());
       }
     }
     partitionsTable.delete(delete);
 
     Put put = new Put(rowKey);
-    addPropertiesToPut(properties, put);
+    addMetadataToPut(metadata, put);
     partitionsTable.put(put);
   }
 
-  protected void addPartition(PartitionKey key, String path, boolean addToExplore, Map<String, String> properties) {
+  protected void addPartition(PartitionKey key, String path, boolean addToExplore, PartitionMetadata metadata) {
     final byte[] rowKey = generateRowKey(key, partitioning);
     Row row = partitionsTable.get(rowKey);
     if (row != null && !row.isEmpty()) {
@@ -168,7 +169,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
               Bytes.toBytes(entry.getValue().toString()));            // "<string rep. of value>"
     }
 
-    addPropertiesToPut(properties, put);
+    addMetadataToPut(metadata, put);
 
     partitionsTable.put(put);
     partitionsAddedInSameTx.put(path, key);
@@ -179,9 +180,9 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     }
   }
 
-  private void addPropertiesToPut(Map<String, String> properties, Put put) {
-    for (Map.Entry<String, String> entry : properties.entrySet()) {
-      byte[] columnKey = Bytes.add(PROPERTY_PREFIX, Bytes.toBytes(entry.getKey()));
+  private void addMetadataToPut(PartitionMetadata metadata, Put put) {
+    for (Map.Entry<String, String> entry : metadata) {
+      byte[] columnKey = Bytes.add(METADATA_PREFIX, Bytes.toBytes(entry.getKey()));
       put.add(columnKey, Bytes.toBytes(entry.getValue()));
     }
   }
@@ -240,7 +241,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
       // why a check for relativePath here?
       return null;
     }
-    return new BasicPartition(Bytes.toString(pathBytes), key, propertiesFromRow(row));
+    return new BasicPartition(Bytes.toString(pathBytes), key, metadataFromRow(row));
   }
 
   @Override
@@ -248,8 +249,8 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     final Set<Partition> partitions = Sets.newHashSet();
     getPartitions(filter, new PartitionConsumer() {
       @Override
-      public void consume(PartitionKey key, String path, Map<String, String> properties) {
-        partitions.add(new BasicPartition(path, key, properties));
+      public void consume(PartitionKey key, String path, PartitionMetadata metadata) {
+        partitions.add(new BasicPartition(path, key, metadata));
       }
     });
     return partitions;
@@ -261,7 +262,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     final Set<String> paths = Sets.newHashSet();
     getPartitions(filter, new PartitionConsumer() {
       @Override
-      public void consume(PartitionKey key, String path, Map<String, String> properties) {
+      public void consume(PartitionKey key, String path, PartitionMetadata metadata) {
         paths.add(path);
       }
     });
@@ -294,7 +295,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
         byte[] pathBytes = row.get(RELATIVE_PATH);
         // why a check for relativePath here?
         if (pathBytes != null) {
-          consumer.consume(key, Bytes.toString(pathBytes), propertiesFromRow(row));
+          consumer.consume(key, Bytes.toString(pathBytes), metadataFromRow(row));
         }
       }
     } finally {
@@ -302,16 +303,16 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     }
   }
 
-  private Map<String, String> propertiesFromRow(Row row) {
+  private PartitionMetadata metadataFromRow(Row row) {
     Map<String, String> properties = Maps.newHashMap();
     for (Map.Entry<byte[], byte[]> entry : row.getColumns().entrySet()) {
-      if (Bytes.startsWith(entry.getKey(), PROPERTY_PREFIX)) {
+      if (Bytes.startsWith(entry.getKey(), METADATA_PREFIX)) {
         byte[] columnKey = entry.getKey();
-        byte[] propertyKeyBytes = Arrays.copyOfRange(columnKey, PROPERTY_PREFIX.length, columnKey.length);
-        properties.put(Bytes.toString(propertyKeyBytes), Bytes.toString(entry.getValue()));
+        byte[] metadataKeyBytes = Arrays.copyOfRange(columnKey, METADATA_PREFIX.length, columnKey.length);
+        properties.put(Bytes.toString(metadataKeyBytes), Bytes.toString(entry.getValue()));
       }
     }
-    return properties;
+    return new PartitionMetadata(properties);
   }
 
   /**
@@ -332,7 +333,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
    * Interface use internally to build different types of results when scanning partitions.
    */
   protected interface PartitionConsumer {
-    void consume(PartitionKey key, String path, Map<String, String> properties);
+    void consume(PartitionKey key, String path, PartitionMetadata metadata);
   }
 
   @Override
@@ -397,7 +398,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     }
     // we know for sure there is an output partition key (checked in getOutputFormatConfig())
     PartitionKey outputKey = PartitionedFileSetArguments.getOutputPartitionKey(runtimeArguments, getPartitioning());
-    // TODO: how will, from mapreduce, write properties to the partition?
+    // TODO: how will, from mapreduce, write metadata to the partition?
     addPartition(outputKey, outputPath);
   }
 
@@ -590,12 +591,12 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
   protected class BasicPartition implements Partition {
     protected final String relativePath;
     protected final PartitionKey key;
-    protected Map<String, String> properties;
+    protected PartitionMetadata metadata;
 
-    protected BasicPartition(String relativePath, PartitionKey key, Map<String, String> properties) {
+    protected BasicPartition(String relativePath, PartitionKey key, PartitionMetadata metadata) {
       this.relativePath = relativePath;
       this.key = key;
-      this.properties = properties;
+      this.metadata = metadata;
     }
 
     @Override
@@ -614,8 +615,8 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     }
 
     @Override
-    public Map<String, String> getProperties() {
-      return properties;
+    public PartitionMetadata getMetadata() {
+      return metadata;
     }
 
     @Override
@@ -627,12 +628,12 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
         return false;
       }
       BasicPartition that = (BasicPartition) o;
-      return key.equals(that.key) && relativePath.equals(that.relativePath);
+      return key.equals(that.key) && relativePath.equals(that.relativePath) && metadata.equals(that.metadata);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hashCode(key, relativePath);
+      return Objects.hashCode(key, relativePath, metadata);
     }
   }
 
@@ -642,17 +643,17 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
   protected class BasicPartitionOutput extends BasicPartition implements PartitionOutput {
 
     protected BasicPartitionOutput(String relativePath, PartitionKey key) {
-      super(relativePath, key, ImmutableMap.<String, String>of());
+      super(relativePath, key, new PartitionMetadata(ImmutableMap.<String, String>of()));
     }
 
     @Override
     public void addPartition() {
-      PartitionedFileSetDataset.this.addPartition(key, getRelativePath(), properties);
+      PartitionedFileSetDataset.this.addPartition(key, getRelativePath(), metadata);
     }
 
     @Override
-    public void setProperties(Map<String, String> properties) {
-      this.properties = properties;
+    public void setMetadata(PartitionMetadata metadata) {
+      this.metadata = metadata;
     }
   }
 }

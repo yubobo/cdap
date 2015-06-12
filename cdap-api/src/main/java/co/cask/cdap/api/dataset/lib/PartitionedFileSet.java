@@ -50,14 +50,14 @@ public interface PartitionedFileSet extends Dataset, InputFormatProvider, Output
 
   /**
    * Add a partition for a given partition key, stored at a given path (relative to the file set's base path),
-   * with the given properties.
+   * with the given metadata.
    */
-  void addPartition(PartitionKey key, String path, Map<String, String> properties);
+  void addPartition(PartitionKey key, String path, PartitionMetadata metadata);
 
   /**
-   * Updates the properties for a particular partition.
+   * Updates the metadata for a particular partition.
    */
-  void updateProperties(PartitionKey key, Map<String, String> properties);
+  void updateMetadata(PartitionKey key, PartitionMetadata metadata);
 
   /**
    * Remove a partition for a given partition key.

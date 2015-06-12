@@ -16,8 +16,6 @@
 
 package co.cask.cdap.api.dataset.lib;
 
-import java.util.Map;
-
 /**
  * Represents a partition of a partitioned file set for writing.
  */
@@ -29,7 +27,7 @@ public interface PartitionOutput extends Partition {
   void addPartition();
 
   /**
-   * Sets the properties of a partition.
+   * Sets the metadata of a partition.
    */
-  void setProperties(Map<String, String> properties);
+  void setMetadata(PartitionMetadata metadata);
 }
