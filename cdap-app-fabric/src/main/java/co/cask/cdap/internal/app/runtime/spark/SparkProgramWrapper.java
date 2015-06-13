@@ -253,7 +253,7 @@ public class SparkProgramWrapper {
    * A {@link ClassLoader} that implements {@link Closeable} for resource cleanup. All classloading is done
    * by the delegate {@link ClassLoader}.
    */
-  static final class CloseableClassLoader extends ClassLoader implements Closeable {
+  public static final class CloseableClassLoader extends ClassLoader implements Closeable {
 
     private final Closeable closeable;
 

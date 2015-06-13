@@ -138,8 +138,7 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
             LOG.info("The Metrics temp dir is: " + tmpDir.toString());
             
             File tmpFile = File.createTempFile(SparkMetricsSink.SPARK_METRICS_PROPERTIES_FILENAME,
-                                               Location.TEMP_FILE_SUFFIX,
-                                               tmpDir);
+                                               Location.TEMP_FILE_SUFFIX, tmpDir);
             programClassLoader = createProgramClassloader(programJarCopy);
             try {
               SparkMetricsSink.generateSparkMetricsConfig(tmpFile);
@@ -379,13 +378,15 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
    * @throws IOException if failed to package the jar
    */
   private Location buildDependencyJar(BasicSparkContext context, Configuration conf) throws IOException {
-    Id.Program programId = context.getProgram().getId();
+    /*Id.Program programId = context.getProgram().getId();
 
     Location jobJarLocation = localLocationFactory.create(String.format("%s.%s.%s.%s.%s.jar",
                                                                         ProgramType.SPARK.name().toLowerCase(),
                                                                         programId.getNamespaceId(),
                                                                         programId.getApplicationId(), programId.getId(),
-                                                                        context.getRunId().getId()));
+                                                                        context.getRunId().getId()));*/
+    Location jobJarLocation = localLocationFactory.create(String.format("%s.program.jar",
+                                                                        ProgramType.SPARK.name().toLowerCase()));
 
     LOG.debug("Creating Spark Job Jar: {}", jobJarLocation.toURI());
     try (JarOutputStream jarOut = new JarOutputStream(jobJarLocation.getOutputStream())) {
@@ -406,12 +407,14 @@ final class SparkRuntimeService extends AbstractExecutionThreadService {
    * @throws IOException if failed to get the {@link Location#getInputStream()} or {@link Location#getOutputStream()}
    */
   private Location copyProgramJar(Location jobJarLocation, BasicSparkContext context) throws IOException {
-    Id.Program programId = context.getProgram().getId();
+    /*Id.Program programId = context.getProgram().getId();
     Location programJarCopy = localLocationFactory.create(String.format("%s.%s.%s.%s.%s.program.jar",
                                                                    ProgramType.SPARK.name().toLowerCase(),
                                                                    programId.getNamespaceId(),
                                                                    programId.getApplicationId(), programId.getId(),
-                                                                   context.getRunId().getId()));
+                                                                   context.getRunId().getId()));*/
+    Location programJarCopy = localLocationFactory.create(String.format("%s.program.jar",
+                                                                        ProgramType.SPARK.name().toLowerCase()));
 
     ByteStreams.copy(Locations.newInputSupplier(jobJarLocation), Locations.newOutputSupplier(programJarCopy));
     return programJarCopy;
