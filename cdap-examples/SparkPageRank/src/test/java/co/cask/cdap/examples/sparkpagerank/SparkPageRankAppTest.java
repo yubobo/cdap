@@ -16,13 +16,16 @@
 
 package co.cask.cdap.examples.sparkpagerank;
 
+import co.cask.cdap.examples.sparkpagerank.SparkPageRankApp.RanksServiceHandler;
 import co.cask.cdap.test.ApplicationManager;
+import co.cask.cdap.test.MapReduceManager;
 import co.cask.cdap.test.ServiceManager;
 import co.cask.cdap.test.SparkManager;
 import co.cask.cdap.test.StreamManager;
 import co.cask.cdap.test.TestBase;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,8 +59,12 @@ public class SparkPageRankAppTest extends TestBase {
 
     // Start GoogleTypePR
     ServiceManager transformServiceManager = appManager.startService(SparkPageRankApp.GOOGLE_TYPE_PR_SERVICE_NAME);
-    // Start CentersService
-    ServiceManager serviceManager = appManager.startService(SparkPageRankApp.RANKS_SERVICE_NAME);
+
+    // Start RanksService
+    ServiceManager ranksServiceManager = appManager.startService(SparkPageRankApp.RANKS_SERVICE_NAME);
+
+    // Start TotalPagesPRService
+    ServiceManager totalPagesServiceManager = appManager.startService(SparkPageRankApp.TOTAL_PAGES_PR_SERVICE_NAME);
 
     // Wait for GoogleTypePR service to start since the Spark program needs it
     transformServiceManager.waitForStatus(true);
@@ -66,12 +73,18 @@ public class SparkPageRankAppTest extends TestBase {
     SparkManager sparkManager = appManager.startSpark(SparkPageRankProgram.class.getSimpleName());
     sparkManager.waitForFinish(60, TimeUnit.SECONDS);
 
+    // Run RanksCounter which will count the number of pages with a pr
+    MapReduceManager mapReduceManager = appManager.startMapReduce("RanksCounter",
+                                                                  ImmutableMap.<String, String>of());
+    mapReduceManager.waitForFinish(3, TimeUnit.MINUTES);
+
     // Wait for ranks service to start
-    serviceManager.waitForStatus(true);
+    ranksServiceManager.waitForStatus(true);
+    totalPagesServiceManager.waitForStatus(true);
 
     //Query for rank
-    URL ranksURL = new URL(serviceManager.getServiceURL(15, TimeUnit.SECONDS),
-                           SparkPageRankApp.RanksServiceHandler.RANKS_SERVICE_PATH);
+    URL ranksURL = new URL(ranksServiceManager.getServiceURL(15, TimeUnit.SECONDS),
+                           RanksServiceHandler.RANKS_SERVICE_PATH);
     HttpURLConnection ranksURLConnection = (HttpURLConnection) ranksURL.openConnection();
 
     try {
@@ -88,6 +101,9 @@ public class SparkPageRankAppTest extends TestBase {
     } finally {
       ranksURLConnection.disconnect();
     }
+
+    // Request data and verify it
+    String response = requestService(new URL(totalPagesServiceManager.getServiceURL(15, TimeUnit.SECONDS), "total/10"));
   }
 
   private String requestService(URL url) throws IOException {
