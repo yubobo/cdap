@@ -89,22 +89,27 @@ angular.module(PKG.name + '.feature.workflows')
         angular.forEach(activeNodes, function(n) {
           var runid = response.properties[n.nodeId];
 
+          var path = '/apps/' + $state.params.appId;
+
+          if (n.program.programType === 'MAPREDUCE') {
+            path += '/mapreduce/' + n.program.programName + '/runs/' + runid;
+          } else if (n.program.programType === 'SPARK') {
+            path += '/spark/' + n.program.programName + '/runs/' + runid;
+          }
+
           dataSrc.request({
-            _cdapNsPath: '/apps/' + $state.params.appId +
-              '/mapreduce/' + n.program.programName +
-              '/runs/' + runid
+            _cdapNsPath: path
           })
           .then(function (result) {
             $scope.data.current[n.name] = result.status;
           });
         });
 
-        return response;
-      })
-      .then(function (response) {
         if (response.status === 'COMPLETED') {
           dataSrc.stopPoll(response.__pollId__);
         }
+
+        return response;
       });
     }
 
@@ -116,6 +121,11 @@ angular.module(PKG.name + '.feature.workflows')
       if ($scope.runs.length) {
         if (instance.program.programType === 'MAPREDUCE') {
           $state.go('mapreduce.detail.runs.run', {
+            programId: instance.program.programName,
+            runid: $scope.runs.selected.properties[instance.nodeId]
+          });
+        } else if (instance.program.programType === 'SPARK') {
+          $state.go('spark.detail.runs.run', {
             programId: instance.program.programName,
             runid: $scope.runs.selected.properties[instance.nodeId]
           });
