@@ -628,6 +628,10 @@ public abstract class Id {
     public static Service from(Application application, String id) {
       return new Service(application, id);
     }
+
+    public static Service from(Namespace namespace, String application, String id) {
+      return new Service(Id.Application.from(namespace, application), id);
+    }
   }
 
   /**
@@ -641,6 +645,10 @@ public abstract class Id {
 
     public static Workflow from(Application application, String id) {
       return new Workflow(application, id);
+    }
+
+    public static Workflow from(Namespace namespace, String application, String id) {
+      return new Workflow(Id.Application.from(namespace, application), id);
     }
   }
 
