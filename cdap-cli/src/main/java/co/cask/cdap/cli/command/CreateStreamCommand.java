@@ -45,7 +45,7 @@ public class CreateStreamCommand extends AbstractAuthCommand {
   public void perform(Arguments arguments, PrintStream output) throws Exception {
     String streamId = arguments.get(ArgumentName.NEW_STREAM.toString());
 
-    streamClient.create(streamId);
+    streamClient.create(cliConfig.getCurrentNamespace(), streamId);
     output.printf("Successfully created stream with ID '%s'\n", streamId);
   }
 
