@@ -303,6 +303,10 @@ public class CLIConfig implements TableRendererConfig {
     return clientConfig;
   }
 
+  public CLIConnectionConfig getConnectionConfig() {
+    return connectionConfig;
+  }
+
   public String getVersion() {
     return version;
   }
