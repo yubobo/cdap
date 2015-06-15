@@ -28,6 +28,7 @@ import co.cask.cdap.client.config.ClientConfig;
 import co.cask.cdap.client.config.ConnectionConfig;
 import co.cask.cdap.client.exception.DisconnectedException;
 import co.cask.cdap.common.conf.CConfiguration;
+import co.cask.cdap.proto.Id;
 import co.cask.common.cli.CLI;
 import co.cask.common.cli.Command;
 import co.cask.common.cli.CommandSet;
@@ -161,8 +162,8 @@ public class CLIMain {
     cli.getReader().setExpandEvents(false);
     cliConfig.addHostnameChangeListener(new CLIConfig.ConnectionChangeListener() {
       @Override
-      public void onConnectionChanged(ClientConfig clientConfig) {
-        updateCLIPrompt(clientConfig);
+      public void onConnectionChanged(CLIConnectionConfig config) {
+        updateCLIPrompt(config);
       }
     });
   }
@@ -174,8 +175,8 @@ public class CLIMain {
     InstanceURIParser instanceURIParser = injector.getInstance(InstanceURIParser.class);
     if (options.isAutoconnect()) {
       try {
-        ConnectionConfig connectionInfo = instanceURIParser.parse(options.getUri());
-        cliConfig.tryConnect(connectionInfo, cliConfig.getOutput(), options.isDebug());
+        CLIConnectionConfig connection = instanceURIParser.parse(options.getUri());
+        cliConfig.tryConnect(connection, cliConfig.getOutput(), options.isDebug());
       } catch (Exception e) {
         if (options.isDebug()) {
           e.printStackTrace(cliConfig.getOutput());
@@ -206,15 +207,14 @@ public class CLIMain {
     }
   }
 
-  private void updateCLIPrompt(ClientConfig clientConfig) {
-    cli.getReader().setPrompt(getPrompt(clientConfig));
+  private void updateCLIPrompt(CLIConnectionConfig config) {
+    cli.getReader().setPrompt(getPrompt(config));
   }
 
-  public String getPrompt(ClientConfig clientConfig) {
+  public String getPrompt(CLIConnectionConfig config) {
     try {
-      ConnectionConfig connectionConfig = clientConfig.getConnectionConfig();
-      URI baseURI = connectionConfig.getURI();
-      URI uri = baseURI.resolve("/" + connectionConfig.getNamespace());
+      URI baseURI = config.getURI();
+      URI uri = baseURI.resolve("/" + config.getNamespace());
       return "cdap (" + uri + ")> ";
     } catch (DisconnectedException e) {
       return "cdap (DISCONNECTED)> ";
@@ -271,7 +271,10 @@ public class CLIMain {
         CLI cli = cliMain.getCLI();
 
         cliMain.tryAutoconnect();
-        cliMain.updateCLIPrompt(cliConfig.getClientConfig());
+
+        CLIConnectionConfig connectionConfig = new CLIConnectionConfig(
+          cliConfig.getClientConfig().getConnectionConfig(), Id.Namespace.DEFAULT, null);
+        cliMain.updateCLIPrompt(connectionConfig);
 
         if (hasScriptFile) {
           File script = cliMain.getFilePathResolver().resolvePathToFile(scriptFile);
@@ -281,7 +284,7 @@ public class CLIMain {
           }
           List<String> scriptLines = Files.readLines(script, Charsets.UTF_8);
           for (String scriptLine : scriptLines) {
-            output.print(cliMain.getPrompt(clientConfig));
+            output.print(cliMain.getPrompt(connectionConfig));
             output.println(scriptLine);
             cli.execute(scriptLine, output);
             output.println();

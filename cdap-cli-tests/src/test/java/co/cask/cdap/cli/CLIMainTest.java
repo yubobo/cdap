@@ -30,7 +30,6 @@ import co.cask.cdap.client.app.FakeFlow;
 import co.cask.cdap.client.app.FakeSpark;
 import co.cask.cdap.client.app.FakeWorkflow;
 import co.cask.cdap.client.app.PrefixedEchoHandler;
-import co.cask.cdap.client.config.AuthenticatedConnectionConfig;
 import co.cask.cdap.client.config.ClientConfig;
 import co.cask.cdap.client.config.ConnectionConfig;
 import co.cask.cdap.common.conf.Constants;
@@ -155,7 +154,7 @@ public class CLIMainTest {
     Assert.assertTrue(prompt.contains(cliConfig.getCurrentNamespace().getId()));
 
     ConnectionConfig oldConnectionConfig = clientConfig.getConnectionConfig();
-    ConnectionConfig authConnectionConfig = new AuthenticatedConnectionConfig(oldConnectionConfig, "test-username");
+    ConnectionConfig authConnectionConfig = new CLIConnectionConfig(oldConnectionConfig, "test-username");
     cliConfig.setConnectionConfig(authConnectionConfig);
     prompt = cliMain.getPrompt(cliConfig.getClientConfig());
     Assert.assertTrue(prompt.contains("test-username@"));
