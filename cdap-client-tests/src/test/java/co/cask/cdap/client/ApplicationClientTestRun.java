@@ -63,14 +63,16 @@ public class ApplicationClientTestRun extends ClientTestBase {
     // Delete FakeApp's dataset and module so that DatasetClientTestRun works when running both inside a test suite
     // This is due to DatasetClientTestRun assuming that it is using a blank CDAP instance
 
+    Id.Namespace namespace = Id.Namespace.DEFAULT;
+
     try {
-      datasetClient.delete(FakeApp.DS_NAME);
+      datasetClient.delete(Id.DatasetInstance.from(namespace, FakeApp.DS_NAME));
     } catch (DatasetNotFoundException e) {
       // NO-OP
     }
 
     try {
-      datasetModuleClient.delete(FakeDatasetModule.NAME);
+      datasetModuleClient.delete(Id.DatasetModule.from(namespace, FakeDatasetModule.NAME));
     } catch (DatasetModuleNotFoundException e) {
       // NO-OP
     }

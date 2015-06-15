@@ -80,8 +80,9 @@ public class QueryClientTestRun extends ClientTestBase {
       programClient.start(flow);
       assertProgramRunning(programClient, flow);
 
-      streamClient.sendEvent(FakeApp.STREAM_NAME, "bob:123");
-      streamClient.sendEvent(FakeApp.STREAM_NAME, "joe:321");
+      Id.Stream stream = Id.Stream.from(namespace, FakeApp.STREAM_NAME);
+      streamClient.sendEvent(stream, "bob:123");
+      streamClient.sendEvent(stream, "joe:321");
 
       Thread.sleep(3000);
 
