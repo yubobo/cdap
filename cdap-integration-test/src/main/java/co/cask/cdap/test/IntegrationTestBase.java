@@ -69,30 +69,22 @@ public class IntegrationTestBase {
 
   @Before
   public void setUp() throws Exception {
-    assertNoApps();
-    assertNoUserDatasets();
-    // TODO: check metrics, streams, etc.
+    // TOOD: support multiple namespaces
+    Id.Namespace namespace = Id.Namespace.DEFAULT;
 
-    // TODO: check no streams once streams can be deleted instead of truncating all streams
-    StreamClient streamClient = getStreamClient();
-    List<StreamDetail> streamRecords = streamClient.list();
-    if (streamRecords.size() > 0) {
-      for (StreamDetail streamRecord : streamRecords) {
-        try {
-          streamClient.truncate(streamRecord.getName());
-        } catch (Exception e) {
-          Assert.fail("All existing streams must be truncated" +
-                      " - failed to truncate stream '" + streamRecord.getName() + "'");
-        }
-      }
-    }
+    assertNoApps(namespace);
+    assertNoUserDatasets(namespace);
+    truncateAllStreams(namespace);
   }
 
   @After
   public void tearDown() throws Exception {
+    // TOOD: support multiple namespaces
+    Id.Namespace namespace = Id.Namespace.DEFAULT;
+
     getTestManager().clear();
-    assertNoApps();
-    assertNoUserDatasets();
+    assertNoApps(namespace);
+    assertNoUserDatasets(namespace);
     // TODO: check metrics, streams, etc.
   }
 
@@ -163,18 +155,8 @@ public class IntegrationTestBase {
     return getTestManager().deployApplication(namespace, applicationClz, bundleEmbeddedJars);
   }
 
-  protected ApplicationManager deployApplication(Class<? extends Application> applicationClz,
-                                                 File...bundleEmbeddedJars) throws IOException {
-    return deployApplication(getClientConfig().getNamespace(), applicationClz, bundleEmbeddedJars);
-  }
-
-  protected ApplicationManager deployApplication(Id.Namespace namespace,
-                                                 Class<? extends Application> applicationClz) throws IOException {
-    return deployApplication(namespace, applicationClz, new File[0]);
-  }
-
   protected ApplicationManager deployApplication(Class<? extends Application> applicationClz) throws IOException {
-    return deployApplication(getClientConfig().getNamespace(), applicationClz, new File[0]);
+    return deployApplication(Id.Namespace.DEFAULT, applicationClz, new File[0]);
   }
 
   private boolean isUserDataset(DatasetSpecificationSummary specification) {
@@ -182,9 +164,25 @@ public class IntegrationTestBase {
     return !dsNamespace.contains(specification.getName(), Constants.SYSTEM_NAMESPACE);
   }
 
-  private void assertNoUserDatasets() throws Exception {
+  private void truncateAllStreams(Id.Namespace namespace) throws IOException, UnauthorizedException {
+    // TODO: check no streams once streams can be deleted instead of truncating all streams
+    StreamClient streamClient = getStreamClient();
+    List<StreamDetail> streamRecords = streamClient.list(namespace);
+    if (streamRecords.size() > 0) {
+      for (StreamDetail streamRecord : streamRecords) {
+        try {
+          streamClient.truncate(Id.Stream.from(namespace, streamRecord.getName()));
+        } catch (Exception e) {
+          Assert.fail("All existing streams must be truncated" +
+                        " - failed to truncate stream '" + streamRecord.getName() + "'");
+        }
+      }
+    }
+  }
+
+  private void assertNoUserDatasets(Id.Namespace namespace) throws Exception {
     DatasetClient datasetClient = getDatasetClient();
-    List<DatasetSpecificationSummary> datasets = datasetClient.list();
+    List<DatasetSpecificationSummary> datasets = datasetClient.list(namespace);
 
     Iterable<DatasetSpecificationSummary> filteredDatasts = Iterables.filter(
       datasets, new Predicate<DatasetSpecificationSummary>() {
@@ -215,9 +213,9 @@ public class IntegrationTestBase {
                          + Joiner.on(", ").join(filteredDatasetsNames), filteredDatasts.iterator().hasNext());
   }
 
-  private void assertNoApps() throws Exception {
+  private void assertNoApps(Id.Namespace namespace) throws Exception {
     ApplicationClient applicationClient = getApplicationClient();
-    List<ApplicationRecord> applicationRecords = applicationClient.list();
+    List<ApplicationRecord> applicationRecords = applicationClient.list(namespace);
     List<String> applicationIds = Lists.newArrayList();
     for (ApplicationRecord applicationRecord : applicationRecords) {
       applicationIds.add(applicationRecord.getName());
@@ -246,8 +244,7 @@ public class IntegrationTestBase {
     return result;
   }
 
-  private void assertFlowletInstances(ProgramClient programClient, String appId, String flowId, String flowletId,
-                                        int numInstances)
+  private void assertFlowletInstances(ProgramClient programClient, Id.Flow.Flowlet flowletId, int numInstances)
     throws IOException, NotFoundException, UnauthorizedException {
 
     // TODO: replace with programClient.waitForFlowletInstances()
@@ -255,36 +252,33 @@ public class IntegrationTestBase {
     int numTries = 0;
     int maxTries = 5;
     do {
-      actualInstances = programClient.getFlowletInstances(appId, flowId, flowletId);
+      actualInstances = programClient.getFlowletInstances(flowletId);
       numTries++;
     } while (actualInstances != numInstances && numTries <= maxTries);
     Assert.assertEquals(numInstances, actualInstances);
   }
 
-  private void assertProgramRunning(ProgramClient programClient, String appId, ProgramType programType,
-                                      String programId)
+  private void assertProgramRunning(ProgramClient programClient, Id.Program programId)
     throws IOException, ProgramNotFoundException, UnauthorizedException, InterruptedException {
 
-    assertProgramStatus(programClient, appId, programType, programId, "RUNNING");
+    assertProgramStatus(programClient, programId, "RUNNING");
   }
 
-  private void assertProgramStopped(ProgramClient programClient, String appId, ProgramType programType,
-                                      String programId)
+  private void assertProgramStopped(ProgramClient programClient, Id.Program programId)
     throws IOException, ProgramNotFoundException, UnauthorizedException, InterruptedException {
 
-    assertProgramStatus(programClient, appId, programType, programId, "STOPPED");
+    assertProgramStatus(programClient, programId, "STOPPED");
   }
 
-  private void assertProgramStatus(ProgramClient programClient, String appId, ProgramType programType,
-                                     String programId, String programStatus)
+  private void assertProgramStatus(ProgramClient programClient, Id.Program programId, String programStatus)
     throws IOException, ProgramNotFoundException, UnauthorizedException, InterruptedException {
 
     try {
-      programClient.waitForStatus(appId, programType, programId, programStatus, 30, TimeUnit.SECONDS);
+      programClient.waitForStatus(programId, programStatus, 30, TimeUnit.SECONDS);
     } catch (TimeoutException e) {
       // NO-OP
     }
 
-    Assert.assertEquals(programStatus, programClient.getStatus(appId, programType, programId));
+    Assert.assertEquals(programStatus, programClient.getStatus(programId));
   }
 }

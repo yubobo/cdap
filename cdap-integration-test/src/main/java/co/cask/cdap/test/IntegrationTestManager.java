@@ -80,7 +80,7 @@ public class IntegrationTestManager implements TestManager {
       File appJarFile = File.createTempFile(applicationClz.getSimpleName(), ".jar");
       try {
         Files.copy(Locations.newInputSupplier(appJar), appJarFile);
-        applicationClient.deploy(appJarFile);
+        applicationClient.deploy(namespace, appJarFile);
 
         Application application = applicationClz.newInstance();
         DefaultAppConfigurer configurer = new DefaultAppConfigurer(application);
@@ -119,13 +119,14 @@ public class IntegrationTestManager implements TestManager {
 
   @Override
   public AdapterManager createAdapter(Id.Adapter adapterId, AdapterConfig config) throws Exception {
-    adapterClient.create(adapterId.getId(), config);
+    adapterClient.create(adapterId.getNamespace(), adapterId.getId(), config);
     return new RemoteAdapterManager(adapterId, adapterClient);
   }
 
   @Override
   public void clear() throws Exception {
-    programClient.stopAll();
+    // TODO: support multiple namespaces
+    programClient.stopAll(Id.Namespace.DEFAULT);
     namespaceClient.deleteAll();
   }
 

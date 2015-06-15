@@ -28,21 +28,22 @@ import com.google.common.base.Throwables;
  * Remote implementation of {@link WorkerManager}
  */
 public class RemoteWorkerManager extends AbstractProgramManager<WorkerManager> implements WorkerManager {
-  private final ProgramClient programClient;
 
-  public RemoteWorkerManager(Id.Program programId, ClientConfig clientConfig,
+  private final ProgramClient programClient;
+  private final Id.Worker workerId;
+
+  public RemoteWorkerManager(Id.Worker programId, ClientConfig clientConfig,
                              RemoteApplicationManager applicationManager) {
     super(programId, applicationManager);
-    ClientConfig namespacedClientConfig = new ClientConfig.Builder(clientConfig).build();
-    namespacedClientConfig.setNamespace(programId.getNamespace());
-    this.programClient = new ProgramClient(namespacedClientConfig);
+    this.workerId = programId;
+    this.programClient = new ProgramClient(clientConfig);
   }
 
   @Override
   public void setInstances(int instances) {
     Preconditions.checkArgument(instances > 0, "Instance count should be > 0.");
     try {
-      programClient.setServiceInstances(programId.getApplicationId(), programId.getId(), instances);
+      programClient.setWorkerInstances(workerId, instances);
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
@@ -51,7 +52,7 @@ public class RemoteWorkerManager extends AbstractProgramManager<WorkerManager> i
   @Override
   public int getInstances() {
     try {
-      return programClient.getServiceInstances(programId.getApplicationId(), programId.getId());
+      return programClient.getWorkerInstances(workerId);
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }

@@ -21,7 +21,6 @@ import co.cask.cdap.client.ProgramClient;
 import co.cask.cdap.client.ScheduleClient;
 import co.cask.cdap.client.config.ClientConfig;
 import co.cask.cdap.proto.Id;
-import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.RunRecord;
 import co.cask.cdap.test.AbstractProgramManager;
 import co.cask.cdap.test.ScheduleManager;
@@ -34,22 +33,23 @@ import java.util.List;
  * Remote implementation of {@link WorkflowManager}.
  */
 public class RemoteWorkflowManager extends AbstractProgramManager<WorkflowManager> implements WorkflowManager {
+
   private final ScheduleClient scheduleClient;
   private final ProgramClient programClient;
+  private final Id.Workflow workflowId;
 
-  public RemoteWorkflowManager(Id.Program programId, ClientConfig clientConfig,
+  public RemoteWorkflowManager(Id.Workflow programId, ClientConfig clientConfig,
                                RemoteApplicationManager applicationManager) {
     super(programId, applicationManager);
-    ClientConfig namespacedClientConfig = new ClientConfig.Builder(clientConfig).build();
-    namespacedClientConfig.setNamespace(programId.getNamespace());
-    this.programClient = new ProgramClient(namespacedClientConfig);
-    this.scheduleClient = new ScheduleClient(namespacedClientConfig);
+    this.workflowId = programId;
+    this.programClient = new ProgramClient(clientConfig);
+    this.scheduleClient = new ScheduleClient(clientConfig);
   }
 
   @Override
   public List<ScheduleSpecification> getSchedules() {
     try {
-      return scheduleClient.list(programId.getApplicationId(), programId.getId());
+      return scheduleClient.list(workflowId);
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
@@ -58,8 +58,7 @@ public class RemoteWorkflowManager extends AbstractProgramManager<WorkflowManage
   @Override
   public List<RunRecord> getHistory() {
     try {
-      return programClient.getProgramRuns(programId.getApplicationId(), ProgramType.WORKFLOW,
-                                          programId.getId(), "ALL", 0, Long.MAX_VALUE, Integer.MAX_VALUE);
+      return programClient.getProgramRuns(workflowId, "ALL", 0, Long.MAX_VALUE, Integer.MAX_VALUE);
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
@@ -70,7 +69,7 @@ public class RemoteWorkflowManager extends AbstractProgramManager<WorkflowManage
       @Override
       public void suspend() {
         try {
-          scheduleClient.suspend(programId.getApplicationId(), schedName);
+          scheduleClient.suspend(Id.Schedule.from(programId.getApplication(), schedName));
         } catch (Exception e) {
           throw Throwables.propagate(e);
         }
@@ -79,7 +78,7 @@ public class RemoteWorkflowManager extends AbstractProgramManager<WorkflowManage
       @Override
       public void resume() {
         try {
-          scheduleClient.resume(programId.getApplicationId(), schedName);
+          scheduleClient.resume(Id.Schedule.from(programId.getApplication(), schedName));
         } catch (Exception e) {
           throw Throwables.propagate(e);
         }
@@ -88,7 +87,7 @@ public class RemoteWorkflowManager extends AbstractProgramManager<WorkflowManage
       @Override
       public String status(int expectedCode) {
         try {
-          return scheduleClient.getStatus(programId.getApplicationId(), schedName);
+          return scheduleClient.getStatus(Id.Schedule.from(programId.getApplication(), schedName));
         } catch (Exception e) {
           throw Throwables.propagate(e);
         }
