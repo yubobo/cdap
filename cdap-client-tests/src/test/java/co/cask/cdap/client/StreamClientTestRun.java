@@ -73,7 +73,7 @@ public class StreamClientTestRun extends ClientTestBase {
     int baseStreamCount = streamClient.list(namespaceId).size();
     Assert.assertEquals(baseStreamCount, streamClient.list(namespaceId).size());
     LOG.info("Creating stream");
-    streamClient.create(namespaceId, streamId.getId());
+    streamClient.create(streamId);
     LOG.info("Checking stream list");
     Assert.assertEquals(baseStreamCount + 1, streamClient.list(namespaceId).size());
     StreamProperties config = streamClient.getConfig(streamId);
@@ -88,7 +88,7 @@ public class StreamClientTestRun extends ClientTestBase {
     StreamNotFoundException, UnauthorizedException {
 
     Id.Stream streamId = Id.Stream.from(namespaceId, "testEvents");
-    streamClient.create(streamId.getNamespace(), streamId.getId());
+    streamClient.create(streamId);
 
     // Send 5000 events
     int eventCount = 5000;
@@ -128,7 +128,7 @@ public class StreamClientTestRun extends ClientTestBase {
   @Test
   public void testAsyncWrite() throws Exception {
     Id.Stream streamId = Id.Stream.from(namespaceId, "testAsync");
-    streamClient.create(streamId.getNamespace(), streamId.getId());
+    streamClient.create(streamId);
 
     // Send 10 async writes
     int msgCount = 10;
@@ -178,7 +178,7 @@ public class StreamClientTestRun extends ClientTestBase {
   @Test
   public void testDelete() throws Exception {
     Id.Stream streamId = Id.Stream.from(namespaceId, "testDelete");
-    streamClient.create(streamId.getNamespace(), streamId.getId());
+    streamClient.create(streamId);
 
     // Send an event and get it back
     String msg = "Test Delete";
@@ -207,7 +207,7 @@ public class StreamClientTestRun extends ClientTestBase {
     }
 
     // Create the stream again, it should returns empty events
-    streamClient.create(streamId.getNamespace(), streamId.getId());
+    streamClient.create(streamId);
     events.clear();
     streamClient.getEvents(streamId, 0, Long.MAX_VALUE, Integer.MAX_VALUE, events);
     Assert.assertTrue(events.isEmpty());
@@ -216,7 +216,7 @@ public class StreamClientTestRun extends ClientTestBase {
 
   private void testSendFile(int msgCount) throws Exception {
     Id.Stream streamId = Id.Stream.from(namespaceId, "testSendFile");
-    streamClient.create(streamId.getNamespace(), streamId.getId());
+    streamClient.create(streamId);
 
     // Generate msgCount lines of events
     StringWriter writer = new StringWriter();

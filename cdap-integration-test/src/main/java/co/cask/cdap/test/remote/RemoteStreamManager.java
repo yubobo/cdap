@@ -48,7 +48,7 @@ public class RemoteStreamManager implements StreamManager {
   @Override
   public void createStream() throws IOException {
     try {
-      streamClient.create(streamId.getNamespace(), streamId.getId());
+      streamClient.create(streamId);
     } catch (IOException e) {
       throw e;
     } catch (Exception e) {

@@ -133,15 +133,15 @@ public class StreamClient {
   /**
    * Creates a stream.
    *
-   * @param namespace namespace to create the stream in
    * @param newStreamId ID of the new stream to create
    * @throws IOException if a network error occurred
    * @throws BadRequestException if the provided stream ID was invalid
    */
-  public void create(Id.Namespace namespace, String newStreamId)
+  public void create(Id.Stream newStreamId)
     throws IOException, BadRequestException, UnauthorizedException {
 
-    URL url = config.resolveNamespacedURLV3(namespace, String.format("streams/%s", newStreamId));
+    URL url = config.resolveNamespacedURLV3(newStreamId.getNamespace(),
+                                            String.format("streams/%s", newStreamId.getId()));
     HttpResponse response = restClient.execute(HttpMethod.PUT, url, config.getAccessToken(),
                                                HttpURLConnection.HTTP_BAD_REQUEST);
     if (response.getResponseCode() == HttpURLConnection.HTTP_BAD_REQUEST) {
