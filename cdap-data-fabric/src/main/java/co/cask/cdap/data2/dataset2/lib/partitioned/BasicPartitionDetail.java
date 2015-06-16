@@ -26,11 +26,13 @@ import com.google.common.base.Objects;
  */
 class BasicPartitionDetail extends BasicPartition implements PartitionDetail {
   protected final PartitionMetadata metadata;
+  protected final long creationTime;
 
   protected BasicPartitionDetail(PartitionedFileSetDataset partitionedFileSetDataset,
-                                 String relativePath, PartitionKey key, PartitionMetadata metadata) {
+                                 String relativePath, PartitionKey key, PartitionMetadata metadata, long creationTime) {
     super(partitionedFileSetDataset, relativePath, key);
     this.metadata = metadata;
+    this.creationTime = creationTime;
   }
 
   @Override
@@ -38,21 +40,29 @@ class BasicPartitionDetail extends BasicPartition implements PartitionDetail {
     return metadata;
   }
 
+  public long getCreationTime() {
+    return creationTime;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (o == null || !(o instanceof BasicPartitionDetail)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
+
     BasicPartitionDetail that = (BasicPartitionDetail) o;
-    return key.equals(that.key) && relativePath.equals(that.relativePath) && metadata.equals(that.metadata);
+
+    return Objects.equal(this.metadata, that.metadata) &&
+      Objects.equal(this.creationTime, that.creationTime) &&
+      Objects.equal(this.relativePath, that.relativePath) &&
+      Objects.equal(this.key, that.key);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(key, relativePath, metadata);
+    return Objects.hashCode(metadata, creationTime, relativePath, key);
   }
-
 }

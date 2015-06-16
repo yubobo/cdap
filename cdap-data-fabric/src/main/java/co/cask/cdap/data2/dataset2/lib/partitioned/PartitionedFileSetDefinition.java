@@ -52,6 +52,7 @@ public class PartitionedFileSetDefinition extends AbstractDatasetDefinition<Part
   private static final Logger LOG = LoggerFactory.getLogger(PartitionedFileSetDefinition.class);
 
   protected static final String PARTITION_TABLE_NAME = "partitions";
+  protected static final String INDEX_TABLE_NAME = "index";
   protected static final String FILESET_NAME = "files";
 
   protected final DatasetDefinition<? extends Table, ?> tableDef;
@@ -75,7 +76,8 @@ public class PartitionedFileSetDefinition extends AbstractDatasetDefinition<Part
     return DatasetSpecification.builder(instanceName, getName())
       .properties(properties.getProperties())
       .datasets(filesetDef.configure(FILESET_NAME, properties),
-                tableDef.configure(PARTITION_TABLE_NAME, properties))
+                tableDef.configure(PARTITION_TABLE_NAME, properties),
+                tableDef.configure(INDEX_TABLE_NAME, properties))
       .build();
   }
 
@@ -85,7 +87,8 @@ public class PartitionedFileSetDefinition extends AbstractDatasetDefinition<Part
     return new PartitionedFileSetAdmin(
         datasetContext, spec, getExploreProvider(),
         filesetDef.getAdmin(datasetContext, spec.getSpecification(FILESET_NAME), classLoader),
-        tableDef.getAdmin(datasetContext, spec.getSpecification(PARTITION_TABLE_NAME), classLoader));
+        tableDef.getAdmin(datasetContext, spec.getSpecification(PARTITION_TABLE_NAME), classLoader),
+        tableDef.getAdmin(datasetContext, spec.getSpecification(INDEX_TABLE_NAME), classLoader));
   }
 
   @Override
@@ -99,11 +102,13 @@ public class PartitionedFileSetDefinition extends AbstractDatasetDefinition<Part
 
     FileSet fileset = filesetDef.getDataset(datasetContext, spec.getSpecification(FILESET_NAME), arguments,
                                             classLoader);
-    Table table = tableDef.getDataset(datasetContext, spec.getSpecification(PARTITION_TABLE_NAME), arguments,
-                                      classLoader);
+    Table partitionsTable = tableDef.getDataset(datasetContext, spec.getSpecification(PARTITION_TABLE_NAME), arguments,
+                                          classLoader);
+    Table indexTable = tableDef.getDataset(datasetContext, spec.getSpecification(INDEX_TABLE_NAME), arguments,
+                                     classLoader);
 
-    return new PartitionedFileSetDataset(datasetContext, spec.getName(), partitioning, fileset, table, spec, arguments,
-                                         getExploreProvider());
+    return new PartitionedFileSetDataset(datasetContext, spec.getName(), partitioning, fileset,
+                                         partitionsTable, indexTable, spec, arguments, getExploreProvider());
   }
 
   // if the arguments do not contain an output location, generate one from the partition key (if present)

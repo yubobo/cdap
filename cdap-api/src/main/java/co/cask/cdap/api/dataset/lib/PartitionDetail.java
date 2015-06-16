@@ -25,4 +25,9 @@ public interface PartitionDetail extends Partition {
    * Gets the metadata for the partition
    */
   PartitionMetadata getMetadata();
+
+  /**
+   * Gets the creation time of the partition, in milliseconds
+   */
+  long getCreationTime();
 }

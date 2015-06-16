@@ -71,9 +71,12 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
   protected static final byte[] RELATIVE_PATH = { 'p' };
   protected static final byte[] FIELD_PREFIX = { 'f', '.' };
   protected static final byte[] METADATA_PREFIX = { 'm', '.' };
+  // also used as the rowkey prefix of the creation time index
+  protected static final byte[] CREATION_TIME = { 'c', '.' };
 
   protected final FileSet files;
   protected final Table partitionsTable;
+  protected final Table indexTable;
   protected final Map<String, String> runtimeArguments;
   protected final DatasetSpecification spec;
   protected final Provider<ExploreFacade> exploreFacadeProvider;
@@ -90,12 +93,13 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
   private final Map<String, PartitionKey> partitionsAddedInSameTx = Maps.newHashMap();
 
   public PartitionedFileSetDataset(DatasetContext datasetContext, String name,
-                                   Partitioning partitioning, FileSet fileSet, Table partitionTable,
+                                   Partitioning partitioning, FileSet fileSet, Table partitionTable, Table indexTable,
                                    DatasetSpecification spec, Map<String, String> arguments,
                                    Provider<ExploreFacade> exploreFacadeProvider) {
-    super(name, partitionTable);
+    super(name, partitionTable, indexTable);
     this.files = fileSet;
     this.partitionsTable = partitionTable;
+    this.indexTable = indexTable;
     this.spec = spec;
     this.exploreFacadeProvider = exploreFacadeProvider;
     this.runtimeArguments = arguments;
@@ -149,6 +153,8 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     LOG.debug("Adding partition with key {} and path {} to dataset {}", key, path, getName());
     Put put = new Put(rowKey);
     put.add(RELATIVE_PATH, Bytes.toBytes(path));
+    byte[] nowInMillis = Bytes.toBytes(System.currentTimeMillis());
+    put.add(CREATION_TIME, nowInMillis);
     for (Map.Entry<String, ? extends Comparable> entry : key.getFields().entrySet()) {
       put.add(Bytes.add(FIELD_PREFIX, Bytes.toBytes(entry.getKey())), // "f.<field name>"
               Bytes.toBytes(entry.getValue().toString()));            // "<string rep. of value>"
@@ -158,6 +164,12 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
 
     partitionsTable.put(put);
     partitionsAddedInSameTx.put(path, key);
+
+
+    // Index by creation time. Multiple partitions can be added at the same timestamp; the column key is the pointer to
+    // the created partition's row key. The value of the column entry is not used.
+    // Note: we need to write to a separate table because there is no rowkey prefix used in partitionsTable
+    indexTable.put(Bytes.add(CREATION_TIME, nowInMillis), rowKey, nowInMillis);
 
     if (explorable) {
       addPartitionToExplore(key, path);
@@ -250,7 +262,10 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     if (pathBytes == null) {
       return null;
     }
-    return new BasicPartitionDetail(this, Bytes.toString(pathBytes), key, metadataFromRow(row));
+    byte[] creationTimeBytes = row.get(CREATION_TIME);
+
+    return new BasicPartitionDetail(this, Bytes.toString(pathBytes), key, metadataFromRow(row),
+                                    Bytes.toLong(creationTimeBytes));
   }
 
   @Override
@@ -258,8 +273,9 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     final Set<PartitionDetail> partitionDetails = Sets.newHashSet();
     getPartitions(filter, new PartitionConsumer() {
       @Override
-      public void consume(PartitionKey key, String path, @Nullable PartitionMetadata metadata) {
-        partitionDetails.add(new BasicPartitionDetail(PartitionedFileSetDataset.this, path, key, metadata));
+      public void consume(PartitionKey key, String path, @Nullable PartitionMetadata metadata, long creationTime) {
+        partitionDetails.add(new BasicPartitionDetail(PartitionedFileSetDataset.this,
+                                                      path, key, metadata, creationTime));
       }
     });
     return partitionDetails;
@@ -271,7 +287,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
     final Set<String> paths = Sets.newHashSet();
     getPartitions(filter, new PartitionConsumer() {
       @Override
-      public void consume(PartitionKey key, String path, @Nullable PartitionMetadata metadata) {
+      public void consume(PartitionKey key, String path, @Nullable PartitionMetadata metadata, long creationTime) {
         paths.add(path);
       }
     }, false);
@@ -310,7 +326,9 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
         }
         byte[] pathBytes = row.get(RELATIVE_PATH);
         if (pathBytes != null) {
-          consumer.consume(key, Bytes.toString(pathBytes), decodeMetadata ? metadataFromRow(row) : null);
+          byte[] creationTime = row.get(CREATION_TIME);
+          consumer.consume(key, Bytes.toString(pathBytes), decodeMetadata ? metadataFromRow(row) : null,
+                           Bytes.toLong(creationTime));
         }
       }
     } finally {
@@ -359,7 +377,7 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
    * Interface use internally to build different types of results when scanning partitions.
    */
   protected interface PartitionConsumer {
-    void consume(PartitionKey key, String path, @Nullable PartitionMetadata metadata);
+    void consume(PartitionKey key, String path, @Nullable PartitionMetadata metadata, long creationTime);
   }
 
   @Override
