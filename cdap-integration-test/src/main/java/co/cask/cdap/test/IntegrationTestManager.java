@@ -145,8 +145,9 @@ public class IntegrationTestManager implements TestManager {
 
   @Override
   public void clear() throws Exception {
-    // TODO: support multiple namespaces
-    programClient.stopAll(Id.Namespace.DEFAULT);
+    for (NamespaceMeta namespace : namespaceClient.list()) {
+      programClient.stopAll(Id.Namespace.from(namespace.getName()));
+    }
     namespaceClient.deleteAll();
   }
 
