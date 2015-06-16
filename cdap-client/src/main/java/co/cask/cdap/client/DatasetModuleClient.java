@@ -206,7 +206,9 @@ public class DatasetModuleClient {
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public void deleteAll(Id.Namespace namespace) throws DatasetModuleCannotBeDeletedException, IOException, UnauthorizedException {
+  public void deleteAll(Id.Namespace namespace)
+    throws DatasetModuleCannotBeDeletedException, IOException, UnauthorizedException {
+    
     URL url = config.resolveNamespacedURLV3(namespace, "data/modules");
     HttpResponse response = restClient.execute(HttpMethod.DELETE, url, config.getAccessToken(),
                                                HttpURLConnection.HTTP_CONFLICT);
