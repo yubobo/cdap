@@ -88,6 +88,7 @@ public class DatasetClient {
   /**
    * Gets information about a dataset.
    *
+   * @param instance ID of the dataset instance
    * @return a {@link DatasetSpecificationSummary}.
    * @throws NotFoundException if the dataset is not found
    * @throws IOException if a network error occurred
@@ -108,42 +109,42 @@ public class DatasetClient {
   /**
    * Creates a dataset.
    *
-   * @param namespace namespace to create the dataset in
-   * @param instanceName name of the dataset to create
+   * @param instance ID of the dataset instance
    * @param properties properties of the dataset to create
    * @throws DatasetTypeNotFoundException if the desired dataset type was not found
    * @throws DatasetAlreadyExistsException if a dataset by the same name already exists
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public void create(Id.Namespace namespace, String instanceName, DatasetInstanceConfiguration properties)
+  public void create(Id.DatasetInstance instance, DatasetInstanceConfiguration properties)
     throws DatasetTypeNotFoundException, DatasetAlreadyExistsException, IOException, UnauthorizedException {
 
-    URL url = config.resolveNamespacedURLV3(namespace, String.format("data/datasets/%s", instanceName));
+    URL url = config.resolveNamespacedURLV3(instance.getNamespace(),
+                                            String.format("data/datasets/%s", instance.getId()));
     HttpRequest request = HttpRequest.put(url).withBody(GSON.toJson(properties)).build();
 
     HttpResponse response = restClient.execute(request, config.getAccessToken(), HttpURLConnection.HTTP_NOT_FOUND,
                                                HttpURLConnection.HTTP_CONFLICT);
     if (response.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
+      throw new DatasetTypeNotFoundException(Id.DatasetType.from(instance.getNamespace(), properties.getTypeName()));
     } else if (response.getResponseCode() == HttpURLConnection.HTTP_CONFLICT) {
-      throw new DatasetAlreadyExistsException(Id.DatasetInstance.from(namespace, instanceName));
+      throw new DatasetAlreadyExistsException(instance);
     }
   }
 
   /**
    * Creates a dataset.
    *
-   * @param namespace namespace to create the dataset in
-   * @param instanceName name of the dataset to create
+   * @param instance ID of the dataset instance
    * @param typeName type of dataset to create
    * @throws DatasetTypeNotFoundException if the desired dataset type was not found
    * @throws DatasetAlreadyExistsException if a dataset by the same name already exists
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public void create(Id.Namespace namespace, String instanceName, String typeName)
+  public void create(Id.DatasetInstance instance, String typeName)
     throws DatasetTypeNotFoundException, DatasetAlreadyExistsException, IOException, UnauthorizedException {
-    create(namespace, instanceName, new DatasetInstanceConfiguration(typeName, ImmutableMap.<String, String>of()));
+    create(instance, new DatasetInstanceConfiguration(typeName, ImmutableMap.<String, String>of()));
   }
 
   /**

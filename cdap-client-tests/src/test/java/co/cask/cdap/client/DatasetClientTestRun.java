@@ -133,7 +133,7 @@ public class DatasetClientTestRun extends ClientTestBase {
 
     Id.DatasetInstance instance = Id.DatasetInstance.from(namespace, "testDataset");
 
-    datasetClient.create(instance.getNamespace(), instance.getId(), StandaloneDataset.TYPE_NAME);
+    datasetClient.create(instance, StandaloneDataset.TYPE_NAME);
     Assert.assertEquals(numBaseDataset + 1, datasetClient.list(namespace).size());
     datasetClient.truncate(instance);
 
@@ -162,7 +162,7 @@ public class DatasetClientTestRun extends ClientTestBase {
 
     LOG.info("Creating and deleting multiple Datasets");
     for (int i = 1; i <= 3; i++) {
-      datasetClient.create(namespace, "testDataset" + i, StandaloneDataset.TYPE_NAME);
+      datasetClient.create(Id.DatasetInstance.from(namespace, "testDataset" + i), StandaloneDataset.TYPE_NAME);
     }
     Assert.assertEquals(numBaseDataset + 3, datasetClient.list(namespace).size());
     for (int i = 1; i <= 3; i++) {
@@ -195,7 +195,7 @@ public class DatasetClientTestRun extends ClientTestBase {
 
     Assert.assertFalse(typeClient.exists(type));
     Assert.assertFalse(datasetClient.exists(instance));
-    datasetClient.create(namespace, instance.getId(), Table.class.getName());
+    datasetClient.create(instance, Table.class.getName());
     Assert.assertTrue(datasetClient.exists(instance));
   }
 }
