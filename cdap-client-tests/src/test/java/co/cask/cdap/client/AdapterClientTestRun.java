@@ -72,7 +72,7 @@ public class AdapterClientTestRun extends ClientTestBase {
     AdapterConfig adapterConfig = new AdapterConfig("description", DummyWorkerTemplate.NAME, GSON.toJsonTree(config));
 
     // Create Adapter
-    adapterClient.create(namespace, adapter.getId(), adapterConfig);
+    adapterClient.create(adapter, adapterConfig);
 
     // Check that the created adapter is present
     adapterClient.waitForExists(adapter, 30, TimeUnit.SECONDS);

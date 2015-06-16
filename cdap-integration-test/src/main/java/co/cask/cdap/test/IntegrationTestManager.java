@@ -139,7 +139,7 @@ public class IntegrationTestManager implements TestManager {
 
   @Override
   public AdapterManager createAdapter(Id.Adapter adapterId, AdapterConfig config) throws Exception {
-    adapterClient.create(adapterId.getNamespace(), adapterId.getId(), config);
+    adapterClient.create(adapterId, config);
     return new RemoteAdapterManager(adapterId, adapterClient);
   }
 

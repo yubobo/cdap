@@ -108,17 +108,17 @@ public class AdapterClient {
   /**
    * Creates an adapter.
    *
-   * @param adapterName name of the adapter to create
+   * @param adapter name of the adapter to create
    * @param adapterSpec properties of the adapter to create
    * @throws ApplicationTemplateNotFoundException if the desired adapter type was not found
    * @throws BadRequestException if the provided {@link AdapterConfig} was bad
    * @throws IOException if a network error occurred
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public void create(Id.Namespace namespace, String adapterName, AdapterConfig adapterSpec)
+  public void create(Id.Adapter adapter, AdapterConfig adapterSpec)
     throws ApplicationTemplateNotFoundException, BadRequestException, IOException, UnauthorizedException {
 
-    URL url = config.resolveNamespacedURLV3(namespace, String.format("adapters/%s", adapterName));
+    URL url = config.resolveNamespacedURLV3(adapter.getNamespace(), String.format("adapters/%s", adapter.getId()));
     HttpRequest request = HttpRequest.put(url).withBody(GSON.toJson(adapterSpec)).build();
 
     HttpResponse response = restClient.execute(request, config.getAccessToken(), HttpURLConnection.HTTP_NOT_FOUND,
