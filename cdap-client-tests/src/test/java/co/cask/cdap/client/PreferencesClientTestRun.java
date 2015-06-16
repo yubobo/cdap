@@ -87,8 +87,9 @@ public class PreferencesClientTestRun extends ClientTestBase {
 
       programClient.setRuntimeArgs(service, setMap);
       assertEquals(setMap, programClient.getRuntimeArgs(service));
-      programClient.start(service, ImmutableMap.of("run", "value"));
+      programClient.start(service, false, ImmutableMap.of("run", "value"));
       assertProgramRunning(programClient, service);
+
       propMap.put("run", "value");
       propMap.putAll(setMap);
 

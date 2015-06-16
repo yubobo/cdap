@@ -92,7 +92,7 @@ public class ServiceClient {
     throws IOException, UnauthorizedException, NotFoundException {
 
     ServiceSpecification specification = get(service);
-    ImmutableList.Builder<ServiceHttpEndpoint> builder = new ImmutableList.Builder<ServiceHttpEndpoint>();
+    ImmutableList.Builder<ServiceHttpEndpoint> builder = new ImmutableList.Builder<>();
     for (HttpServiceHandlerSpecification handlerSpecification : specification.getHandlers().values()) {
       builder.addAll(handlerSpecification.getEndpoints());
     }

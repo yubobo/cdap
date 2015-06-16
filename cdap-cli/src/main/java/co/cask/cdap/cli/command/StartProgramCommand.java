@@ -36,11 +36,12 @@ import java.util.Map;
  * Starts a program.
  */
 public class StartProgramCommand extends AbstractAuthCommand {
-
   private static final Gson GSON = new Gson();
 
+  protected final ElementType elementType;
   private final ProgramClient programClient;
-  private final ElementType elementType;
+
+  protected boolean isDebug = false;
 
   public StartProgramCommand(ElementType elementType, ProgramClient programClient, CLIConfig cliConfig) {
     super(cliConfig);
@@ -63,14 +64,14 @@ public class StartProgramCommand extends AbstractAuthCommand {
     String runtimeArgsString = arguments.get(ArgumentName.RUNTIME_ARGS.toString(), "");
     if (runtimeArgsString == null || runtimeArgsString.isEmpty()) {
       // run with stored runtime args
-      programClient.start(programId);
+      programClient.start(programId, isDebug);
       runtimeArgsString = GSON.toJson(programClient.getRuntimeArgs(programId));
       output.printf("Successfully started %s '%s' of application '%s' with stored runtime arguments '%s'\n",
                     elementType.getTitleName(), programId, appId, runtimeArgsString);
     } else {
       // run with user-provided runtime args
       Map<String, String> runtimeArgs = ArgumentParser.parseMap(runtimeArgsString);
-      programClient.start(programId, runtimeArgs);
+      programClient.start(programId, isDebug, runtimeArgs);
       output.printf("Successfully started %s '%s' of application '%s' with provided runtime arguments '%s'\n",
                     elementType.getTitleName(), programId, appId, runtimeArgsString);
     }

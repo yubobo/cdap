@@ -30,6 +30,7 @@ import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.Instances;
 import co.cask.cdap.proto.ProgramLiveInfo;
 import co.cask.cdap.proto.ProgramRecord;
+import co.cask.cdap.proto.ProgramRunStatus;
 import co.cask.cdap.proto.ProgramStatus;
 import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.RunRecord;
@@ -77,30 +78,37 @@ public class ProgramClient {
   }
 
   public ProgramClient(ClientConfig config) {
-    this.config = config;
-    this.restClient = new RESTClient(config);
-    this.applicationClient = new ApplicationClient(config, restClient);
+    this(config, new RESTClient(config));
+  }
+
+  public ProgramClient(ClientConfig config, RESTClient restClient) {
+    this(config, restClient, new ApplicationClient(config, restClient));
   }
 
   /**
    * Starts a program using specified runtime arguments.
    *
    * @param program the program to start
+   * @param debug true to start in debug mode
    * @param runtimeArgs runtime arguments to pass to the program
    * @throws IOException if a network error occurred
    * @throws ProgramNotFoundException if the program with the specified name could not be found
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public void start(Id.Program program, @Nullable Map<String, String> runtimeArgs)
+  public void start(Id.Program program, boolean debug, @Nullable Map<String, String> runtimeArgs)
     throws IOException, ProgramNotFoundException, UnauthorizedException {
 
-    String path = String.format("apps/%s/%s/%s/start",
-                                program.getApplicationId(), program.getType().getCategoryName(), program.getId());
+    String action = debug ? "debug" : "start";
+    String path = String.format("apps/%s/%s/%s/%s",
+                                program.getApplicationId(),
+                                program.getType().getCategoryName(),
+                                program.getId(), action);
     URL url = config.resolveNamespacedURLV3(program.getNamespace(), path);
     HttpRequest.Builder request = HttpRequest.post(url);
     if (runtimeArgs != null) {
-      request = request.withBody(GSON.toJson(runtimeArgs));
+      request.withBody(GSON.toJson(runtimeArgs));
     }
+
     HttpResponse response = restClient.execute(request.build(), config.getAccessToken(),
                                                HttpURLConnection.HTTP_NOT_FOUND);
     if (response.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
@@ -116,8 +124,22 @@ public class ProgramClient {
    * @throws ProgramNotFoundException if the program with the specified name could not be found
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
+  public void start(Id.Program program, boolean debug)
+    throws IOException, ProgramNotFoundException, UnauthorizedException {
+
+    start(program, debug, null);
+  }
+
+  /**
+   * Starts a program using the stored runtime arguments.
+   *
+   * @param program the program to start
+   * @throws IOException if a network error occurred
+   * @throws ProgramNotFoundException if the program with the specified name could not be found
+   * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
+   */
   public void start(Id.Program program) throws IOException, ProgramNotFoundException, UnauthorizedException {
-    start(program, null);
+    start(program, false, null);
   }
 
   /**
@@ -390,39 +412,6 @@ public class ProgramClient {
   }
 
   /**
-   * Gets the run records of a program.
-   *
-   * @param program the program
-   * @param state to filter by program state
-   * @return the run records of the program
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if the application or program could not be found
-   * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
-   */
-  public List<RunRecord> getProgramRuns(Id.Program program, String state, long startTime, long endTime, int limit)
-    throws IOException, NotFoundException, UnauthorizedException {
-
-    String queryParams = String.format("%s=%s&%s=%d&%s=%d&%s=%d",
-                                       Constants.AppFabric.QUERY_PARAM_STATUS, state,
-                                       Constants.AppFabric.QUERY_PARAM_START_TIME, startTime,
-                                       Constants.AppFabric.QUERY_PARAM_END_TIME, endTime,
-                                       Constants.AppFabric.QUERY_PARAM_LIMIT, limit);
-
-    String path = String.format("apps/%s/%s/%s/runs?%s",
-                                program.getApplicationId(), program.getType().getCategoryName(),
-                                program.getId(), queryParams);
-    URL url = config.resolveNamespacedURLV3(program.getNamespace(), path);
-
-    HttpResponse response = restClient.execute(HttpMethod.GET, url, config.getAccessToken(),
-                                               HttpURLConnection.HTTP_NOT_FOUND);
-    if (response.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-      throw new NotFoundException(program);
-    }
-
-    return ObjectResponse.fromJsonBody(response, new TypeToken<List<RunRecord>>() { }).getResponseObject();
-  }
-
-  /**
    * Get the current run information for the Workflow based on the runid
    * @param appId ID of the application
    * @param workflowId ID of the workflow
@@ -448,26 +437,31 @@ public class ProgramClient {
       response, new TypeToken<List<WorkflowActionNode>>() { }.getType(), GSON);
 
     return objectResponse.getResponseObject();
-}
+  }
 
   /**
    * Gets the run records of a program.
    *
    * @param program the program
+   * @param state - filter by status of the program
    * @return the run records of the program
    * @throws IOException if a network error occurred
    * @throws NotFoundException if the application or program could not be found
    * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
    */
-  public List<RunRecord> getAllProgramRuns(Id.Program program, long startTime, long endTime, int limit)
+  public List<RunRecord> getProgramRuns(Id.Program program, String state,
+                                        long startTime, long endTime, int limit)
     throws IOException, NotFoundException, UnauthorizedException {
 
-    String queryParams = String.format("%s=%d&%s=%d&%s=%d", Constants.AppFabric.QUERY_PARAM_START_TIME, startTime,
+    String queryParams = String.format("%s=%s&%s=%d&%s=%d&%s=%d",
+                                       Constants.AppFabric.QUERY_PARAM_STATUS, state,
+                                       Constants.AppFabric.QUERY_PARAM_START_TIME, startTime,
                                        Constants.AppFabric.QUERY_PARAM_END_TIME, endTime,
                                        Constants.AppFabric.QUERY_PARAM_LIMIT, limit);
 
     String path = String.format("apps/%s/%s/%s/runs?%s",
-                                program.getApplicationId(), program.getType().getCategoryName(),
+                                program.getApplicationId(),
+                                program.getType().getCategoryName(),
                                 program.getId(), queryParams);
     URL url = config.resolveNamespacedURLV3(program.getNamespace(), path);
 
@@ -478,6 +472,20 @@ public class ProgramClient {
     }
 
     return ObjectResponse.fromJsonBody(response, new TypeToken<List<RunRecord>>() { }).getResponseObject();
+  }
+
+  /**
+   * Gets the run records of a program.
+   *
+   * @param program ID of the program
+   * @return the run records of the program
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if the application or program could not be found
+   * @throws UnauthorizedException if the request is not authorized successfully in the gateway server
+   */
+  public List<RunRecord> getAllProgramRuns(Id.Program program, long startTime, long endTime, int limit)
+    throws IOException, NotFoundException, UnauthorizedException {
+    return getProgramRuns(program, ProgramRunStatus.ALL.name(), startTime, endTime, limit);
   }
 
 

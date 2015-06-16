@@ -21,6 +21,7 @@ import co.cask.cdap.client.MetricsClient;
 import co.cask.cdap.client.ProgramClient;
 import co.cask.cdap.client.ServiceClient;
 import co.cask.cdap.client.config.ClientConfig;
+import co.cask.cdap.client.util.RESTClient;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.test.AbstractProgramManager;
 import co.cask.cdap.test.ServiceManager;
@@ -39,13 +40,13 @@ public class RemoteServiceManager extends AbstractProgramManager<ServiceManager>
   private final ServiceClient serviceClient;
   private final Id.Service serviceId;
 
-  public RemoteServiceManager(Id.Service programId, ClientConfig clientConfig,
+  public RemoteServiceManager(Id.Service programId, ClientConfig clientConfig, RESTClient restClient,
                               RemoteApplicationManager remoteApplicationManager) {
     super(programId, remoteApplicationManager);
     this.serviceId = programId;
-    this.metricsClient = new MetricsClient(clientConfig);
-    this.programClient = new ProgramClient(clientConfig);
-    this.serviceClient = new ServiceClient(clientConfig);
+    this.metricsClient = new MetricsClient(clientConfig, restClient);
+    this.programClient = new ProgramClient(clientConfig, restClient);
+    this.serviceClient = new ServiceClient(clientConfig, restClient);
   }
 
   @Override

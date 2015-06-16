@@ -20,6 +20,7 @@ import co.cask.cdap.api.metrics.RuntimeMetrics;
 import co.cask.cdap.client.MetricsClient;
 import co.cask.cdap.client.ProgramClient;
 import co.cask.cdap.client.config.ClientConfig;
+import co.cask.cdap.client.util.RESTClient;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.test.AbstractProgramManager;
@@ -36,13 +37,13 @@ public class RemoteFlowManager extends AbstractProgramManager<FlowManager> imple
   private final MetricsClient metricsClient;
   private final Id.Flow flowId;
 
-  public RemoteFlowManager(Id.Flow programId, ClientConfig clientConfig,
+  public RemoteFlowManager(Id.Flow programId, ClientConfig clientConfig, RESTClient restClient,
                            RemoteApplicationManager applicationManager) {
     super(programId, applicationManager);
     Preconditions.checkArgument(ProgramType.FLOW == programId.getType());
     this.flowId = programId;
-    this.programClient = new ProgramClient(clientConfig);
-    this.metricsClient = new MetricsClient(clientConfig);
+    this.programClient = new ProgramClient(clientConfig, restClient);
+    this.metricsClient = new MetricsClient(clientConfig, restClient);
   }
 
   @Override
