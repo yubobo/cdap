@@ -22,7 +22,6 @@ import co.cask.cdap.client.ProgramClient;
 import co.cask.cdap.client.config.ClientConfig;
 import co.cask.cdap.client.util.RESTClient;
 import co.cask.cdap.proto.Id;
-import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.test.AbstractProgramManager;
 import co.cask.cdap.test.FlowManager;
 import com.google.common.base.Preconditions;
@@ -40,7 +39,6 @@ public class RemoteFlowManager extends AbstractProgramManager<FlowManager> imple
   public RemoteFlowManager(Id.Flow programId, ClientConfig clientConfig, RESTClient restClient,
                            RemoteApplicationManager applicationManager) {
     super(programId, applicationManager);
-    Preconditions.checkArgument(ProgramType.FLOW == programId.getType());
     this.flowId = programId;
     this.programClient = new ProgramClient(clientConfig, restClient);
     this.metricsClient = new MetricsClient(clientConfig, restClient);
