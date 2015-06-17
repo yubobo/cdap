@@ -114,7 +114,7 @@ public class DatasetClientTestRun extends ClientTestBase {
     typeClient.waitForExists(type, 5, TimeUnit.SECONDS);
     DatasetTypeMeta datasetTypeMeta = typeClient.get(type);
     Assert.assertNotNull(datasetTypeMeta);
-    Assert.assertEquals(StandaloneDataset.TYPE_NAME, datasetTypeMeta.getName());
+    Assert.assertEquals(type.getId(), datasetTypeMeta.getName());
 
     datasetTypeMeta = typeClient.get(type);
     Assert.assertNotNull(datasetTypeMeta);
