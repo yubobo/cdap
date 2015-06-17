@@ -52,7 +52,7 @@ public class IntegrationTestBaseTest extends IntegrationTestBase {
 
     // Check the default namespaces applications to see whether the application wasnt made in the default namespace
     ClientConfig defaultClientConfig = new ClientConfig.Builder(getClientConfig()).build();
-    Assert.assertEquals(0, new ApplicationClient(defaultClientConfig).list(namespace).size());
+    Assert.assertEquals(0, new ApplicationClient(defaultClientConfig).list(Id.Namespace.DEFAULT).size());
 
     ApplicationClient applicationClient = new ApplicationClient(clientConfig);
     Assert.assertEquals("TestApplication", applicationClient.list(namespace).get(0).getName());
