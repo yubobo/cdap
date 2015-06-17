@@ -146,7 +146,7 @@ public class CLIMainTest {
 
     CLIConnectionConfig oldConnectionConfig = cliConfig.getConnectionConfig();
     CLIConnectionConfig authConnectionConfig = new CLIConnectionConfig(
-      oldConnectionConfig, Id.Namespace.from("test-username"));
+      oldConnectionConfig, Id.Namespace.DEFAULT, "test-username");
     cliConfig.setConnectionConfig(authConnectionConfig);
     prompt = cliMain.getPrompt(cliConfig.getConnectionConfig());
     Assert.assertTrue(prompt.contains("test-username@"));
@@ -174,6 +174,8 @@ public class CLIMainTest {
   @Test
   public void testStream() throws Exception {
     String streamId = PREFIX + "sdf123";
+    Id.Stream stream = Id.Stream.from(Id.Namespace.DEFAULT, streamId);
+
     testCommandOutputContains(cli, "create stream " + streamId, "Successfully created stream");
     testCommandOutputContains(cli, "list streams", streamId);
     testCommandOutputNotContains(cli, "get stream " + streamId, "helloworld");
@@ -207,9 +209,9 @@ public class CLIMainTest {
                               "Successfully sent stream event to stream");
     testCommandOutputContains(cli, "get stream " + streamId, "9, Event 9");
     testCommandOutputContains(cli, "get stream-stats " + streamId,
-                              String.format("No schema found for Stream '%s'", streamId));
+                              String.format("No schema found for %s", stream));
     testCommandOutputContains(cli, "set stream format " + streamId + " csv 'body string'",
-                              String.format("Successfully set format of stream '%s'", streamId));
+                              String.format("Successfully set format of %s", stream));
     testCommandOutputContains(cli, "execute 'show tables'", String.format("stream_%s", streamId));
     testCommandOutputContains(cli, "get stream-stats " + streamId,
                               "Analyzed 10 Stream events in the time range [0, 9223372036854775807]");
@@ -232,6 +234,8 @@ public class CLIMainTest {
   @Test
   public void testDataset() throws Exception {
     String datasetName = PREFIX + "sdf123lkj";
+    Id.DatasetInstance dataset = Id.DatasetInstance.from(Id.Namespace.DEFAULT, datasetName);
+
     DatasetTypeClient datasetTypeClient = new DatasetTypeClient(cliConfig.getClientConfig());
     DatasetTypeMeta datasetType = datasetTypeClient.list(Id.Namespace.DEFAULT).get(0);
     testCommandOutputContains(cli, "create dataset instance " + datasetType.getName() + " " + datasetName,
@@ -252,9 +256,9 @@ public class CLIMainTest {
 
     testCommandOutputContains(cli, "use namespace default", "Now using namespace 'default'");
     try {
-      testCommandOutputContains(cli, "truncate dataset instance " + datasetName, "Successfully truncated dataset");
+      testCommandOutputContains(cli, "truncate dataset instance " + datasetName, "Successfully truncated");
     } finally {
-      testCommandOutputContains(cli, "delete dataset instance " + datasetName, "Successfully deleted dataset");
+      testCommandOutputContains(cli, "delete dataset instance " + datasetName, "Successfully deleted");
     }
   }
 

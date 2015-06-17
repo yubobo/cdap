@@ -1055,14 +1055,6 @@ public abstract class Id {
       return this.namespace.equals(that.namespace) &&
         this.streamName.equals(that.streamName);
     }
-
-    @Override
-    public String toString() {
-      return Objects.toStringHelper(this)
-        .add("namespace", namespace)
-        .add("streamName", streamName)
-        .toString();
-    }
   }
 
   /**
@@ -1261,14 +1253,6 @@ public abstract class Id {
     @Override
     public int hashCode() {
       return Objects.hashCode(namespace, instanceId);
-    }
-
-    @Override
-    public String toString() {
-      return Objects.toStringHelper(this)
-        .add("namespace", namespace)
-        .add("instance", instanceId)
-        .toString();
     }
 
     public static DatasetInstance from(Namespace id, String instanceId) {
