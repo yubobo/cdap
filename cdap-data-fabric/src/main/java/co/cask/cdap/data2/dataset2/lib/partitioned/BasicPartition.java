@@ -25,7 +25,6 @@ import org.apache.twill.filesystem.Location;
  * Simple Implementation of Partition.
  */
 class BasicPartition implements Partition {
-
   private final transient PartitionedFileSetDataset partitionedFileSetDataset;
   protected final String relativePath;
   protected final PartitionKey key;

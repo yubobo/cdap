@@ -130,6 +130,29 @@ public class PartitionedFileSetTest {
   }
 
   @Test
+  public void testGetPartitionByCreationTime() throws Exception {
+    final PartitionedFileSet dataset = dsFrameworkUtil.getInstance(pfsInstance);
+
+    PartitionKey partitionKey1 = PartitionKey.builder()
+      .addIntField("i", 42)
+      .addLongField("l", 17L)
+      .addStringField("s", "x")
+      .build();
+    PartitionKey partitionKey2 = PartitionKey.builder()
+      .addIntField("i", 43)
+      .addLongField("l", 17L)
+      .addStringField("s", "x")
+      .build();
+    dataset.getPartitionOutput(partitionKey1).addPartition();
+    long afterFirstPartition = System.currentTimeMillis();
+    dataset.getPartitionOutput(partitionKey2).addPartition();
+
+    Set<PartitionDetail> retrievedPartitions =
+      dataset.getPartitionsByCreationTime(afterFirstPartition, Long.MAX_VALUE);
+    // TODO: assert properly
+  }
+
+  @Test
   public void testPartitionMetadata() throws Exception {
     final PartitionedFileSet dataset = dsFrameworkUtil.getInstance(pfsInstance);
 

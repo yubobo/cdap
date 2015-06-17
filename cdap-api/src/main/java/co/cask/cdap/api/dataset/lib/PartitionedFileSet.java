@@ -85,6 +85,14 @@ public interface PartitionedFileSet extends Dataset, InputFormatProvider, Output
   Set<PartitionDetail> getPartitions(@Nullable PartitionFilter filter);
 
   /**
+   * TODO: docs
+   * @param startTime
+   * @param endTime
+   * @return
+   */
+  Set<PartitionDetail> getPartitionsByCreationTime(@Nullable Long startTime, @Nullable Long endTime);
+
+  /**
    * Return a partition output for a specific partition key, in preparation for creating a new partition.
    * Obtain the location to write from the PartitionOutput, then call the {@link PartitionOutput#addPartition}
    * to add the partition to this dataset.

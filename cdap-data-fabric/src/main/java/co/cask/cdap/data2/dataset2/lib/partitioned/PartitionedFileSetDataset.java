@@ -34,6 +34,7 @@ import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetArguments;
 import co.cask.cdap.api.dataset.lib.Partitioning;
 import co.cask.cdap.api.dataset.lib.Partitioning.FieldType;
+import co.cask.cdap.api.dataset.table.Get;
 import co.cask.cdap.api.dataset.table.Put;
 import co.cask.cdap.api.dataset.table.Row;
 import co.cask.cdap.api.dataset.table.Scanner;
@@ -279,6 +280,58 @@ public class PartitionedFileSetDataset extends AbstractDataset implements Partit
       }
     });
     return partitionDetails;
+  }
+
+  @Override
+  public Set<PartitionDetail> getPartitionsByCreationTime(@Nullable Long startTime, @Nullable Long endTime) {
+    // TODO: handle or remove @nullable
+    byte[] startKey = Bytes.add(CREATION_TIME, Bytes.toBytes(startTime));
+    byte[] endKey = Bytes.add(CREATION_TIME, Bytes.toBytes(endTime));
+    Scanner scanner = indexTable.scan(startKey, endKey);
+    Set<PartitionDetail> partitions = Sets.newHashSet();
+    try {
+      while (true) {
+        Row row = scanner.next();
+        if (row == null) {
+          break;
+        }
+//        System.out.println("timestamp from rowKey: " + Bytes.toLong(row.getRow(), CREATION_TIME.length, row.getRow().length - CREATION_TIME.length));
+
+        ArrayList<Get> gets = Lists.newArrayList();
+        Map<byte[], byte[]> columns = row.getColumns();
+        for (Map.Entry<byte[], byte[]> entry : columns.entrySet()) {
+          gets.add(new Get(entry.getKey()));
+//          System.out.println("timestamp from columnValue: " + Bytes.toLong(entry.getValue()));
+        }
+
+        List<Row> rows = partitionsTable.get(gets);
+        for (Row partitionRow : rows) {
+          PartitionKey key;
+          try {
+            key = parseRowKey(partitionRow.getRow(), partitioning);
+          } catch (IllegalArgumentException e) {
+            if (!ignoreInvalidRowsSilently) {
+              LOG.debug(String.format("Failed to parse row key for partitioned file set '%s': %s",
+                                      getName(), Bytes.toStringBinary(partitionRow.getRow())));
+            }
+            continue;
+          }
+
+          byte[] pathBytes = partitionRow.get(RELATIVE_PATH);
+          if (pathBytes == null) {
+            return null;
+          }
+          // TODO: this is probably redundant. Well, at least, check if its the same as the values in the index.
+          byte[] creationTimeBytes = partitionRow.get(CREATION_TIME);
+
+          partitions.add(new BasicPartitionDetail(this, Bytes.toString(pathBytes), key, metadataFromRow(partitionRow),
+                                                  Bytes.toLong(creationTimeBytes)));
+        }
+      }
+    } finally {
+      scanner.close();
+    }
+    return partitions;
   }
 
   @VisibleForTesting
