@@ -108,7 +108,6 @@ public class IntegrationTestBase {
   }
 
   private void assertIsClear() throws Exception {
-    // TODO: support multiple namespaces
     Id.Namespace namespace = Id.Namespace.DEFAULT;
 
     // only namespace existing should be 'default'
@@ -192,22 +191,6 @@ public class IntegrationTestBase {
   private boolean isUserDataset(DatasetSpecificationSummary specification) {
     final DefaultDatasetNamespace dsNamespace = new DefaultDatasetNamespace(CConfiguration.create());
     return !dsNamespace.contains(specification.getName(), Constants.SYSTEM_NAMESPACE);
-  }
-
-  private void truncateAllStreams(Id.Namespace namespace) throws IOException, UnauthorizedException {
-    // TODO: check no streams once streams can be deleted instead of truncating all streams
-    StreamClient streamClient = getStreamClient();
-    List<StreamDetail> streamRecords = streamClient.list(namespace);
-    if (streamRecords.size() > 0) {
-      for (StreamDetail streamRecord : streamRecords) {
-        try {
-          streamClient.truncate(Id.Stream.from(namespace, streamRecord.getName()));
-        } catch (Exception e) {
-          Assert.fail("All existing streams must be truncated" +
-                        " - failed to truncate stream '" + streamRecord.getName() + "'");
-        }
-      }
-    }
   }
 
   private void assertNoUserDatasets(Id.Namespace namespace) throws Exception {

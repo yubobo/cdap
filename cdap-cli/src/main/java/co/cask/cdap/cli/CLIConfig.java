@@ -24,6 +24,7 @@ import co.cask.cdap.cli.util.table.TableRendererConfig;
 import co.cask.cdap.client.MetaClient;
 import co.cask.cdap.client.config.ClientConfig;
 import co.cask.cdap.client.config.ConnectionConfig;
+import co.cask.cdap.client.exception.DisconnectedException;
 import co.cask.cdap.common.exception.UnauthorizedException;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.security.authentication.client.AccessToken;
@@ -127,7 +128,10 @@ public class CLIConfig implements TableRendererConfig {
   }
 
   public Id.Namespace getCurrentNamespace() {
-    return connectionConfig != null ? connectionConfig.getNamespace() : null;
+    if (connectionConfig == null || connectionConfig.getNamespace() == null) {
+      throw new DisconnectedException();
+    }
+    return connectionConfig.getNamespace();
   }
 
   public void setTableRenderer(TableRenderer tableRenderer) {
