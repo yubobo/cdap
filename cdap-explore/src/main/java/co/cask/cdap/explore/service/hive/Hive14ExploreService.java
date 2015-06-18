@@ -35,16 +35,17 @@ import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.cli.OperationHandle;
 import org.apache.hive.service.cli.OperationStatus;
 import org.apache.hive.service.cli.SessionHandle;
+import org.apache.hive.service.server.HiveServer2;
 
 import java.io.File;
 
 /**
  * Hive 13 implementation of {@link co.cask.cdap.explore.service.ExploreService}.
  */
-public class Hive13ExploreService extends BaseHiveExploreService {
+public class Hive14ExploreService extends BaseHiveExploreService {
 
   @Inject
-  public Hive13ExploreService(TransactionSystemClient txClient, DatasetFramework datasetFramework, CConfiguration cConf,
+  public Hive14ExploreService(TransactionSystemClient txClient, DatasetFramework datasetFramework, CConfiguration cConf,
                               Configuration hConf, HiveConf hiveConf,
                               @Named(Constants.Explore.PREVIEWS_DIR_NAME) File previewsDir,
                               StreamAdmin streamAdmin, Store store) {
@@ -52,6 +53,15 @@ public class Hive13ExploreService extends BaseHiveExploreService {
     // This config sets the time Hive CLI getOperationStatus method will wait for the status of
     // a running query.
     System.setProperty(HiveConf.ConfVars.HIVE_SERVER2_LONG_POLLING_TIMEOUT.toString(), "50");
+  }
+
+  @Override
+  protected CLIService createCLIService() {
+    try {
+      return CLIService.class.getDeclaredConstructor(HiveServer2.class).newInstance(null);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to instantiate CLIService", e);
+    }
   }
 
   @Override
