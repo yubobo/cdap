@@ -43,6 +43,7 @@ import com.google.common.io.Files;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.VersionInfo;
+import org.apache.hive.common.util.HiveVersionInfo;
 import org.apache.twill.internal.utils.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -160,27 +160,15 @@ public class ExploreServiceUtils {
   }
 
   public static Class<? extends ExploreService> getHiveService() {
-    HiveSupport hiveVersion = checkHiveSupport(null);
+    HiveSupport hiveVersion = checkHiveSupport();
     return hiveVersion.getHiveExploreServiceClass();
-  }
-
-  public static HiveSupport checkHiveSupport() {
-    return checkHiveSupport(getExploreClassLoader());
   }
 
   /**
    * Check that Hive is in the class path - with a right version.
-   *
-   * @param hiveClassLoader class loader to use to load hive classes.
-   *                        If null, the class loader of this class is used.
    */
-  public static HiveSupport checkHiveSupport(ClassLoader hiveClassLoader) {
+  public static HiveSupport checkHiveSupport() {
     try {
-      ClassLoader usingCL = hiveClassLoader;
-      if (usingCL == null) {
-        usingCL = ExploreServiceUtils.class.getClassLoader();
-      }
-
       // First try to figure which hive support is relevant based on Hadoop distribution name
       String hadoopVersion = VersionInfo.getVersion();
       LOG.info("Hadoop version is: {}", hadoopVersion);
@@ -191,26 +179,16 @@ public class ExploreServiceUtils {
         }
       }
 
-      // In Hive 12, CLIService.getOperationStatus returns OperationState.
-      // In Hive 13, CLIService.getOperationStatus returns OperationStatus.
-      Class cliServiceClass = usingCL.loadClass("org.apache.hive.service.cli.CLIService");
-      Class operationHandleCl = usingCL.loadClass("org.apache.hive.service.cli.OperationHandle");
-      @SuppressWarnings("unchecked")
-      Method getStatusMethod = cliServiceClass.getDeclaredMethod("getOperationStatus", operationHandleCl);
-
-      // Rowset is an interface in Hive 13, but a class in Hive 12
-      Class rowSetClass = usingCL.loadClass("org.apache.hive.service.cli.RowSet");
-
-      if (rowSetClass.isInterface()
-        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationStatus")) {
-        return HiveSupport.HIVE_13;
-      } else if (!rowSetClass.isInterface()
-        && getStatusMethod.getReturnType() == usingCL.loadClass("org.apache.hive.service.cli.OperationState")) {
+      String hiveVersion = HiveVersionInfo.getVersion();
+      if (hiveVersion.startsWith("0.12.")) {
         return HiveSupport.HIVE_12;
+      } else if (hiveVersion.startsWith("0.13.")) {
+        return HiveSupport.HIVE_13;
       }
+
       throw new RuntimeException("Hive distribution not supported. Set the configuration '" +
-                                 Constants.Explore.EXPLORE_ENABLED +
-                                 "' to false to start up without Explore.");
+                                   Constants.Explore.EXPLORE_ENABLED +
+                                   "' to false to start up without Explore.");
     } catch (RuntimeException e) {
       throw e;
     } catch (Throwable e) {
