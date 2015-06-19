@@ -16,8 +16,10 @@
 package co.cask.cdap.api.workflow;
 
 import co.cask.cdap.api.Predicate;
+import co.cask.cdap.api.RunnableContext;
 
 import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  * Represents the runtime context of a {@link WorkflowAction}.
@@ -51,4 +53,10 @@ public interface WorkflowContext {
    * @return a {@link WorkflowToken}
    */
   WorkflowToken getToken();
+
+  /**
+   * @return the {@link WorkflowActionContext} for custom actions
+   */
+  @Nullable
+  WorkflowActionContext getWorkflowActionContext();
 }

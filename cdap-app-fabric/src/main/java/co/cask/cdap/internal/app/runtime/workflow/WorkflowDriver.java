@@ -97,9 +97,11 @@ final class WorkflowDriver extends AbstractExecutionThreadService {
   private boolean suspended;
   private Lock lock;
   private Condition condition;
+  private final BasicWorkflowActionContext context;
 
   WorkflowDriver(Program program, ProgramOptions options, InetAddress hostname,
-                 WorkflowSpecification workflowSpec, ProgramRunnerFactory programRunnerFactory) {
+                 WorkflowSpecification workflowSpec, ProgramRunnerFactory programRunnerFactory,
+                 BasicWorkflowActionContext context) {
     this.program = program;
     this.hostname = hostname;
     this.runtimeArgs = createRuntimeArgs(options.getUserArguments());
@@ -120,6 +122,7 @@ final class WorkflowDriver extends AbstractExecutionThreadService {
     this.loggingContext = new WorkflowLoggingContext(program.getNamespaceId(), program.getApplicationId(),
                                                      program.getName(),
                                                      arguments.getOption(ProgramOptionConstants.RUN_ID), adapterName);
+    this.context = context;
   }
 
   @Override
@@ -155,6 +158,7 @@ final class WorkflowDriver extends AbstractExecutionThreadService {
 
   /**
    * Suspends the execution of the Workflow after the currently running actions complete.
+   *
    * @throws Exception
    */
   public void suspend() throws Exception {
@@ -169,6 +173,7 @@ final class WorkflowDriver extends AbstractExecutionThreadService {
 
   /**
    * Resumes the execution of the Workflow.
+   *
    * @throws Exception
    */
   public void resume() throws Exception {
@@ -334,7 +339,7 @@ final class WorkflowDriver extends AbstractExecutionThreadService {
     executeAll(iterator, appSpec, instantiator, classLoader, token);
   }
 
-    @Override
+  @Override
   protected void run() throws Exception {
     LOG.info("Start workflow execution for {}", workflowSpec);
     WorkflowToken token = new BasicWorkflowToken();
@@ -396,7 +401,7 @@ final class WorkflowDriver extends AbstractExecutionThreadService {
                                                  logicalStartTime,
                                                  workflowProgramRunnerFactory.getProgramWorkflowRunner(actionSpec,
                                                                                                        token, nodeId),
-                                                 runtimeArgs, token));
+                                                 runtimeArgs, token, context));
     } catch (Throwable t) {
       LOG.warn("Exception on WorkflowAction.initialize(), abort Workflow. {}", actionSpec, t);
       // this will always rethrow

@@ -144,6 +144,26 @@ public class TestFrameworkTestRun extends TestFrameworkTestBase {
     Assert.assertEquals("world", Bytes.toString(outputTable.read("hello")));
   }
 
+  @Test
+  public void testCustomActionDatasetAccess() throws Exception {
+    addDatasetInstance("keyValueTable", DatasetWithCustomActionApp.INPUT_DS).create();
+    addDatasetInstance("keyValueTable", DatasetWithCustomActionApp.OUTPUT_DS).create();
+    DataSetManager<KeyValueTable> tableManager = getDataset(DatasetWithCustomActionApp.INPUT_DS);
+    KeyValueTable inputTable = tableManager.get();
+    inputTable.write("hello", "world");
+    tableManager.flush();
+
+
+    ApplicationManager appManager = deployApplication(DatasetWithCustomActionApp.class);
+    WorkflowManager workflowManager = appManager.getWorkflowManager(DatasetWithCustomActionApp.CUSTOM_WORKFLOW).start();
+    workflowManager.waitForFinish(3, TimeUnit.MINUTES);
+    appManager.stopAll();
+
+    DataSetManager<KeyValueTable> outTableManager = getDataset(DatasetWithCustomActionApp.OUTPUT_DS);
+    KeyValueTable outputTable = outTableManager.get();
+    Assert.assertEquals("world", Bytes.toString(outputTable.read("hello")));
+  }
+
   @Category(XSlowTests.class)
   @Test
   public void testDeployWorkflowApp() throws InterruptedException {

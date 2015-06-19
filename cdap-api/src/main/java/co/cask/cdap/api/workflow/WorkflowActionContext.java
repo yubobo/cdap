@@ -14,28 +14,18 @@
  * the License.
  */
 
-package co.cask.cdap.api.worker;
+package co.cask.cdap.api.workflow;
 
 import co.cask.cdap.api.RunnableContext;
-import co.cask.cdap.api.RuntimeContext;
-import co.cask.cdap.api.ServiceDiscoverer;
-import co.cask.cdap.api.TxRunnable;
-import co.cask.cdap.api.data.stream.StreamWriter;
-import co.cask.cdap.api.templates.AdapterContext;
 
 /**
- * Context for {@link Worker}.
+ * Created by dtzeng on 6/17/15.
  */
-public interface WorkerContext extends RunnableContext {
+public interface WorkflowActionContext extends RunnableContext {
 
   /**
-   * Returns the specification used to configure {@link Worker} bounded to this context.
+   * Returns the specification used to configure {@link WorkflowAction} bounded to this context.
    */
-  WorkerSpecification getSpecification();
-
-  /**
-   * @return number of instances of this worker
-   */
-  int getInstanceCount();
+  WorkflowActionSpecification getSpecification();
 
 }

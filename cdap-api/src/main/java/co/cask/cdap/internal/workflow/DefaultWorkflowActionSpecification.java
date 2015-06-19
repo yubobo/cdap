@@ -24,7 +24,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -35,6 +37,8 @@ public class DefaultWorkflowActionSpecification implements WorkflowActionSpecifi
   private final String name;
   private final String description;
   private final Map<String, String> properties;
+  private final Set<String> datasets;
+
 
   public DefaultWorkflowActionSpecification(String name, String description, Map<String, String> properties) {
     this(null, name, description, properties);
@@ -51,14 +55,16 @@ public class DefaultWorkflowActionSpecification implements WorkflowActionSpecifi
     this.name = spec.getName();
     this.description = spec.getDescription();
     this.properties = ImmutableMap.copyOf(properties);
+    this.datasets = new HashSet<>();
   }
 
-  public DefaultWorkflowActionSpecification(String className, String name,
-                                            String description, Map<String, String> properties) {
+  public DefaultWorkflowActionSpecification(String className, String name, String description,
+                                            Map<String, String> properties) {
     this.className = className;
     this.name = name;
     this.description = description;
     this.properties = ImmutableMap.copyOf(properties);
+    this.datasets = new HashSet<>();
   }
 
   @Override
@@ -86,6 +92,7 @@ public class DefaultWorkflowActionSpecification implements WorkflowActionSpecifi
     return properties.get(key);
   }
 
+
   @Override
   public String toString() {
     return Objects.toStringHelper(WorkflowActionSpecification.class)
@@ -93,5 +100,10 @@ public class DefaultWorkflowActionSpecification implements WorkflowActionSpecifi
       .add("class", className)
       .add("options", properties)
       .toString();
+  }
+
+  @Override
+  public Set<String> getDatasets() {
+    return datasets;
   }
 }

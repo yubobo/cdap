@@ -18,6 +18,7 @@ package co.cask.cdap.api.worker;
 
 import co.cask.cdap.api.ProgramSpecification;
 import co.cask.cdap.api.Resources;
+import co.cask.cdap.api.common.DatasetUser;
 import co.cask.cdap.api.common.PropertyProvider;
 import co.cask.cdap.api.dataset.Dataset;
 
@@ -30,7 +31,7 @@ import java.util.Set;
 /**
  * Specification for {@link Worker}s.
  */
-public final class WorkerSpecification implements ProgramSpecification, PropertyProvider {
+public final class WorkerSpecification implements ProgramSpecification, PropertyProvider, DatasetUser {
   private final String className;
   private final String name;
   private final String description;

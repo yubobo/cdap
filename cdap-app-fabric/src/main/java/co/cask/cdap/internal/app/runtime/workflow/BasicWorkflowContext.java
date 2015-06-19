@@ -15,6 +15,7 @@
  */
 package co.cask.cdap.internal.app.runtime.workflow;
 
+import co.cask.cdap.api.workflow.WorkflowActionContext;
 import co.cask.cdap.api.workflow.WorkflowActionSpecification;
 import co.cask.cdap.api.workflow.WorkflowContext;
 import co.cask.cdap.api.workflow.WorkflowSpecification;
@@ -35,16 +36,25 @@ final class BasicWorkflowContext implements WorkflowContext {
   private final ProgramWorkflowRunner programWorkflowRunner;
   private final Map<String, String> runtimeArgs;
   private final WorkflowToken token;
+  private final WorkflowActionContext context;
 
   BasicWorkflowContext(WorkflowSpecification workflowSpec, @Nullable WorkflowActionSpecification specification,
                        long logicalStartTime, @Nullable ProgramWorkflowRunner programWorkflowRunner,
                        Map<String, String> runtimeArgs, WorkflowToken token) {
+    this(workflowSpec, specification, logicalStartTime, programWorkflowRunner,
+         ImmutableMap.copyOf(runtimeArgs), token, null);
+  }
+
+  BasicWorkflowContext(WorkflowSpecification workflowSpec, @Nullable WorkflowActionSpecification specification,
+                       long logicalStartTime, @Nullable ProgramWorkflowRunner programWorkflowRunner,
+                       Map<String, String> runtimeArgs, WorkflowToken token, WorkflowActionContext context) {
     this.workflowSpec = workflowSpec;
     this.specification = specification;
     this.logicalStartTime = logicalStartTime;
     this.programWorkflowRunner = programWorkflowRunner;
     this.runtimeArgs = ImmutableMap.copyOf(runtimeArgs);
     this.token = token;
+    this.context = context;
   }
 
   @Override
@@ -81,5 +91,11 @@ final class BasicWorkflowContext implements WorkflowContext {
   @Override
   public WorkflowToken getToken() {
     return token;
+  }
+
+  @Nullable
+  @Override
+  public WorkflowActionContext getWorkflowActionContext() {
+    return context;
   }
 }

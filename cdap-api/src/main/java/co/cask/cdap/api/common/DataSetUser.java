@@ -14,28 +14,18 @@
  * the License.
  */
 
-package co.cask.cdap.api.worker;
+package co.cask.cdap.api.common;
 
-import co.cask.cdap.api.RunnableContext;
-import co.cask.cdap.api.RuntimeContext;
-import co.cask.cdap.api.ServiceDiscoverer;
-import co.cask.cdap.api.TxRunnable;
-import co.cask.cdap.api.data.stream.StreamWriter;
-import co.cask.cdap.api.templates.AdapterContext;
+
+import java.util.Set;
 
 /**
- * Context for {@link Worker}.
+ * Created by dtzeng on 6/17/15.
  */
-public interface WorkerContext extends RunnableContext {
+public interface DatasetUser {
 
   /**
-   * Returns the specification used to configure {@link Worker} bounded to this context.
+   * @return An immutable set of {@link co.cask.cdap.api.dataset.Dataset DataSets} that are used
    */
-  WorkerSpecification getSpecification();
-
-  /**
-   * @return number of instances of this worker
-   */
-  int getInstanceCount();
-
+  Set<String> getDatasets();
 }

@@ -15,6 +15,8 @@
  */
 package co.cask.cdap.api.workflow;
 
+import co.cask.cdap.api.ProgramLifecycle;
+
 /**
  * Represents an action that can be executed in a {@link Workflow}. The lifecycle of a {@link WorkflowAction} is:
  *
