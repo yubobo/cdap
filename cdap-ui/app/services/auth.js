@@ -88,8 +88,6 @@ module.service('myAuth', function myAuthService (MYAUTH_EVENT, MyAuthUser, myAut
    * @return {promise} resolved on sucessful login
    */
   this.login = function (cred) {
-    console.log('cred', cred);
-
     return myAuthPromise(cred).then(
       function(data) {
         var user = new MyAuthUser(data);
