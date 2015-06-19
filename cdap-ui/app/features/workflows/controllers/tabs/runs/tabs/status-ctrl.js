@@ -16,6 +16,8 @@ angular.module(PKG.name + '.feature.workflows')
 
     var vm = this;
 
+    vm.timeline = {};
+
     vm.data = {};
     myWorkFlowApi.get(params)
       .$promise
@@ -110,6 +112,13 @@ angular.module(PKG.name + '.feature.workflows')
                 .$promise
                 .then(function (result) {
                   vm.data.current[n.name] = result.status;
+
+                  vm.timeline[n.name] = {
+                    status: result.status,
+                    start: result.start * 1000,
+                    end: result.end * 1000
+                  };
+
                 });
               } else if (n.program.programType === 'SPARK') {
 
@@ -121,6 +130,12 @@ angular.module(PKG.name + '.feature.workflows')
                 })
                 .then(function (result) {
                   vm.data.current[n.name] = result.status;
+
+                  vm.timeline[n.name] = {
+                    status: result.status,
+                    start: result.start * 1000,
+                    end: result.end * 1000
+                  };
                 });
               }
 
