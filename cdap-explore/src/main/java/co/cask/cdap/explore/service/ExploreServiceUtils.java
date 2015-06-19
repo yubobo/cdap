@@ -44,7 +44,6 @@ import com.google.common.io.Files;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.VersionInfo;
-import org.apache.hive.common.util.HiveVersionInfo;
 import org.apache.twill.internal.utils.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,26 +161,32 @@ public class ExploreServiceUtils {
   }
 
   public static Class<? extends ExploreService> getHiveService() {
-    HiveSupport hiveVersion = checkHiveSupport();
+    HiveSupport hiveVersion = checkHiveSupport(getExploreClassLoader());
     return hiveVersion.getHiveExploreServiceClass();
   }
 
   /**
    * Check that Hive is in the class path - with a right version.
    */
-  public static HiveSupport checkHiveSupport() {
-    try {
-      // First try to figure which hive support is relevant based on Hadoop distribution name
-      String hadoopVersion = VersionInfo.getVersion();
-      LOG.info("Hadoop version is: {}", hadoopVersion);
-      for (HiveSupport hiveSupport : HiveSupport.values()) {
-        if (hiveSupport.getHadoopVersionPattern() != null &&
-          hiveSupport.getHadoopVersionPattern().matcher(hadoopVersion).matches()) {
-          return hiveSupport;
-        }
+  public static HiveSupport checkHiveSupport(ClassLoader hiveClassLoader) {
+    // First try to figure which hive support is relevant based on Hadoop distribution name
+    String hadoopVersion = VersionInfo.getVersion();
+    LOG.info("Hadoop version is: {}", hadoopVersion);
+    for (HiveSupport hiveSupport : HiveSupport.values()) {
+      if (hiveSupport.getHadoopVersionPattern() != null &&
+        hiveSupport.getHadoopVersionPattern().matcher(hadoopVersion).matches()) {
+        return hiveSupport;
       }
+    }
 
-      String hiveVersion = HiveVersionInfo.getVersion();
+    ClassLoader usingCL = hiveClassLoader;
+    if (usingCL == null) {
+      usingCL = ExploreServiceUtils.class.getClassLoader();
+    }
+
+    try {
+      Class<?> hiveVersionInfoClass = usingCL.loadClass("org.apache.hive.common.util.HiveVersionInfo");
+      String hiveVersion = (String) hiveVersionInfoClass.getDeclaredMethod("getVersion").invoke(null);
       if (hiveVersion.startsWith("0.12.")) {
         return HiveSupport.HIVE_12;
       } else if (hiveVersion.startsWith("0.13.")) {
@@ -189,17 +194,13 @@ public class ExploreServiceUtils {
       } else if (hiveVersion.startsWith("0.14.")) {
         return HiveSupport.HIVE_14;
       }
-
-      throw new RuntimeException("Hive distribution not supported. Set the configuration '" +
-                                   Constants.Explore.EXPLORE_ENABLED +
-                                   "' to false to start up without Explore.");
-    } catch (RuntimeException e) {
-      throw e;
-    } catch (Throwable e) {
-      throw new RuntimeException("Hive jars not present in classpath. Set the configuration '" +
-                                 Constants.Explore.EXPLORE_ENABLED +
-                                 "' to false to start up without Explore.", e);
+    } catch (Exception e) {
+      throw Throwables.propagate(e);
     }
+
+    throw new RuntimeException("Hive distribution not supported. Set the configuration '" +
+                                 Constants.Explore.EXPLORE_ENABLED +
+                                 "' to false to start up without Explore.");
   }
 
   /**
