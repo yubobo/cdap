@@ -16,12 +16,13 @@
 
 package co.cask.cdap.logging.context;
 
+import co.cask.cdap.api.workflow.WorkflowAction;
 import co.cask.cdap.common.logging.ApplicationLoggingContext;
 
 import javax.annotation.Nullable;
 
 /**
- * Created by dtzeng on 6/17/15.
+ * Logging Context for {@link WorkflowAction}
  */
 public class WorkflowActionLoggingContext extends ApplicationLoggingContext {
 

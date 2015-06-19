@@ -20,7 +20,7 @@ package co.cask.cdap.api.common;
 import java.util.Set;
 
 /**
- * Created by dtzeng on 6/17/15.
+ * Defines an interface for components which use Datasets.
  */
 public interface DatasetUser {
 

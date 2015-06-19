@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
+ * The default implementation for a {@link WorkflowActionSpecification}
  */
 public class DefaultWorkflowActionSpecification implements WorkflowActionSpecification {
 

@@ -38,7 +38,7 @@ import org.apache.twill.discovery.DiscoveryServiceClient;
 import javax.annotation.Nullable;
 
 /**
- * Created by dtzeng on 6/17/15.
+ * Default implementation of a {@link WorkflowActionContext}
  */
 public class BasicWorkflowActionContext extends BasicRunnableContext<WorkflowActionSpecification>
   implements WorkflowActionContext {

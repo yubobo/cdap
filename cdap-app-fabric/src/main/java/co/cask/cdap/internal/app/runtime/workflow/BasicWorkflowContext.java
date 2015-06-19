@@ -26,7 +26,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
- *
+ * Default implementation of a {@link WorkflowContext}
  */
 final class BasicWorkflowContext implements WorkflowContext {
 

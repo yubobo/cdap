@@ -17,11 +17,6 @@
 package co.cask.cdap.api.worker;
 
 import co.cask.cdap.api.RunnableContext;
-import co.cask.cdap.api.RuntimeContext;
-import co.cask.cdap.api.ServiceDiscoverer;
-import co.cask.cdap.api.TxRunnable;
-import co.cask.cdap.api.data.stream.StreamWriter;
-import co.cask.cdap.api.templates.AdapterContext;
 
 /**
  * Context for {@link Worker}.

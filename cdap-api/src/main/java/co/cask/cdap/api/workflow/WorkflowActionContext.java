@@ -19,7 +19,7 @@ package co.cask.cdap.api.workflow;
 import co.cask.cdap.api.RunnableContext;
 
 /**
- * Created by dtzeng on 6/17/15.
+ * Defines an interface for the context of Workflow Actions
  */
 public interface WorkflowActionContext extends RunnableContext {
 

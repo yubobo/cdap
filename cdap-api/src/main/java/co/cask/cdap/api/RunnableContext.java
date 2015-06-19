@@ -20,14 +20,9 @@ import co.cask.cdap.api.data.stream.StreamWriter;
 import co.cask.cdap.api.templates.AdapterContext;
 
 /**
- * Created by dtzeng on 6/17/15.
+ * Defines an interface for Runnable components which need access to datasets, services, streams.
  */
 public interface RunnableContext extends RuntimeContext, ServiceDiscoverer, StreamWriter, AdapterContext {
-
-//  /**
-//   * Returns the specification used to configure {@link Worker} bounded to this context.
-//   */
-//  T getSpecification();
 
   /**
    * Execute a set of operations on datasets via a {@link TxRunnable} that are committed as a single transaction.
