@@ -16,13 +16,12 @@
 
 package co.cask.cdap.api.common;
 
-
 import java.util.Set;
 
 /**
  * Defines an interface for components which use Datasets.
  */
-public interface DatasetUser {
+public interface DatasetProvider {
 
   /**
    * @return An immutable set of {@link co.cask.cdap.api.dataset.Dataset DataSets} that are used

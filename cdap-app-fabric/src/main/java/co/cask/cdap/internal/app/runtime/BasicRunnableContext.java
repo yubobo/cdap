@@ -18,7 +18,7 @@ package co.cask.cdap.internal.app.runtime;
 
 import co.cask.cdap.api.RunnableContext;
 import co.cask.cdap.api.TxRunnable;
-import co.cask.cdap.api.common.DatasetUser;
+import co.cask.cdap.api.common.DatasetProvider;
 import co.cask.cdap.api.data.stream.StreamBatchWriter;
 import co.cask.cdap.api.data.stream.StreamWriter;
 import co.cask.cdap.api.dataset.Dataset;
@@ -70,7 +70,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
  *
  * @param <T> specification of {@link RunnableContext}
  */
-public abstract class BasicRunnableContext<T extends DatasetUser> extends AbstractContext implements RunnableContext {
+public abstract class BasicRunnableContext<T extends DatasetProvider> extends AbstractContext implements RunnableContext {
   private static final Logger LOG = LoggerFactory.getLogger(BasicRunnableContext.class);
 
   private final TransactionSystemClient transactionSystemClient;

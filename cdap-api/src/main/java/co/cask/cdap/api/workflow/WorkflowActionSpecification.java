@@ -21,7 +21,7 @@ import co.cask.cdap.api.builder.Creator;
 import co.cask.cdap.api.builder.DescriptionSetter;
 import co.cask.cdap.api.builder.NameSetter;
 import co.cask.cdap.api.builder.OptionsSetter;
-import co.cask.cdap.api.common.DatasetUser;
+import co.cask.cdap.api.common.DatasetProvider;
 import co.cask.cdap.api.common.PropertyProvider;
 import co.cask.cdap.api.mapreduce.MapReduceSpecification;
 import co.cask.cdap.internal.builder.BaseBuilder;
@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * Specification for a {@link WorkflowAction}.
  */
-public interface WorkflowActionSpecification extends ProgramSpecification, PropertyProvider, DatasetUser {
+public interface WorkflowActionSpecification extends ProgramSpecification, PropertyProvider, DatasetProvider {
 
   /**
    * @return Class name of the workflow action.

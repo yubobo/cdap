@@ -28,10 +28,10 @@ import co.cask.cdap.api.workflow.AbstractWorkflowAction;
  * App which copies data from one KVTable to another using a Workflow Custom Action.
  */
 public class DatasetWithCustomActionApp extends AbstractApplication {
-  public static final String INPUT_DS = "t1";
-  public static final String OUTPUT_DS = "t2";
-  public static final String CUSTOM_PROGRAM = "DatasetWithCustomActionApp";
-  public static final String CUSTOM_WORKFLOW = "CustomWorkflow";
+  static final String INPUT_DS = "t1";
+  static final String OUTPUT_DS = "t2";
+  static final String CUSTOM_PROGRAM = "DatasetWithCustomActionApp";
+  static final String CUSTOM_WORKFLOW = "CustomWorkflow";
 
   @Override
   public void configure() {
