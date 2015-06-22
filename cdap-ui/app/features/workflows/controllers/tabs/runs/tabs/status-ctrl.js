@@ -1,5 +1,5 @@
 angular.module(PKG.name + '.feature.workflows')
-  .controller('WorkflowsRunsStatusController', function($state, $scope, myWorkFlowApi, $filter, $alert, GraphHelpers, MyDataSource, myMapreduceApi) {
+  .controller('WorkflowsRunsStatusController', function($state, $scope, myWorkFlowApi, $filter, $alert, GraphHelpers, MyDataSource, myMapreduceApi, mySparkApi) {
     var filterFilter = $filter('filter'),
         params = {
           appId: $state.params.appId,
@@ -111,18 +111,23 @@ angular.module(PKG.name + '.feature.workflows')
                 .then(function (result) {
                   vm.data.current[n.name] = result.status;
                 });
-              } else if (n.program.programType === 'SPARK') {
+            } else if (n.program.programType === 'SPARK') {
 
-                // TODO: Change to data-modelling once available for Spark
-                var sparkPath = '/apps/' + $state.params.appId + '/spark/' + n.program.programName + '/runs/' + runid;
+              var sparkParams = {
+                namespace: $state.params.namespace,
+                appId: $state.params.appId,
+                sparkId: n.program.programName,
+                runId: runid,
+                scope: $scope
+              };
 
-                dataSrc.request({
-                  _cdapNsPath: sparkPath
-                })
+              mySparkApi.runDetail(sparkParams)
+                .$promise
                 .then(function (result) {
                   vm.data.current[n.name] = result.status;
                 });
-              }
+
+            }
 
           });
 
