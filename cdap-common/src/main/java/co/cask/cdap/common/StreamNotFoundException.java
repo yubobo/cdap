@@ -14,18 +14,23 @@
  * the License.
  */
 
-package co.cask.cdap.common.exception;
+package co.cask.cdap.common;
+
+import co.cask.cdap.proto.Id;
 
 /**
- * Thrown when the input was bad.
+ * Thrown when a stream is not found
  */
-public class BadRequestException extends Exception {
+public class StreamNotFoundException extends NotFoundException {
 
-  public BadRequestException(String message) {
-    super(message);
+  private final Id.Stream id;
+
+  public StreamNotFoundException(Id.Stream id) {
+    super(id);
+    this.id = id;
   }
 
-  public BadRequestException(Throwable cause) {
-    super(cause);
+  public Id.Stream getId() {
+    return id;
   }
 }

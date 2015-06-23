@@ -14,24 +14,35 @@
  * the License.
  */
 
-package co.cask.cdap.common.exception;
+package co.cask.cdap.common;
 
 import co.cask.cdap.proto.Id;
 
 /**
- * Thrown when an element already exists.
+ * Thrown when an element cannot be deleted.
  */
-public class AlreadyExistsException extends Exception {
+public class CannotBeDeletedException extends ConflictException {
 
   private final Id objectId;
 
-  public AlreadyExistsException(Id id) {
-    super(String.format("'%s' already exists", id.getIdRep()));
+  public CannotBeDeletedException(Id id) {
+    super(String.format("'%s' could not be deleted", id.getIdRep()));
+    this.objectId = id;
+  }
+
+  public CannotBeDeletedException(Id id, String reason) {
+    super(String.format("'%s' could not be deleted. Reason: %s", id.getIdRep(), reason));
+    this.objectId = id;
+  }
+
+  public CannotBeDeletedException(Id id, Throwable cause) {
+    super(String.format("'%s' could not be deleted. Reason: %s", id.getIdRep(), cause.getMessage()), cause);
     this.objectId = id;
   }
 
   public Id getObjectId() {
     return objectId;
   }
+
 
 }
