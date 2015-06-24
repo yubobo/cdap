@@ -98,6 +98,7 @@ public class IndexedTable extends AbstractDataset implements Table {
    */
   private static final byte[] IDX_COL = {'r'};
 
+  private final boolean hasColumnWithZero;
   // the two underlying tables
   private Table table, index;
   // the secondary index column
@@ -118,6 +119,19 @@ public class IndexedTable extends AbstractDataset implements Table {
     this.table = table;
     this.index = index;
     this.indexedColumns = Sets.newTreeSet(Bytes.BYTES_COMPARATOR);
+    boolean hasColumnWithZero = false;
+    outerloop:
+    for (byte[] column : columnsToIndex) {
+      for (byte b : column) {
+        if (b == 0) {
+          // only when a column has a zero value in it do we need to check for false positive in the scan on the index
+          // by checking against the column's value in the data table
+          hasColumnWithZero = true;
+          break outerloop;
+        }
+      }
+    }
+    this.hasColumnWithZero = hasColumnWithZero;
     Collections.addAll(this.indexedColumns, columnsToIndex);
   }
 
@@ -170,7 +184,7 @@ public class IndexedTable extends AbstractDataset implements Table {
     byte[] rowKeyPrefix = Bytes.concat(column, keyDelimiter, value, keyDelimiter);
     byte[] stopRow = Bytes.stopKeyForPrefix(rowKeyPrefix);
     Scanner indexScan = index.scan(rowKeyPrefix, stopRow);
-    return new IndexScanner(indexScan, rowKeyPrefix);
+    return new IndexScanner(indexScan, column, rowKeyPrefix, value);
   }
 
   /**
@@ -183,17 +197,19 @@ public class IndexedTable extends AbstractDataset implements Table {
    * @param endValue the exclusive end of the range for which rows must fall within to be returned in the scan
    *                 {@code null} means end with the last row of the table
    * @return a Scanner returning rows from the data table, whose stored value for the given column is within the the
-   * given range.
+   *         given range.
    * @throws java.lang.IllegalArgumentException if the given column is not configured for indexing.
    */
   public Scanner scanByIndex(byte[] column, @Nullable byte[] startValue, @Nullable byte[] endValue) {
     assertIndexedColumn(column);
     // keyDelimiter is not used at the end of the rowKeys, because they are used for a range scan,
     // instead of a fixed-match lookup
-    byte[] startRow = startValue == null ? null : Bytes.concat(column, keyDelimiter, startValue);
-    byte[] stopRow = endValue == null ? null : Bytes.concat(column, keyDelimiter, endValue);
+    byte[] startRow = startValue == null ? Bytes.concat(column, keyDelimiter) :
+      Bytes.concat(column, keyDelimiter, startValue);
+    byte[] stopRow = endValue == null ? Bytes.stopKeyForPrefix(Bytes.concat(column, keyDelimiter)) :
+      Bytes.concat(column, keyDelimiter, endValue);
     Scanner indexScan = index.scan(startRow, stopRow);
-    return new IndexScanner(indexScan, null);
+    return new IndexRangeScanner(indexScan, column, startValue, endValue);
   }
 
   private void assertIndexedColumn(byte[] column) {
@@ -544,13 +560,15 @@ public class IndexedTable extends AbstractDataset implements Table {
   private class IndexScanner implements Scanner {
     // scanner over index table
     private final Scanner baseScanner;
+    private final byte[] column;
     private final byte[] rowKeyPrefix;
+    private final byte[] value;
 
-    // If rowKeyPrefix is null, that means don't check equality with the rows returned by the index because we are doing
-    // a range scan instead of an exact match lookup.
-    public IndexScanner(Scanner baseScanner, @Nullable byte[] rowKeyPrefix) {
+    public IndexScanner(Scanner baseScanner, byte[] column, byte[] rowKeyPrefix, byte[] value) {
       this.baseScanner = baseScanner;
+      this.column = column;
       this.rowKeyPrefix = rowKeyPrefix;
+      this.value = value;
     }
 
     @Nullable
@@ -563,10 +581,67 @@ public class IndexedTable extends AbstractDataset implements Table {
         byte[] rowkey = indexRow.get(IDX_COL);
         // verify that datarow matches the expected row key to avoid issues with column name or value
         // containing the delimiter used
-        if (rowkey != null) {
-          if (rowKeyPrefix == null || Bytes.equals(indexRow.getRow(), Bytes.add(rowKeyPrefix, rowkey))) {
-            return table.get(rowkey);
+        if (rowkey != null && Bytes.equals(indexRow.getRow(), Bytes.add(rowKeyPrefix, rowkey))) {
+          byte[] columnValue = Arrays.copyOfRange(indexRow.getRow(),
+                                                  column.length + 1,
+                                                  indexRow.getRow().length - rowkey.length - 1);
+          if (Bytes.equals(columnValue, value)) {
+            Row row = table.get(rowkey);
+            if (hasColumnWithZero && !Bytes.equals(row.get(column), value)) {
+              continue;
+            }
+            return row;
           }
+        }
+      }
+      // end of index
+      return null;
+    }
+
+    @Override
+    public void close() {
+      baseScanner.close();
+    }
+  }
+
+  private class IndexRangeScanner implements Scanner {
+    // scanner over index table
+    private final Scanner baseScanner;
+    private final byte[] column;
+    private final byte[] start;
+    private final byte[] end;
+
+    public IndexRangeScanner(Scanner baseScanner, byte[] column, byte[] start, byte[] end) {
+      this.baseScanner = baseScanner;
+      this.column = column;
+      this.start = start;
+      this.end = end;
+    }
+
+    @Nullable
+    @Override
+    public Row next() {
+      // TODO: retrieve results in batches to minimize RPC overhead (requires multi-get support in table)
+      // keep going until we hit a non-null, non-empty data row, or we exhaust the index
+      Row indexRow;
+      while ((indexRow = baseScanner.next()) != null) {
+        byte[] rowkey = indexRow.get(IDX_COL);
+        // verify that datarow matches the expected row key to avoid issues with column name or value
+        // containing the delimiter used
+        if (rowkey == null) {
+          continue;
+        }
+        // columnName + \0 + columnValue + \0 + rowkey
+        byte[] columnValue = Arrays.copyOfRange(indexRow.getRow(),
+                                                column.length + 1,
+                                                indexRow.getRow().length - rowkey.length - 1);
+        if ((start == null || Bytes.compareTo(columnValue, start) >= 0)
+         && (start == null || Bytes.compareTo(columnValue, end) < 0)) {
+          Row row = table.get(rowkey);
+          if (hasColumnWithZero && !Bytes.equals(columnValue, row.get(column))) {
+            continue;
+          }
+          return row;
         }
       }
       // end of index
